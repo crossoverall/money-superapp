@@ -38,8 +38,8 @@
     <button data-lang="en">EN</button>
   </div>
   <div class="theme-toggle">
-    <button data-theme-btn="light">☀ Light</button>
-    <button data-theme-btn="dark">☾ Dark</button>
+    <button data-theme-btn="light" data-th="☀ สว่าง" data-en="☀ Light">☀ Light</button>
+    <button data-theme-btn="dark" data-th="☾ มืด" data-en="☾ Dark">☾ Dark</button>
   </div>
 </div>
 <iframe id="app" src="rebalance.html"></iframe>
@@ -54,6 +54,7 @@
   function applyLang(lang){
     langButtons.forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
     navButtons.forEach(b => b.textContent = b.dataset[lang]);
+    themeButtons.forEach(b => b.textContent = b.dataset[lang]);
   }
   function applyTheme(theme){
     themeButtons.forEach(b => b.classList.toggle('active', b.dataset.themeBtn === theme));
