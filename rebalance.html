@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>คำนวณการเติมเงินรายเดือน</title>
+<style>
+  :root{
+    --bg: #0E1512;
+    --panel: #131E19;
+    --panel-2: #16221C;
+    --line: #24352C;
+    --ink: #EAF2EE;
+    --ink-dim: #8FA69C;
+    --ink-faint: #5B7168;
+    --warn: #C9A15A;
+    --warn-dim: rgba(201,161,90,0.14);
+
+    --core: #4FA894;
+    --core-dim: rgba(79,168,148,0.14);
+    --ballast: #C9A15A;
+    --ballast-dim: rgba(201,161,90,0.14);
+    --satellite: #C97D5A;
+    --satellite-dim: rgba(201,125,90,0.14);
+  }
+  *{box-sizing:border-box;}
+  body{
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Helvetica Neue', -apple-system, 'Segoe UI', sans-serif;
+    margin:0;
+    padding: 26px 16px 70px;
+    max-width: 520px;
+    margin-inline: auto;
+  }
+  .eyebrow{
+    font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--ink-faint); margin-bottom: 6px;
+  }
+  h1{ font-size: 23px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 4px;}
+  .sub{ color: var(--ink-dim); font-size: 13px; margin-bottom: 22px; line-height:1.5;}
+
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .panel-title{
+    font-size: 11px; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--ink-faint); font-weight: 700; margin-bottom: 12px;
+  }
+
+  .budget-row{ display:flex; align-items:center; gap:10px; }
+  .budget-row label{ font-size: 13.5px; color: var(--ink-dim); white-space:nowrap;}
+  .budget-row input{
+    flex:1; background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: 10px; color: var(--ink); font-size: 17px; font-weight:700;
+    padding: 10px 12px; font-variant-numeric: tabular-nums; text-align:right;
+  }
+  .budget-row input:focus{ outline: none; border-color: var(--ink-dim); }
+
+  .split-bar{ display:flex; height: 8px; border-radius: 5px; overflow: hidden; margin: 14px 0 8px; }
+  .split-legend{ display:flex; justify-content: space-between; font-size: 11px; color: var(--ink-dim); }
+  .split-legend .dot{ display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:5px; vertical-align:middle;}
+  .split-legend input{
+    width: 42px; background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: 6px; color: var(--ink); font-size: 11.5px; font-weight:700;
+    padding: 2px 4px; text-align:center; margin-left: 3px; font-variant-numeric: tabular-nums;
+  }
+  .split-warn{ font-size: 11px; color: var(--warn); margin-top: 8px; }
+  .split-warn.ok{ display:none; }
+
+  .bucket-panel{ border-radius: 16px; border: 1px solid var(--line); margin-bottom: 16px; overflow:hidden; }
+  .bucket-head{
+    display:flex; justify-content: space-between; align-items:baseline;
+    padding: 14px 16px 12px;
+  }
+  .bucket-head .name{ font-size: 15px; font-weight: 700; }
+  .bucket-head .amount{ font-size: 14.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .bucket-body{ padding: 4px 16px 16px; }
+
+  .bucket-panel.core .bucket-head{ background: var(--core-dim); border-bottom:1px solid var(--line); }
+  .bucket-panel.ballast .bucket-head{ background: var(--ballast-dim); border-bottom:1px solid var(--line); }
+  .bucket-panel.satellite .bucket-head{ background: var(--satellite-dim); border-bottom:1px solid var(--line); }
+  .bucket-panel.core .name{ color: var(--core); }
+  .bucket-panel.ballast .name{ color: var(--ballast); }
+  .bucket-panel.satellite .name{ color: var(--satellite); }
+
+  .rows{ display:flex; flex-direction:column; gap:10px; margin-top: 10px; }
+  .asset-row{ background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+  .asset-row-top{ display:flex; align-items:center; gap:8px; margin-bottom: 10px; }
+  .asset-row-top input.name{
+    flex:1; background:transparent; border:none; color: var(--ink);
+    font-size: 14px; font-weight: 700; padding: 4px 2px;
+  }
+  .asset-row-top input.name:focus{ outline:none; }
+  .remove-btn{ background:none; border:none; color: var(--ink-faint); font-size:18px; cursor:pointer; line-height:1; padding:2px 6px; }
+  .remove-btn:hover{ color: var(--satellite); }
+
+  .field-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .field{ display:flex; flex-direction:column; gap:3px; }
+  .field label{ font-size: 10.5px; color: var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;}
+  .field input{
+    width:100%; background: var(--bg); border: 1px solid var(--line);
+    border-radius: 8px; color: var(--ink); font-size: 14px; font-weight:600;
+    padding: 8px 10px; font-variant-numeric: tabular-nums;
+  }
+  .field input:focus{ outline:none; border-color: var(--ink-dim); }
+
+  .add-btn{
+    width:100%; background: rgba(255,255,255,0.04); border: 1px dashed var(--line);
+    color: var(--ink-dim); border-radius: 12px; padding: 10px;
+    font-size: 12.5px; font-weight: 700; cursor:pointer; margin-top: 10px;
+  }
+  .add-btn:hover{ background: rgba(255,255,255,0.07); }
+
+  .weight-status{
+    display:flex; justify-content: space-between; align-items:center;
+    font-size: 11.5px; margin-top: 10px; padding: 8px 10px;
+    border-radius: 8px; background: var(--warn-dim); color: var(--warn);
+  }
+  .weight-status.ok{ display:none; }
+
+  .results{ margin-top: 4px; }
+  .result-row{ display:flex; justify-content: space-between; align-items:center; padding: 11px 2px; border-bottom: 1px solid var(--line); }
+  .result-row:last-child{ border-bottom:none; }
+  .result-left .rname{ font-size: 13.5px; font-weight: 700; }
+  .result-left .rmeta{ font-size: 10.5px; color: var(--ink-faint); margin-top:2px; }
+  .result-right{ text-align:right; }
+  .result-right .radd{ font-size: 14.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .result-right .radd.zero{ color: var(--ink-faint); }
+  .result-right .rnewpct{ font-size: 10.5px; color: var(--ink-faint); margin-top:2px; }
+
+  .bucket-panel.core .radd{ color: var(--core); }
+  .bucket-panel.ballast .radd{ color: var(--ballast); }
+  .bucket-panel.satellite .radd{ color: var(--satellite); }
+
+  .capped-note{ font-size: 11px; color: var(--warn); margin-top: 10px; background: var(--warn-dim); padding: 8px 10px; border-radius: 8px; line-height:1.5; }
+
+  .total-check{
+    display:flex; justify-content: space-between; font-size: 13px;
+    padding: 14px 4px 4px; margin-top: 6px; border-top: 1px solid var(--line);
+    color: var(--ink-dim);
+  }
+  .total-check strong{ color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  .howto{
+    font-size: 12px; color: var(--ink-dim); line-height: 1.6;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 14px; padding: 14px 16px; margin-top: 4px;
+  }
+  .howto b{ color: var(--ink); }
+
+  .save-status{
+    display:flex; justify-content: space-between; align-items:center;
+    font-size: 11px; color: var(--ink-faint); margin-top: 12px; padding: 0 2px;
+  }
+  .save-status .reset-btn{
+    background:none; border:none; color: var(--ink-faint); font-size: 11px;
+    text-decoration: underline; cursor:pointer; padding:0;
+  }
+  .save-status .reset-btn:hover{ color: var(--satellite); }
+</style>
+</head>
+<body>
+
+  <div class="eyebrow">เครื่องมือ DCA</div>
+  <h1>คำนวณการเติมเงินรายเดือน</h1>
+  <div class="sub">แบ่งงบเดือนนี้ตาม Core / Ballast / Satellite แล้วคำนวณว่าแต่ละสินทรัพย์ในแต่ละกลุ่มควรเติมเท่าไหร่ ให้สัดส่วนเข้าใกล้เป้าหมายที่สุด โดยไม่ต้องขายอะไรเลย</div>
+
+  <div class="panel">
+    <div class="panel-title">งบที่จะลงทุนเดือนนี้</div>
+    <div class="budget-row">
+      <label>บาท</label>
+      <input type="text" inputmode="decimal" id="totalBudget" value="200000">
+    </div>
+    <div class="split-bar" id="splitBar"></div>
+    <div class="split-legend" id="splitLegend"></div>
+    <div class="split-warn" id="splitWarn"></div>
+  </div>
+
+  <div id="bucketsContainer"></div>
+
+  <div class="howto">
+    <b>วิธีทำงาน</b> — งบรวมถูกแบ่งตามสัดส่วน Core/Ballast/Satellite ก่อน จากนั้นในแต่ละกลุ่ม ระบบจะเติมเงินให้สินทรัพย์ที่ "ตามหลัง" สัดส่วนเป้าหมายมากที่สุดก่อน ถ้าตัวไหนมูลค่าเกินเป้าหมายอยู่แล้วจะไม่เติมเดือนนี้ (ค่า = 0) แล้วนำงบไปให้ตัวที่ตามหลังแทน — ไม่มีการขายสินทรัพย์ใดๆ ทั้งสิ้น<br><br>
+    <b>ใช้ทุกเดือนยังไง</b> — ก่อนซื้อแต่ละเดือน อัปเดต "มูลค่าปัจจุบัน" ของทุกตัวตามราคาจริง แล้วดูผลลัพธ์ใหม่<br><br>
+    <b>เคล็ดลับ</b> — ในช่อง "มูลค่าปัจจุบัน" หรืองบรวม พิมพ์ <code>+10000</code> หรือ <code>-5000</code> แล้วกด Enter/คลิกออกนอกช่อง เพื่อบวก/ลบจากค่าเดิมโดยไม่ต้องคำนวณเอง
+  </div>
+
+  <div class="save-status">
+    <span id="saveStatus">&nbsp;</span>
+    <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
+  </div>
+
+<script>
+const state = {
+  totalBudget: 200000,
+  buckets: [
+    {
+      id: 'core', label: 'Core', weight: 45,
+      assets: [
+        { name: 'K-WORLDX', value: 98000, weight: 90 },
+        { name: 'KFCSI300-A', value: 0, weight: 5 },
+        { name: 'SCBCE', value: 0, weight: 5 },
+      ]
+    },
+    {
+      id: 'ballast', label: 'Ballast', weight: 15,
+      assets: [
+        { name: 'CLICX', value: 65540, weight: 90 },
+        { name: 'GLD', value: 0, weight: 10 },
+      ]
+    },
+    {
+      id: 'satellite', label: 'Satellite', weight: 40,
+      assets: [
+        { name: 'NVDA', value: 34243, weight: 25 },
+        { name: 'NVO', value: 32124, weight: 25 },
+        { name: 'NFLX', value: 18774, weight: 25 },
+        { name: 'Bitcoin', value: 0, weight: 25 },
+      ]
+    },
+  ]
+};
+
+const bucketsContainer = document.getElementById('bucketsContainer');
+const totalBudgetEl = document.getElementById('totalBudget');
+const splitBarEl = document.getElementById('splitBar');
+const splitLegendEl = document.getElementById('splitLegend');
+const splitWarnEl = document.getElementById('splitWarn');
+const saveStatusEl = document.getElementById('saveStatus');
+const resetBtn = document.getElementById('resetBtn');
+
+function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
+
+// --- Quick math entry (+10000 / -5000 adds/subtracts from the field's current value) ---
+const inputBaseValues = new WeakMap();
+
+function isDeltaExpr(raw){
+  return /^\s*[+-]/.test(String(raw || ''));
+}
+
+// Resolves what a user typed into a numeric text field: a leading +/- is treated
+// as a delta against `base` (e.g. "+10000" => base + 10000); anything else is a
+// plain absolute number. Commas are tolerated so pasted "10,000" style text works.
+function resolveNumericInput(raw, base){
+  if(raw == null) return 0;
+  const trimmed = String(raw).trim().replace(/,/g, '');
+  if(trimmed === '') return 0;
+  const m = trimmed.match(/^([+-])\s*(\d*\.?\d*)$/);
+  if(m){
+    const sign = m[1] === '-' ? -1 : 1;
+    const num = m[2] === '' ? 0 : parseFloat(m[2]);
+    return (base || 0) + sign * (isNaN(num) ? 0 : num);
+  }
+  const n = parseFloat(trimmed);
+  return isNaN(n) ? 0 : n;
+}
+
+function fmtPlain(n){
+  // Plain numeric string for writing back into an input (no thousands separators).
+  return String(Math.round(n * 100) / 100);
+}
+
+// Wires "type +N / -N to add/subtract from the current value" onto a text input.
+// getBase() supplies the value to add/subtract from (snapshotted on focus, so a
+// mid-typing string like "+1" doesn't recompute against its own live preview).
+// onChange(newValue) fires live while typing, and once more on blur/Enter once
+// the field is normalized back to a plain absolute number.
+function enableDeltaInput(inputEl, getBase, onChange){
+  inputEl.addEventListener('focus', () => {
+    inputBaseValues.set(inputEl, getBase());
+    inputEl.select();
+  });
+  inputEl.addEventListener('input', () => {
+    const raw = inputEl.value;
+    const base = isDeltaExpr(raw)
+      ? (inputBaseValues.has(inputEl) ? inputBaseValues.get(inputEl) : getBase())
+      : 0;
+    onChange(resolveNumericInput(raw, base));
+  });
+  function finalize(){
+    const raw = inputEl.value;
+    if(isDeltaExpr(raw)){
+      const base = inputBaseValues.has(inputEl) ? inputBaseValues.get(inputEl) : getBase();
+      const result = resolveNumericInput(raw, base);
+      inputEl.value = fmtPlain(result);
+      inputBaseValues.set(inputEl, result);
+      onChange(result);
+    } else if(raw.trim() !== ''){
+      inputBaseValues.set(inputEl, resolveNumericInput(raw, 0));
+    }
+  }
+  inputEl.addEventListener('blur', finalize);
+  inputEl.addEventListener('keydown', e => {
+    if(e.key === 'Enter'){ finalize(); inputEl.blur(); }
+  });
+}
+
+// --- Autosave (localStorage) ---
+const STORAGE_KEY = 'rebalanceCalculator.state.v1';
+
+function saveState(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      totalBudget: state.totalBudget,
+      buckets: state.buckets,
+    }));
+    if(saveStatusEl){
+      const t = new Date();
+      const hh = String(t.getHours()).padStart(2,'0');
+      const mm = String(t.getMinutes()).padStart(2,'0');
+      saveStatusEl.textContent = `บันทึกล่าสุด ${hh}:${mm}`;
+    }
+  } catch(e){ /* localStorage unavailable (private mode, etc.) — silently skip */ }
+}
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return null;
+    const saved = JSON.parse(raw);
+    if(saved && typeof saved.totalBudget === 'number' && Array.isArray(saved.buckets)){
+      return saved;
+    }
+  } catch(e){ /* corrupted or unavailable — ignore, fall back to defaults */ }
+  return null;
+}
+
+const savedState = loadState();
+if(savedState){
+  state.totalBudget = savedState.totalBudget;
+  state.buckets = savedState.buckets;
+  totalBudgetEl.value = state.totalBudget;
+}
+
+if(resetBtn){
+  resetBtn.addEventListener('click', () => {
+    if(confirm('ล้างข้อมูลที่บันทึกไว้ในเบราว์เซอร์นี้ และกลับไปใช้ค่าตั้งต้น?')){
+      try{ localStorage.removeItem(STORAGE_KEY); } catch(e){}
+      location.reload();
+    }
+  });
+}
+
+// Water-filling allocation: buy-only rebalance toward target weights
+function allocate(assets, budget){
+  const n = assets.length;
+  const x = new Array(n).fill(0);
+  let active = assets.map((_, i) => i);
+  const totalW = assets.reduce((s,a) => s + a.weight, 0) || 1;
+  const w = assets.map(a => a.weight / totalW);
+
+  let remaining = budget;
+  let guard = 0;
+  while(active.length > 0 && guard < 50){
+    guard++;
+    const sumWActive = active.reduce((s,i) => s + w[i], 0);
+    if(sumWActive <= 0) break;
+    const sumVActive = active.reduce((s,i) => s + assets[i].value, 0);
+    const T = sumVActive + remaining;
+    const target = {};
+    active.forEach(i => { target[i] = (w[i] / sumWActive) * T; });
+    const over = active.filter(i => target[i] < assets[i].value);
+    if(over.length === 0){
+      active.forEach(i => { x[i] = target[i] - assets[i].value; });
+      break;
+    } else {
+      over.forEach(i => { x[i] = 0; active = active.filter(j => j !== i); });
+    }
+  }
+  return x;
+}
+
+function renderSplit(){
+  splitBarEl.innerHTML = '';
+  splitLegendEl.innerHTML = '';
+  const totalW = state.buckets.reduce((s,b) => s + b.weight, 0);
+
+  state.buckets.forEach(b => {
+    const seg = document.createElement('div');
+    seg.style.background = `var(--${b.id})`;
+    seg.style.flex = Math.max(b.weight, 0.0001);
+    splitBarEl.appendChild(seg);
+
+    const item = document.createElement('span');
+    item.innerHTML = `<span class="dot" style="background:var(--${b.id})"></span>${b.label}<input type="number" data-bucket="${b.id}" value="${b.weight}" min="0" max="100" step="1">%`;
+    splitLegendEl.appendChild(item);
+  });
+
+  splitLegendEl.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const bucket = state.buckets.find(b => b.id === e.target.dataset.bucket);
+      bucket.weight = parseFloat(e.target.value) || 0;
+      compute();
+    });
+  });
+
+  if(Math.abs(totalW - 100) > 0.5){
+    splitWarnEl.className = 'split-warn';
+    splitWarnEl.textContent = `รวมสัดส่วน Core+Ballast+Satellite = ${totalW.toFixed(0)}% (ระบบจะปรับให้เป็น 100% อัตโนมัติระหว่างคำนวณ)`;
+  } else {
+    splitWarnEl.className = 'split-warn ok';
+  }
+}
+
+function renderBuckets(){
+  bucketsContainer.innerHTML = '';
+  state.buckets.forEach(bucket => {
+    const panel = document.createElement('div');
+    panel.className = `bucket-panel ${bucket.id}`;
+    panel.innerHTML = `
+      <div class="bucket-head">
+        <div class="name">${bucket.label}</div>
+        <div class="amount" id="amt-${bucket.id}">—</div>
+      </div>
+      <div class="bucket-body">
+        <div class="rows" id="rows-${bucket.id}"></div>
+        <button class="add-btn" data-bucket="${bucket.id}">+ เพิ่มสินทรัพย์ใน ${bucket.label}</button>
+        <div class="weight-status" id="status-${bucket.id}"></div>
+        <div class="results" id="results-${bucket.id}"></div>
+        <div class="capped-note" id="capped-${bucket.id}" style="display:none;"></div>
+        <div class="total-check" id="total-${bucket.id}"></div>
+      </div>
+    `;
+    bucketsContainer.appendChild(panel);
+
+    renderAssetRows(bucket);
+
+    panel.querySelector('.add-btn').addEventListener('click', () => {
+      const newIdx = bucket.assets.length;
+      bucket.assets.push({ name: `สินทรัพย์ ${newIdx+1}`, value: 0, weight: 0 });
+      renderAssetRows(bucket);
+      compute();
+      const rowsEl = document.getElementById(`rows-${bucket.id}`);
+      const nameInput = rowsEl.querySelectorAll('.asset-row-top input.name')[newIdx];
+      if(nameInput){ nameInput.focus(); nameInput.select(); }
+    });
+  });
+}
+
+function renderAssetRows(bucket){
+  const rowsEl = document.getElementById(`rows-${bucket.id}`);
+  rowsEl.innerHTML = '';
+  bucket.assets.forEach((a, i) => {
+    const row = document.createElement('div');
+    row.className = 'asset-row';
+    row.innerHTML = `
+      <div class="asset-row-top">
+        <input class="name" data-bucket="${bucket.id}" data-idx="${i}" data-field="name" value="${a.name}">
+        <button class="remove-btn" data-bucket="${bucket.id}" data-idx="${i}" title="ลบ">×</button>
+      </div>
+      <div class="field-grid">
+        <div class="field">
+          <label>มูลค่าปัจจุบัน (บาท)</label>
+          <input type="text" inputmode="decimal" data-bucket="${bucket.id}" data-idx="${i}" data-field="value" value="${a.value}">
+        </div>
+        <div class="field">
+          <label>สัดส่วนเป้าหมาย (%)</label>
+          <input type="number" data-bucket="${bucket.id}" data-idx="${i}" data-field="weight" value="${a.weight}" min="0" max="100" step="1">
+        </div>
+      </div>
+    `;
+    rowsEl.appendChild(row);
+  });
+
+  rowsEl.querySelectorAll('input[data-field="name"], input[data-field="weight"]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const b = state.buckets.find(bk => bk.id === e.target.dataset.bucket);
+      const idx = parseInt(e.target.dataset.idx);
+      const field = e.target.dataset.field;
+      if(field === 'name'){ b.assets[idx].name = e.target.value || `สินทรัพย์ ${idx+1}`; }
+      else{ b.assets[idx][field] = parseFloat(e.target.value) || 0; }
+      compute();
+    });
+  });
+  rowsEl.querySelectorAll('input[data-field="value"]').forEach(inp => {
+    const bucketId = inp.dataset.bucket;
+    const idx = parseInt(inp.dataset.idx);
+    enableDeltaInput(
+      inp,
+      () => {
+        const b = state.buckets.find(bk => bk.id === bucketId);
+        return b && b.assets[idx] ? b.assets[idx].value : 0;
+      },
+      (val) => {
+        const b = state.buckets.find(bk => bk.id === bucketId);
+        if(b && b.assets[idx]) b.assets[idx].value = val;
+        compute();
+      }
+    );
+  });
+  rowsEl.querySelectorAll('.remove-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const b = state.buckets.find(bk => bk.id === btn.dataset.bucket);
+      const idx = parseInt(btn.dataset.idx);
+      b.assets.splice(idx, 1);
+      renderAssetRows(b);
+      compute();
+    });
+  });
+}
+
+function compute(){
+  const totalBudget = state.totalBudget || 0;
+  renderSplit();
+
+  const totalBucketW = state.buckets.reduce((s,b) => s + b.weight, 0) || 1;
+
+  state.buckets.forEach(bucket => {
+    const bucketBudget = (bucket.weight / totalBucketW) * totalBudget;
+    document.getElementById(`amt-${bucket.id}`).textContent = `${fmt(bucketBudget)} บาท`;
+
+    const totalAssetW = bucket.assets.reduce((s,a) => s + a.weight, 0);
+    const statusEl = document.getElementById(`status-${bucket.id}`);
+    if(Math.abs(totalAssetW - 100) < 0.5){
+      statusEl.className = 'weight-status ok';
+    } else {
+      statusEl.className = 'weight-status';
+      statusEl.textContent = `รวมสัดส่วนในกลุ่มนี้ ${totalAssetW.toFixed(0)}% (ระบบจะปรับให้เป็น 100% อัตโนมัติ)`;
+    }
+
+    const x = allocate(bucket.assets, bucketBudget);
+    const currentTotal = bucket.assets.reduce((s,a) => s + a.value, 0);
+    const newTotal = currentTotal + bucketBudget;
+
+    const resultsEl = document.getElementById(`results-${bucket.id}`);
+    resultsEl.innerHTML = '';
+    let cappedCount = 0;
+
+    bucket.assets.forEach((a, i) => {
+      const add = x[i];
+      const newValue = a.value + add;
+      const newPct = newTotal > 0 ? (newValue / newTotal * 100) : 0;
+      if(add <= 0.5 && a.value > 0) cappedCount++;
+
+      const row = document.createElement('div');
+      row.className = 'result-row';
+      row.innerHTML = `
+        <div class="result-left">
+          <div class="rname">${a.name}</div>
+          <div class="rmeta">ปัจจุบัน ${fmt(a.value)} → เป้า ${a.weight}%</div>
+        </div>
+        <div class="result-right">
+          <div class="radd ${add <= 0.5 ? 'zero' : ''}">${add > 0.5 ? '+' + fmt(add) : '—'}</div>
+          <div class="rnewpct">หลังเติม ${newPct.toFixed(1)}%</div>
+        </div>
+      `;
+      resultsEl.appendChild(row);
+    });
+
+    const totalAllocated = x.reduce((s,v) => s + Math.max(v,0), 0);
+    document.getElementById(`total-${bucket.id}`).innerHTML =
+      `<span>รวมที่เติม</span><strong>${fmt(totalAllocated)} / ${fmt(bucketBudget)} บาท</strong>`;
+
+    const cappedEl = document.getElementById(`capped-${bucket.id}`);
+    if(cappedCount > 0){
+      cappedEl.style.display = 'block';
+      cappedEl.textContent = `มี ${cappedCount} สินทรัพย์ในกลุ่มนี้ที่เกินเป้าหมายแล้ว จึงไม่เติมเดือนนี้ งบถูกกระจายไปตัวที่ตามหลังแทน`;
+    } else {
+      cappedEl.style.display = 'none';
+    }
+  });
+
+  saveState();
+}
+
+enableDeltaInput(totalBudgetEl, () => state.totalBudget, (val) => {
+  state.totalBudget = val;
+  compute();
+});
+
+renderSplit();
+renderBuckets();
+compute();
+</script>
+
+</body>
+</html>

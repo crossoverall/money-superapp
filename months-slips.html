@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จำลองสลิปเงินเดือน (รวมโบนัส)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Prompt', sans-serif; background-color: #f3f4f6; }
+        .slip-bg { background-image: repeating-linear-gradient(0deg, transparent, transparent 19px, #f9fafb 19px, #f9fafb 20px); }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div class="w-full max-w-4xl grid grid-cols-1 md:grid-cols-12 gap-6">
+        
+        <!-- Input Section -->
+        <div class="bg-white p-6 rounded-2xl shadow-md md:col-span-5 h-fit border-t-4 border-blue-500">
+            <h2 class="text-xl font-semibold text-gray-800 mb-5">ตั้งค่าข้อมูลรายได้</h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">เงินเดือนพื้นฐาน (บาท/เดือน)</label>
+                    <input type="number" id="salary" placeholder="เช่น 50000" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all" oninput="calculateSlip()">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">เงินได้อื่นๆ / Allowance (บาท/เดือน)</label>
+                    <input type="number" id="allowance" placeholder="เช่น 7000" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all" oninput="calculateSlip()">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">โบนัสประจำปี (บาท/ปี)</label>
+                    <input type="number" id="bonus" placeholder="เช่น 100000" class="w-full px-4 py-2 bg-green-50 border border-green-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none transition-all" oninput="calculateSlip()">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Provident Fund หักกี่ %</label>
+                    <input type="number" id="pvd" placeholder="เช่น 15" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all" oninput="calculateSlip()">
+                    <p class="text-xs text-gray-500 mt-1">* หักจากฐานเงินเดือนพื้นฐานเท่านั้น</p>
+                </div>
+            </div>
+            
+            <div class="mt-6 p-4 bg-blue-50 rounded-lg text-sm text-blue-800">
+                <p><strong>หลักการคำนวณภาษี:</strong> ระบบจะนำ โบนัส ไปรวมกับรายได้ทั้งปี เพื่อหาฐานภาษีรวม จากนั้นจะหาร 12 เพื่อเฉลี่ยเป็นยอดหักภาษีต่อเดือน (วิธี Annualized)</p>
+            </div>
+        </div>
+
+        <!-- Slip Section -->
+        <div class="bg-white rounded-xl shadow-lg md:col-span-7 overflow-hidden border border-gray-200">
+            <div class="bg-gray-800 text-white text-center py-4 px-6 relative overflow-hidden">
+                <h2 class="text-xl font-semibold tracking-wide">PAYSLIP</h2>
+                <div class="absolute top-0 right-0 w-16 h-16 bg-white opacity-5 transform rotate-45 translate-x-4 -translate-y-4"></div>
+            </div>
+            
+            <div class="p-6 slip-bg">
+                <div class="grid grid-cols-2 gap-x-8 gap-y-4 border-b border-gray-300 pb-4 mb-4">
+                    <!-- Earnings -->
+                    <div>
+                        <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider mb-3 border-b-2 border-gray-800 inline-block">รายได้ (Earnings)</h3>
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-gray-600">Basic Salary</span>
+                            <span id="out-salary" class="font-medium text-gray-900">0.00</span>
+                        </div>
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-gray-600">Allowance</span>
+                            <span id="out-allowance" class="font-medium text-gray-900">0.00</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Deductions -->
+                    <div>
+                        <h3 class="text-sm font-bold text-red-600 uppercase tracking-wider mb-3 border-b-2 border-red-600 inline-block">รายการหัก (Deductions)</h3>
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-gray-600">Tax this period</span>
+                            <span id="out-tax" class="font-medium text-red-500">0.00</span>
+                        </div>
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-gray-600">SS EE Contrib Amount</span>
+                            <span id="out-sso" class="font-medium text-red-500">0.00</span>
+                        </div>
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-gray-600">PF EE Contrib Amount</span>
+                            <span id="out-pvd" class="font-medium text-red-500">0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-x-8 text-sm font-semibold text-gray-800 pb-4 border-b-2 border-dashed border-gray-300 mb-4">
+                    <div class="flex justify-between">
+                        <span>Total Gross</span>
+                        <span id="out-total-income">0.00</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Total Dedns</span>
+                        <span id="out-total-deduct" class="text-red-600">0.00</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center bg-green-50 p-4 rounded-lg border border-green-200 mb-4">
+                    <span class="text-lg font-bold text-green-800">NET PAYMENT</span>
+                    <div class="text-right">
+                        <span id="out-net" class="text-2xl font-black text-green-600 tracking-tight">0.00</span>
+                    </div>
+                </div>
+
+                <!-- YTD Summary (Year to Date) -->
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-xs text-gray-600">
+                    <h4 class="font-bold text-gray-800 mb-2 uppercase border-b pb-1">ประมาณการรวมทั้งปี (Annual Estimate)</h4>
+                    <div class="grid grid-cols-2 gap-4 mt-2">
+                        <div class="flex justify-between"><span>รายได้รวมทั้งปี:</span><span id="ytd-income" class="font-medium">0.00</span></div>
+                        <div class="flex justify-between"><span>ภาษีรวมทั้งปี:</span><span id="ytd-tax" class="font-medium text-red-500">0.00</span></div>
+                        <div class="flex justify-between"><span>หัก PVD ทั้งปี:</span><span id="ytd-pvd" class="font-medium">0.00</span></div>
+                        <div class="flex justify-between"><span>ฐานภาษีสุทธิ:</span><span id="ytd-taxable" class="font-medium">0.00</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function calculateSlip() {
+            const salary = parseFloat(document.getElementById('salary').value) || 0;
+            const allowance = parseFloat(document.getElementById('allowance').value) || 0;
+            const bonus = parseFloat(document.getElementById('bonus').value) || 0;
+            const pvdPercent = parseFloat(document.getElementById('pvd').value) || 0;
+
+            const monthlyEarnings = salary + allowance;
+
+            // ประกันสังคม (คำนวณจากรายได้รวม สูงสุดฐาน 17,500 บาท = 875 บาท)
+            let sso = monthlyEarnings * 0.05;
+            if (sso > 875) sso = 875;
+
+            // กองทุนสำรองเลี้ยงชีพ (คิดจากฐานเงินเดือนเพียวๆ ไม่รวม Allowance)
+            const pvd = salary * (pvdPercent / 100);
+
+            // คำนวณรายได้ทั้งปี (รวมโบนัส)
+            const annualIncome = (monthlyEarnings * 12) + bonus;
+            const annualSso = sso * 12;
+            const annualPvd = pvd * 12;
+
+            const expenseDeduction = Math.min(annualIncome * 0.5, 100000); 
+            const personalDeduction = 60000; 
+
+            // ฐานภาษีสุทธิ (Taxable Income)
+            let netAnnualIncome = annualIncome - (expenseDeduction + personalDeduction + annualSso + annualPvd);
+            if (netAnnualIncome < 0) netAnnualIncome = 0;
+
+            const brackets = [
+                { limit: 150000, rate: 0 },
+                { limit: 150000, rate: 0.05 },
+                { limit: 200000, rate: 0.10 },
+                { limit: 250000, rate: 0.15 },
+                { limit: 250000, rate: 0.20 },
+                { limit: 1000000, rate: 0.25 },
+                { limit: 3000000, rate: 0.30 },
+                { limit: Infinity, rate: 0.35 }
+            ];
+
+            let annualTax = 0;
+            let remaining = netAnnualIncome;
+
+            for (let i = 0; i < brackets.length; i++) {
+                if (remaining <= 0) break;
+                const taxable = Math.min(remaining, brackets[i].limit);
+                annualTax += taxable * brackets[i].rate;
+                remaining -= taxable;
+            }
+
+            // เฉลี่ยภาษีเป็นรายเดือน (ระบบ Payroll ส่วนใหญ่จะเกลี่ยภาษีโบนัสหาร 12 เดือน เพื่อไม่ให้พนักงานจ่ายหนักเดือนเดียว)
+            const monthlyTax = annualTax / 12;
+            
+            const totalDeductions = sso + pvd + monthlyTax;
+            const netPayout = monthlyEarnings - totalDeductions;
+
+            const fmt = (num) => num.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            // อัปเดตยอดรายเดือน (Monthly Slip)
+            document.getElementById('out-salary').innerText = fmt(salary);
+            document.getElementById('out-allowance').innerText = fmt(allowance);
+            document.getElementById('out-tax').innerText = fmt(monthlyTax);
+            document.getElementById('out-sso').innerText = fmt(sso);
+            document.getElementById('out-pvd').innerText = fmt(pvd);
+            document.getElementById('out-total-income').innerText = fmt(monthlyEarnings);
+            document.getElementById('out-total-deduct').innerText = fmt(totalDeductions);
+            document.getElementById('out-net').innerText = fmt(netPayout);
+
+            // อัปเดตยอดประเมินทั้งปี (YTD Estimate)
+            document.getElementById('ytd-income').innerText = fmt(annualIncome);
+            document.getElementById('ytd-tax').innerText = fmt(annualTax);
+            document.getElementById('ytd-pvd').innerText = fmt(annualPvd);
+            document.getElementById('ytd-taxable').innerText = fmt(netAnnualIncome);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>คำนวณภาษีเงินได้บุคคลธรรมดา</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Prompt', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">คำนวณภาษีเบื้องต้น 📊</h2>
+
+        <!-- Input Section -->
+        <div class="space-y-4 mb-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">เงินเดือน (บาท/เดือน)</label>
+                <input type="number" id="salary" placeholder="เช่น 50000" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">โบนัส (บาท/ปี)</label>
+                <input type="number" id="bonus" placeholder="เช่น 100000" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Provident Fund (%)</label>
+                <input type="number" id="pvd" placeholder="เช่น 5" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
+            </div>
+        </div>
+
+        <hr class="my-6 border-gray-200">
+
+        <!-- Result Section -->
+        <div class="space-y-3 text-sm text-gray-600">
+            <div class="flex justify-between">
+                <span>รายได้รวมทั้งปี:</span>
+                <span id="totalIncome" class="font-medium text-gray-900">0 บาท</span>
+            </div>
+            <div class="flex justify-between">
+                <span>หักค่าใช้จ่าย (สูงสุด 100,000):</span>
+                <span id="expenseDeduct" class="font-medium text-red-500">- 0 บาท</span>
+            </div>
+            <div class="flex justify-between">
+                <span>หักค่าลดหย่อนส่วนตัว:</span>
+                <span class="font-medium text-red-500">- 60,000 บาท</span>
+            </div>
+            <div class="flex justify-between">
+                <span>หักกองทุนสำรองเลี้ยงชีพ (PVD):</span>
+                <span id="pvdDeduct" class="font-medium text-red-500">- 0 บาท</span>
+            </div>
+            
+            <div class="border-t pt-3 mt-3 flex justify-between items-center text-base">
+                <span class="font-semibold text-gray-800">เงินได้สุทธิ:</span>
+                <span id="netIncome" class="font-semibold text-blue-600">0 บาท</span>
+            </div>
+        </div>
+
+        <div class="mt-6 bg-blue-50 p-4 rounded-xl border border-blue-100 text-center">
+            <span class="block text-sm text-blue-800 mb-1">ภาษีที่ต้องชำระโดยประมาณ</span>
+            <span id="taxAmount" class="text-3xl font-bold text-blue-600">0</span>
+            <span class="text-blue-800 font-medium"> บาท</span>
+        </div>
+    </div>
+
+    <script>
+        function formatMoney(amount) {
+            return amount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function calculateTax() {
+            // ดึงค่าจาก Input
+            const salary = parseFloat(document.getElementById('salary').value) || 0;
+            const bonus = parseFloat(document.getElementById('bonus').value) || 0;
+            const pvdPercent = parseFloat(document.getElementById('pvd').value) || 0;
+
+            // คำนวณรายได้
+            const totalIncome = (salary * 12) + bonus;
+
+            // คำนวณค่าลดหย่อน
+            const expenseDeduction = Math.min(totalIncome * 0.5, 100000);
+            const personalDeduction = 60000;
+            // คิด PVD จากฐานเงินเดือนเท่านั้น (ไม่รวมโบนัส) ตามหลักการทั่วไป
+            const pvdDeduction = (salary * 12) * (pvdPercent / 100); 
+
+            // คำนวณเงินได้สุทธิ
+            const totalDeductions = expenseDeduction + personalDeduction + pvdDeduction;
+            let netIncome = totalIncome - totalDeductions;
+            if (netIncome < 0) netIncome = 0;
+
+            // ตารางอัตราภาษี (ขั้นบันได)
+            const brackets = [
+                { limit: 150000, rate: 0 },       // 0 - 150,000
+                { limit: 150000, rate: 0.05 },    // 150,001 - 300,000
+                { limit: 200000, rate: 0.10 },    // 300,001 - 500,000
+                { limit: 250000, rate: 0.15 },    // 500,001 - 750,000
+                { limit: 250000, rate: 0.20 },    // 750,001 - 1,000,000
+                { limit: 1000000, rate: 0.25 },   // 1,000,001 - 2,000,000
+                { limit: 3000000, rate: 0.30 },   // 2,000,001 - 5,000,000
+                { limit: Infinity, rate: 0.35 }   // 5,000,001 ขึ้นไป
+            ];
+
+            let tax = 0;
+            let remainingIncome = netIncome;
+
+            // คำนวณภาษีตามขั้นบันได
+            for (let i = 0; i < brackets.length; i++) {
+                if (remainingIncome <= 0) break;
+                
+                const taxableAtThisBracket = Math.min(remainingIncome, brackets[i].limit);
+                tax += taxableAtThisBracket * brackets[i].rate;
+                remainingIncome -= taxableAtThisBracket;
+            }
+
+            // แสดงผลลัพธ์
+            document.getElementById('totalIncome').innerText = formatMoney(totalIncome) + ' บาท';
+            document.getElementById('expenseDeduct').innerText = '- ' + formatMoney(expenseDeduction) + ' บาท';
+            document.getElementById('pvdDeduct').innerText = '- ' + formatMoney(pvdDeduction) + ' บาท';
+            document.getElementById('netIncome').innerText = formatMoney(netIncome) + ' บาท';
+            document.getElementById('taxAmount').innerText = formatMoney(tax);
+        }
+    </script>
+</body>
+</html>

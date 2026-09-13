@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Money Superapp</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, sans-serif; background: #f4f5f7; }
+  nav { display: flex; flex-wrap: wrap; background: #1f2937; }
+  nav button {
+    flex: 1; min-width: 140px; padding: 14px 10px; border: none; background: none;
+    color: #cbd5e1; font-size: 14px; cursor: pointer; border-bottom: 3px solid transparent;
+  }
+  nav button:hover { background: #374151; }
+  nav button.active { color: #fff; border-bottom-color: #38bdf8; background: #111827; }
+  iframe { display: block; width: 100%; height: calc(100vh - 52px); border: none; background: #fff; }
+</style>
+</head>
+<body>
+<nav>
+  <button class="active" data-src="rebalance.html">Rebalance Calculator</button>
+  <button data-src="months-slips.html">Months Slips Calculator</button>
+  <button data-src="tax-calculator-base.html">Tax Calculator (Base)</button>
+  <button data-src="tax-calculator.html">Tax Calculator</button>
+</nav>
+<iframe id="app" src="rebalance.html"></iframe>
+<script>
+  const frame = document.getElementById('app');
+  document.querySelectorAll('nav button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelector('nav button.active').classList.remove('active');
+      btn.classList.add('active');
+      frame.src = btn.dataset.src;
+    });
+  });
+</script>
+</body>
+</html>

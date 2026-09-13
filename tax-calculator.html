@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>คำนวณภาษีเงินชดเชย + PVD</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+      width: 100%;
+      max-width: 520px;
+      padding: 28px 32px 32px;
+    }
+
+    h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      font-size: 0.82rem;
+      color: #64748b;
+      margin-bottom: 20px;
+    }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      background: #f1f5f9;
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 22px;
+    }
+
+    .tab {
+      padding: 7px 4px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-align: center;
+      border-radius: 7px;
+      cursor: pointer;
+      color: #64748b;
+      line-height: 1.35;
+      transition: background 0.15s, color 0.15s;
+      user-select: none;
+    }
+
+    .tab:hover { color: #334155; }
+
+    .tab.active {
+      background: #fff;
+      color: #6366f1;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .condition-note {
+      font-size: 0.78rem;
+      color: #64748b;
+      background: #f8fafc;
+      border-left: 3px solid #6366f1;
+      padding: 8px 12px;
+      border-radius: 0 6px 6px 0;
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+
+    /* ── Fields ── */
+    .field { margin-bottom: 16px; }
+
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+      margin: 20px 0 10px;
+    }
+
+    .pvd-group {
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+    }
+
+    .pvd-group .field { margin-bottom: 10px; }
+    .pvd-group .field:last-child { margin-bottom: 0; }
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 5px;
+    }
+
+    .label-en {
+      font-weight: 400;
+      color: #94a3b8;
+      font-size: 0.78rem;
+    }
+
+    .badge-exempt {
+      font-size: 0.67rem;
+      font-weight: 600;
+      color: #16a34a;
+      background: #dcfce7;
+      padding: 1px 6px;
+      border-radius: 99px;
+    }
+
+    .badge-taxable {
+      font-size: 0.67rem;
+      font-weight: 600;
+      color: #b45309;
+      background: #fef3c7;
+      padding: 1px 6px;
+      border-radius: 99px;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 9px 14px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      color: #1e293b;
+      transition: border-color 0.2s;
+      outline: none;
+      appearance: none;
+      background: #fff;
+    }
+
+    input[type="number"]:focus { border-color: #6366f1; }
+
+    input[type="number"].dimmed {
+      background: #f1f5f9;
+      color: #94a3b8;
+    }
+
+    button.calc-btn {
+      width: 100%;
+      padding: 13px;
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s;
+    }
+
+    button.calc-btn:hover { background: #4f46e5; }
+
+    /* ── Results ── */
+    .results {
+      margin-top: 24px;
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 20px;
+      display: none;
+    }
+
+    .results.show { display: block; }
+
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 0.9rem;
+    }
+
+    .result-row:last-of-type { border-bottom: none; }
+
+    .result-label {
+      color: #475569;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .result-value {
+      font-weight: 600;
+      color: #1e293b;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .result-value.exempt-badge {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #16a34a;
+      background: #dcfce7;
+      padding: 2px 8px;
+      border-radius: 99px;
+    }
+
+    .result-row.highlight .result-label { color: #dc2626; font-weight: 600; }
+    .result-row.highlight .result-value { color: #dc2626; font-size: 1.15rem; }
+    .result-row.highlight .result-value.zero { color: #16a34a; font-size: 1.15rem; }
+
+    .error {
+      color: #dc2626;
+      font-size: 0.82rem;
+      margin-top: 10px;
+      display: none;
+    }
+
+    .reset-btn {
+      background: none;
+      color: #94a3b8;
+      font-size: 0.8rem;
+      font-weight: 400;
+      margin-top: 10px;
+      padding: 6px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .reset-btn:hover { background: #f1f5f9; color: #475569; }
+
+    /* ── Tooltip ── */
+    .tip {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: #cbd5e1;
+      color: #475569;
+      font-size: 0.65rem;
+      font-weight: 700;
+      cursor: default;
+      flex-shrink: 0;
+    }
+
+    .tip .tip-box {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e293b;
+      color: #f1f5f9;
+      font-size: 0.75rem;
+      font-weight: 400;
+      line-height: 1.5;
+      padding: 8px 10px;
+      border-radius: 7px;
+      white-space: nowrap;
+      z-index: 10;
+      pointer-events: none;
+      min-width: 230px;
+      text-align: left;
+    }
+
+    .tip .tip-box::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: #1e293b;
+    }
+
+    .tip:hover .tip-box { display: block; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>คำนวณภาษีเงินชดเชย + PVD</h1>
+    <p class="subtitle">เลือกเงื่อนไขที่ตรงกับสถานการณ์ของคุณ</p>
+
+    <div class="tabs">
+      <div class="tab active" onclick="setTab(0)">สมาชิก<br>&lt; 5 ปี</div>
+      <div class="tab" onclick="setTab(1)">≥ 5 ปี<br>อายุ &lt; 55</div>
+      <div class="tab" onclick="setTab(2)">≥ 5 ปี<br>อายุ ≥ 55</div>
+    </div>
+
+    <div class="condition-note" id="condNote">
+      สมาชิก PVD <strong>น้อยกว่า 5 ปี</strong> — PVD ส่วนที่ต้องเสียภาษีถูกนำมาคิดแบบปกติ ไม่ได้รับสิทธิ์หักค่าใช้จ่ายพิเศษ
+    </div>
+
+    <!-- Severance -->
+    <div class="section-label">เงินชดเชย</div>
+    <div class="pvd-group">
+      <div class="field">
+        <label>
+          เงินชดเชยตามกฎหมาย
+          <span class="badge-exempt">ยกเว้น 600,000 บาท</span>
+        </label>
+        <input type="number" id="severanceLegal" placeholder="300000" min="0" step="0.01" />
+      </div>
+      <div class="field">
+        <label>
+          เงินชดเชยพิเศษ (นอกเหนือกฎหมาย)
+          <span class="badge-taxable">ต้องเสียภาษีทั้งหมด</span>
+        </label>
+        <input type="number" id="severanceExtra" placeholder="0" min="0" step="0.01" />
+      </div>
+    </div>
+
+    <!-- PVD group -->
+    <div class="section-label">กองทุนสำรองเลี้ยงชีพ (PVD)</div>
+    <div class="pvd-group">
+      <div class="field">
+        <label>
+          เงินสะสม (ส่วนลูกจ้าง)
+          <span class="badge-exempt">ยกเว้นภาษี</span>
+        </label>
+        <input type="number" id="pvdEmpContrib" placeholder="0" min="0" step="0.01" />
+      </div>
+      <div class="field">
+        <label>
+          ผลประโยชน์เงินสะสม
+          <span class="badge-taxable" id="badge2">ต้องเสียภาษี</span>
+        </label>
+        <input type="number" id="pvdEmpReturn" placeholder="0" min="0" step="0.01" />
+      </div>
+      <div class="field">
+        <label>
+          เงินสมทบ (ส่วนนายจ้าง)
+          <span class="badge-taxable" id="badge3">ต้องเสียภาษี</span>
+        </label>
+        <input type="number" id="pvdEmrContrib" placeholder="0" min="0" step="0.01" />
+      </div>
+      <div class="field">
+        <label>
+          ผลประโยชน์เงินสมทบ
+          <span class="badge-taxable" id="badge4">ต้องเสียภาษี</span>
+        </label>
+        <input type="number" id="pvdEmrReturn" placeholder="0" min="0" step="0.01" />
+      </div>
+    </div>
+
+    <!-- Years -->
+    <div class="field">
+      <label>จำนวนปีที่ทำงาน <span class="label-en">Years of Service</span></label>
+      <input type="number" id="years" placeholder="10" min="1" step="1" />
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">คำนวณภาษี</button>
+    <div class="error" id="errorMsg"></div>
+
+    <div class="results" id="results">
+      <div class="result-row">
+        <span class="result-label">
+          เงินชดเชยตามกฎหมาย (ส่วนเกิน)
+          <span class="tip">?<span class="tip-box">เงินชดเชยตามกฎหมายแรงงาน หักส่วนที่ยกเว้น 600,000 บาท<br>= เงินชดเชยตามกฎหมาย − 600,000 (ไม่ต่ำกว่า 0)</span></span>
+        </span>
+        <span class="result-value" id="res-legal-excess"></span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">
+          เงินชดเชยพิเศษ
+          <span class="tip">?<span class="tip-box">เงินชดเชยนอกเหนือกฎหมาย ไม่มีส่วนยกเว้น<br>นำมาคิดภาษีทั้งจำนวน</span></span>
+        </span>
+        <span class="result-value" id="res-extra"></span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">
+          PVD ที่ต้องเสียภาษี
+          <span class="tip">?<span class="tip-box" id="tip-pvd">= ผลประโยชน์เงินสะสม + เงินสมทบนายจ้าง<br>+ ผลประโยชน์เงินสมทบ<br>(ไม่รวมเงินสะสมส่วนลูกจ้างซึ่งยกเว้นภาษี)</span></span>
+        </span>
+        <span class="result-value" id="res-pvd"></span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">
+          รวมส่วนที่นำมาคิดภาษี
+          <span class="tip">?<span class="tip-box" id="tip-taxable"></span></span>
+        </span>
+        <span class="result-value" id="res-taxable"></span>
+      </div>
+      <div class="result-row highlight">
+        <span class="result-label">
+          ภาษีที่ต้องจ่าย
+          <span class="tip">?<span class="tip-box" id="tip-tax">คำนวณจากอัตราภาษีก้าวหน้า<br>0–300k: 5% / 300k–500k: 10%<br>500k–750k: 15% / 750k–1M: 20%<br>1M–2M: 25% / 2M–4M: 30% / &gt;4M: 35%</span></span>
+        </span>
+        <span class="result-value" id="res-tax"></span>
+      </div>
+      <button class="reset-btn" onclick="reset()">ล้างข้อมูล</button>
+    </div>
+    <p style="text-align:center;font-size:0.72rem;color:#cbd5e1;margin-top:20px;">v1.0.0</p>
+  </div>
+
+  <script>
+    let activeTab = 0;
+
+    const condNotes = [
+      'สมาชิก PVD <strong>น้อยกว่า 5 ปี</strong> — PVD ส่วนที่ต้องเสียภาษีถูกนำมาคิดแบบปกติ ไม่ได้รับสิทธิ์หักค่าใช้จ่ายพิเศษ',
+      'สมาชิก PVD <strong>5 ปีขึ้นไป อายุน้อยกว่า 55 ปี</strong> — ได้รับสิทธิ์คำนวณแบบพิเศษ (มาตรา 48(5)) แยกจากเงินได้อื่น',
+      'สมาชิก PVD <strong>5 ปีขึ้นไป และอายุ 55 ปีบริบูรณ์ขึ้นไป</strong> — PVD ได้รับ<strong>ยกเว้นภาษีทั้งหมด</strong> คำนวณภาษีเฉพาะเงินชดเชยส่วนเกิน',
+    ];
+
+    const pvdTaxableIds = ['pvdEmpReturn', 'pvdEmrContrib', 'pvdEmrReturn'];
+    const pvdBadgeIds   = ['badge2', 'badge3', 'badge4'];
+
+    function setTab(n) {
+      activeTab = n;
+      document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === n));
+      document.getElementById('condNote').innerHTML = condNotes[n];
+
+      const pvdExempt = n === 2;
+      pvdTaxableIds.forEach(id => document.getElementById(id).classList.toggle('dimmed', pvdExempt));
+      pvdBadgeIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (pvdExempt) {
+          el.textContent = 'ยกเว้นภาษี';
+          el.className = 'badge-exempt';
+        } else {
+          el.textContent = 'ต้องเสียภาษี';
+          el.className = 'badge-taxable';
+        }
+      });
+
+      document.getElementById('results').classList.remove('show');
+      document.getElementById('errorMsg').style.display = 'none';
+    }
+
+    function fmt(n) {
+      return n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' บาท';
+    }
+
+    function progressiveTax(income) {
+      if (income <= 0)        return 0;
+      if (income <= 300000)   return income * 0.05;
+      if (income <= 500000)   return 300000 * 0.05 + (income - 300000) * 0.1;
+      if (income <= 750000)   return 300000 * 0.05 + 200000 * 0.1 + (income - 500000) * 0.15;
+      if (income <= 1000000)  return 300000 * 0.05 + 200000 * 0.1 + 250000 * 0.15 + (income - 750000) * 0.2;
+      if (income <= 2000000)  return 300000 * 0.05 + 200000 * 0.1 + 250000 * 0.15 + 250000 * 0.2 + (income - 1000000) * 0.25;
+      if (income <= 4000000)  return 300000 * 0.05 + 200000 * 0.1 + 250000 * 0.15 + 250000 * 0.2 + 1000000 * 0.25 + (income - 2000000) * 0.3;
+      return                         300000 * 0.05 + 200000 * 0.1 + 250000 * 0.15 + 250000 * 0.2 + 1000000 * 0.25 + 2000000 * 0.3 + (income - 4000000) * 0.35;
+    }
+
+    function calculate() {
+      const severanceLegal = parseFloat(document.getElementById('severanceLegal').value) || 0;
+      const severanceExtra = parseFloat(document.getElementById('severanceExtra').value) || 0;
+      const pvdEmpReturn   = parseFloat(document.getElementById('pvdEmpReturn').value)   || 0;
+      const pvdEmrContrib  = parseFloat(document.getElementById('pvdEmrContrib').value)  || 0;
+      const pvdEmrReturn   = parseFloat(document.getElementById('pvdEmrReturn').value)   || 0;
+      const years          = parseFloat(document.getElementById('years').value)          || 0;
+
+      const errorEl = document.getElementById('errorMsg');
+      if (years <= 0) {
+        errorEl.textContent = 'กรุณากรอกจำนวนปีที่ทำงาน';
+        errorEl.style.display = 'block';
+        return;
+      }
+      errorEl.style.display = 'none';
+
+      const legalExcess = Math.max(0, severanceLegal - 600000);
+      const pvdTaxable  = pvdEmpReturn + pvdEmrContrib + pvdEmrReturn;
+      const totalExcess = legalExcess + severanceExtra;
+
+      let taxable, tax, pvdDisplay, pvdClass = '';
+
+      if (activeTab === 0) {
+        taxable    = pvdTaxable + severanceExtra;
+        tax        = progressiveTax(taxable);
+        pvdDisplay = fmt(pvdTaxable);
+        document.getElementById('tip-taxable').innerHTML =
+          '= PVD ส่วนที่ต้องเสียภาษี + เงินชดเชยพิเศษ<br>(ไม่มีสิทธิ์หักค่าใช้จ่ายพิเศษ)';
+
+      } else if (activeTab === 1) {
+        taxable    = Math.max(0, ((totalExcess + pvdTaxable) - 7000 * years) * 0.5);
+        tax        = progressiveTax(taxable);
+        pvdDisplay = fmt(pvdTaxable);
+        document.getElementById('tip-taxable').innerHTML =
+          '= (เงินชดเชยส่วนเกิน + PVD − ค่าใช้จ่าย) × 0.5<br>ค่าใช้จ่าย = 7,000 × จำนวนปีที่ทำงาน';
+
+      } else {
+        taxable    = Math.max(0, (totalExcess - 7000 * years) * 0.5);
+        tax        = progressiveTax(taxable);
+        pvdDisplay = 'ยกเว้นภาษี';
+        pvdClass   = 'exempt-badge';
+        document.getElementById('tip-taxable').innerHTML =
+          '= (เงินชดเชยส่วนเกิน − ค่าใช้จ่าย) × 0.5<br>PVD ได้รับยกเว้นภาษีทั้งหมด';
+      }
+
+      document.getElementById('res-legal-excess').textContent = fmt(legalExcess);
+      document.getElementById('res-extra').textContent        = fmt(severanceExtra);
+      const pvdEl = document.getElementById('res-pvd');
+      pvdEl.textContent = pvdDisplay;
+      pvdEl.className   = 'result-value' + (pvdClass ? ' ' + pvdClass : '');
+      document.getElementById('res-taxable').textContent = fmt(taxable);
+      document.getElementById('res-tax').textContent     = fmt(tax);
+
+      document.getElementById('results').classList.add('show');
+    }
+
+    function reset() {
+      ['severanceLegal','severanceExtra','pvdEmpContrib','pvdEmpReturn','pvdEmrContrib','pvdEmrReturn','years']
+        .forEach(id => document.getElementById(id).value = '');
+      document.getElementById('results').classList.remove('show');
+      document.getElementById('errorMsg').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
