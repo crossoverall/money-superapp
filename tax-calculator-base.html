@@ -19,7 +19,8 @@
         [data-theme="dark"] .text-gray-800,
         [data-theme="dark"] .text-gray-900 { color: #e2e8f0 !important; }
         [data-theme="dark"] .text-gray-700,
-        [data-theme="dark"] .text-gray-600 { color: #94a3b8 !important; }
+        [data-theme="dark"] .text-gray-600,
+        [data-theme="dark"] .text-gray-500 { color: #94a3b8 !important; }
         [data-theme="dark"] .text-blue-800 { color: #93c5fd !important; }
         [data-theme="dark"] input { background-color: #0f172a !important; color: #e2e8f0 !important; border-color: #334155 !important; }
     </style>
@@ -66,7 +67,7 @@
                 <span id="pvdDeduct" class="font-medium text-red-500">- 0 บาท</span>
             </div>
             <div class="flex justify-between">
-                <span id="lbl-ssoDeduct">หักประกันสังคม:</span>
+                <span id="lbl-ssoDeduct">หักประกันสังคม (ทั้งปี):</span>
                 <span id="ssoDeduct" class="font-medium text-red-500">- 0 บาท</span>
             </div>
 
@@ -80,6 +81,11 @@
             <span class="block text-sm text-blue-800 mb-1" id="lbl-taxAmount">ภาษีที่ต้องชำระโดยประมาณ</span>
             <span id="taxAmount" class="text-3xl font-bold text-blue-600">0</span>
             <span class="text-blue-800 font-medium" id="unitLabel"> บาท</span>
+        </div>
+
+        <div class="mt-4">
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2" id="lbl-breakdownTitle">รายละเอียดภาษีตามขั้นบันได</p>
+            <div id="taxBreakdown" class="space-y-1 text-xs text-gray-600"></div>
         </div>
     </div>
 
@@ -99,9 +105,10 @@
                 'lbl-expenseDeduct': 'Expense deduction (up to 100,000):',
                 'lbl-personalDeduct': 'Personal allowance:',
                 'lbl-pvdDeduct': 'Provident Fund (PVD) deduction:',
-                'lbl-ssoDeduct': 'Social Security deduction:',
+                'lbl-ssoDeduct': 'Social Security deduction (annual):',
                 'lbl-netIncome': 'Net taxable income:',
                 'lbl-taxAmount': 'Estimated tax payable',
+                'lbl-breakdownTitle': 'Tax breakdown by bracket',
             };
             Object.keys(EN).forEach(id => { document.getElementById(id).textContent = EN[id]; });
             document.getElementById('personalDeductVal').textContent = '- 60,000 THB';
@@ -139,27 +146,36 @@
 
             // ตารางอัตราภาษี (ขั้นบันได)
             const brackets = [
-                { limit: 150000, rate: 0 },       // 0 - 150,000
-                { limit: 150000, rate: 0.05 },    // 150,001 - 300,000
-                { limit: 200000, rate: 0.10 },    // 300,001 - 500,000
-                { limit: 250000, rate: 0.15 },    // 500,001 - 750,000
-                { limit: 250000, rate: 0.20 },    // 750,001 - 1,000,000
-                { limit: 1000000, rate: 0.25 },   // 1,000,001 - 2,000,000
-                { limit: 3000000, rate: 0.30 },   // 2,000,001 - 5,000,000
-                { limit: Infinity, rate: 0.35 }   // 5,000,001 ขึ้นไป
+                { limit: 150000, rate: 0,    labelTh: '0 - 150,000',             labelEn: '0 - 150,000' },
+                { limit: 150000, rate: 0.05, labelTh: '150,001 - 300,000',       labelEn: '150,001 - 300,000' },
+                { limit: 200000, rate: 0.10, labelTh: '300,001 - 500,000',       labelEn: '300,001 - 500,000' },
+                { limit: 250000, rate: 0.15, labelTh: '500,001 - 750,000',       labelEn: '500,001 - 750,000' },
+                { limit: 250000, rate: 0.20, labelTh: '750,001 - 1,000,000',     labelEn: '750,001 - 1,000,000' },
+                { limit: 1000000, rate: 0.25, labelTh: '1,000,001 - 2,000,000',  labelEn: '1,000,001 - 2,000,000' },
+                { limit: 3000000, rate: 0.30, labelTh: '2,000,001 - 5,000,000',  labelEn: '2,000,001 - 5,000,000' },
+                { limit: Infinity, rate: 0.35, labelTh: '5,000,001 ขึ้นไป',      labelEn: 'Over 5,000,000' }
             ];
 
             let tax = 0;
             let remainingIncome = netIncome;
+            const breakdown = [];
 
             // คำนวณภาษีตามขั้นบันได
             for (let i = 0; i < brackets.length; i++) {
                 if (remainingIncome <= 0) break;
-                
+
                 const taxableAtThisBracket = Math.min(remainingIncome, brackets[i].limit);
-                tax += taxableAtThisBracket * brackets[i].rate;
+                const taxAtThisBracket = taxableAtThisBracket * brackets[i].rate;
+                tax += taxAtThisBracket;
                 remainingIncome -= taxableAtThisBracket;
+                breakdown.push({ bracket: brackets[i], taxable: taxableAtThisBracket, tax: taxAtThisBracket });
             }
+
+            const breakdownEl = document.getElementById('taxBreakdown');
+            breakdownEl.innerHTML = breakdown.map(b => {
+                const label = LANG === 'en' ? b.bracket.labelEn : b.bracket.labelTh;
+                return `<div class="flex justify-between"><span>${label} (${(b.bracket.rate * 100).toFixed(0)}%)</span><span class="font-medium">${formatMoney(b.tax)} ${unit}</span></div>`;
+            }).join('');
 
             // แสดงผลลัพธ์
             document.getElementById('totalIncome').innerText = formatMoney(totalIncome) + ' ' + unit;
