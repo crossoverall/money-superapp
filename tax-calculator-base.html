@@ -113,6 +113,10 @@
             Object.keys(EN).forEach(id => { document.getElementById(id).textContent = EN[id]; });
             document.getElementById('personalDeductVal').textContent = '- 60,000 THB';
             document.getElementById('unitLabel').textContent = ' THB';
+            const placeholders = { salary: 'e.g. 50000', bonus: 'e.g. 100000', pvd: 'e.g. 5' };
+            Object.keys(placeholders).forEach(id => {
+                document.getElementById(id).placeholder = placeholders[id];
+            });
         }
 
         function formatMoney(amount) {
