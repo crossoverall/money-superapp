@@ -113,6 +113,13 @@
             Object.keys(EN).forEach(id => { document.getElementById(id).textContent = EN[id]; });
             document.getElementById('personalDeductVal').textContent = '- 60,000 THB';
             document.getElementById('unitLabel').textContent = ' THB';
+            // Default zero-value text is baked into the markup with the THB unit inline;
+            // it only gets recalculated (and re-translated) once the user types something.
+            document.getElementById('totalIncome').textContent = '0 THB';
+            document.getElementById('expenseDeduct').textContent = '- 0 THB';
+            document.getElementById('pvdDeduct').textContent = '- 0 THB';
+            document.getElementById('ssoDeduct').textContent = '- 0 THB';
+            document.getElementById('netIncome').textContent = '0 THB';
             const placeholders = { salary: 'e.g. 50000', bonus: 'e.g. 100000', pvd: 'e.g. 5' };
             Object.keys(placeholders).forEach(id => {
                 document.getElementById(id).placeholder = placeholders[id];
