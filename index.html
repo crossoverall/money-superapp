@@ -6,27 +6,42 @@
 <title>Money Superapp</title>
 <style>
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: system-ui, sans-serif; background: #f4f5f7; }
-  .topbar { display: flex; align-items: stretch; background: #1f2937; }
-  nav { display: flex; flex-wrap: wrap; flex: 1; }
+  html, body { height: 100%; margin: 0; }
+  body { font-family: system-ui, sans-serif; background: #f4f5f7; display: flex; flex-direction: column; }
+
+  /* Full-bleed dark background bar; its content is capped and centered so tabs
+     don't stretch into huge gaps on ultra-wide monitors. */
+  .topbar { flex: 0 0 auto; background: #1f2937; }
+  .topbar-inner {
+    max-width: 1280px; margin: 0 auto; display: flex; align-items: stretch;
+  }
+
+  /* Tabs scroll horizontally instead of wrapping, so the bar's height never
+     changes with screen width (that's what keeps the iframe below sized right). */
+  nav { display: flex; flex: 1 1 auto; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   nav button {
-    flex: 1; min-width: 140px; padding: 14px 10px; border: none; background: none;
+    flex: 0 0 auto; white-space: nowrap; padding: 14px 16px; border: none; background: none;
     color: #cbd5e1; font-size: 14px; cursor: pointer; border-bottom: 3px solid transparent;
   }
   nav button:hover { background: #374151; }
   nav button.active { color: #fff; border-bottom-color: #38bdf8; background: #111827; }
-  .lang-toggle, .theme-toggle { display: flex; align-items: center; gap: 4px; padding: 0 12px; flex-shrink: 0; }
+
+  .lang-toggle, .theme-toggle {
+    display: flex; align-items: center; gap: 4px; padding: 0 10px; flex: 0 0 auto;
+  }
   .theme-toggle { border-left: 1px solid #374151; }
   .lang-toggle button, .theme-toggle button {
-    border: 1px solid #4b5563; background: none; color: #cbd5e1;
-    font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 999px; cursor: pointer;
+    border: 1px solid #4b5563; background: none; color: #cbd5e1; white-space: nowrap;
+    font-size: 12px; font-weight: 700; padding: 8px 12px; border-radius: 999px; cursor: pointer;
   }
   .lang-toggle button.active, .theme-toggle button.active { background: #38bdf8; color: #0f172a; border-color: #38bdf8; }
-  iframe { display: block; width: 100%; height: calc(100vh - 52px); border: none; background: #fff; }
+
+  iframe { display: block; width: 100%; flex: 1 1 auto; border: none; background: #fff; }
 </style>
 </head>
 <body>
 <div class="topbar">
+ <div class="topbar-inner">
   <nav>
     <button class="active" data-src="rebalance.html" data-th="คำนวณ Rebalance" data-en="Rebalance Calculator">Rebalance Calculator</button>
     <button data-src="months-slips.html" data-th="จำลองสลิปเงินเดือน" data-en="Payslip Simulator">Months Slips Calculator</button>
@@ -41,6 +56,7 @@
     <button data-theme-btn="light" data-th="☀ สว่าง" data-en="☀ Light">☀ Light</button>
     <button data-theme-btn="dark" data-th="☾ มืด" data-en="☾ Dark">☾ Dark</button>
   </div>
+ </div>
 </div>
 <iframe id="app" src="rebalance.html"></iframe>
 <script>
