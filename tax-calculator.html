@@ -499,7 +499,6 @@
       document.getElementById('tab0').innerHTML = 'Member<br>&lt; 5 yrs';
       document.getElementById('tab1').innerHTML = '≥ 5 yrs<br>age &lt; 55';
       document.getElementById('tab2').innerHTML = '≥ 5 yrs<br>age ≥ 55';
-      document.getElementById('condNote').innerHTML = 'PVD member <strong>less than 5 years</strong> — the taxable PVD portion is taxed normally, with no special expense deduction.';
     }
 
     let activeTab = 0;
@@ -541,6 +540,11 @@
       document.getElementById('results').classList.remove('show');
       document.getElementById('errorMsg').style.display = 'none';
     }
+
+    // Sync the default tab's condition note and PVD badges to the current language —
+    // setTab() is otherwise only called on click, so without this the initial badges
+    // (badge2/3/4) stay in whatever language was hardcoded in the markup (Thai).
+    setTab(0);
 
     function fmt(n) {
       return n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + unit;
