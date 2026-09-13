@@ -131,6 +131,10 @@
                         <div class="flex justify-between"><span id="lbl-ytd-pvd">หัก PVD ทั้งปี:</span><span id="ytd-pvd" class="font-medium">0.00</span></div>
                         <div class="flex justify-between"><span id="lbl-ytd-taxable">ฐานภาษีสุทธิ:</span><span id="ytd-taxable" class="font-medium">0.00</span></div>
                     </div>
+                    <div class="mt-3 pt-3 border-t border-gray-200">
+                        <p class="font-bold text-gray-800 mb-2 uppercase" id="lbl-breakdownTitle">รายละเอียดภาษีตามขั้นบันได (ทั้งปี)</p>
+                        <div id="taxBreakdown" class="space-y-1"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -168,6 +172,7 @@
                 'lbl-totalGross': 'Total Gross',
                 'lbl-totalDedns': 'Total Dedns',
                 'lbl-netPayment': 'NET PAYMENT',
+                'lbl-breakdownTitle': 'Tax breakdown by bracket (annual)',
             };
             Object.keys(EN).forEach(id => {
                 const el = document.getElementById(id);
@@ -207,25 +212,34 @@
             if (netAnnualIncome < 0) netAnnualIncome = 0;
 
             const brackets = [
-                { limit: 150000, rate: 0 },
-                { limit: 150000, rate: 0.05 },
-                { limit: 200000, rate: 0.10 },
-                { limit: 250000, rate: 0.15 },
-                { limit: 250000, rate: 0.20 },
-                { limit: 1000000, rate: 0.25 },
-                { limit: 3000000, rate: 0.30 },
-                { limit: Infinity, rate: 0.35 }
+                { limit: 150000, rate: 0,    labelTh: '0 - 150,000',            labelEn: '0 - 150,000' },
+                { limit: 150000, rate: 0.05, labelTh: '150,001 - 300,000',      labelEn: '150,001 - 300,000' },
+                { limit: 200000, rate: 0.10, labelTh: '300,001 - 500,000',      labelEn: '300,001 - 500,000' },
+                { limit: 250000, rate: 0.15, labelTh: '500,001 - 750,000',      labelEn: '500,001 - 750,000' },
+                { limit: 250000, rate: 0.20, labelTh: '750,001 - 1,000,000',    labelEn: '750,001 - 1,000,000' },
+                { limit: 1000000, rate: 0.25, labelTh: '1,000,001 - 2,000,000', labelEn: '1,000,001 - 2,000,000' },
+                { limit: 3000000, rate: 0.30, labelTh: '2,000,001 - 5,000,000', labelEn: '2,000,001 - 5,000,000' },
+                { limit: Infinity, rate: 0.35, labelTh: '5,000,001 ขึ้นไป',     labelEn: 'Over 5,000,000' }
             ];
 
             let annualTax = 0;
             let remaining = netAnnualIncome;
+            const breakdown = [];
 
             for (let i = 0; i < brackets.length; i++) {
                 if (remaining <= 0) break;
                 const taxable = Math.min(remaining, brackets[i].limit);
-                annualTax += taxable * brackets[i].rate;
+                const taxAtThisBracket = taxable * brackets[i].rate;
+                annualTax += taxAtThisBracket;
                 remaining -= taxable;
+                breakdown.push({ bracket: brackets[i], tax: taxAtThisBracket });
             }
+
+            const unit = LANG === 'en' ? 'THB' : 'บาท';
+            document.getElementById('taxBreakdown').innerHTML = breakdown.map(b => {
+                const label = LANG === 'en' ? b.bracket.labelEn : b.bracket.labelTh;
+                return `<div class="flex justify-between"><span>${label} (${(b.bracket.rate * 100).toFixed(0)}%)</span><span class="font-medium">${b.tax.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${unit}</span></div>`;
+            }).join('');
 
             // เฉลี่ยภาษีเป็นรายเดือน (ระบบ Payroll ส่วนใหญ่จะเกลี่ยภาษีโบนัสหาร 12 เดือน เพื่อไม่ให้พนักงานจ่ายหนักเดือนเดียว)
             const monthlyTax = annualTax / 12;
