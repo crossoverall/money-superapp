@@ -65,6 +65,10 @@
                 <span id="lbl-pvdDeduct">หักกองทุนสำรองเลี้ยงชีพ (PVD):</span>
                 <span id="pvdDeduct" class="font-medium text-red-500">- 0 บาท</span>
             </div>
+            <div class="flex justify-between">
+                <span id="lbl-ssoDeduct">หักประกันสังคม:</span>
+                <span id="ssoDeduct" class="font-medium text-red-500">- 0 บาท</span>
+            </div>
 
             <div class="border-t pt-3 mt-3 flex justify-between items-center text-base">
                 <span class="font-semibold text-gray-800" id="lbl-netIncome">เงินได้สุทธิ:</span>
@@ -95,6 +99,7 @@
                 'lbl-expenseDeduct': 'Expense deduction (up to 100,000):',
                 'lbl-personalDeduct': 'Personal allowance:',
                 'lbl-pvdDeduct': 'Provident Fund (PVD) deduction:',
+                'lbl-ssoDeduct': 'Social Security deduction:',
                 'lbl-netIncome': 'Net taxable income:',
                 'lbl-taxAmount': 'Estimated tax payable',
             };
@@ -120,10 +125,15 @@
             const expenseDeduction = Math.min(totalIncome * 0.5, 100000);
             const personalDeduction = 60000;
             // คิด PVD จากฐานเงินเดือนเท่านั้น (ไม่รวมโบนัส) ตามหลักการทั่วไป
-            const pvdDeduction = (salary * 12) * (pvdPercent / 100); 
+            const pvdDeduction = (salary * 12) * (pvdPercent / 100);
+
+            // ประกันสังคม (5% ของเงินเดือน สูงสุด 875 บาท/เดือน) — เช่นเดียวกับที่ใช้ใน months-slips.html
+            let ssoMonthly = salary * 0.05;
+            if (ssoMonthly > 875) ssoMonthly = 875;
+            const ssoDeduction = ssoMonthly * 12;
 
             // คำนวณเงินได้สุทธิ
-            const totalDeductions = expenseDeduction + personalDeduction + pvdDeduction;
+            const totalDeductions = expenseDeduction + personalDeduction + pvdDeduction + ssoDeduction;
             let netIncome = totalIncome - totalDeductions;
             if (netIncome < 0) netIncome = 0;
 
@@ -155,6 +165,7 @@
             document.getElementById('totalIncome').innerText = formatMoney(totalIncome) + ' ' + unit;
             document.getElementById('expenseDeduct').innerText = '- ' + formatMoney(expenseDeduction) + ' ' + unit;
             document.getElementById('pvdDeduct').innerText = '- ' + formatMoney(pvdDeduction) + ' ' + unit;
+            document.getElementById('ssoDeduct').innerText = '- ' + formatMoney(ssoDeduction) + ' ' + unit;
             document.getElementById('netIncome').innerText = formatMoney(netIncome) + ' ' + unit;
             document.getElementById('taxAmount').innerText = formatMoney(tax);
         }
