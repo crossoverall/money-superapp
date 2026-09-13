@@ -6,6 +6,24 @@
 <title>คำนวณการเติมเงินรายเดือน</title>
 <style>
   :root{
+    --bg: #F5F7F6;
+    --panel: #FFFFFF;
+    --panel-2: #EEF2F0;
+    --line: #DCE4E0;
+    --ink: #14201B;
+    --ink-dim: #57685F;
+    --ink-faint: #8B9A92;
+    --warn: #A9762F;
+    --warn-dim: rgba(169,118,47,0.12);
+
+    --core: #2F8B76;
+    --core-dim: rgba(47,139,118,0.10);
+    --ballast: #A9762F;
+    --ballast-dim: rgba(169,118,47,0.10);
+    --satellite: #B0562F;
+    --satellite-dim: rgba(176,86,47,0.10);
+  }
+  :root[data-theme="dark"]{
     --bg: #0E1512;
     --panel: #131E19;
     --panel-2: #16221C;
@@ -198,6 +216,7 @@
 // Language: read once from localStorage (shared origin with the shell nav's toggle).
 const LANG = (function(){ try { return localStorage.getItem('moneySuperapp.lang') || 'th'; } catch(e){ return 'th'; } })();
 document.documentElement.lang = LANG;
+document.documentElement.dataset.theme = (function(){ try { return localStorage.getItem('moneySuperapp.theme') || 'light'; } catch(e){ return 'light'; } })();
 
 const EN = {
   eyebrow: 'DCA TOOL',

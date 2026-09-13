@@ -15,12 +15,13 @@
   }
   nav button:hover { background: #374151; }
   nav button.active { color: #fff; border-bottom-color: #38bdf8; background: #111827; }
-  .lang-toggle { display: flex; align-items: center; gap: 4px; padding: 0 12px; flex-shrink: 0; }
-  .lang-toggle button {
+  .lang-toggle, .theme-toggle { display: flex; align-items: center; gap: 4px; padding: 0 12px; flex-shrink: 0; }
+  .theme-toggle { border-left: 1px solid #374151; }
+  .lang-toggle button, .theme-toggle button {
     border: 1px solid #4b5563; background: none; color: #cbd5e1;
     font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 999px; cursor: pointer;
   }
-  .lang-toggle button.active { background: #38bdf8; color: #0f172a; border-color: #38bdf8; }
+  .lang-toggle button.active, .theme-toggle button.active { background: #38bdf8; color: #0f172a; border-color: #38bdf8; }
   iframe { display: block; width: 100%; height: calc(100vh - 52px); border: none; background: #fff; }
 </style>
 </head>
@@ -36,17 +37,31 @@
     <button data-lang="th">TH</button>
     <button data-lang="en">EN</button>
   </div>
+  <div class="theme-toggle">
+    <button data-theme-btn="light">☀ Light</button>
+    <button data-theme-btn="dark">☾ Dark</button>
+  </div>
 </div>
 <iframe id="app" src="rebalance.html"></iframe>
 <script>
   const frame = document.getElementById('app');
   const navButtons = document.querySelectorAll('nav button');
   const langButtons = document.querySelectorAll('.lang-toggle button');
+  const themeButtons = document.querySelectorAll('.theme-toggle button');
 
   function getLang(){ try { return localStorage.getItem('moneySuperapp.lang') || 'th'; } catch(e){ return 'th'; } }
+  function getTheme(){ try { return localStorage.getItem('moneySuperapp.theme') || 'light'; } catch(e){ return 'light'; } }
   function applyLang(lang){
     langButtons.forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
     navButtons.forEach(b => b.textContent = b.dataset[lang]);
+  }
+  function applyTheme(theme){
+    themeButtons.forEach(b => b.classList.toggle('active', b.dataset.themeBtn === theme));
+  }
+  // Each app page reads lang/theme from localStorage once on load, so reload the
+  // currently displayed one whenever either changes.
+  function reloadFrame(){
+    try { frame.contentWindow.location.reload(); } catch(e){ frame.src = frame.src; }
   }
 
   navButtons.forEach(btn => {
@@ -62,13 +77,21 @@
       const lang = btn.dataset.lang;
       try { localStorage.setItem('moneySuperapp.lang', lang); } catch(e){}
       applyLang(lang);
-      // Each app page reads the language from localStorage once on load, so reload
-      // the currently displayed one to pick up the change.
-      try { frame.contentWindow.location.reload(); } catch(e){ frame.src = frame.src; }
+      reloadFrame();
+    });
+  });
+
+  themeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const theme = btn.dataset.themeBtn;
+      try { localStorage.setItem('moneySuperapp.theme', theme); } catch(e){}
+      applyTheme(theme);
+      reloadFrame();
     });
   });
 
   applyLang(getLang());
+  applyTheme(getTheme());
 </script>
 </body>
 </html>
