@@ -296,13 +296,13 @@
 </head>
 <body>
   <div class="card">
-    <h1>คำนวณภาษีเงินชดเชย + PVD</h1>
-    <p class="subtitle">เลือกเงื่อนไขที่ตรงกับสถานการณ์ของคุณ</p>
+    <h1 id="lbl-h1">คำนวณภาษีเงินชดเชย + PVD</h1>
+    <p class="subtitle" id="lbl-subtitle">เลือกเงื่อนไขที่ตรงกับสถานการณ์ของคุณ</p>
 
     <div class="tabs">
-      <div class="tab active" onclick="setTab(0)">สมาชิก<br>&lt; 5 ปี</div>
-      <div class="tab" onclick="setTab(1)">≥ 5 ปี<br>อายุ &lt; 55</div>
-      <div class="tab" onclick="setTab(2)">≥ 5 ปี<br>อายุ ≥ 55</div>
+      <div class="tab active" onclick="setTab(0)" id="tab0">สมาชิก<br>&lt; 5 ปี</div>
+      <div class="tab" onclick="setTab(1)" id="tab1">≥ 5 ปี<br>อายุ &lt; 55</div>
+      <div class="tab" onclick="setTab(2)" id="tab2">≥ 5 ปี<br>อายุ ≥ 55</div>
     </div>
 
     <div class="condition-note" id="condNote">
@@ -310,51 +310,51 @@
     </div>
 
     <!-- Severance -->
-    <div class="section-label">เงินชดเชย</div>
+    <div class="section-label" id="lbl-severance">เงินชดเชย</div>
     <div class="pvd-group">
       <div class="field">
         <label>
-          เงินชดเชยตามกฎหมาย
-          <span class="badge-exempt">ยกเว้น 600,000 บาท</span>
+          <span id="lbl-severanceLegal">เงินชดเชยตามกฎหมาย</span>
+          <span class="badge-exempt" id="badge-severanceLegal">ยกเว้น 600,000 บาท</span>
         </label>
         <input type="number" id="severanceLegal" placeholder="300000" min="0" step="0.01" />
       </div>
       <div class="field">
         <label>
-          เงินชดเชยพิเศษ (นอกเหนือกฎหมาย)
-          <span class="badge-taxable">ต้องเสียภาษีทั้งหมด</span>
+          <span id="lbl-severanceExtra">เงินชดเชยพิเศษ (นอกเหนือกฎหมาย)</span>
+          <span class="badge-taxable" id="badge-severanceExtra">ต้องเสียภาษีทั้งหมด</span>
         </label>
         <input type="number" id="severanceExtra" placeholder="0" min="0" step="0.01" />
       </div>
     </div>
 
     <!-- PVD group -->
-    <div class="section-label">กองทุนสำรองเลี้ยงชีพ (PVD)</div>
+    <div class="section-label" id="lbl-pvdSection">กองทุนสำรองเลี้ยงชีพ (PVD)</div>
     <div class="pvd-group">
       <div class="field">
         <label>
-          เงินสะสม (ส่วนลูกจ้าง)
+          <span id="lbl-pvdEmpContrib">เงินสะสม (ส่วนลูกจ้าง)</span>
           <span class="badge-exempt">ยกเว้นภาษี</span>
         </label>
         <input type="number" id="pvdEmpContrib" placeholder="0" min="0" step="0.01" />
       </div>
       <div class="field">
         <label>
-          ผลประโยชน์เงินสะสม
+          <span id="lbl-pvdEmpReturn">ผลประโยชน์เงินสะสม</span>
           <span class="badge-taxable" id="badge2">ต้องเสียภาษี</span>
         </label>
         <input type="number" id="pvdEmpReturn" placeholder="0" min="0" step="0.01" />
       </div>
       <div class="field">
         <label>
-          เงินสมทบ (ส่วนนายจ้าง)
+          <span id="lbl-pvdEmrContrib">เงินสมทบ (ส่วนนายจ้าง)</span>
           <span class="badge-taxable" id="badge3">ต้องเสียภาษี</span>
         </label>
         <input type="number" id="pvdEmrContrib" placeholder="0" min="0" step="0.01" />
       </div>
       <div class="field">
         <label>
-          ผลประโยชน์เงินสมทบ
+          <span id="lbl-pvdEmrReturn">ผลประโยชน์เงินสมทบ</span>
           <span class="badge-taxable" id="badge4">ต้องเสียภาษี</span>
         </label>
         <input type="number" id="pvdEmrReturn" placeholder="0" min="0" step="0.01" />
@@ -363,62 +363,109 @@
 
     <!-- Years -->
     <div class="field">
-      <label>จำนวนปีที่ทำงาน <span class="label-en">Years of Service</span></label>
+      <label><span id="lbl-years">จำนวนปีที่ทำงาน</span> <span class="label-en">Years of Service</span></label>
       <input type="number" id="years" placeholder="10" min="1" step="1" />
     </div>
 
-    <button class="calc-btn" onclick="calculate()">คำนวณภาษี</button>
+    <button class="calc-btn" onclick="calculate()" id="btn-calc">คำนวณภาษี</button>
     <div class="error" id="errorMsg"></div>
 
     <div class="results" id="results">
       <div class="result-row">
         <span class="result-label">
-          เงินชดเชยตามกฎหมาย (ส่วนเกิน)
-          <span class="tip">?<span class="tip-box">เงินชดเชยตามกฎหมายแรงงาน หักส่วนที่ยกเว้น 600,000 บาท<br>= เงินชดเชยตามกฎหมาย − 600,000 (ไม่ต่ำกว่า 0)</span></span>
+          <span id="lbl-res-legal-excess">เงินชดเชยตามกฎหมาย (ส่วนเกิน)</span>
+          <span class="tip">?<span class="tip-box" id="tip-legal-excess">เงินชดเชยตามกฎหมายแรงงาน หักส่วนที่ยกเว้น 600,000 บาท<br>= เงินชดเชยตามกฎหมาย − 600,000 (ไม่ต่ำกว่า 0)</span></span>
         </span>
         <span class="result-value" id="res-legal-excess"></span>
       </div>
       <div class="result-row">
         <span class="result-label">
-          เงินชดเชยพิเศษ
-          <span class="tip">?<span class="tip-box">เงินชดเชยนอกเหนือกฎหมาย ไม่มีส่วนยกเว้น<br>นำมาคิดภาษีทั้งจำนวน</span></span>
+          <span id="lbl-res-extra">เงินชดเชยพิเศษ</span>
+          <span class="tip">?<span class="tip-box" id="tip-extra">เงินชดเชยนอกเหนือกฎหมาย ไม่มีส่วนยกเว้น<br>นำมาคิดภาษีทั้งจำนวน</span></span>
         </span>
         <span class="result-value" id="res-extra"></span>
       </div>
       <div class="result-row">
         <span class="result-label">
-          PVD ที่ต้องเสียภาษี
+          <span id="lbl-res-pvd">PVD ที่ต้องเสียภาษี</span>
           <span class="tip">?<span class="tip-box" id="tip-pvd">= ผลประโยชน์เงินสะสม + เงินสมทบนายจ้าง<br>+ ผลประโยชน์เงินสมทบ<br>(ไม่รวมเงินสะสมส่วนลูกจ้างซึ่งยกเว้นภาษี)</span></span>
         </span>
         <span class="result-value" id="res-pvd"></span>
       </div>
       <div class="result-row">
         <span class="result-label">
-          รวมส่วนที่นำมาคิดภาษี
+          <span id="lbl-res-taxable">รวมส่วนที่นำมาคิดภาษี</span>
           <span class="tip">?<span class="tip-box" id="tip-taxable"></span></span>
         </span>
         <span class="result-value" id="res-taxable"></span>
       </div>
       <div class="result-row highlight">
         <span class="result-label">
-          ภาษีที่ต้องจ่าย
+          <span id="lbl-res-tax">ภาษีที่ต้องจ่าย</span>
           <span class="tip">?<span class="tip-box" id="tip-tax">คำนวณจากอัตราภาษีก้าวหน้า<br>0–300k: 5% / 300k–500k: 10%<br>500k–750k: 15% / 750k–1M: 20%<br>1M–2M: 25% / 2M–4M: 30% / &gt;4M: 35%</span></span>
         </span>
         <span class="result-value" id="res-tax"></span>
       </div>
-      <button class="reset-btn" onclick="reset()">ล้างข้อมูล</button>
+      <button class="reset-btn" onclick="reset()" id="btn-reset">ล้างข้อมูล</button>
     </div>
     <p style="text-align:center;font-size:0.72rem;color:#cbd5e1;margin-top:20px;">v1.0.0</p>
   </div>
 
   <script>
+    // Language: read once from localStorage (shared origin with the shell nav's toggle).
+    const LANG = (function(){ try { return localStorage.getItem('moneySuperapp.lang') || 'th'; } catch(e){ return 'th'; } })();
+    document.documentElement.lang = LANG;
+    const unit = LANG === 'en' ? 'THB' : 'บาท';
+
+    if (LANG === 'en') {
+      document.title = 'Severance & PVD Tax Calculator';
+      const EN = {
+        'lbl-h1': 'Severance & PVD Tax Calculator',
+        'lbl-subtitle': 'Choose the condition that matches your situation',
+        'lbl-severance': 'Severance Pay',
+        'lbl-severanceLegal': 'Statutory severance',
+        'badge-severanceLegal': 'Exempt up to 600,000 THB',
+        'lbl-severanceExtra': 'Extra severance (beyond statutory)',
+        'badge-severanceExtra': 'Fully taxable',
+        'lbl-pvdSection': 'Provident Fund (PVD)',
+        'lbl-pvdEmpContrib': "Accumulated contribution (employee's)",
+        'lbl-pvdEmpReturn': 'Return on accumulated contribution',
+        'lbl-pvdEmrContrib': "Contribution (employer's)",
+        'lbl-pvdEmrReturn': 'Return on employer contribution',
+        'lbl-years': 'Years of service',
+        'btn-calc': 'Calculate Tax',
+        'lbl-res-legal-excess': 'Statutory severance (excess)',
+        'lbl-res-extra': 'Extra severance',
+        'lbl-res-pvd': 'Taxable PVD',
+        'lbl-res-taxable': 'Total taxable amount',
+        'lbl-res-tax': 'Tax payable',
+        'btn-reset': 'Clear',
+        'tip-legal-excess': 'Statutory severance minus the 600,000 THB exemption<br>= statutory severance − 600,000 (not below 0)',
+        'tip-extra': 'Severance beyond statutory amount has no exemption<br>fully taxed',
+        'tip-pvd': '= return on accumulated contribution + employer contribution<br>+ return on employer contribution<br>(excludes the employee\'s own accumulated contribution, which is exempt)',
+        'tip-tax': 'Calculated using progressive tax brackets<br>0–300k: 5% / 300k–500k: 10%<br>500k–750k: 15% / 750k–1M: 20%<br>1M–2M: 25% / 2M–4M: 30% / &gt;4M: 35%',
+      };
+      Object.keys(EN).forEach(id => { document.getElementById(id).innerHTML = EN[id]; });
+      document.getElementById('tab0').innerHTML = 'Member<br>&lt; 5 yrs';
+      document.getElementById('tab1').innerHTML = '≥ 5 yrs<br>age &lt; 55';
+      document.getElementById('tab2').innerHTML = '≥ 5 yrs<br>age ≥ 55';
+      document.getElementById('condNote').innerHTML = 'PVD member <strong>less than 5 years</strong> — the taxable PVD portion is taxed normally, with no special expense deduction.';
+    }
+
     let activeTab = 0;
 
-    const condNotes = [
-      'สมาชิก PVD <strong>น้อยกว่า 5 ปี</strong> — PVD ส่วนที่ต้องเสียภาษีถูกนำมาคิดแบบปกติ ไม่ได้รับสิทธิ์หักค่าใช้จ่ายพิเศษ',
-      'สมาชิก PVD <strong>5 ปีขึ้นไป อายุน้อยกว่า 55 ปี</strong> — ได้รับสิทธิ์คำนวณแบบพิเศษ (มาตรา 48(5)) แยกจากเงินได้อื่น',
-      'สมาชิก PVD <strong>5 ปีขึ้นไป และอายุ 55 ปีบริบูรณ์ขึ้นไป</strong> — PVD ได้รับ<strong>ยกเว้นภาษีทั้งหมด</strong> คำนวณภาษีเฉพาะเงินชดเชยส่วนเกิน',
-    ];
+    const condNotes = {
+      th: [
+        'สมาชิก PVD <strong>น้อยกว่า 5 ปี</strong> — PVD ส่วนที่ต้องเสียภาษีถูกนำมาคิดแบบปกติ ไม่ได้รับสิทธิ์หักค่าใช้จ่ายพิเศษ',
+        'สมาชิก PVD <strong>5 ปีขึ้นไป อายุน้อยกว่า 55 ปี</strong> — ได้รับสิทธิ์คำนวณแบบพิเศษ (มาตรา 48(5)) แยกจากเงินได้อื่น',
+        'สมาชิก PVD <strong>5 ปีขึ้นไป และอายุ 55 ปีบริบูรณ์ขึ้นไป</strong> — PVD ได้รับ<strong>ยกเว้นภาษีทั้งหมด</strong> คำนวณภาษีเฉพาะเงินชดเชยส่วนเกิน',
+      ],
+      en: [
+        'PVD member <strong>less than 5 years</strong> — the taxable PVD portion is taxed normally, with no special expense deduction.',
+        'PVD member <strong>5+ years, age under 55</strong> — eligible for the special calculation (Section 48(5)), separate from other income.',
+        'PVD member <strong>5+ years and age 55 or over</strong> — PVD is <strong>fully tax-exempt</strong>; tax is calculated only on excess severance.',
+      ],
+    };
 
     const pvdTaxableIds = ['pvdEmpReturn', 'pvdEmrContrib', 'pvdEmrReturn'];
     const pvdBadgeIds   = ['badge2', 'badge3', 'badge4'];
@@ -426,17 +473,17 @@
     function setTab(n) {
       activeTab = n;
       document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === n));
-      document.getElementById('condNote').innerHTML = condNotes[n];
+      document.getElementById('condNote').innerHTML = (condNotes[LANG] || condNotes.th)[n];
 
       const pvdExempt = n === 2;
       pvdTaxableIds.forEach(id => document.getElementById(id).classList.toggle('dimmed', pvdExempt));
       pvdBadgeIds.forEach(id => {
         const el = document.getElementById(id);
         if (pvdExempt) {
-          el.textContent = 'ยกเว้นภาษี';
+          el.textContent = LANG === 'en' ? 'Exempt' : 'ยกเว้นภาษี';
           el.className = 'badge-exempt';
         } else {
-          el.textContent = 'ต้องเสียภาษี';
+          el.textContent = LANG === 'en' ? 'Taxable' : 'ต้องเสียภาษี';
           el.className = 'badge-taxable';
         }
       });
@@ -446,7 +493,7 @@
     }
 
     function fmt(n) {
-      return n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' บาท';
+      return n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + unit;
     }
 
     function progressiveTax(income) {
@@ -470,7 +517,7 @@
 
       const errorEl = document.getElementById('errorMsg');
       if (years <= 0) {
-        errorEl.textContent = 'กรุณากรอกจำนวนปีที่ทำงาน';
+        errorEl.textContent = LANG === 'en' ? 'Please enter years of service' : 'กรุณากรอกจำนวนปีที่ทำงาน';
         errorEl.style.display = 'block';
         return;
       }
@@ -482,27 +529,38 @@
 
       let taxable, tax, pvdDisplay, pvdClass = '';
 
+      const tipTaxable = {
+        th: [
+          '= PVD ส่วนที่ต้องเสียภาษี + เงินชดเชยพิเศษ<br>(ไม่มีสิทธิ์หักค่าใช้จ่ายพิเศษ)',
+          '= (เงินชดเชยส่วนเกิน + PVD − ค่าใช้จ่าย) × 0.5<br>ค่าใช้จ่าย = 7,000 × จำนวนปีที่ทำงาน',
+          '= (เงินชดเชยส่วนเกิน − ค่าใช้จ่าย) × 0.5<br>PVD ได้รับยกเว้นภาษีทั้งหมด',
+        ],
+        en: [
+          '= taxable PVD + extra severance<br>(no special expense deduction)',
+          '= (excess severance + PVD − expense) × 0.5<br>expense = 7,000 × years of service',
+          '= (excess severance − expense) × 0.5<br>PVD is fully tax-exempt',
+        ],
+      };
+      const exemptLabel = LANG === 'en' ? 'Exempt' : 'ยกเว้นภาษี';
+
       if (activeTab === 0) {
         taxable    = pvdTaxable + severanceExtra;
         tax        = progressiveTax(taxable);
         pvdDisplay = fmt(pvdTaxable);
-        document.getElementById('tip-taxable').innerHTML =
-          '= PVD ส่วนที่ต้องเสียภาษี + เงินชดเชยพิเศษ<br>(ไม่มีสิทธิ์หักค่าใช้จ่ายพิเศษ)';
+        document.getElementById('tip-taxable').innerHTML = (tipTaxable[LANG] || tipTaxable.th)[0];
 
       } else if (activeTab === 1) {
         taxable    = Math.max(0, ((totalExcess + pvdTaxable) - 7000 * years) * 0.5);
         tax        = progressiveTax(taxable);
         pvdDisplay = fmt(pvdTaxable);
-        document.getElementById('tip-taxable').innerHTML =
-          '= (เงินชดเชยส่วนเกิน + PVD − ค่าใช้จ่าย) × 0.5<br>ค่าใช้จ่าย = 7,000 × จำนวนปีที่ทำงาน';
+        document.getElementById('tip-taxable').innerHTML = (tipTaxable[LANG] || tipTaxable.th)[1];
 
       } else {
         taxable    = Math.max(0, (totalExcess - 7000 * years) * 0.5);
         tax        = progressiveTax(taxable);
-        pvdDisplay = 'ยกเว้นภาษี';
+        pvdDisplay = exemptLabel;
         pvdClass   = 'exempt-badge';
-        document.getElementById('tip-taxable').innerHTML =
-          '= (เงินชดเชยส่วนเกิน − ค่าใช้จ่าย) × 0.5<br>PVD ได้รับยกเว้นภาษีทั้งหมด';
+        document.getElementById('tip-taxable').innerHTML = (tipTaxable[LANG] || tipTaxable.th)[2];
       }
 
       document.getElementById('res-legal-excess').textContent = fmt(legalExcess);

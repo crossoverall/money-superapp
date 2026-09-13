@@ -17,30 +17,30 @@
         
         <!-- Input Section -->
         <div class="bg-white p-6 rounded-2xl shadow-md md:col-span-5 h-fit border-t-4 border-blue-500">
-            <h2 class="text-xl font-semibold text-gray-800 mb-5">ตั้งค่าข้อมูลรายได้</h2>
-            
+            <h2 class="text-xl font-semibold text-gray-800 mb-5" id="lbl-setup">ตั้งค่าข้อมูลรายได้</h2>
+
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">เงินเดือนพื้นฐาน (บาท/เดือน)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-salary">เงินเดือนพื้นฐาน (บาท/เดือน)</label>
                     <input type="number" id="salary" placeholder="เช่น 50000" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all" oninput="calculateSlip()">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">เงินได้อื่นๆ / Allowance (บาท/เดือน)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-allowance">เงินได้อื่นๆ / Allowance (บาท/เดือน)</label>
                     <input type="number" id="allowance" placeholder="เช่น 7000" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all" oninput="calculateSlip()">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">โบนัสประจำปี (บาท/ปี)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-bonus">โบนัสประจำปี (บาท/ปี)</label>
                     <input type="number" id="bonus" placeholder="เช่น 100000" class="w-full px-4 py-2 bg-green-50 border border-green-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none transition-all" oninput="calculateSlip()">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Provident Fund หักกี่ %</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-pvd">Provident Fund หักกี่ %</label>
                     <input type="number" id="pvd" placeholder="เช่น 15" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all" oninput="calculateSlip()">
-                    <p class="text-xs text-gray-500 mt-1">* หักจากฐานเงินเดือนพื้นฐานเท่านั้น</p>
+                    <p class="text-xs text-gray-500 mt-1" id="lbl-pvd-note">* หักจากฐานเงินเดือนพื้นฐานเท่านั้น</p>
                 </div>
             </div>
-            
+
             <div class="mt-6 p-4 bg-blue-50 rounded-lg text-sm text-blue-800">
-                <p><strong>หลักการคำนวณภาษี:</strong> ระบบจะนำ โบนัส ไปรวมกับรายได้ทั้งปี เพื่อหาฐานภาษีรวม จากนั้นจะหาร 12 เพื่อเฉลี่ยเป็นยอดหักภาษีต่อเดือน (วิธี Annualized)</p>
+                <p id="lbl-taxnote"><strong>หลักการคำนวณภาษี:</strong> ระบบจะนำ โบนัส ไปรวมกับรายได้ทั้งปี เพื่อหาฐานภาษีรวม จากนั้นจะหาร 12 เพื่อเฉลี่ยเป็นยอดหักภาษีต่อเดือน (วิธี Annualized)</p>
             </div>
         </div>
 
@@ -55,7 +55,7 @@
                 <div class="grid grid-cols-2 gap-x-8 gap-y-4 border-b border-gray-300 pb-4 mb-4">
                     <!-- Earnings -->
                     <div>
-                        <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider mb-3 border-b-2 border-gray-800 inline-block">รายได้ (Earnings)</h3>
+                        <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider mb-3 border-b-2 border-gray-800 inline-block" id="lbl-earnings">รายได้ (Earnings)</h3>
                         <div class="flex justify-between text-sm mb-2">
                             <span class="text-gray-600">Basic Salary</span>
                             <span id="out-salary" class="font-medium text-gray-900">0.00</span>
@@ -68,7 +68,7 @@
                     
                     <!-- Deductions -->
                     <div>
-                        <h3 class="text-sm font-bold text-red-600 uppercase tracking-wider mb-3 border-b-2 border-red-600 inline-block">รายการหัก (Deductions)</h3>
+                        <h3 class="text-sm font-bold text-red-600 uppercase tracking-wider mb-3 border-b-2 border-red-600 inline-block" id="lbl-deductions">รายการหัก (Deductions)</h3>
                         <div class="flex justify-between text-sm mb-2">
                             <span class="text-gray-600">Tax this period</span>
                             <span id="out-tax" class="font-medium text-red-500">0.00</span>
@@ -104,12 +104,12 @@
 
                 <!-- YTD Summary (Year to Date) -->
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-xs text-gray-600">
-                    <h4 class="font-bold text-gray-800 mb-2 uppercase border-b pb-1">ประมาณการรวมทั้งปี (Annual Estimate)</h4>
+                    <h4 class="font-bold text-gray-800 mb-2 uppercase border-b pb-1" id="lbl-annual">ประมาณการรวมทั้งปี (Annual Estimate)</h4>
                     <div class="grid grid-cols-2 gap-4 mt-2">
-                        <div class="flex justify-between"><span>รายได้รวมทั้งปี:</span><span id="ytd-income" class="font-medium">0.00</span></div>
-                        <div class="flex justify-between"><span>ภาษีรวมทั้งปี:</span><span id="ytd-tax" class="font-medium text-red-500">0.00</span></div>
-                        <div class="flex justify-between"><span>หัก PVD ทั้งปี:</span><span id="ytd-pvd" class="font-medium">0.00</span></div>
-                        <div class="flex justify-between"><span>ฐานภาษีสุทธิ:</span><span id="ytd-taxable" class="font-medium">0.00</span></div>
+                        <div class="flex justify-between"><span id="lbl-ytd-income">รายได้รวมทั้งปี:</span><span id="ytd-income" class="font-medium">0.00</span></div>
+                        <div class="flex justify-between"><span id="lbl-ytd-tax">ภาษีรวมทั้งปี:</span><span id="ytd-tax" class="font-medium text-red-500">0.00</span></div>
+                        <div class="flex justify-between"><span id="lbl-ytd-pvd">หัก PVD ทั้งปี:</span><span id="ytd-pvd" class="font-medium">0.00</span></div>
+                        <div class="flex justify-between"><span id="lbl-ytd-taxable">ฐานภาษีสุทธิ:</span><span id="ytd-taxable" class="font-medium">0.00</span></div>
                     </div>
                 </div>
             </div>
@@ -118,6 +118,33 @@
     </div>
 
     <script>
+        // Language: read once from localStorage (shared origin with the shell nav's toggle).
+        const LANG = (function(){ try { return localStorage.getItem('moneySuperapp.lang') || 'th'; } catch(e){ return 'th'; } })();
+        document.documentElement.lang = LANG;
+        if (LANG === 'en') {
+            document.title = 'Payslip Simulator (with bonus)';
+            const EN = {
+                'lbl-setup': 'Income settings',
+                'lbl-salary': 'Base salary (THB/month)',
+                'lbl-allowance': 'Other income / Allowance (THB/month)',
+                'lbl-bonus': 'Annual bonus (THB/year)',
+                'lbl-pvd': 'Provident Fund deduction %',
+                'lbl-pvd-note': '* Deducted from base salary only',
+                'lbl-taxnote': '<strong>How tax is calculated:</strong> the bonus is added to annual income to get the total taxable base, then divided by 12 to spread the monthly withholding (annualized method).',
+                'lbl-earnings': 'Earnings',
+                'lbl-deductions': 'Deductions',
+                'lbl-annual': 'Annual Estimate',
+                'lbl-ytd-income': 'Total annual income:',
+                'lbl-ytd-tax': 'Total annual tax:',
+                'lbl-ytd-pvd': 'Total annual PVD:',
+                'lbl-ytd-taxable': 'Net taxable base:',
+            };
+            Object.keys(EN).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = EN[id];
+            });
+        }
+
         function calculateSlip() {
             const salary = parseFloat(document.getElementById('salary').value) || 0;
             const allowance = parseFloat(document.getElementById('allowance').value) || 0;

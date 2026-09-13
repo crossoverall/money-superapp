@@ -166,14 +166,14 @@
 </head>
 <body>
 
-  <div class="eyebrow">เครื่องมือ DCA</div>
-  <h1>คำนวณการเติมเงินรายเดือน</h1>
-  <div class="sub">แบ่งงบเดือนนี้ตาม Core / Ballast / Satellite แล้วคำนวณว่าแต่ละสินทรัพย์ในแต่ละกลุ่มควรเติมเท่าไหร่ ให้สัดส่วนเข้าใกล้เป้าหมายที่สุด โดยไม่ต้องขายอะไรเลย</div>
+  <div class="eyebrow" id="eyebrow">เครื่องมือ DCA</div>
+  <h1 id="pageTitle">คำนวณการเติมเงินรายเดือน</h1>
+  <div class="sub" id="subtitle">แบ่งงบเดือนนี้ตาม Core / Ballast / Satellite แล้วคำนวณว่าแต่ละสินทรัพย์ในแต่ละกลุ่มควรเติมเท่าไหร่ ให้สัดส่วนเข้าใกล้เป้าหมายที่สุด โดยไม่ต้องขายอะไรเลย</div>
 
   <div class="panel">
-    <div class="panel-title">งบที่จะลงทุนเดือนนี้</div>
+    <div class="panel-title" id="budgetPanelTitle">งบที่จะลงทุนเดือนนี้</div>
     <div class="budget-row">
-      <label>บาท</label>
+      <label id="budgetUnit">บาท</label>
       <input type="text" inputmode="decimal" id="totalBudget" value="200000">
     </div>
     <div class="split-bar" id="splitBar"></div>
@@ -183,7 +183,7 @@
 
   <div id="bucketsContainer"></div>
 
-  <div class="howto">
+  <div class="howto" id="howto">
     <b>วิธีทำงาน</b> — งบรวมถูกแบ่งตามสัดส่วน Core/Ballast/Satellite ก่อน จากนั้นในแต่ละกลุ่ม ระบบจะเติมเงินให้สินทรัพย์ที่ "ตามหลัง" สัดส่วนเป้าหมายมากที่สุดก่อน ถ้าตัวไหนมูลค่าเกินเป้าหมายอยู่แล้วจะไม่เติมเดือนนี้ (ค่า = 0) แล้วนำงบไปให้ตัวที่ตามหลังแทน — ไม่มีการขายสินทรัพย์ใดๆ ทั้งสิ้น<br><br>
     <b>ใช้ทุกเดือนยังไง</b> — ก่อนซื้อแต่ละเดือน อัปเดต "มูลค่าปัจจุบัน" ของทุกตัวตามราคาจริง แล้วดูผลลัพธ์ใหม่<br><br>
     <b>เคล็ดลับ</b> — ในช่อง "มูลค่าปัจจุบัน" หรืองบรวม พิมพ์ <code>+10000</code> หรือ <code>-5000</code> แล้วกด Enter/คลิกออกนอกช่อง เพื่อบวก/ลบจากค่าเดิมโดยไม่ต้องคำนวณเอง
@@ -195,6 +195,68 @@
   </div>
 
 <script>
+// Language: read once from localStorage (shared origin with the shell nav's toggle).
+const LANG = (function(){ try { return localStorage.getItem('moneySuperapp.lang') || 'th'; } catch(e){ return 'th'; } })();
+document.documentElement.lang = LANG;
+
+const EN = {
+  eyebrow: 'DCA TOOL',
+  pageTitle: 'Monthly Top-up Calculator',
+  subtitle: 'Split this month\'s budget across Core / Ballast / Satellite, then work out how much to add to each asset so allocations move closest to target — without selling anything.',
+  budgetPanelTitle: "This month's investment budget",
+  budgetUnit: 'THB',
+  howto: '<b>How it works</b> — The total budget is split by Core/Ballast/Satellite weights first. Within each group, the system tops up whichever asset lags its target weight the most. Anything already over target gets nothing this month (= 0), and its share goes to the laggards instead — nothing is ever sold.<br><br><b>Monthly routine</b> — Before buying each month, update every "Current value" with the real price, then check the new results.<br><br><b>Tip</b> — In "Current value" or the total budget, type <code>+10000</code> or <code>-5000</code> then press Enter/click away to add/subtract from the existing value without doing the math yourself.',
+};
+if(LANG === 'en'){
+  document.title = 'Monthly Top-up Calculator';
+  ['eyebrow','pageTitle','subtitle','budgetPanelTitle','budgetUnit'].forEach(id => {
+    document.getElementById(id).textContent = EN[id];
+  });
+  document.getElementById('howto').innerHTML = EN.howto;
+  document.getElementById('resetBtn').textContent = 'Clear saved data';
+}
+
+// Small dict for text regenerated on every render (compute/renderSplit/renderBuckets).
+const T = {
+  th: {
+    splitWarn: pct => `รวมสัดส่วน Core+Ballast+Satellite = ${pct}% (ระบบจะปรับให้เป็น 100% อัตโนมัติระหว่างคำนวณ)`,
+    addAsset: label => `+ เพิ่มสินทรัพย์ใน ${label}`,
+    assetDefaultName: n => `สินทรัพย์ ${n}`,
+    remove: 'ลบ',
+    fieldValue: 'มูลค่าปัจจุบัน (บาท)',
+    fieldWeight: 'สัดส่วนเป้าหมาย (%)',
+    bucketStatus: pct => `รวมสัดส่วนในกลุ่มนี้ ${pct}% (ระบบจะปรับให้เป็น 100% อัตโนมัติ)`,
+    amount: n => `${n} บาท`,
+    rmeta: (cur, target) => `ปัจจุบัน ${cur} → เป้า ${target}%`,
+    rnewpct: pct => `หลังเติม ${pct}%`,
+    totalAdded: 'รวมที่เติม',
+    cappedNote: n => `มี ${n} สินทรัพย์ในกลุ่มนี้ที่เกินเป้าหมายแล้ว จึงไม่เติมเดือนนี้ งบถูกกระจายไปตัวที่ตามหลังแทน`,
+    lastSaved: t => `บันทึกล่าสุด ${t}`,
+    resetConfirm: 'ล้างข้อมูลที่บันทึกไว้ในเบราว์เซอร์นี้ และกลับไปใช้ค่าตั้งต้น?',
+  },
+  en: {
+    splitWarn: pct => `Core+Ballast+Satellite total = ${pct}% (auto-normalized to 100% during calculation)`,
+    addAsset: label => `+ Add asset to ${label}`,
+    assetDefaultName: n => `Asset ${n}`,
+    remove: 'Remove',
+    fieldValue: 'Current value (THB)',
+    fieldWeight: 'Target weight (%)',
+    bucketStatus: pct => `This group's weights total ${pct}% (auto-normalized to 100%)`,
+    amount: n => `${n} THB`,
+    rmeta: (cur, target) => `Current ${cur} → target ${target}%`,
+    rnewpct: pct => `After top-up ${pct}%`,
+    totalAdded: 'Total added',
+    cappedNote: n => `${n} asset(s) in this group are already over target, so they get nothing this month — budget redistributed to the others.`,
+    lastSaved: t => `Last saved ${t}`,
+    resetConfirm: 'Clear the data saved in this browser and go back to defaults?',
+  },
+};
+function t(key, ...args){
+  const fn = (T[LANG] || T.th)[key];
+  const v = typeof fn === 'function' ? fn(...args) : fn;
+  return v;
+}
+
 const state = {
   totalBudget: 200000,
   buckets: [
@@ -309,10 +371,10 @@ function saveState(){
       buckets: state.buckets,
     }));
     if(saveStatusEl){
-      const t = new Date();
-      const hh = String(t.getHours()).padStart(2,'0');
-      const mm = String(t.getMinutes()).padStart(2,'0');
-      saveStatusEl.textContent = `บันทึกล่าสุด ${hh}:${mm}`;
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2,'0');
+      const mm = String(now.getMinutes()).padStart(2,'0');
+      saveStatusEl.textContent = t('lastSaved', `${hh}:${mm}`);
     }
   } catch(e){ /* localStorage unavailable (private mode, etc.) — silently skip */ }
 }
@@ -338,7 +400,7 @@ if(savedState){
 
 if(resetBtn){
   resetBtn.addEventListener('click', () => {
-    if(confirm('ล้างข้อมูลที่บันทึกไว้ในเบราว์เซอร์นี้ และกลับไปใช้ค่าตั้งต้น?')){
+    if(confirm(t('resetConfirm'))){
       try{ localStorage.removeItem(STORAGE_KEY); } catch(e){}
       location.reload();
     }
@@ -400,7 +462,7 @@ function renderSplit(){
 
   if(Math.abs(totalW - 100) > 0.5){
     splitWarnEl.className = 'split-warn';
-    splitWarnEl.textContent = `รวมสัดส่วน Core+Ballast+Satellite = ${totalW.toFixed(0)}% (ระบบจะปรับให้เป็น 100% อัตโนมัติระหว่างคำนวณ)`;
+    splitWarnEl.textContent = t('splitWarn', totalW.toFixed(0));
   } else {
     splitWarnEl.className = 'split-warn ok';
   }
@@ -418,7 +480,7 @@ function renderBuckets(){
       </div>
       <div class="bucket-body">
         <div class="rows" id="rows-${bucket.id}"></div>
-        <button class="add-btn" data-bucket="${bucket.id}">+ เพิ่มสินทรัพย์ใน ${bucket.label}</button>
+        <button class="add-btn" data-bucket="${bucket.id}">${t('addAsset', bucket.label)}</button>
         <div class="weight-status" id="status-${bucket.id}"></div>
         <div class="results" id="results-${bucket.id}"></div>
         <div class="capped-note" id="capped-${bucket.id}" style="display:none;"></div>
@@ -431,7 +493,7 @@ function renderBuckets(){
 
     panel.querySelector('.add-btn').addEventListener('click', () => {
       const newIdx = bucket.assets.length;
-      bucket.assets.push({ name: `สินทรัพย์ ${newIdx+1}`, value: 0, weight: 0 });
+      bucket.assets.push({ name: t('assetDefaultName', newIdx+1), value: 0, weight: 0 });
       renderAssetRows(bucket);
       compute();
       const rowsEl = document.getElementById(`rows-${bucket.id}`);
@@ -450,15 +512,15 @@ function renderAssetRows(bucket){
     row.innerHTML = `
       <div class="asset-row-top">
         <input class="name" data-bucket="${bucket.id}" data-idx="${i}" data-field="name" value="${a.name}">
-        <button class="remove-btn" data-bucket="${bucket.id}" data-idx="${i}" title="ลบ">×</button>
+        <button class="remove-btn" data-bucket="${bucket.id}" data-idx="${i}" title="${t('remove')}">×</button>
       </div>
       <div class="field-grid">
         <div class="field">
-          <label>มูลค่าปัจจุบัน (บาท)</label>
+          <label>${t('fieldValue')}</label>
           <input type="text" inputmode="decimal" data-bucket="${bucket.id}" data-idx="${i}" data-field="value" value="${a.value}">
         </div>
         <div class="field">
-          <label>สัดส่วนเป้าหมาย (%)</label>
+          <label>${t('fieldWeight')}</label>
           <input type="number" data-bucket="${bucket.id}" data-idx="${i}" data-field="weight" value="${a.weight}" min="0" max="100" step="1">
         </div>
       </div>
@@ -471,7 +533,7 @@ function renderAssetRows(bucket){
       const b = state.buckets.find(bk => bk.id === e.target.dataset.bucket);
       const idx = parseInt(e.target.dataset.idx);
       const field = e.target.dataset.field;
-      if(field === 'name'){ b.assets[idx].name = e.target.value || `สินทรัพย์ ${idx+1}`; }
+      if(field === 'name'){ b.assets[idx].name = e.target.value || t('assetDefaultName', idx+1); }
       else{ b.assets[idx][field] = parseFloat(e.target.value) || 0; }
       compute();
     });
@@ -511,7 +573,7 @@ function compute(){
 
   state.buckets.forEach(bucket => {
     const bucketBudget = (bucket.weight / totalBucketW) * totalBudget;
-    document.getElementById(`amt-${bucket.id}`).textContent = `${fmt(bucketBudget)} บาท`;
+    document.getElementById(`amt-${bucket.id}`).textContent = t('amount', fmt(bucketBudget));
 
     const totalAssetW = bucket.assets.reduce((s,a) => s + a.weight, 0);
     const statusEl = document.getElementById(`status-${bucket.id}`);
@@ -519,7 +581,7 @@ function compute(){
       statusEl.className = 'weight-status ok';
     } else {
       statusEl.className = 'weight-status';
-      statusEl.textContent = `รวมสัดส่วนในกลุ่มนี้ ${totalAssetW.toFixed(0)}% (ระบบจะปรับให้เป็น 100% อัตโนมัติ)`;
+      statusEl.textContent = t('bucketStatus', totalAssetW.toFixed(0));
     }
 
     const x = allocate(bucket.assets, bucketBudget);
@@ -541,11 +603,11 @@ function compute(){
       row.innerHTML = `
         <div class="result-left">
           <div class="rname">${a.name}</div>
-          <div class="rmeta">ปัจจุบัน ${fmt(a.value)} → เป้า ${a.weight}%</div>
+          <div class="rmeta">${t('rmeta', fmt(a.value), a.weight)}</div>
         </div>
         <div class="result-right">
           <div class="radd ${add <= 0.5 ? 'zero' : ''}">${add > 0.5 ? '+' + fmt(add) : '—'}</div>
-          <div class="rnewpct">หลังเติม ${newPct.toFixed(1)}%</div>
+          <div class="rnewpct">${t('rnewpct', newPct.toFixed(1))}</div>
         </div>
       `;
       resultsEl.appendChild(row);
@@ -553,12 +615,12 @@ function compute(){
 
     const totalAllocated = x.reduce((s,v) => s + Math.max(v,0), 0);
     document.getElementById(`total-${bucket.id}`).innerHTML =
-      `<span>รวมที่เติม</span><strong>${fmt(totalAllocated)} / ${fmt(bucketBudget)} บาท</strong>`;
+      `<span>${t('totalAdded')}</span><strong>${t('amount', `${fmt(totalAllocated)} / ${fmt(bucketBudget)}`)}</strong>`;
 
     const cappedEl = document.getElementById(`capped-${bucket.id}`);
     if(cappedCount > 0){
       cappedEl.style.display = 'block';
-      cappedEl.textContent = `มี ${cappedCount} สินทรัพย์ในกลุ่มนี้ที่เกินเป้าหมายแล้ว จึงไม่เติมเดือนนี้ งบถูกกระจายไปตัวที่ตามหลังแทน`;
+      cappedEl.textContent = t('cappedNote', cappedCount);
     } else {
       cappedEl.style.display = 'none';
     }

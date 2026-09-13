@@ -13,16 +13,16 @@
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
 
     <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
-        <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">คำนวณภาษีเบื้องต้น 📊</h2>
+        <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center" id="lbl-title">คำนวณภาษีเบื้องต้น 📊</h2>
 
         <!-- Input Section -->
         <div class="space-y-4 mb-6">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">เงินเดือน (บาท/เดือน)</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-salary">เงินเดือน (บาท/เดือน)</label>
                 <input type="number" id="salary" placeholder="เช่น 50000" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">โบนัส (บาท/ปี)</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-bonus">โบนัส (บาท/ปี)</label>
                 <input type="number" id="bonus" placeholder="เช่น 100000" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
             </div>
             <div>
@@ -36,36 +36,58 @@
         <!-- Result Section -->
         <div class="space-y-3 text-sm text-gray-600">
             <div class="flex justify-between">
-                <span>รายได้รวมทั้งปี:</span>
+                <span id="lbl-totalIncome">รายได้รวมทั้งปี:</span>
                 <span id="totalIncome" class="font-medium text-gray-900">0 บาท</span>
             </div>
             <div class="flex justify-between">
-                <span>หักค่าใช้จ่าย (สูงสุด 100,000):</span>
+                <span id="lbl-expenseDeduct">หักค่าใช้จ่าย (สูงสุด 100,000):</span>
                 <span id="expenseDeduct" class="font-medium text-red-500">- 0 บาท</span>
             </div>
             <div class="flex justify-between">
-                <span>หักค่าลดหย่อนส่วนตัว:</span>
-                <span class="font-medium text-red-500">- 60,000 บาท</span>
+                <span id="lbl-personalDeduct">หักค่าลดหย่อนส่วนตัว:</span>
+                <span class="font-medium text-red-500" id="personalDeductVal">- 60,000 บาท</span>
             </div>
             <div class="flex justify-between">
-                <span>หักกองทุนสำรองเลี้ยงชีพ (PVD):</span>
+                <span id="lbl-pvdDeduct">หักกองทุนสำรองเลี้ยงชีพ (PVD):</span>
                 <span id="pvdDeduct" class="font-medium text-red-500">- 0 บาท</span>
             </div>
-            
+
             <div class="border-t pt-3 mt-3 flex justify-between items-center text-base">
-                <span class="font-semibold text-gray-800">เงินได้สุทธิ:</span>
+                <span class="font-semibold text-gray-800" id="lbl-netIncome">เงินได้สุทธิ:</span>
                 <span id="netIncome" class="font-semibold text-blue-600">0 บาท</span>
             </div>
         </div>
 
         <div class="mt-6 bg-blue-50 p-4 rounded-xl border border-blue-100 text-center">
-            <span class="block text-sm text-blue-800 mb-1">ภาษีที่ต้องชำระโดยประมาณ</span>
+            <span class="block text-sm text-blue-800 mb-1" id="lbl-taxAmount">ภาษีที่ต้องชำระโดยประมาณ</span>
             <span id="taxAmount" class="text-3xl font-bold text-blue-600">0</span>
-            <span class="text-blue-800 font-medium"> บาท</span>
+            <span class="text-blue-800 font-medium" id="unitLabel"> บาท</span>
         </div>
     </div>
 
     <script>
+        // Language: read once from localStorage (shared origin with the shell nav's toggle).
+        const LANG = (function(){ try { return localStorage.getItem('moneySuperapp.lang') || 'th'; } catch(e){ return 'th'; } })();
+        document.documentElement.lang = LANG;
+        const unit = LANG === 'en' ? 'THB' : 'บาท';
+        if (LANG === 'en') {
+            document.title = 'Personal Income Tax Calculator';
+            const EN = {
+                'lbl-title': 'Tax Estimate 📊',
+                'lbl-salary': 'Salary (THB/month)',
+                'lbl-bonus': 'Bonus (THB/year)',
+                'lbl-totalIncome': 'Total annual income:',
+                'lbl-expenseDeduct': 'Expense deduction (up to 100,000):',
+                'lbl-personalDeduct': 'Personal allowance:',
+                'lbl-pvdDeduct': 'Provident Fund (PVD) deduction:',
+                'lbl-netIncome': 'Net taxable income:',
+                'lbl-taxAmount': 'Estimated tax payable',
+            };
+            Object.keys(EN).forEach(id => { document.getElementById(id).textContent = EN[id]; });
+            document.getElementById('personalDeductVal').textContent = '- 60,000 THB';
+            document.getElementById('unitLabel').textContent = ' THB';
+        }
+
         function formatMoney(amount) {
             return amount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
@@ -115,10 +137,10 @@
             }
 
             // แสดงผลลัพธ์
-            document.getElementById('totalIncome').innerText = formatMoney(totalIncome) + ' บาท';
-            document.getElementById('expenseDeduct').innerText = '- ' + formatMoney(expenseDeduction) + ' บาท';
-            document.getElementById('pvdDeduct').innerText = '- ' + formatMoney(pvdDeduction) + ' บาท';
-            document.getElementById('netIncome').innerText = formatMoney(netIncome) + ' บาท';
+            document.getElementById('totalIncome').innerText = formatMoney(totalIncome) + ' ' + unit;
+            document.getElementById('expenseDeduct').innerText = '- ' + formatMoney(expenseDeduction) + ' ' + unit;
+            document.getElementById('pvdDeduct').innerText = '- ' + formatMoney(pvdDeduction) + ' ' + unit;
+            document.getElementById('netIncome').innerText = formatMoney(netIncome) + ' ' + unit;
             document.getElementById('taxAmount').innerText = formatMoney(tax);
         }
     </script>
