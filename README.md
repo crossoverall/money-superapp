@@ -48,10 +48,10 @@ Each tool also works standalone: open `rebalance.html`, `months-slips.html`, `ta
 
 ## Tech
 
-- Plain HTML + CSS + vanilla JavaScript — no framework, no bundler.
-- Tailwind CSS (CDN) used in `months-slips.html`, `tax-calculator-base.html`.
-- Google Fonts (Prompt) loaded in `tax-calculator-base.html`.
-- Theme implemented via `data-theme` attribute on `<html>` / `:root` CSS variables and Tailwind `!important` overrides.
+- Plain HTML + CSS + vanilla JavaScript — no framework, no bundler, zero external JavaScript runtime.
+- Lightweight standalone utility CSS (`css/tailwind-lite.css`) for offline-first resilience.
+- Google Fonts (Prompt) loaded with system font fallback stack.
+- Theme implemented via `data-theme` attribute on `<html>` and CSS variables.
 
 ## Project structure
 
