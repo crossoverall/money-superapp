@@ -73,6 +73,8 @@ const toolFiles = [
 for (const file of toolFiles) {
   const p = resolve(ROOT, file);
   let content = readFileSync(p, 'utf8');
+  content = content.replace(/<meta name="version" content="[^"]+">/, `<meta name="version" content="${newVersion}">`);
+  content = content.replace(/Money Superapp v[0-9.]+/g, `Money Superapp v${newVersion}`);
   content = content.replace(/v[0-9]+\.[0-9]+(\.[0-9]+)?/g, `v${newVersion}`);
   writeFileSync(p, content);
   console.log(`  ✓ Updated ${file}`);

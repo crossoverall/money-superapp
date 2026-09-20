@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="1.3.1">
+  <meta name="version" content="1.3.6">
   <title>ภาพรวมการเงิน</title>
   <style>
     :root{
@@ -135,7 +135,7 @@
         <div style="font-size:14px; font-weight:700; color:var(--warn);" id="kpi-tax-bracket">0%</div>
       </div>
       <div style="text-align:right;">
-        <div style="font-size:11px; color:var(--ink-faint); font-weight:600;" id="lbl-tax-pay"><span id="lbl-tax-pay">ประมาณการภาษีที่ต้องจ่าย</span></div>
+        <div style="font-size:11px; color:var(--ink-faint); font-weight:600;" id="lbl-tax-pay">ประมาณการภาษีที่ต้องจ่าย</div>
         <div style="font-size:14px; font-weight:700; color:var(--danger);" id="kpi-tax-amount">0 บาท</div>
       </div>
     </div>
@@ -164,16 +164,15 @@
 
   <div class="panel">
     <div class="panel-title" id="lbl-quick-links">ไปหน้าเครื่องมือ (Tools)</div>
-    
-    <div onclick="window.parent.postMessage({action:'switchToTab', key:'1'},'*')" class="quick-link"><span id="qc-rem-title">💰 คำนวณเงินคงเหลือ (Remaining)</span> <span>Alt+1</span></div>
-    <div onclick="window.parent.postMessage({action:'switchToTab', key:'2'},'*')" class="quick-link"><span id="qc-rebal-title">📊 Rebalance พอร์ต</span> <span>Alt+2</span></div>
-    <div onclick="window.parent.postMessage({action:'switchToTab', key:'3'},'*')" class="quick-link"><span id="qc-slip-title">📄 จำลองสลิปเงินเดือน</span> <span>Alt+3</span></div>
-    <div onclick="window.parent.postMessage({action:'switchToTab', key:'4'},'*')" class="quick-link"><span id="qc-tax-title">🧾 คำนวณภาษีประจำปี</span> <span>Alt+4</span></div>
-    <div onclick="window.parent.postMessage({action:'switchToTab', key:'6'},'*')" class="quick-link"><span id="qc-pvd-title">📈 ตารางบันทึก PVD</span> <span>Alt+6</span></div>
-    <div onclick="window.parent.postMessage({action:'switchToTab', key:'7'},'*')" class="quick-link"><span id="qc-debt-title">📉 วางแผนปลดหนี้ (Debt)</span> <span>Alt+7</span></div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', target:'rebalance', key:'2'},'*')" class="quick-link"><span id="qc-rebal-title">📊 Rebalance พอร์ต</span> <span>Alt+2</span></div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', target:'months-slips', key:'3'},'*')" class="quick-link"><span id="qc-slip-title">📄 จำลองสลิปเงินเดือน</span> <span>Alt+3</span></div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', target:'tax-calculator-base', key:'4'},'*')" class="quick-link"><span id="qc-tax-title">🧾 คำนวณภาษีประจำปี</span> <span>Alt+4</span></div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', target:'tax-calculator', key:'5'},'*')" class="quick-link"><span id="qc-pvd-title">📈 ตารางบันทึก PVD</span> <span>Alt+5</span></div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', target:'remaining-money', key:'6'},'*')" class="quick-link"><span id="qc-rem-title">💰 คำนวณเงินคงเหลือ (Remaining)</span> <span>Alt+6</span></div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', target:'debt-calculator', key:'7'},'*')" class="quick-link"><span id="qc-debt-title">📉 วางแผนปลดหนี้ (Debt)</span> <span>Alt+7</span></div>
   </div>
 
-  <p class="version-tag">Money Superapp v1.3.4</p>
+  <p class="version-tag">Money Superapp v1.3.6</p>
 
 <script>
     const LANG = (function(){ try { return localStorage.getItem('moneySuperapp.lang') || 'th'; } catch(e){ return 'th'; } })();
@@ -195,14 +194,14 @@
             runwaySub: 'ฉุกเฉินอยู่รอด',
             kpiTaxDebt: 'ยอดหนี้รวม (Debt)',
             taxBracketSub: 'ฐานภาษีปัจจุบัน',
-            taxAmountSub: '<span id="lbl-tax-pay">ประมาณการภาษีที่ต้องจ่าย</span>',
+            taxAmountSub: 'ประมาณการภาษีที่ต้องจ่าย',
             quickNavTitle: 'ไปหน้าเครื่องมือ (Tools)',
-            qcRebalTitle: '<span id="qc-rebal-title">📊 Rebalance พอร์ต</span>',
-            qcRemTitle: '<span id="qc-rem-title">💰 คำนวณเงินคงเหลือ (Remaining)</span>',
-            qcTaxTitle: '<span id="qc-tax-title">🧾 คำนวณภาษีประจำปี</span>',
-            qcDebtTitle: '<span id="qc-debt-title">📉 วางแผนปลดหนี้ (Debt)</span>',
-            qcSlipTitle: '<span id="qc-slip-title">📄 จำลองสลิปเงินเดือน</span>',
-            qcPvdTitle: '<span id="qc-pvd-title">📈 ตารางบันทึก PVD</span>',
+            qcRebalTitle: '📊 Rebalance พอร์ต',
+            qcRemTitle: '💰 คำนวณเงินคงเหลือ (Remaining)',
+            qcTaxTitle: '🧾 คำนวณภาษีประจำปี',
+            qcDebtTitle: '📉 วางแผนปลดหนี้ (Debt)',
+            qcSlipTitle: '📄 จำลองสลิปเงินเดือน',
+            qcPvdTitle: '📈 ตารางบันทึก PVD',
             historyTitle: 'ประวัติที่บันทึกไว้ (History)',
             historySub: 'ประวัติการเติบโตของความมั่งคั่ง',
             btnChartNw: '— Net Worth',
@@ -213,8 +212,8 @@
             thSnapRes: 'เงินฉุกเฉิน',
             thSnapDebt: 'หนี้สิน',
             thSnapRate: 'อัตราออม',
-            btnClearHistory: '<span id="btn-clear-history">ลบประวัติทั้งหมด</span>',
-            chartTitle: '<span id="lbl-chart-title-txt">แนวโน้มการเติบโต (Trends)</span>'
+            btnClearHistory: 'ลบประวัติทั้งหมด',
+            chartTitle: 'แนวโน้มการเติบโต (Trends)'
         },
                 en: {
             title: 'Financial Dashboard',
