@@ -9,7 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Prompt', sans-serif; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Prompt", sans-serif; }
 
         [data-theme="dark"] body { background-color: #0f172a !important; }
         [data-theme="dark"] .bg-white { background-color: #1e293b !important; }
@@ -24,7 +24,8 @@
         [data-theme="dark"] .text-gray-600,
         [data-theme="dark"] .text-gray-500 { color: #94a3b8 !important; }
         [data-theme="dark"] .text-blue-800 { color: #93c5fd !important; }
-        [data-theme="dark"] input { background-color: #0f172a !important; color: #e2e8f0 !important; border-color: #334155 !important; }
+        [data-theme="dark"] input, [data-theme="dark"] select { background-color: #0f172a !important; color: #e2e8f0 !important; border-color: #334155 !important; }
+        [data-theme="dark"] details { background-color: #1e293b !important; border-color: #334155 !important; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
@@ -46,6 +47,34 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-pvdPercent">กองทุนสำรองเลี้ยงชีพ (%)</label>
                 <input type="number" id="pvd" placeholder="เช่น 5" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
             </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-sso-ceiling">เพดานประกันสังคม</label>
+                <select id="ssoCap" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" onchange="calculateTax()">
+                    <option value="750" id="opt-sso-750">750 บาท (เพดานเดิม 15,000)</option>
+                    <option value="875" id="opt-sso-875" selected>875 บาท (เพดานใหม่ 17,500)</option>
+                </select>
+            </div>
+            <details class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm">
+                <summary class="font-medium text-gray-700 cursor-pointer select-none" id="lbl-more-deduct">+ ค่าลดหย่อนเพิ่มเติม (SSF, RMF, ประกัน, ดอกเบี้ยบ้าน)</summary>
+                <div class="space-y-3 mt-3 pt-3 border-t border-gray-200">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1" id="lbl-fund-deduct">กองทุนลดหย่อนภาษี SSF / RMF / ThaiESG (บาท/ปี)</label>
+                        <input type="number" id="fundDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" oninput="calculateTax()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1" id="lbl-ins-deduct">เบี้ยประกันชีวิต + สุขภาพ (บาท/ปี)</label>
+                        <input type="number" id="insuranceDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" oninput="calculateTax()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1" id="lbl-mortgage-deduct">ดอกเบี้ยเงินกู้ยืมเพื่อที่อยู่อาศัย (บาท/ปี)</label>
+                        <input type="number" id="mortgageDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" oninput="calculateTax()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1" id="lbl-other-deduct">ลดหย่อนอื่นๆ เช่น บิดามารดา บุตร ช้อปดีมีคืน (บาท/ปี)</label>
+                        <input type="number" id="otherDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" oninput="calculateTax()">
+                    </div>
+                </div>
+            </details>
         </div>
 
         <hr class="my-6 border-gray-200">
@@ -72,6 +101,10 @@
                 <span id="lbl-ssoDeduct">หักประกันสังคม (ทั้งปี):</span>
                 <span id="ssoDeduct" class="font-medium text-red-500">- 0 บาท</span>
             </div>
+            <div class="flex justify-between" id="row-more-deduct" style="display:none;">
+                <span id="lbl-moreDeduct">หักลดหย่อนอื่นๆ เพิ่มเติม:</span>
+                <span id="moreDeduct" class="font-medium text-red-500">- 0 บาท</span>
+            </div>
 
             <div class="border-t pt-3 mt-3 flex justify-between items-center text-base">
                 <span class="font-semibold text-gray-800" id="lbl-netIncome">เงินได้สุทธิ:</span>
@@ -89,7 +122,13 @@
             <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2" id="lbl-breakdownTitle">รายละเอียดภาษีตามขั้นบันได</p>
             <div id="taxBreakdown" class="space-y-1 text-xs text-gray-600"></div>
         </div>
-        <p class="text-xs text-gray-400 text-center mt-4">v0.1</p>
+
+        <div class="flex justify-between items-center mt-4 pt-3 border-t border-gray-200">
+            <button onclick="copyTaxSummary()" id="btn-copy-tax" class="py-1.5 px-3 bg-gray-100 hover:bg-gray-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-200 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5">
+                <span id="lbl-copy-tax">📋 คัดลอกสรุปภาษี</span>
+            </button>
+            <p class="text-xs text-gray-400">v0.2</p>
+        </div>
     </div>
 
     <script>
@@ -105,20 +144,31 @@
                 'lbl-salary': 'Salary (THB/month)',
                 'lbl-bonus': 'Bonus (THB/year)',
                 'lbl-pvdPercent': 'Provident Fund (%)',
+                'lbl-sso-ceiling': 'Social Security (SSO) Cap',
+                'opt-sso-750': '750 THB (15k wage cap)',
+                'opt-sso-875': '875 THB (17.5k new cap)',
+                'lbl-more-deduct': '+ Additional Deductions (SSF, RMF, Insurance, Loan)',
+                'lbl-fund-deduct': 'Tax-saving funds: SSF / RMF / ThaiESG (THB/yr)',
+                'lbl-ins-deduct': 'Life & Health Insurance premium (THB/yr)',
+                'lbl-mortgage-deduct': 'Mortgage loan interest (THB/yr)',
+                'lbl-other-deduct': 'Other deductions (parents, children, etc.) (THB/yr)',
                 'lbl-totalIncome': 'Total annual income:',
                 'lbl-expenseDeduct': 'Expense deduction (up to 100,000):',
                 'lbl-personalDeduct': 'Personal allowance:',
                 'lbl-pvdDeduct': 'Provident Fund (PVD) deduction:',
                 'lbl-ssoDeduct': 'Social Security deduction (annual):',
+                'lbl-moreDeduct': 'Additional deductions:',
                 'lbl-netIncome': 'Net taxable income:',
                 'lbl-taxAmount': 'Estimated tax payable',
                 'lbl-breakdownTitle': 'Tax breakdown by bracket',
+                'lbl-copy-tax': '📋 Copy Tax Summary',
             };
-            Object.keys(EN).forEach(id => { document.getElementById(id).textContent = EN[id]; });
+            Object.keys(EN).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = EN[id];
+            });
             document.getElementById('personalDeductVal').textContent = '- 60,000 THB';
             document.getElementById('unitLabel').textContent = ' THB';
-            // Default zero-value text is baked into the markup with the THB unit inline;
-            // it only gets recalculated (and re-translated) once the user types something.
             document.getElementById('totalIncome').textContent = '0 THB';
             document.getElementById('expenseDeduct').textContent = '- 0 THB';
             document.getElementById('pvdDeduct').textContent = '- 0 THB';
@@ -126,7 +176,8 @@
             document.getElementById('netIncome').textContent = '0 THB';
             const placeholders = { salary: 'e.g. 50000', bonus: 'e.g. 100000', pvd: 'e.g. 5' };
             Object.keys(placeholders).forEach(id => {
-                document.getElementById(id).placeholder = placeholders[id];
+                const el = document.getElementById(id);
+                if (el) el.placeholder = placeholders[id];
             });
         }
 
@@ -134,11 +185,45 @@
             return amount.toLocaleString(LANG === 'en' ? 'en-US' : 'th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
+        const STORAGE_KEY = 'moneySuperapp.taxBase';
+        const PROFILE_KEY = 'moneySuperapp.sharedProfile';
+
+        function saveState() {
+            const data = {
+                salary: document.getElementById('salary').value,
+                bonus: document.getElementById('bonus').value,
+                pvd: document.getElementById('pvd').value,
+                ssoCap: document.getElementById('ssoCap').value,
+                fundDeduct: document.getElementById('fundDeduct').value,
+                insuranceDeduct: document.getElementById('insuranceDeduct').value,
+                mortgageDeduct: document.getElementById('mortgageDeduct').value,
+                otherDeduct: document.getElementById('otherDeduct').value
+            };
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                const profRaw = localStorage.getItem(PROFILE_KEY);
+                const prof = profRaw ? JSON.parse(profRaw) : {};
+                if (data.salary) prof.salary = data.salary;
+                if (data.pvd) prof.pvdPercent = data.pvd;
+                if (data.bonus) prof.bonus = data.bonus;
+                if (data.ssoCap) prof.ssoCap = data.ssoCap;
+                localStorage.setItem(PROFILE_KEY, JSON.stringify(prof));
+            } catch(e){}
+        }
+
         function calculateTax() {
-            // ดึงค่าจาก Input
+            saveState();
+
             const salary = parseFloat(document.getElementById('salary').value) || 0;
             const bonus = parseFloat(document.getElementById('bonus').value) || 0;
             const pvdPercent = parseFloat(document.getElementById('pvd').value) || 0;
+            const ssoCapVal = parseFloat(document.getElementById('ssoCap').value) || 875;
+
+            const fundDeduct = parseFloat(document.getElementById('fundDeduct').value) || 0;
+            const insuranceDeduct = parseFloat(document.getElementById('insuranceDeduct').value) || 0;
+            const mortgageDeduct = parseFloat(document.getElementById('mortgageDeduct').value) || 0;
+            const otherDeduct = parseFloat(document.getElementById('otherDeduct').value) || 0;
+            const additionalDeductions = fundDeduct + insuranceDeduct + mortgageDeduct + otherDeduct;
 
             // คำนวณรายได้
             const totalIncome = (salary * 12) + bonus;
@@ -146,16 +231,15 @@
             // คำนวณค่าลดหย่อน
             const expenseDeduction = Math.min(totalIncome * 0.5, 100000);
             const personalDeduction = 60000;
-            // คิด PVD จากฐานเงินเดือนเท่านั้น (ไม่รวมโบนัส) ตามหลักการทั่วไป
             const pvdDeduction = (salary * 12) * (pvdPercent / 100);
 
-            // ประกันสังคม (5% ของเงินเดือน สูงสุด 875 บาท/เดือน) — เช่นเดียวกับที่ใช้ใน months-slips.html
+            // ประกันสังคม
             let ssoMonthly = salary * 0.05;
-            if (ssoMonthly > 875) ssoMonthly = 875;
+            if (ssoMonthly > ssoCapVal) ssoMonthly = ssoCapVal;
             const ssoDeduction = ssoMonthly * 12;
 
             // คำนวณเงินได้สุทธิ
-            const totalDeductions = expenseDeduction + personalDeduction + pvdDeduction + ssoDeduction;
+            const totalDeductions = expenseDeduction + personalDeduction + pvdDeduction + ssoDeduction + additionalDeductions;
             let netIncome = totalIncome - totalDeductions;
             if (netIncome < 0) netIncome = 0;
 
@@ -175,7 +259,6 @@
             let remainingIncome = netIncome;
             const breakdown = [];
 
-            // คำนวณภาษีตามขั้นบันได
             for (let i = 0; i < brackets.length; i++) {
                 if (remainingIncome <= 0) break;
 
@@ -197,9 +280,65 @@
             document.getElementById('expenseDeduct').innerText = '- ' + formatMoney(expenseDeduction) + ' ' + unit;
             document.getElementById('pvdDeduct').innerText = '- ' + formatMoney(pvdDeduction) + ' ' + unit;
             document.getElementById('ssoDeduct').innerText = '- ' + formatMoney(ssoDeduction) + ' ' + unit;
+
+            const moreRow = document.getElementById('row-more-deduct');
+            if (additionalDeductions > 0) {
+                moreRow.style.display = 'flex';
+                document.getElementById('moreDeduct').innerText = '- ' + formatMoney(additionalDeductions) + ' ' + unit;
+            } else {
+                moreRow.style.display = 'none';
+            }
+
             document.getElementById('netIncome').innerText = formatMoney(netIncome) + ' ' + unit;
             document.getElementById('taxAmount').innerText = formatMoney(tax);
         }
+
+        function copyTaxSummary() {
+            const income = document.getElementById('totalIncome').innerText;
+            const net = document.getElementById('netIncome').innerText;
+            const tax = document.getElementById('taxAmount').innerText + ' ' + unit;
+
+            const text = LANG === 'en'
+                ? `Income Tax Estimate:\nTotal Annual Income: ${income}\nNet Taxable Income: ${net}\nEstimated Tax: ${tax}`
+                : `สรุปประมาณการภาษีเงินได้:\nรายได้รวมทั้งปี: ${income}\nเงินได้สุทธิ: ${net}\nภาษีที่ต้องชำระ: ${tax}`;
+
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('lbl-copy-tax');
+                const orig = btn.innerText;
+                btn.innerText = LANG === 'en' ? '✓ Copied!' : '✓ คัดลอกแล้ว!';
+                setTimeout(() => { btn.innerText = orig; }, 1800);
+            }).catch(() => {});
+        }
+
+        function loadState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                const profRaw = localStorage.getItem(PROFILE_KEY);
+                const prof = profRaw ? JSON.parse(profRaw) : {};
+                const data = raw ? JSON.parse(raw) : null;
+
+                const salary = data?.salary || prof?.salary;
+                const bonus = data?.bonus || prof?.bonus || '';
+                const pvd = data?.pvd || prof?.pvdPercent || '';
+                const ssoCap = data?.ssoCap || prof?.ssoCap || '875';
+
+                if (salary !== undefined && salary !== '') document.getElementById('salary').value = salary;
+                if (bonus !== '') document.getElementById('bonus').value = bonus;
+                if (pvd !== '') document.getElementById('pvd').value = pvd;
+                if (ssoCap !== '') document.getElementById('ssoCap').value = ssoCap;
+
+                if (data?.fundDeduct) document.getElementById('fundDeduct').value = data.fundDeduct;
+                if (data?.insuranceDeduct) document.getElementById('insuranceDeduct').value = data.insuranceDeduct;
+                if (data?.mortgageDeduct) document.getElementById('mortgageDeduct').value = data.mortgageDeduct;
+                if (data?.otherDeduct) document.getElementById('otherDeduct').value = data.otherDeduct;
+
+                if (parseFloat(document.getElementById('salary').value) > 0) {
+                    calculateTax();
+                }
+            } catch(e){}
+        }
+
+        loadState();
     </script>
 </body>
 </html>

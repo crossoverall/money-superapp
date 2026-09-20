@@ -4,12 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="version" content="0.1.0">
-<meta name="description" content="Money Superapp — four financial calculators (rebalance, payslip simulator, income tax, PVD tax) in Thai and English with light/dark theme.">
+<meta name="description" content="Money Superapp — five financial calculators (rebalance, payslip simulator, income tax, PVD tax, remaining money) in Thai and English with light/dark theme.">
 <title>Money Superapp</title>
 <style>
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
-  body { font-family: system-ui, sans-serif; background: #f4f5f7; display: flex; flex-direction: column; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Prompt", Helvetica, Arial, sans-serif; background: #f4f5f7; display: flex; flex-direction: column; }
 
   /* Full-bleed dark background bar; its content is capped and centered so tabs
      don't stretch into huge gaps on ultra-wide monitors. */
@@ -24,6 +24,7 @@
   nav button {
     flex: 0 0 auto; white-space: nowrap; padding: 14px 16px; border: none; background: none;
     color: #cbd5e1; font-size: 14px; cursor: pointer; border-bottom: 3px solid transparent;
+    font-family: inherit;
   }
   nav button:hover { background: #374151; }
   nav button.active { color: #fff; border-bottom-color: #38bdf8; background: #111827; }
@@ -34,11 +35,12 @@
   .theme-toggle { border-left: 1px solid #374151; }
   .version-badge {
     flex: 0 0 auto; padding: 0 10px; font-size: 11px; font-weight: 600;
-    color: #94a3b8; letter-spacing: 0.05em;
+    color: #94a3b8; letter-spacing: 0.05em; align-self: center;
   }
   .lang-toggle button, .theme-toggle button {
     border: 1px solid #4b5563; background: none; color: #cbd5e1; white-space: nowrap;
     font-size: 12px; font-weight: 700; padding: 8px 12px; border-radius: 999px; cursor: pointer;
+    font-family: inherit;
   }
   .lang-toggle button.active, .theme-toggle button.active { background: #38bdf8; color: #0f172a; border-color: #38bdf8; }
 
@@ -49,11 +51,11 @@
 <div class="topbar">
  <div class="topbar-inner">
   <nav>
-    <button class="active" data-src="rebalance.html" data-th="คำนวณ Rebalance" data-en="Rebalance Calculator">Rebalance Calculator</button>
-    <button data-src="months-slips.html" data-th="จำลองสลิปเงินเดือน" data-en="Payslip Simulator">Months Slips Calculator</button>
-    <button data-src="tax-calculator-base.html" data-th="ประมาณการภาษีเงินได้" data-en="Income Tax Estimation">Income Tax Estimation</button>
-    <button data-src="tax-calculator.html" data-th="คำนวณภาษี PVD" data-en="PVD Tax Calculator">PVD Tax Calculator</button>
-    <button data-src="remaining-money.html" data-th="คำนวณเงินคงเหลือ" data-en="Remaining Money">Remaining Money</button>
+    <button class="active" data-src="rebalance.html" data-tab="rebalance" data-th="คำนวณ Rebalance" data-en="Rebalance Calculator">คำนวณ Rebalance</button>
+    <button data-src="months-slips.html" data-tab="months-slips" data-th="จำลองสลิปเงินเดือน" data-en="Payslip Simulator">จำลองสลิปเงินเดือน</button>
+    <button data-src="tax-calculator-base.html" data-tab="tax-calculator-base" data-th="ประมาณการภาษีเงินได้" data-en="Income Tax Estimation">ประมาณการภาษีเงินได้</button>
+    <button data-src="tax-calculator.html" data-tab="tax-calculator" data-th="คำนวณภาษี PVD" data-en="PVD Tax Calculator">คำนวณภาษี PVD</button>
+    <button data-src="remaining-money.html" data-tab="remaining-money" data-th="คำนวณเงินคงเหลือ" data-en="Remaining Money">คำนวณเงินคงเหลือ</button>
   </nav>
   <div class="lang-toggle">
     <button data-lang="th">TH</button>
@@ -63,7 +65,7 @@
     <button data-theme-btn="light" data-th="☀ สว่าง" data-en="☀ Light">☀ Light</button>
     <button data-theme-btn="dark" data-th="☾ มืด" data-en="☾ Dark">☾ Dark</button>
   </div>
-  <span class="version-badge">v0.1</span>
+  <span class="version-badge">v0.2</span>
  </div>
 </div>
 <iframe id="app" src="rebalance.html"></iframe>
@@ -84,17 +86,38 @@
   function applyTheme(theme){
     themeButtons.forEach(b => b.classList.toggle('active', b.dataset.themeBtn === theme));
   }
-  // Each app page reads lang/theme from localStorage once on load, so reload the
-  // currently displayed one whenever either changes.
   function reloadFrame(){
     try { frame.contentWindow.location.reload(); } catch(e){ frame.src = frame.src; }
   }
 
+  function activateTab(tabIdOrSrc, updateHash = true) {
+    const btn = Array.from(navButtons).find(b => b.dataset.tab === tabIdOrSrc || b.dataset.src === tabIdOrSrc) || navButtons[0];
+    const currentActive = document.querySelector('nav button.active');
+    if (currentActive) currentActive.classList.remove('active');
+    btn.classList.add('active');
+    if (frame.getAttribute('src') !== btn.dataset.src) {
+      frame.src = btn.dataset.src;
+    }
+    const tabKey = btn.dataset.tab;
+    try { localStorage.setItem('moneySuperapp.activeTab', tabKey); } catch(e){}
+    if (updateHash && window.location.hash !== '#' + tabKey) {
+      history.replaceState(null, '', '#' + tabKey);
+    }
+  }
+
+  window.switchToTab = function(target) {
+    activateTab(target, true);
+  };
+
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.action === 'switchToTab') {
+      activateTab(e.data.target, true);
+    }
+  });
+
   navButtons.forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelector('nav button.active').classList.remove('active');
-      btn.classList.add('active');
-      frame.src = btn.dataset.src;
+      activateTab(btn.dataset.tab, true);
     });
   });
 
@@ -116,8 +139,18 @@
     });
   });
 
+  window.addEventListener('hashchange', () => {
+    const hash = window.location.hash.replace(/^#/, '');
+    if (hash) activateTab(hash, false);
+  });
+
   applyLang(getLang());
   applyTheme(getTheme());
+
+  // Restore initial tab from URL hash or localStorage
+  const initialHash = window.location.hash.replace(/^#/, '');
+  const savedTab = (function(){ try { return localStorage.getItem('moneySuperapp.activeTab'); } catch(e){ return null; } })();
+  activateTab(initialHash || savedTab || 'rebalance', false);
 </script>
 </body>
 </html>

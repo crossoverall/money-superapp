@@ -44,7 +44,7 @@
     body{
       background: var(--bg);
       color: var(--ink);
-      font-family: 'Helvetica Neue', -apple-system, 'Segoe UI', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Prompt", Helvetica, Arial, sans-serif;
       margin:0;
       padding: 26px 16px 70px;
       max-width: 520px;
@@ -195,6 +195,29 @@
     }
     .summary-card.income .sc-value{ color: var(--core); }
     .summary-card.expense .sc-value{ color: var(--warn); }
+
+    .rebalance-bridge-btn {
+      margin-top: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 18px;
+      border-radius: 999px;
+      background: var(--core);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(47,139,118,0.25);
+      transition: opacity 0.15s, transform 0.15s;
+      font-family: inherit;
+    }
+    .rebalance-bridge-btn:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+    }
   </style>
 </head>
 <body>
@@ -232,13 +255,16 @@
     <div class="rlabel" id="remainingLabel">เงินคงเหลือ</div>
     <div class="rvalue zero" id="remainingValue">0 บาท</div>
     <div class="rnote" id="remainingNote">&nbsp;</div>
+    <button class="rebalance-bridge-btn" id="bridgeToRebalanceBtn" style="display:none;" onclick="sendToRebalance()">
+      📊 <span id="lblBridgeBtn">นำเงินคงเหลือไปคำนวณ Rebalance</span>
+    </button>
   </div>
 
   <div class="save-status">
     <span id="saveStatus">&nbsp;</span>
     <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
   </div>
-  <p class="version-tag">v0.1</p>
+  <p class="version-tag">v0.2</p>
 
 <script>
 // ── Language ──────────────────────────────────────────────────────────────
@@ -286,6 +312,8 @@ if(LANG === 'en'){
   document.getElementById('expenseAddBtn').textContent = EN.addExpense;
   document.getElementById('resetBtn').textContent = EN.resetBtn;
   document.getElementById('remainingNote').textContent = EN.remainingNote;
+  const bridgeLbl = document.getElementById('lblBridgeBtn');
+  if (bridgeLbl) bridgeLbl.textContent = 'Send remaining money to Rebalance';
 }
 
 const T = {
@@ -554,10 +582,17 @@ function updateAutoExpenses(pvdPct){
   }
 }
 
-// ── Autosave ───────────────────────────────────────────────────────────────
+const PROFILE_KEY = 'moneySuperapp.sharedProfile';
 function saveState(){
   try{
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const profRaw = localStorage.getItem(PROFILE_KEY);
+    const prof = profRaw ? JSON.parse(profRaw) : {};
+    const sal = getSalaryValue();
+    if(sal > 0) prof.salary = sal;
+    if(pvdPercent !== undefined) prof.pvdPercent = pvdPercent;
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(prof));
+
     if(saveStatusEl){
       const now = new Date();
       const hh = String(now.getHours()).padStart(2,'0');
@@ -821,7 +856,28 @@ function compute(){
     ? (LANG === 'en' ? 'Expenses exceed income — review spending or boost income' : 'ใช้จ่ายเกินรายได้ — ลดค่าใช้จ่ายหรือเพิ่มรายได้')
     : (LANG === 'en' ? 'Income and expenses are balanced' : 'รายได้และค่าใช้จ่ายเท่ากันพอดี');
 
+  const bridgeBtn = document.getElementById('bridgeToRebalanceBtn');
+  if (bridgeBtn) {
+    bridgeBtn.style.display = remaining > 0.5 ? 'inline-flex' : 'none';
+  }
+
   saveState();
+}
+
+function sendToRebalance(){
+  const totalIncome  = state.incomes.reduce((s, item) => s + (item.value || 0), 0);
+  const totalExpense = state.expenses.reduce((s, item) => s + (item.value || 0), 0);
+  const remaining    = Math.round(totalIncome - totalExpense);
+  if (remaining > 0) {
+    try {
+      localStorage.setItem('moneySuperapp.pendingBudget', String(remaining));
+    } catch(e){}
+    if (window.parent && typeof window.parent.switchToTab === 'function') {
+      window.parent.switchToTab('rebalance');
+    } else {
+      window.parent.postMessage({ action: 'switchToTab', target: 'rebalance' }, '*');
+    }
+  }
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────

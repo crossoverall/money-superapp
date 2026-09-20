@@ -1,6 +1,6 @@
 # Money Superapp
 
-A lightweight, client-side personal finance toolkit — four calculators in one page, no build step, no server, no dependencies beyond a CDN.
+A lightweight, client-side personal finance toolkit — five calculators in one page, no build step, no server, no dependencies beyond a CDN.
 
 ## What's inside
 
@@ -36,8 +36,12 @@ Each tool also works standalone: open `rebalance.html`, `months-slips.html`, `ta
 ## Features
 
 - **Five calculators** in one navigation bar — switch between them without leaving the page.
+- **Deep Linking & Hash Routing** — bookmark or refresh any tool using URL hash (`#rebalance`, `#months-slips`, etc.).
+- **Cross-Tool Synergy** — share common profile inputs (Salary, PVD %, Bonus) and send remaining money straight into the Rebalance DCA budget with 1 click.
 - **Bilingual UI** — Thai and English, toggle in the top-right of the top bar.
 - **Light / Dark theme** — toggle in the top-right; preference saved to `localStorage`.
+- **Accurate Thai Tax Logic** — full progressive PIT brackets, Section 48(5) separate calculations, and expanded deductions (SSF/RMF/ThaiESG, Insurance, Mortgage).
+- **Persistent State** — all calculators save input state to `localStorage` so data is never lost on theme/language switch or refresh.
 - **Zero build step** — all files are self-contained HTML; edit and refresh.
 - **Responsive** — tabs scroll horizontally on narrow screens; iframe fills the remaining height.
 - **Standalone-capable** — each tool reads lang/theme from `localStorage` on its own, so it can be opened outside the shell.
