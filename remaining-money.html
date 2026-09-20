@@ -69,15 +69,6 @@
       color: var(--ink-faint); font-weight: 700; margin-bottom: 12px;
     }
 
-    .row-head{ display:flex; align-items:center; gap:10px; margin-bottom: 4px; }
-    .row-head label{ font-size: 13.5px; color: var(--ink-dim); white-space:nowrap; font-weight:600; }
-    .row-head input[type="text"]{
-      flex:1; background: var(--panel-2); border: 1px solid var(--line);
-      border-radius: 10px; color: var(--ink); font-size: 14px; font-weight:500;
-      padding: 8px 12px; outline:none;
-    }
-    .row-head input[type="text"]:focus{ border-color: var(--ink-dim); }
-
     .entry-row{
       display:flex; align-items:center; gap:10px;
       background: var(--panel-2); border: 1px solid var(--line);
@@ -101,6 +92,15 @@
       cursor:pointer; line-height:1; padding:2px 6px; flex:0 0 auto;
     }
     .remove-btn:hover{ color: var(--danger); }
+    .remove-btn.disabled{
+      color: var(--ink-faint); cursor:not-allowed; opacity:0.4;
+    }
+    .auto-badge{
+      font-size: 9px; font-weight:700; color: var(--ink-faint);
+      background: var(--panel); border:1px solid var(--line);
+      border-radius: 99px; padding: 1px 5px; text-transform:uppercase;
+      letter-spacing:.04em; margin-left:4px; white-space:nowrap;
+    }
 
     .add-btn{
       width:100%; background: rgba(255,255,255,0.04); border: 1px dashed var(--line);
@@ -119,7 +119,6 @@
     .result-left .rmeta{ font-size: 11px; color: var(--ink-faint); margin-top:3px; }
     .result-right{ text-align:right; }
     .result-right .rval{ font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
-    .result-right .rval.zero{ color: var(--ink-faint); }
 
     .remaining-box{
       margin-top: 16px; padding: 18px;
@@ -151,7 +150,6 @@
 
     .version-tag{ font-size: 10px; color: var(--ink-faint); text-align: center; margin-top: 14px; }
 
-    /* summary strip at top */
     .summary-strip{
       display:flex; gap: 10px; margin-bottom: 18px;
     }
@@ -175,7 +173,7 @@
 
   <div class="eyebrow" id="eyebrow">เครื่องมือจัดการเงิน</div>
   <h1 id="pageTitle">คำนวณเงินคงเหลือ</h1>
-  <div class="sub" id="subtitle">บันทึกรายได้และค่าใช้จ่าย แล้วดูว่าแต่ละเดือนเหลือเงินเท่าไหร่ — เพิ่มแถวได้ตามต้องการ</div>
+  <div class="sub" id="subtitle">บันทึกรายได้และค่าใช้จ่าย แล้วดูว่าแต่ละเดือนเหลือเงินเท่าไหร่ — เมื่อกรอกเงินเดือน ระบบจะคำนวณภาษีและประกันสังคมโดยอัตโนมัติ</div>
 
   <div class="summary-strip" id="summaryStrip">
     <div class="summary-card income">
@@ -223,7 +221,7 @@ document.documentElement.dataset.theme = (function(){ try { return localStorage.
 const EN = {
   eyebrow: 'Money Manager',
   pageTitle: 'Remaining Money Calculator',
-  subtitle: 'Log income and expenses, then see how much is left each month — add as many rows as you need.',
+  subtitle: 'Log income and expenses, then see how much is left each month — enter a salary and tax + social security are calculated automatically.',
   incomePanelTitle: 'Income',
   expensePanelTitle: 'Expenses',
   scIncomeLabel: 'Total Income',
@@ -232,8 +230,6 @@ const EN = {
   scExpenseValue: '0 THB',
   addIncome: '+ Add income',
   addExpense: '+ Add expense',
-  incomeUnit: 'บาท',
-  expenseUnit: 'บาท',
   remainingLabel: 'Remaining',
   remainingNote: 'Income minus expenses',
   remainingPositive: 'You have money left over this month.',
@@ -244,8 +240,9 @@ const EN = {
   resetConfirm: 'Clear the data saved in this browser and go back to defaults?',
   incomeDefaultName: n => `Income ${n}`,
   expenseDefaultName: n => `Expense ${n}`,
-  fieldName: 'Description',
-  fieldValue: 'Amount',
+  // Auto-row display names (per language)
+  autoTaxName: 'Estimated income tax (monthly)',
+  autoSSOName: 'Social Security (SSO)',
 };
 if(LANG === 'en'){
   document.title = 'Remaining Money Calculator';
@@ -267,6 +264,11 @@ const T = {
     remainingPositive: 'เหลือเงินในเดือนนี้',
     remainingNegative: 'ใช้จ่ายเกินรายได้ — ลดค่าใช้จ่ายหรือเพิ่มรายได้',
     remainingZero: 'รายได้และค่าใช้จ่ายเท่ากันพอดี',
+    autoTaxLabel: 'ภาษี',
+    autoSSOLabel: 'SSO',
+    metaAutoPrefix: 'คำนวณโดยอัตโนมัติ',
+    metaTaxDesc: 'ภาษีเงินได้ (ประมาณการ)',
+    metaSSODesc: 'ประกันสังคม 5% (สูงสุด 875 บาท/เดือน)',
   },
   en: {
     scIncomeValue: n => `${n} THB`,
@@ -275,6 +277,11 @@ const T = {
     remainingPositive: 'Money left over this month',
     remainingNegative: 'Expenses exceed income — review spending or boost income',
     remainingZero: 'Income and expenses are balanced',
+    autoTaxLabel: 'Tax',
+    autoSSOLabel: 'SSO',
+    metaAutoPrefix: 'Auto-calculated',
+    metaTaxDesc: 'Estimated income tax (monthly)',
+    metaSSODesc: 'Social Security 5% (max 875 THB/month)',
   },
 };
 function t(key, ...args){
@@ -282,6 +289,10 @@ function t(key, ...args){
   const v = typeof fn === 'function' ? fn(...args) : fn;
   return v;
 }
+
+// ── Auto-row canonical names ( Thai, always used as state name) ────────────
+const AUTO_TAX_NAME_TH = 'ภาษีเงินได้ (ประมาณการ)',
+      AUTO_SSO_NAME_TH = 'ประกันสังคม (SSO)';
 
 // ── State ─────────────────────────────────────────────────────────────────
 const STORAGE_KEY = 'remainingMoneyCalculator.state.v1';
@@ -292,6 +303,8 @@ const defaultState = {
     { name: 'เงิน allowances / อื่นๆ', value: 1000 },
   ],
   expenses: [
+    { name: AUTO_TAX_NAME_TH, value: 0, auto: true },
+    { name: AUTO_SSO_NAME_TH,  value: 0, auto: true },
     { name: 'ค่าเช่า / ค่า condo', value: 3000 },
     { name: 'ค่าไฟฟ้า', value: 500 },
     { name: 'ค่าน้ำ', value: 200 },
@@ -304,9 +317,17 @@ const state = (function(){
     if(!raw) return JSON.parse(JSON.stringify(defaultState));
     const saved = JSON.parse(raw);
     if(saved && Array.isArray(saved.incomes) && Array.isArray(saved.expenses)){
+      // Ensure auto rows exist in loaded state
+      const expenses = Array.isArray(saved.expenses) ? saved.expenses : defaultState.expenses.slice();
+      if(!expenses.find(e => e.name === AUTO_TAX_NAME_TH)){
+        expenses.unshift({ name: AUTO_TAX_NAME_TH, value: 0, auto: true });
+      }
+      if(!expenses.find(e => e.name === AUTO_SSO_NAME_TH)){
+        expenses.unshift({ name: AUTO_SSO_NAME_TH, value: 0, auto: true });
+      }
       return {
         incomes: Array.isArray(saved.incomes) ? saved.incomes : defaultState.incomes,
-        expenses: Array.isArray(saved.expenses) ? saved.expenses : defaultState.expenses,
+        expenses,
       };
     }
   } catch(e){ /* corrupted — fall back to defaults */ }
@@ -330,12 +351,10 @@ const resetBtn         = document.getElementById('resetBtn');
 function fmt(n){ return Math.round(n).toLocaleString(LANG === 'en' ? 'en-US' : 'th-TH'); }
 function fmtCurrency(n){ return fmt(Math.round(n)) + ' ' + (LANG === 'en' ? 'THB' : 'บาท'); }
 
-// ── Delta input (same pattern as rebalance.html) ──────────────────────────
+// ── Delta input ────────────────────────────────────────────────────────────
 const inputBaseValues = new WeakMap();
 
-function isDeltaExpr(raw){
-  return /^\s*[+-]/.test(String(raw || ''));
-}
+function isDeltaExpr(raw){ return /^\s*[+-]/.test(String(raw || '')); }
 
 function resolveNumericInput(raw, base){
   if(raw == null) return 0;
@@ -383,6 +402,78 @@ function enableDeltaInput(inputEl, getBase, onChange){
   });
 }
 
+// ── Tax & SSO calculation (annualized method, same as months-slips.html) ──
+function calculateSSO(salary){
+  return Math.min(salary * 0.05, 875);
+}
+
+const TAX_BRACKETS = [
+  { limit: 150000,  rate: 0.00 },
+  { limit: 150000,  rate: 0.05 },
+  { limit: 200000,  rate: 0.10 },
+  { limit: 250000,  rate: 0.15 },
+  { limit: 250000,  rate: 0.20 },
+  { limit: 1000000, rate: 0.25 },
+  { limit: 3000000, rate: 0.30 },
+  { limit: Infinity, rate: 0.35 },
+];
+
+function progressiveTax(income){
+  if(income <= 0) return 0;
+  let tax = 0, remaining = income;
+  for(let i = 0; i < TAX_BRACKETS.length; i++){
+    if(remaining <= 0) break;
+    const taxable = Math.min(remaining, TAX_BRACKETS[i].limit);
+    tax += taxable * TAX_BRACKETS[i].rate;
+    remaining -= taxable;
+  }
+  return tax;
+}
+
+function calculateMonthlyTax(salary){
+  const ssoMonthly = calculateSSO(salary);
+  const annualIncome = salary * 12;
+  const expenseDeduction = Math.min(annualIncome * 0.5, 100000);
+  const personalDeduction = 60000;
+  const netAnnual = Math.max(0, annualIncome - expenseDeduction - personalDeduction - ssoMonthly * 12);
+  return progressiveTax(netAnnual) / 12;
+}
+
+// ── Auto-expense update ────────────────────────────────────────────────────
+function getSalaryValue(){
+  const first = state.incomes[0];
+  return first && first.name === 'เงินเดือน' ? (first.value || 0) : 0;
+}
+
+function updateAutoExpenses(){
+  const salary = getSalaryValue();
+  const tax = salary > 0 ? calculateMonthlyTax(salary) : 0;
+  const sso = salary > 0 ? calculateSSO(salary) : 0;
+
+  let taxItem = state.expenses.find(e => e.name === AUTO_TAX_NAME_TH);
+  if(!taxItem){
+    taxItem = { name: AUTO_TAX_NAME_TH, value: 0, auto: true };
+    state.expenses.unshift(taxItem);
+  }
+  taxItem.value = tax;
+
+  let ssoItem = state.expenses.find(e => e.name === AUTO_SSO_NAME_TH);
+  if(!ssoItem){
+    ssoItem = { name: AUTO_SSO_NAME_TH, value: 0, auto: true };
+    const taxIdx = state.expenses.indexOf(taxItem);
+    state.expenses.splice(taxIdx + 1, 0, ssoItem);
+  }
+  ssoItem.value = sso;
+
+  // Sync DOM inputs for auto rows so they reflect the new computed values
+  if(expenseContainer){
+    const taxRow = expenseContainer.querySelector(`.entry-row .name-input[value="${AUTO_TAX_NAME_TH.replace(/"/g, '&quot;')}"]`);
+    const ssoRow = expenseContainer.querySelector(`.entry-row .name-input[value="${AUTO_SSO_NAME_TH.replace(/"/g, '&quot;')}"]`);
+    if(taxRow) taxRow.parentElement.querySelector('.value-input').value = fmtPlain(tax);
+    if(ssoRow) ssoRow.parentElement.querySelector('.value-input').value = fmtPlain(sso);
+  }
+}
+
 // ── Autosave ───────────────────────────────────────────────────────────────
 function saveState(){
   try{
@@ -411,14 +502,20 @@ function createRowContainer(items, type, container){
   items.forEach((item, i) => {
     const row = document.createElement('div');
     row.className = 'entry-row';
-    const label = type === 'income' ? 'incomeUnit' : 'expenseUnit';
+    const isAuto = item.auto === true;
+    const autoLabel = LANG === 'en' ? (item.name === AUTO_TAX_NAME_TH ? EN.autoTaxName : EN.autoSSOName)
+                                    : (item.name === AUTO_TAX_NAME_TH ? t('autoTaxLabel') : t('autoSSOLabel'));
     row.innerHTML = `
       <input class="name-input" data-type="${type}" data-idx="${i}" data-field="name"
-             value="${item.name.replace(/"/g, '&quot;')}" placeholder="${type === 'income' ? EN.incomeDefaultName(i+1) : EN.expenseDefaultName(i+1)}">
+             value="${item.name.replace(/"/g, '&quot;')}"
+             ${isAuto ? 'readonly' : ''} placeholder="${type === 'income' ? EN.incomeDefaultName(i+1) : EN.expenseDefaultName(i+1)}">
       <input class="value-input" type="text" inputmode="decimal" data-type="${type}" data-idx="${i}" data-field="value"
-             value="${item.value}">
+             value="${item.value}" ${isAuto ? 'readonly' : ''}>
       <span class="unit">${type === 'income' ? 'บาท' : 'บาท'}</span>
-      <button class="remove-btn" data-type="${type}" data-idx="${i}" title="ลบ">×</button>
+      ${isAuto ? `<span class="auto-badge">${autoLabel}</span>` : ''}
+      <button class="remove-btn ${isAuto ? 'disabled' : ''}"
+              data-type="${type}" data-idx="${i}"
+              title="${isAuto ? 'คำนวณโดยอัตโนมัติ' : 'ลบ'}">×</button>
     `;
     container.appendChild(row);
   });
@@ -427,8 +524,8 @@ function createRowContainer(items, type, container){
 function bindRows(container, type){
   const items = type === 'income' ? state.incomes : state.expenses;
 
-  // Name input
-  container.querySelectorAll('input.name-input').forEach(inp => {
+  // Name input (only editable for non-auto rows)
+  container.querySelectorAll('input.name-input:not([readonly])').forEach(inp => {
     inp.addEventListener('input', e => {
       const idx = parseInt(e.target.dataset.idx);
       items[idx].name = e.target.value || (type === 'income' ? EN.incomeDefaultName(idx+1) : EN.expenseDefaultName(idx+1));
@@ -436,21 +533,28 @@ function bindRows(container, type){
     });
   });
 
-  // Value input — with delta support
-  container.querySelectorAll('input.value-input').forEach(inp => {
+  // Value input — with delta support (only editable for non-auto rows)
+  container.querySelectorAll('input.value-input:not([readonly])').forEach(inp => {
     const idx = parseInt(inp.dataset.idx);
     enableDeltaInput(
       inp,
       () => items[idx] ? items[idx].value : 0,
       (val) => {
         if(items[idx]) items[idx].value = val;
+        // If salary changed, update auto expenses
+        if(type === 'income'){
+          const item = items[idx];
+          if(item && item.name === 'เงินเดือน'){
+            updateAutoExpenses();
+          }
+        }
         compute();
       }
     );
   });
 
-  // Remove button
-  container.querySelectorAll('.remove-btn').forEach(btn => {
+  // Remove button (only for non-auto rows)
+  container.querySelectorAll('.remove-btn:not(.disabled)').forEach(btn => {
     btn.addEventListener('click', () => {
       const idx = parseInt(btn.dataset.idx);
       if(type === 'income') state.incomes.splice(idx, 1);
@@ -461,6 +565,18 @@ function bindRows(container, type){
       );
       bindRows(type === 'income' ? incomeContainer : expenseContainer, type);
       compute();
+    });
+  });
+
+  // Focus change on salary row triggers auto-expense update
+  container.querySelectorAll('input.name-input').forEach(inp => {
+    inp.addEventListener('blur', () => {
+      const idx = parseInt(inp.dataset.idx);
+      const item = items[idx];
+      if(item && item.name === 'เงินเดือน'){
+        updateAutoExpenses();
+        compute();
+      }
     });
   });
 }
@@ -479,7 +595,6 @@ function addRow(type){
   items.push({ name: type === 'income' ? EN.incomeDefaultName(idx+1) : EN.expenseDefaultName(idx+1), value: 0 });
   createRowContainer(items, type, type === 'income' ? incomeContainer : expenseContainer);
   bindRows(type === 'income' ? incomeContainer : expenseContainer, type);
-  // Focus the newly added name input
   const container = type === 'income' ? incomeContainer : expenseContainer;
   const nameInput = container.querySelector(`input.name-input[data-idx="${idx}"]`);
   if(nameInput){ nameInput.focus(); nameInput.select(); }
@@ -491,15 +606,16 @@ expenseAddBtn.addEventListener('click', () => addRow('expense'));
 
 // ── Compute & display ──────────────────────────────────────────────────────
 function compute(){
+  // Auto-update tax/SSO from salary before computing totals
+  updateAutoExpenses();
+
   const totalIncome  = state.incomes.reduce((s, item) => s + (item.value || 0), 0);
   const totalExpense = state.expenses.reduce((s, item) => s + (item.value || 0), 0);
   const remaining    = totalIncome - totalExpense;
 
-  // Summary strip
   scIncomeValue.textContent  = fmtCurrency(totalIncome);
   scExpenseValue.textContent = fmtCurrency(totalExpense);
 
-  // Per-item rows in the results area (shows the breakdown)
   const resultsEl = document.getElementById('resultsContainer');
   resultsEl.innerHTML = '';
 
@@ -535,12 +651,15 @@ function compute(){
     state.expenses.forEach(item => {
       const row = document.createElement('div');
       row.className = 'result-row';
+      const isAuto = item.auto === true;
+      const signColor = isAuto ? 'var(--danger)' : 'var(--warn)';
       row.innerHTML = `
         <div class="result-left">
           <div class="rname">${item.name}</div>
+          ${isAuto ? `<div class="rmeta" style="color:var(--ink-faint)">${t('metaAutoPrefix')} • ${item.name === AUTO_TAX_NAME_TH ? t('metaTaxDesc') : t('metaSSODesc')}</div>` : ''}
         </div>
         <div class="result-right">
-          <div class="rval" style="color:var(--warn)">− ${fmtCurrency(item.value)}</div>
+          <div class="rval" style="color:${signColor}">− ${fmtCurrency(item.value)}</div>
         </div>
       `;
       resultsEl.appendChild(row);
