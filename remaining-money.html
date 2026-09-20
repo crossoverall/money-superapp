@@ -621,7 +621,10 @@ function renderPvdRow(){
     <span class="pvd-unit">%</span>
     <span class="pvd-badge">PVD</span>
   `;
-  incomeContainer.appendChild(pvdRow);
+  // Insert after salary (position 0), before any removable income rows
+  const target = incomeContainer.children[1];
+  if(target) incomeContainer.insertBefore(pvdRow, target);
+  else incomeContainer.appendChild(pvdRow);
 
   const pvdInput = document.getElementById('pvdPctInput');
 
