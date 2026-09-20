@@ -278,23 +278,52 @@
   </div>
 
   <!-- Emergency Fund Runway Card -->
-  <div class="panel" id="runwayCard" style="display:none; margin-top:16px; text-align:center;">
-    <div class="panel-title" id="runwayTitle">🛡️ เงินสำรองฉุกเฉิน (Emergency Runway)</div>
-    <div style="display:flex; align-items:center; justify-content:center; gap:14px; margin:10px 0;">
-      <div style="font-size:36px; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-0.02em;" id="runwayMonths">—</div>
-      <div style="font-size:13px; color:var(--ink-dim); text-align:left;" id="runwayUnit">เดือน<br><span style="font-size:11px;" id="runwayFormula"></span></div>
+  <div class="panel" id="runwayCard" style="margin-top:16px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; user-select:none;">
+      <label for="chkShowRunway" style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; font-weight:700; color:var(--ink); margin:0;">
+        <input type="checkbox" id="chkShowRunway" style="width:17px; height:17px; accent-color:var(--brand, #059669); cursor:pointer; margin:0;" onchange="onToggleRunway(this.checked)">
+        <span id="runwayTitle">🛡️ คำนวณเงินสำรองฉุกเฉิน (Emergency Runway)</span>
+      </label>
     </div>
-    <div id="runwayBar" style="height:8px; border-radius:5px; overflow:hidden; background:var(--panel-2); margin:8px 0;">
-      <div id="runwayBarFill" style="height:100%; border-radius:5px; transition:width 0.3s, background 0.3s;"></div>
+
+    <div id="runwayContent" style="display:none; margin-top:14px; border-top:1px solid var(--line); padding-top:14px;">
+      <!-- Reserve input -->
+      <div style="margin-bottom:14px;">
+        <label for="txtCurrentReserve" id="lblCurrentReserve" style="display:block; font-size:12px; font-weight:600; color:var(--ink-dim); margin-bottom:6px;">
+          เงินสำรองฉุกเฉินสะสมที่มีอยู่ปัจจุบัน (บาท)
+        </label>
+        <div style="display:flex; align-items:center; gap:8px; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:8px 12px;">
+          <span style="font-size:15px;">💰</span>
+          <input type="number" id="txtCurrentReserve" min="0" step="1000" placeholder="เช่น 100,000"
+                 style="flex:1; border:none; background:transparent; font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; color:var(--ink); outline:none;"
+                 oninput="onCurrentReserveChange(this.value)">
+          <span style="font-size:12px; color:var(--ink-faint);" id="lblReserveUnit">บาท</span>
+        </div>
+      </div>
+
+      <!-- Indicator & Gauge Box -->
+      <div id="runwayIndicatorBox" style="text-align:center; padding:14px; background:var(--panel-2); border:1px solid var(--line); border-radius:12px;">
+        <div style="display:flex; align-items:center; justify-content:center; gap:14px; margin:4px 0 8px;">
+          <div style="font-size:34px; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-0.02em;" id="runwayMonths">—</div>
+          <div style="font-size:13px; color:var(--ink-dim); text-align:left;" id="runwayUnit">เดือน<br><span style="font-size:11px;" id="runwayFormula"></span></div>
+        </div>
+        <div id="runwayBar" style="height:8px; border-radius:5px; overflow:hidden; background:var(--panel-3, rgba(0,0,0,0.06)); margin:8px 0;">
+          <div id="runwayBarFill" style="height:100%; border-radius:5px; transition:width 0.3s, background 0.3s;"></div>
+        </div>
+        <div id="runwayBadge" style="display:inline-block; font-size:12px; font-weight:700; padding:3px 10px; border-radius:999px; margin-top:4px;"></div>
+        
+        <!-- Target comparison & pace note -->
+        <div id="runwayTargetNote" style="margin-top:12px; font-size:12px; color:var(--ink-dim); line-height:1.6; text-align:left; border-top:1px dashed var(--line); padding-top:10px;"></div>
+      </div>
     </div>
-    <div id="runwayBadge" style="display:inline-block; font-size:12px; font-weight:700; padding:3px 10px; border-radius:999px; margin-top:4px;"></div>
   </div>
+
 
   <div class="save-status">
     <span id="saveStatus">&nbsp;</span>
     <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
   </div>
-  <p class="version-tag">v1.2.1</p>
+  <p class="version-tag">v1.2.2</p>
 
 <script>
 // ── Language ──────────────────────────────────────────────────────────────
@@ -336,7 +365,10 @@ const EN = {
   pvdPlaceholder: 'e.g. 5',
   lblBridgeBtn: 'Send investable money to Rebalance',
   bridgeAlertDefault: '✓ Data imported successfully',
-  runwayTitle: '🛡️ Emergency Runway',
+  runwayTitle: '🛡️ Calculate Emergency Runway',
+  lblCurrentReserve: 'Current Accumulated Emergency Reserve (THB)',
+  lblReserveUnit: 'THB',
+  placeholderCurrentReserve: 'e.g. 100,000',
   runwayUnit: 'months',
   runwayWarning: '⚠️ Warning — Less than 3 months of buffer',
   runwayHealthy: '✅ Healthy — 3–6 months of buffer',
@@ -406,10 +438,13 @@ function t(key, ...args){
 if(LANG === 'en'){
   document.title = 'Remaining Money Calculator';
   ['eyebrow','pageTitle','subtitle','incomePanelTitle','expensePanelTitle','savingPanelTitle',
-   'scIncomeLabel','scExpenseLabel','scSavingLabel','remainingLabel','remainingNote'].forEach(id => {
+   'scIncomeLabel','scExpenseLabel','scSavingLabel','remainingLabel','remainingNote',
+   'runwayTitle','lblCurrentReserve','lblReserveUnit'].forEach(id => {
     const el = document.getElementById(id);
     if(el && EN[id]) el.textContent = EN[id];
   });
+  const txtResInp = document.getElementById('txtCurrentReserve');
+  if(txtResInp && EN.placeholderCurrentReserve) txtResInp.placeholder = EN.placeholderCurrentReserve;
   document.getElementById('incomeAddBtn').textContent = EN.addIncome;
   document.getElementById('expenseAddBtn').textContent = EN.addExpense;
   const savAddBtn = document.getElementById('savingAddBtn');
@@ -491,6 +526,8 @@ const defaultState = {
   savings: [
     { name: 'เงินออมฉุกเฉิน / เงินสำรอง', value: 1000 },
   ],
+  showEmergencyRunway: false,
+  currentEmergencyReserve: 0,
 };
 
 const state = (function(){
@@ -521,10 +558,14 @@ const state = (function(){
         saved.incomes[0].name = 'เงินเดือน';
       }
       const savings = Array.isArray(saved.savings) ? saved.savings : (defaultState.savings ? defaultState.savings.map(s => ({...s})) : []);
+      const showEmergencyRunway = typeof saved.showEmergencyRunway === 'boolean' ? saved.showEmergencyRunway : false;
+      const currentEmergencyReserve = Number(saved.currentEmergencyReserve) >= 0 ? Number(saved.currentEmergencyReserve) : 0;
       return {
         incomes: Array.isArray(saved.incomes) ? saved.incomes : defaultState.incomes,
         expenses,
         savings,
+        showEmergencyRunway,
+        currentEmergencyReserve,
       };
     }
   } catch(e){ /* corrupted — fall back to defaults */ }
@@ -1186,45 +1227,124 @@ function compute(){
   saveState();
 
   // ── Emergency Runway Gauge ──
-  const runwayCard = document.getElementById('runwayCard');
-  if (runwayCard && totalExpense > 0) {
-    const runwayRaw = remaining > 0 ? remaining / totalExpense : 0;
-    const runwayVal = Math.round(runwayRaw * 10) / 10;
-    const isEN = LANG === 'en';
+  const runwayContent = document.getElementById('runwayContent');
+  const isEN = LANG === 'en';
 
-    runwayCard.style.display = '';
-    document.getElementById('runwayMonths').textContent = runwayVal.toFixed(1);
-    document.getElementById('runwayUnit').innerHTML = (isEN ? 'months' : 'เดือน') +
-      '<br><span style="font-size:11px; opacity:0.7;">' +
-      (isEN ? `${fmt(remaining)} ÷ ${fmt(totalExpense)}` : `${fmt(remaining)} ÷ ${fmt(totalExpense)}`) +
-      '</span>';
+  if (state.showEmergencyRunway && runwayContent) {
+    runwayContent.style.display = '';
+    const reserve = Math.max(0, Number(state.currentEmergencyReserve) || 0);
+    const monthsEl = document.getElementById('runwayMonths');
+    const unitEl   = document.getElementById('runwayUnit');
+    const badgeEl  = document.getElementById('runwayBadge');
+    const barFill  = document.getElementById('runwayBarFill');
+    const noteEl   = document.getElementById('runwayTargetNote');
 
-    if (isEN) document.getElementById('runwayTitle').textContent = EN.runwayTitle;
-
-    let color, bg, label, pct;
-    if (runwayVal < 3) {
-      color = '#ef4444'; bg = 'rgba(239,68,68,0.12)';
-      label = isEN ? EN.runwayWarning : '⚠️ อันตราย — สำรองไม่ถึง 3 เดือน';
-      pct = Math.min((runwayVal / 3) * 33, 33);
-    } else if (runwayVal <= 6) {
-      color = '#eab308'; bg = 'rgba(234,179,8,0.12)';
-      label = isEN ? EN.runwayHealthy : '✅ ปลอดภัย — สำรอง 3–6 เดือน';
-      pct = 33 + ((runwayVal - 3) / 3) * 34;
+    if (totalExpense <= 0) {
+      if (monthsEl) monthsEl.textContent = '—';
+      if (unitEl) unitEl.innerHTML = (isEN ? 'months' : 'เดือน') + '<br><span style="font-size:11px; opacity:0.7;">—</span>';
+      if (badgeEl) {
+        badgeEl.textContent = isEN ? 'Please enter monthly expenses first' : 'กรุณากรอกค่าใช้จ่ายเพื่อคำนวณเงินสำรอง';
+        badgeEl.style.background = 'var(--panel-3, rgba(0,0,0,0.06))';
+        badgeEl.style.color = 'var(--ink-dim)';
+      }
+      if (barFill) { barFill.style.width = '0%'; barFill.style.background = 'transparent'; }
+      if (noteEl) noteEl.innerHTML = '';
     } else {
-      color = '#22c55e'; bg = 'rgba(34,197,94,0.12)';
-      label = isEN ? EN.runwaySolid : '💪 มั่นคง — สำรองมากกว่า 6 เดือน';
-      pct = Math.min(67 + ((runwayVal - 6) / 6) * 33, 100);
-    }
+      const runwayRaw = reserve > 0 ? reserve / totalExpense : 0;
+      const runwayVal = Math.round(runwayRaw * 10) / 10;
 
-    document.getElementById('runwayBarFill').style.width = pct + '%';
-    document.getElementById('runwayBarFill').style.background = color;
-    const badge = document.getElementById('runwayBadge');
-    badge.textContent = label;
-    badge.style.background = bg;
-    badge.style.color = color;
-  } else if (runwayCard) {
-    runwayCard.style.display = 'none';
+      if (monthsEl) monthsEl.textContent = runwayVal.toFixed(1);
+      if (unitEl) {
+        unitEl.innerHTML = (isEN ? 'months' : 'เดือน') +
+          '<br><span style="font-size:11px; opacity:0.7;">' +
+          `${fmt(reserve)} ÷ ${fmt(totalExpense)}` +
+          '</span>';
+      }
+
+      let color, bg, label, pct;
+      if (reserve <= 0) {
+        color = '#ef4444'; bg = 'rgba(239,68,68,0.12)';
+        label = isEN ? '⚠️ No reserve entered yet' : '⚠️ ยังไม่ได้ระบุเงินสำรองฉุกเฉิน';
+        pct = 0;
+      } else if (runwayVal < 3) {
+        color = '#ef4444'; bg = 'rgba(239,68,68,0.12)';
+        label = isEN ? EN.runwayWarning : '⚠️ อันตราย — สำรองไม่ถึง 3 เดือน';
+        pct = Math.min((runwayVal / 3) * 33, 33);
+      } else if (runwayVal <= 6) {
+        color = '#eab308'; bg = 'rgba(234,179,8,0.12)';
+        label = isEN ? EN.runwayHealthy : '✅ ปลอดภัย — สำรอง 3–6 เดือน';
+        pct = 33 + ((runwayVal - 3) / 3) * 34;
+      } else {
+        color = '#22c55e'; bg = 'rgba(34,197,94,0.12)';
+        label = isEN ? EN.runwaySolid : '💪 มั่นคง — สำรองมากกว่า 6 เดือน';
+        pct = Math.min(67 + ((runwayVal - 6) / 6) * 33, 100);
+      }
+
+      if (barFill) {
+        barFill.style.width = pct + '%';
+        barFill.style.background = color;
+      }
+      if (badgeEl) {
+        badgeEl.textContent = label;
+        badgeEl.style.background = bg;
+        badgeEl.style.color = color;
+      }
+
+      if (noteEl) {
+        const target3M = Math.round(totalExpense * 3);
+        const target6M = Math.round(totalExpense * 6);
+        const targetText = isEN
+          ? `🎯 <strong>Target Buffers:</strong> 3-Month Min = <strong>${fmt(target3M)} THB</strong> | 6-Month Recommended = <strong>${fmt(target6M)} THB</strong>`
+          : `🎯 <strong>เป้าหมายแนะนำ:</strong> ขั้นต่ำ 3 เดือน = <strong>${fmt(target3M)} บาท</strong> | มั่นคง 6 เดือน = <strong>${fmt(target6M)} บาท</strong>`;
+
+        let paceText = '';
+        if (reserve < target6M) {
+          const deficit = target6M - reserve;
+          if (totalSavings > 0) {
+            const monthsToGoal = Math.ceil(deficit / totalSavings);
+            paceText = isEN
+              ? `<div style="margin-top:4px;">🌱 Need <strong>${fmt(deficit)} THB</strong> more for 6-month safety — at your current savings rate (<strong>${fmt(totalSavings)} THB/mo</strong>), you will reach it in <strong>${monthsToGoal} months</strong>.</div>`
+              : `<div style="margin-top:4px;">🌱 ยังขาดอีก <strong>${fmt(deficit)} บาท</strong> ถึงเป้าหมาย 6 เดือน — ด้วยเงินออมปัจจุบัน (<strong>${fmt(totalSavings)} บาท/เดือน</strong>) จะถึงเป้าหมายในอีก <strong>${monthsToGoal} เดือน</strong></div>`;
+          } else {
+            paceText = isEN
+              ? `<div style="margin-top:4px; color:var(--ink-faint);">💡 Allocate funds into the <strong>Savings</strong> section above to start accumulating towards your 6-month reserve.</div>`
+              : `<div style="margin-top:4px; color:var(--ink-faint);">💡 เริ่มจัดสรรเงินในหมวด <strong>"เงินออม"</strong> ด้านบน เพื่อสะสมเงินสำรองฉุกเฉินให้ครบ 6 เดือน</div>`;
+          }
+        } else {
+          paceText = isEN
+            ? `<div style="margin-top:4px; color:#16a34a;">🎉 <strong>Congratulations!</strong> You have fully covered the recommended 6-month emergency buffer.</div>`
+            : `<div style="margin-top:4px; color:#16a34a;">🎉 <strong>ยอดเยี่ยมมาก!</strong> คุณมีเงินสำรองฉุกเฉินครบตามเป้าหมาย 6 เดือนแล้ว สามารถนำเงินส่วนเกินไปลงทุนได้อย่างสบายใจ</div>`;
+        }
+
+        noteEl.innerHTML = targetText + paceText;
+      }
+    }
+  } else if (runwayContent) {
+    runwayContent.style.display = 'none';
   }
+}
+
+function onToggleRunway(checked) {
+  state.showEmergencyRunway = !!checked;
+  const content = document.getElementById('runwayContent');
+  if (content) {
+    content.style.display = checked ? '' : 'none';
+  }
+  if (checked) {
+    const input = document.getElementById('txtCurrentReserve');
+    if (input && state.currentEmergencyReserve > 0) {
+      input.value = state.currentEmergencyReserve;
+    }
+  }
+  compute();
+  saveState();
+}
+
+function onCurrentReserveChange(val) {
+  const num = Math.max(0, parseFloat(val) || 0);
+  state.currentEmergencyReserve = num;
+  compute();
+  saveState();
 }
 
 function sendToRebalance(){
@@ -1251,6 +1371,14 @@ checkPendingLumpSum();
 checkPendingSlipImport();
 renderRows();
 renderPvdRow();
+
+const chkShowRunway = document.getElementById('chkShowRunway');
+const txtCurrentReserve = document.getElementById('txtCurrentReserve');
+const runwayContentEl = document.getElementById('runwayContent');
+if (chkShowRunway) chkShowRunway.checked = !!state.showEmergencyRunway;
+if (runwayContentEl) runwayContentEl.style.display = state.showEmergencyRunway ? '' : 'none';
+if (txtCurrentReserve && state.currentEmergencyReserve > 0) txtCurrentReserve.value = state.currentEmergencyReserve;
+
 compute();
 
 window.addEventListener('storage', (e) => {
