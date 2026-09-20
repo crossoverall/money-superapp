@@ -59,13 +59,15 @@ swJs = swJs.replace(/const CACHE_NAME = 'money-superapp-v[^']+';/, `const CACHE_
 writeFileSync(swPath, swJs);
 console.log(`  ✓ Updated sw.js (CACHE_NAME = money-superapp-v${newVersion})`);
 
-// 3. Update all 5 calculator tools footers
+// 3. Update all 7 calculator & dashboard tools footers
 const toolFiles = [
+  'dashboard.html',
   'rebalance.html',
   'months-slips.html',
   'tax-calculator-base.html',
   'tax-calculator.html',
-  'remaining-money.html'
+  'remaining-money.html',
+  'debt-calculator.html'
 ];
 
 for (const file of toolFiles) {

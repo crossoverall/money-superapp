@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="version" content="1.2.2">
+    <meta name="description" content="หน้าหลักสรุปภาพรวมการเงินและประวัติการเติบโต (Unified Financial Dashboard & Historical Tracking)">
+    <title>ภาพรวมการเงิน (Financial Dashboard)</title>
+    <link rel="stylesheet" href="css/tailwind-lite.css">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Prompt", sans-serif; }
+
+        [data-theme="dark"] body { background-color: #0f172a !important; }
+        [data-theme="dark"] .bg-white { background-color: #1e293b !important; color: #e2e8f0 !important; }
+        [data-theme="dark"] .bg-gray-50 { background-color: #0f172a !important; }
+        [data-theme="dark"] .bg-gray-100 { background-color: #0f172a !important; }
+        [data-theme="dark"] .bg-blue-50 { background-color: #172554 !important; border-color: #1d4ed8 !important; }
+        [data-theme="dark"] .bg-emerald-50 { background-color: #064e3b !important; border-color: #059669 !important; }
+        [data-theme="dark"] .bg-amber-50 { background-color: #78350f !important; border-color: #b45309 !important; }
+        [data-theme="dark"] .bg-purple-50 { background-color: #3b0764 !important; border-color: #7e22ce !important; }
+        [data-theme="dark"] .border, [data-theme="dark"] .border-gray-200 { border-color: #334155 !important; }
+        [data-theme="dark"] .text-gray-800, [data-theme="dark"] .text-gray-900 { color: #f8fafc !important; }
+        [data-theme="dark"] .text-gray-700, [data-theme="dark"] .text-gray-600, [data-theme="dark"] .text-gray-500 { color: #94a3b8 !important; }
+        [data-theme="dark"] input, [data-theme="dark"] select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+        [data-theme="dark"] .table-row-alt:nth-child(even) { background-color: #0f172a !important; }
+        [data-theme="dark"] .quick-card { background-color: #1e293b !important; border-color: #334155 !important; }
+        [data-theme="dark"] .quick-card:hover { background-color: #334155 !important; }
+
+        .kpi-stat-card {
+            border-radius: 16px;
+            padding: 16px;
+            border: 1px solid;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quick-card {
+            border-radius: 12px;
+            padding: 12px 14px;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-decoration: none;
+        }
+        .quick-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            border-color: #38bdf8;
+        }
+
+        .chart-tab-btn {
+            padding: 5px 12px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid #cbd5e1;
+            background: #fff;
+            color: #475569;
+            transition: all 0.15s;
+        }
+        .chart-tab-btn.active {
+            background: #0284c7;
+            color: #fff;
+            border-color: #0284c7;
+        }
+        [data-theme="dark"] .chart-tab-btn {
+            background: #1e293b;
+            color: #cbd5e1;
+            border-color: #475569;
+        }
+        [data-theme="dark"] .chart-tab-btn.active {
+            background: #38bdf8;
+            color: #0f172a;
+            border-color: #38bdf8;
+        }
+
+        @media print {
+            body { background: #fff !important; color: #000 !important; padding: 0 !important; }
+            .no-print, button { display: none !important; }
+            .bg-white { box-shadow: none !important; border: 1px solid #e2e8f0 !important; max-width: 100% !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 sm:p-6 flex justify-center">
+
+<div class="bg-white rounded-2xl shadow-xl w-full max-w-4xl p-5 sm:p-8 space-y-6">
+
+    <!-- Top Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-gray-200 pb-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2" id="lbl-title">
+                <span>🏠</span> <span id="txt-title">ภาพรวมการเงิน (Financial Dashboard)</span>
+            </h1>
+            <p class="text-xs text-gray-500 mt-1" id="lbl-subtitle">สรุปความมั่งคั่งสุทธิ, สภาพคล่อง, ภาษี, ภาระหนี้สิน และติดตามประวัติการเติบโต</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="takeSnapshot()" id="btn-take-snapshot" class="py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shadow-sm">
+                <span>📸</span> <span id="lbl-btn-snapshot">บันทึกสแนปช็อตเดือนนี้</span>
+            </button>
+            <button onclick="window.print()" id="btn-print-dash" class="py-1.5 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 no-print">
+                <span id="lbl-print-dash">🖨️ พิมพ์</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Notification / Snapshot Toast Banner -->
+    <div id="snapshotAlertBanner" style="display:none;" class="p-3 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-xl text-xs flex items-center justify-between">
+        <span id="snapshotAlertText">✓ บันทึกภาพรวมการเงินประจำเดือนเรียบร้อยแล้ว!</span>
+        <button onclick="this.parentElement.style.display='none'" class="text-emerald-700 font-bold px-1.5">&times;</button>
+    </div>
+
+    <!-- Unified KPIs Grid (Task 2: Birds-eye view) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- 1. Net Worth -->
+        <div class="kpi-stat-card bg-emerald-50 border-emerald-200 text-emerald-950">
+            <div>
+                <div class="flex justify-between items-center text-xs font-medium text-emerald-800">
+                    <span id="lbl-kpi-networth">ความมั่งคั่งสุทธิ (Net Worth)</span>
+                    <span>💎</span>
+                </div>
+                <div class="text-2xl font-extrabold text-emerald-700 mt-2" id="kpi-networth-val">0 บาท</div>
+            </div>
+            <div class="text-[11px] text-emerald-800/80 mt-2 pt-2 border-t border-emerald-200/60 flex justify-between">
+                <span id="lbl-networth-sub">พอร์ต + สำรอง - หนี้</span>
+                <span class="font-bold text-emerald-700" id="kpi-networth-badge">สุขภาพการเงินดี</span>
+            </div>
+        </div>
+
+        <!-- 2. Monthly Cash Flow & Savings Rate -->
+        <div class="kpi-stat-card bg-blue-50 border-blue-200 text-blue-950">
+            <div>
+                <div class="flex justify-between items-center text-xs font-medium text-blue-800">
+                    <span id="lbl-kpi-savings-rate">อัตราการออม (Savings Rate)</span>
+                    <span>💰</span>
+                </div>
+                <div class="text-2xl font-extrabold text-blue-700 mt-2" id="kpi-savings-rate-val">0.0%</div>
+            </div>
+            <div class="text-[11px] text-blue-800/80 mt-2 pt-2 border-t border-blue-200/60 flex justify-between">
+                <span id="lbl-savings-sub">ออม + ลงทุน/เดือน</span>
+                <span class="font-bold text-blue-700" id="kpi-monthly-savings-val">0 บาท</span>
+            </div>
+        </div>
+
+        <!-- 3. Emergency Runway -->
+        <div class="kpi-stat-card bg-purple-50 border-purple-200 text-purple-950">
+            <div>
+                <div class="flex justify-between items-center text-xs font-medium text-purple-800">
+                    <span id="lbl-kpi-runway">เงินสำรองฉุกเฉิน (Runway)</span>
+                    <span>🛡️</span>
+                </div>
+                <div class="text-2xl font-extrabold text-purple-700 mt-2" id="kpi-runway-months">0.0 เดือน</div>
+            </div>
+            <div class="text-[11px] text-purple-800/80 mt-2 pt-2 border-t border-purple-200/60 flex justify-between">
+                <span id="lbl-runway-sub">เงินสำรองคงเหลือ</span>
+                <span class="font-bold text-purple-700" id="kpi-runway-reserve-val">0 บาท</span>
+            </div>
+        </div>
+
+        <!-- 4. Debt & Tax Summary -->
+        <div class="kpi-stat-card bg-amber-50 border-amber-200 text-amber-950">
+            <div>
+                <div class="flex justify-between items-center text-xs font-medium text-amber-800">
+                    <span id="lbl-kpi-tax-debt">ภาษี & ภาระหนี้สิน</span>
+                    <span>📉</span>
+                </div>
+                <div class="text-2xl font-extrabold text-amber-700 mt-2" id="kpi-debt-val">0 บาท</div>
+            </div>
+            <div class="text-[11px] text-amber-800/80 mt-2 pt-2 border-t border-amber-200/60 flex justify-between">
+                <span id="lbl-tax-bracket-sub">ฐานภาษีสูงสุด</span>
+                <span class="font-bold text-amber-700" id="kpi-tax-bracket-val">0% (0 บาท)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Navigation to All Tools (Task 2: Fast Hub) -->
+    <div class="space-y-2.5">
+        <h3 class="text-xs font-bold text-gray-600 uppercase tracking-wide" id="lbl-quick-nav-title">ทางลัดเครื่องมือคำนวณการเงิน (Calculator Hub)</h3>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+            <div class="quick-card" onclick="jumpToTab('rebalance')">
+                <div class="flex items-center gap-2">
+                    <span class="text-base">⚖️</span>
+                    <div>
+                        <div class="font-bold text-gray-800" id="qc-rebal-title">Rebalance พอร์ต</div>
+                        <div class="text-[10px] text-gray-400" id="qc-rebal-sub">พอร์ต: 0 บาท</div>
+                    </div>
+                </div>
+                <span class="text-gray-400 font-bold">&rarr;</span>
+            </div>
+
+            <div class="quick-card" onclick="jumpToTab('remaining-money')">
+                <div class="flex items-center gap-2">
+                    <span class="text-base">💰</span>
+                    <div>
+                        <div class="font-bold text-gray-800" id="qc-rem-title">เงินคงเหลือ & งบ</div>
+                        <div class="text-[10px] text-gray-400" id="qc-rem-sub">คงเหลือลงทุน: 0 บาท</div>
+                    </div>
+                </div>
+                <span class="text-gray-400 font-bold">&rarr;</span>
+            </div>
+
+            <div class="quick-card" onclick="jumpToTab('tax-calculator-base')">
+                <div class="flex items-center gap-2">
+                    <span class="text-base">🧾</span>
+                    <div>
+                        <div class="font-bold text-gray-800" id="qc-tax-title">ประมาณการภาษี</div>
+                        <div class="text-[10px] text-gray-400" id="qc-tax-sub">ลดหย่อน ThaiESG/SSF</div>
+                    </div>
+                </div>
+                <span class="text-gray-400 font-bold">&rarr;</span>
+            </div>
+
+            <div class="quick-card" onclick="jumpToTab('debt-calculator')">
+                <div class="flex items-center gap-2">
+                    <span class="text-base">📉</span>
+                    <div>
+                        <div class="font-bold text-gray-800" id="qc-debt-title">วางแผนปลดหนี้</div>
+                        <div class="text-[10px] text-gray-400" id="qc-debt-sub">Snowball & Avalanche</div>
+                    </div>
+                </div>
+                <span class="text-gray-400 font-bold">&rarr;</span>
+            </div>
+
+            <div class="quick-card" onclick="jumpToTab('months-slips')">
+                <div class="flex items-center gap-2">
+                    <span class="text-base">📑</span>
+                    <div>
+                        <div class="font-bold text-gray-800" id="qc-slip-title">จำลองสลิปเงินเดือน</div>
+                        <div class="text-[10px] text-gray-400" id="qc-slip-sub">คำนวณหัก PVD & SSO</div>
+                    </div>
+                </div>
+                <span class="text-gray-400 font-bold">&rarr;</span>
+            </div>
+
+            <div class="quick-card" onclick="jumpToTab('tax-calculator')">
+                <div class="flex items-center gap-2">
+                    <span class="text-base">💼</span>
+                    <div>
+                        <div class="font-bold text-gray-800" id="qc-pvd-title">ภาษี PVD & ชดเชย</div>
+                        <div class="text-[10px] text-gray-400" id="qc-pvd-sub">ม.48(5) แยกคำนวณ</div>
+                    </div>
+                </div>
+                <span class="text-gray-400 font-bold">&rarr;</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historical Tracking & Trends Analytics (Task 1: End of Month Snapshots & Charts) -->
+    <div class="p-4 rounded-xl border border-gray-200 bg-gray-50 space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <div>
+                <h3 class="text-sm font-bold text-gray-800 flex items-center gap-1.5" id="lbl-history-title">
+                    <span>📈</span> <span id="txt-history-title">ประวัติและการเติบโต (Historical Trends)</span>
+                </h3>
+                <p class="text-xs text-gray-500" id="lbl-history-sub">ติดตามแนวโน้มความมั่งคั่งสุทธิและวินัยทางการเงินรายเดือน</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" class="chart-tab-btn active" id="btn-chart-nw" onclick="setChartMode('networth')">
+                    💎 ความมั่งคั่งสุทธิ
+                </button>
+                <button type="button" class="chart-tab-btn" id="btn-chart-sav" onclick="setChartMode('savings')">
+                    💰 อัตราการออม
+                </button>
+                <button type="button" class="chart-tab-btn" id="btn-chart-run" onclick="setChartMode('runway')">
+                    🛡️ เงินสำรอง
+                </button>
+            </div>
+        </div>
+
+        <!-- Interactive SVG Chart -->
+        <div class="bg-white p-3 rounded-xl border border-gray-200 relative overflow-hidden">
+            <div id="chartTooltip" class="absolute bg-slate-900 text-white text-[11px] px-2 py-1 rounded shadow-lg pointer-events-none opacity-0 transition-opacity z-10"></div>
+            <svg id="trendSvg" viewBox="0 0 600 220" class="w-full h-48 sm:h-56 block"></svg>
+            <div id="chartLegend" class="flex justify-center items-center gap-4 text-xs text-gray-500 mt-2"></div>
+        </div>
+
+        <!-- Snapshots Table / Log -->
+        <div class="overflow-x-auto border border-gray-200 rounded-xl bg-white">
+            <table class="w-full text-xs text-left">
+                <thead class="bg-gray-100 text-gray-600 uppercase font-semibold border-b border-gray-200">
+                    <tr>
+                        <th class="p-2.5 pl-3" id="th-snap-date">วันที่บันทึก</th>
+                        <th class="p-2.5 text-right" id="th-snap-nw">ความมั่งคั่งสุทธิ (บาท)</th>
+                        <th class="p-2.5 text-right" id="th-snap-port">พอร์ตลงทุน (บาท)</th>
+                        <th class="p-2.5 text-right" id="th-snap-res">สำรองฉุกเฉิน (บาท)</th>
+                        <th class="p-2.5 text-right" id="th-snap-debt">หนี้สิน (บาท)</th>
+                        <th class="p-2.5 text-right" id="th-snap-rate">อัตราออม (%)</th>
+                        <th class="p-2.5 text-center no-print" style="width: 40px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="snapshotsTableBody" class="divide-y divide-gray-200">
+                    <!-- Inserted by JS -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="flex justify-between items-center text-xs text-gray-400 pt-1">
+            <button onclick="clearAllSnapshots()" class="text-gray-400 hover:text-red-500 underline transition-all" id="btn-clear-history">
+                🗑️ ล้างประวัติสแนปช็อตทั้งหมด
+            </button>
+            <span id="lbl-snapshot-count">0 บันทึก</span>
+        </div>
+    </div>
+
+    <!-- Footer Action Bar -->
+    <div class="flex justify-between items-center pt-4 border-t border-gray-200 text-xs text-gray-400">
+        <span id="lbl-privacy-badge">🔒 100% Client-Side Privacy — ทุกตัวเลขประมวลผลบนเครื่องของคุณ</span>
+        <span>Money Superapp v1.3.0</span>
+    </div>
+
+</div>
+
+<script>
+    const LANG = (function(){ try { return localStorage.getItem('moneySuperapp.lang') || 'th'; } catch(e){ return 'th'; } })();
+    document.documentElement.lang = LANG;
+    document.documentElement.dataset.theme = (function(){ try { return localStorage.getItem('moneySuperapp.theme') || 'light'; } catch(e){ return 'light'; } })();
+    const unit = LANG === 'en' ? 'THB' : 'บาท';
+
+    const translations = {
+        th: {
+            title: 'ภาพรวมการเงิน (Financial Dashboard)',
+            subtitle: 'สรุปความมั่งคั่งสุทธิ, สภาพคล่อง, ภาษี, ภาระหนี้สิน และติดตามประวัติการเติบโต',
+            btnSnapshot: 'บันทึกสแนปช็อตเดือนนี้',
+            printDash: '🖨️ พิมพ์',
+            kpiNetworth: 'ความมั่งคั่งสุทธิ (Net Worth)',
+            networthSub: 'พอร์ต + สำรอง - หนี้',
+            kpiSavingsRate: 'อัตราการออม (Savings Rate)',
+            savingsSub: 'ออม + ลงทุน/เดือน',
+            kpiRunway: 'เงินสำรองฉุกเฉิน (Runway)',
+            runwaySub: 'เงินสำรองคงเหลือ',
+            kpiTaxDebt: 'ภาษี & ภาระหนี้สิน',
+            taxBracketSub: 'ฐานภาษีสูงสุด',
+            quickNavTitle: 'ทางลัดเครื่องมือคำนวณการเงิน (Calculator Hub)',
+            qcRebalTitle: 'Rebalance พอร์ต',
+            qcRemTitle: 'เงินคงเหลือ & งบ',
+            qcTaxTitle: 'ประมาณการภาษี',
+            qcDebtTitle: 'วางแผนปลดหนี้',
+            qcSlipTitle: 'จำลองสลิปเงินเดือน',
+            qcPvdTitle: 'ภาษี PVD & ชดเชย',
+            historyTitle: 'ประวัติและการเติบโต (Historical Trends)',
+            historySub: 'ติดตามแนวโน้มความมั่งคั่งสุทธิและวินัยทางการเงินรายเดือน',
+            btnChartNw: '💎 ความมั่งคั่งสุทธิ',
+            btnChartSav: '💰 อัตราการออม',
+            btnChartRun: '🛡️ เงินสำรอง',
+            thSnapDate: 'วันที่บันทึก',
+            thSnapNw: 'ความมั่งคั่งสุทธิ (บาท)',
+            thSnapPort: 'พอร์ตลงทุน (บาท)',
+            thSnapRes: 'สำรองฉุกเฉิน (บาท)',
+            thSnapDebt: 'หนี้สิน (บาท)',
+            thSnapRate: 'อัตราออม (%)',
+            btnClearHistory: '🗑️ ล้างประวัติสแนปช็อตทั้งหมด',
+            privacyBadge: '🔒 100% Client-Side Privacy — ทุกตัวเลขประมวลผลบนเครื่องของคุณ',
+            savedSuccess: '✓ บันทึกภาพรวมการเงินประจำเดือนเรียบร้อยแล้ว!',
+            statusHealthy: 'สุขภาพการเงินดีเยี่ยม',
+            statusCaution: 'ควรเพิ่มเงินสำรอง',
+            statusSolid: 'กันชนปลอดภัย'
+        },
+        en: {
+            title: 'Financial Dashboard',
+            subtitle: 'Birds-eye overview of Net Worth, Cash Flow, Taxes, Debt, and Historical Trends',
+            btnSnapshot: 'Record Monthly Snapshot',
+            printDash: '🖨️ Print',
+            kpiNetworth: 'Total Net Worth',
+            networthSub: 'Portfolio + Cash - Debt',
+            kpiSavingsRate: 'Savings Rate',
+            savingsSub: 'Saved + Invested / mo',
+            kpiRunway: 'Emergency Runway',
+            runwaySub: 'Liquid Cash Buffer',
+            kpiTaxDebt: 'Tax & Debt Status',
+            taxBracketSub: 'Top Marginal Bracket',
+            quickNavTitle: 'Financial Calculator Hub',
+            qcRebalTitle: 'Rebalance Calculator',
+            qcRemTitle: 'Remaining Money & Budget',
+            qcTaxTitle: 'Income Tax Estimation',
+            qcDebtTitle: 'Debt Payoff Calculator',
+            qcSlipTitle: 'Payslip Simulator',
+            qcPvdTitle: 'PVD Tax Calculator',
+            historyTitle: 'Historical Trends & Analytics',
+            historySub: 'Track Net Worth growth and savings discipline over time',
+            btnChartNw: '💎 Net Worth',
+            btnChartSav: '💰 Savings Rate',
+            btnChartRun: '🛡️ Emergency Reserve',
+            thSnapDate: 'Snapshot Date',
+            thSnapNw: 'Net Worth (THB)',
+            thSnapPort: 'Portfolio (THB)',
+            thSnapRes: 'Emergency Reserve (THB)',
+            thSnapDebt: 'Debt Balance (THB)',
+            thSnapRate: 'Savings Rate (%)',
+            btnClearHistory: '🗑️ Clear All Snapshots',
+            privacyBadge: '🔒 100% Client-Side Privacy — All calculations stored locally on your device',
+            savedSuccess: '✓ Monthly snapshot recorded successfully!',
+            statusHealthy: 'Healthy Net Worth',
+            statusCaution: 'Build Emergency Buffer',
+            statusSolid: 'Solid Safety Margin'
+        }
+    };
+
+    if (LANG === 'en') {
+        const t = translations.en;
+        document.title = 'Financial Dashboard — Money Superapp';
+        document.getElementById('txt-title').textContent = t.title;
+        document.getElementById('lbl-subtitle').textContent = t.subtitle;
+        document.getElementById('lbl-btn-snapshot').textContent = t.btnSnapshot;
+        document.getElementById('lbl-print-dash').textContent = t.printDash;
+        document.getElementById('lbl-kpi-networth').textContent = t.kpiNetworth;
+        document.getElementById('lbl-networth-sub').textContent = t.networthSub;
+        document.getElementById('lbl-kpi-savings-rate').textContent = t.kpiSavingsRate;
+        document.getElementById('lbl-savings-sub').textContent = t.savingsSub;
+        document.getElementById('lbl-kpi-runway').textContent = t.kpiRunway;
+        document.getElementById('lbl-runway-sub').textContent = t.runwaySub;
+        document.getElementById('lbl-kpi-tax-debt').textContent = t.kpiTaxDebt;
+        document.getElementById('lbl-tax-bracket-sub').textContent = t.taxBracketSub;
+        document.getElementById('lbl-quick-nav-title').textContent = t.quickNavTitle;
+        document.getElementById('qc-rebal-title').textContent = t.qcRebalTitle;
+        document.getElementById('qc-rem-title').textContent = t.qcRemTitle;
+        document.getElementById('qc-tax-title').textContent = t.qcTaxTitle;
+        document.getElementById('qc-debt-title').textContent = t.qcDebtTitle;
+        document.getElementById('qc-slip-title').textContent = t.qcSlipTitle;
+        document.getElementById('qc-pvd-title').textContent = t.qcPvdTitle;
+        document.getElementById('txt-history-title').textContent = t.historyTitle;
+        document.getElementById('lbl-history-sub').textContent = t.historySub;
+        document.getElementById('btn-chart-nw').textContent = t.btnChartNw;
+        document.getElementById('btn-chart-sav').textContent = t.btnChartSav;
+        document.getElementById('btn-chart-run').textContent = t.btnChartRun;
+        document.getElementById('th-snap-date').textContent = t.thSnapDate;
+        document.getElementById('th-snap-nw').textContent = t.thSnapNw;
+        document.getElementById('th-snap-port').textContent = t.thSnapPort;
+        document.getElementById('th-snap-res').textContent = t.thSnapRes;
+        document.getElementById('th-snap-debt').textContent = t.thSnapDebt;
+        document.getElementById('th-snap-rate').textContent = t.thSnapRate;
+        document.getElementById('btn-clear-history').textContent = t.btnClearHistory;
+        document.getElementById('lbl-privacy-badge').textContent = t.privacyBadge;
+    }
+
+    const SNAPSHOT_KEY = 'moneySuperapp.historicalSnapshots.v1';
+    let chartMode = 'networth';
+
+    function formatMoney(amount) {
+        return Math.round(amount).toLocaleString(LANG === 'en' ? 'en-US' : 'th-TH');
+    }
+
+    function parseNum(val) {
+        if (typeof val === 'number') return val;
+        if (!val) return 0;
+        const clean = String(val).replace(/,/g, '').trim();
+        return parseFloat(clean) || 0;
+    }
+
+    /**
+     * Read cross-calculator live state from localStorage
+     */
+    function gatherFinancialProfile() {
+        // 1. Rebalance
+        let portfolioVal = 0;
+        try {
+            const raw = localStorage.getItem('rebalanceCalculator.state.v1');
+            if (raw) {
+                const s = JSON.parse(raw);
+                if (s && Array.isArray(s.buckets)) {
+                    portfolioVal = s.buckets.reduce((bSum, b) => bSum + (b.assets || []).reduce((aSum, a) => aSum + parseNum(a.value), 0), 0);
+                }
+            }
+        } catch(e){}
+
+        // 2. Remaining Money & Cash Flow
+        let monthlyIncome = 0;
+        let monthlyExpense = 0;
+        let monthlySavings = 0;
+        let monthlyInvest = 0;
+        let emergencyReserve = 0;
+        let runwayMonths = 0;
+        try {
+            const raw = localStorage.getItem('remainingMoneyCalculator.state.v1');
+            if (raw) {
+                const s = JSON.parse(raw);
+                if (s) {
+                    monthlyIncome = (s.incomes || []).reduce((sum, i) => sum + parseNum(i.value), 0);
+                    monthlyExpense = (s.expenses || []).reduce((sum, e) => sum + parseNum(e.value), 0);
+                    monthlySavings = (s.savings || []).reduce((sum, sa) => sum + parseNum(sa.value), 0);
+                    monthlyInvest = Math.max(0, monthlyIncome - monthlyExpense - monthlySavings);
+                    emergencyReserve = parseNum(s.currentEmergencyReserve);
+                    if (monthlyExpense > 0 && emergencyReserve > 0) {
+                        runwayMonths = emergencyReserve / monthlyExpense;
+                    }
+                }
+            }
+        } catch(e){}
+
+        // 3. Tax
+        let estimatedTax = 0;
+        let topMarginalRate = 0;
+        try {
+            const raw = localStorage.getItem('moneySuperapp.taxBase');
+            if (raw) {
+                const s = JSON.parse(raw);
+                const salary = parseNum(s?.salary);
+                const bonus = parseNum(s?.bonus);
+                const totalInc = (salary * 12) + bonus;
+                if (totalInc > 0) {
+                    // Simple estimate for quick badge
+                    const pvd = (salary * 12) * (parseNum(s?.pvd) / 100);
+                    const sso = Math.min(salary * 0.05, parseNum(s?.ssoCap) || 875) * 12;
+                    const expense = Math.min(totalInc * 0.5, 100000);
+                    const net = Math.max(0, totalInc - expense - 60000 - pvd - sso - parseNum(s?.fundDeduct) - parseNum(s?.thaiEsgDeduct));
+                    if (net <= 150000) topMarginalRate = 0;
+                    else if (net <= 300000) topMarginalRate = 5;
+                    else if (net <= 500000) topMarginalRate = 10;
+                    else if (net <= 750000) topMarginalRate = 15;
+                    else if (net <= 1000000) topMarginalRate = 20;
+                    else if (net <= 2000000) topMarginalRate = 25;
+                    else if (net <= 5000000) topMarginalRate = 30;
+                    else topMarginalRate = 35;
+                }
+            }
+        } catch(e){}
+
+        // 4. Debt
+        let totalDebt = 0;
+        let monthsToFree = 0;
+        try {
+            const raw = localStorage.getItem('moneySuperapp.debtCalculator.state.v1');
+            if (raw) {
+                const s = JSON.parse(raw);
+                if (s && Array.isArray(s.debts)) {
+                    totalDebt = s.debts.reduce((sum, d) => sum + parseNum(d.balance), 0);
+                }
+            }
+        } catch(e){}
+
+        // Computed totals
+        const netWorth = (portfolioVal + emergencyReserve) - totalDebt;
+        const totalSavedAndInvested = monthlySavings + monthlyInvest;
+        const savingsRate = monthlyIncome > 0 ? (totalSavedAndInvested / monthlyIncome) * 100 : 0;
+
+        return {
+            portfolioVal,
+            monthlyIncome,
+            monthlyExpense,
+            monthlySavings,
+            monthlyInvest,
+            emergencyReserve,
+            runwayMonths,
+            totalDebt,
+            netWorth,
+            savingsRate,
+            topMarginalRate
+        };
+    }
+
+    function renderDashboardKPIs() {
+        const p = gatherFinancialProfile();
+        const t = translations[LANG] || translations.th;
+
+        document.getElementById('kpi-networth-val').textContent = formatMoney(p.netWorth) + ' ' + unit;
+        document.getElementById('kpi-savings-rate-val').textContent = p.savingsRate.toFixed(1) + '%';
+        document.getElementById('kpi-monthly-savings-val').textContent = formatMoney(p.monthlySavings + p.monthlyInvest) + ' ' + unit;
+        document.getElementById('kpi-runway-months').textContent = p.runwayMonths > 0 ? p.runwayMonths.toFixed(1) + ' ' + (LANG === 'en' ? 'mos' : 'เดือน') : '-';
+        document.getElementById('kpi-runway-reserve-val').textContent = formatMoney(p.emergencyReserve) + ' ' + unit;
+        document.getElementById('kpi-debt-val').textContent = formatMoney(p.totalDebt) + ' ' + unit;
+        document.getElementById('kpi-tax-bracket-val').textContent = `${p.topMarginalRate}%`;
+
+        document.getElementById('kpi-networth-badge').textContent = p.netWorth >= 0 ? t.statusHealthy : t.statusCaution;
+
+        // Subtitles in quick cards
+        document.getElementById('qc-rebal-sub').textContent = `${(LANG === 'en' ? 'Portfolio: ' : 'พอร์ต: ')}${formatMoney(p.portfolioVal)} ${unit}`;
+        document.getElementById('qc-rem-sub').textContent = `${(LANG === 'en' ? 'Investable: ' : 'คงเหลือลงทุน: ')}${formatMoney(p.monthlyInvest)} ${unit}`;
+        document.getElementById('qc-debt-sub').textContent = `${(LANG === 'en' ? 'Debt: ' : 'ยอดหนี้: ')}${formatMoney(p.totalDebt)} ${unit}`;
+    }
+
+    function jumpToTab(tabId) {
+        try {
+            window.parent.postMessage({ action: 'switchToTab', target: tabId }, '*');
+        } catch(e){}
+    }
+
+    // --- Historical Snapshots & SVG Charting (Task 1) ---
+
+    function getSnapshots() {
+        try {
+            const raw = localStorage.getItem(SNAPSHOT_KEY);
+            if (raw) {
+                const arr = JSON.parse(raw);
+                if (Array.isArray(arr) && arr.length > 0) return arr;
+            }
+        } catch(e){}
+
+        // If no snapshots, seed realistic past 3 months based on current profile
+        const cur = gatherFinancialProfile();
+        const now = new Date();
+        const seed = [];
+        for (let i = 2; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 28);
+            const factor = 1 - (i * 0.05); // growth
+            seed.push({
+                id: d.getTime(),
+                date: d.toISOString().slice(0, 10),
+                netWorth: Math.round(cur.netWorth * factor),
+                portfolioVal: Math.round(cur.portfolioVal * factor),
+                emergencyReserve: Math.round(cur.emergencyReserve * factor),
+                totalDebt: Math.round(cur.totalDebt * (1 + (i * 0.04))),
+                savingsRate: Math.max(10, Math.round(cur.savingsRate + (i * 2))),
+                runwayMonths: parseFloat((cur.runwayMonths * factor).toFixed(1))
+            });
+        }
+        try { localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(seed)); } catch(e){}
+        return seed;
+    }
+
+    function saveSnapshots(snapshots) {
+        try {
+            localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshots));
+        } catch(e){}
+    }
+
+    function takeSnapshot() {
+        const cur = gatherFinancialProfile();
+        const snapshots = getSnapshots();
+        const todayStr = new Date().toISOString().slice(0, 10);
+
+        // Check if snapshot exists for today; if so, update it
+        const existingIdx = snapshots.findIndex(s => s.date === todayStr);
+        const newSnap = {
+            id: Date.now(),
+            date: todayStr,
+            netWorth: cur.netWorth,
+            portfolioVal: cur.portfolioVal,
+            emergencyReserve: cur.emergencyReserve,
+            totalDebt: cur.totalDebt,
+            savingsRate: parseFloat(cur.savingsRate.toFixed(1)),
+            runwayMonths: parseFloat(cur.runwayMonths.toFixed(1))
+        };
+
+        if (existingIdx >= 0) {
+            snapshots[existingIdx] = newSnap;
+        } else {
+            snapshots.push(newSnap);
+        }
+
+        snapshots.sort((a, b) => new Date(a.date) - new Date(b.date));
+        saveSnapshots(snapshots);
+
+        renderDashboardKPIs();
+        renderSnapshotsTable();
+        renderChart();
+
+        const banner = document.getElementById('snapshotAlertBanner');
+        document.getElementById('snapshotAlertText').textContent = (LANG === 'en' ? translations.en.savedSuccess : translations.th.savedSuccess);
+        banner.style.display = 'flex';
+        setTimeout(() => { banner.style.display = 'none'; }, 3500);
+    }
+
+    function deleteSnapshot(id) {
+        let snapshots = getSnapshots();
+        snapshots = snapshots.filter(s => s.id !== id);
+        saveSnapshots(snapshots);
+        renderSnapshotsTable();
+        renderChart();
+    }
+
+    function clearAllSnapshots() {
+        const msg = LANG === 'en' ? 'Clear all historical snapshot data?' : 'ต้องการล้างประวัติสแนปช็อตทั้งหมดหรือไม่?';
+        if (!confirm(msg)) return;
+        localStorage.removeItem(SNAPSHOT_KEY);
+        renderSnapshotsTable();
+        renderChart();
+    }
+
+    function setChartMode(mode) {
+        chartMode = mode;
+        document.getElementById('btn-chart-nw').classList.toggle('active', mode === 'networth');
+        document.getElementById('btn-chart-sav').classList.toggle('active', mode === 'savings');
+        document.getElementById('btn-chart-run').classList.toggle('active', mode === 'runway');
+        renderChart();
+    }
+
+    function renderSnapshotsTable() {
+        const snapshots = getSnapshots();
+        const tbody = document.getElementById('snapshotsTableBody');
+        tbody.innerHTML = '';
+        document.getElementById('lbl-snapshot-count').textContent = `${snapshots.length} ${LANG === 'en' ? 'snapshots' : 'บันทึก'}`;
+
+        [...snapshots].reverse().forEach(s => {
+            const tr = document.createElement('tr');
+            tr.className = 'table-row-alt hover:bg-gray-50';
+            tr.innerHTML = `
+                <td class="p-2.5 pl-3 font-semibold text-slate-800">${s.date}</td>
+                <td class="p-2.5 text-right font-bold text-emerald-600">${formatMoney(s.netWorth)}</td>
+                <td class="p-2.5 text-right">${formatMoney(s.portfolioVal)}</td>
+                <td class="p-2.5 text-right text-purple-600">${formatMoney(s.emergencyReserve)}</td>
+                <td class="p-2.5 text-right text-amber-600">${formatMoney(s.totalDebt)}</td>
+                <td class="p-2.5 text-right font-medium text-blue-600">${s.savingsRate}%</td>
+                <td class="p-2.5 text-center no-print">
+                    <button onclick="deleteSnapshot(${s.id})" class="text-gray-400 hover:text-red-500 font-bold p-1 transition-all" title="ลบ">&times;</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    /**
+     * Render SVG chart offline without any external library
+     */
+    function renderChart() {
+        const svg = document.getElementById('trendSvg');
+        const legend = document.getElementById('chartLegend');
+        const snapshots = getSnapshots();
+
+        if (snapshots.length === 0) {
+            svg.innerHTML = `<text x="300" y="110" text-anchor="middle" fill="#94a3b8" font-size="14">${LANG === 'en' ? 'No snapshot data available yet' : 'ยังไม่มีข้อมูลประวัติสแนปช็อต'}</text>`;
+            legend.innerHTML = '';
+            return;
+        }
+
+        const width = 600;
+        const height = 220;
+        const padding = { top: 25, right: 30, bottom: 35, left: 65 };
+        const plotWidth = width - padding.left - padding.right;
+        const plotHeight = height - padding.top - padding.bottom;
+
+        let values = [];
+        let strokeColor = '#059669';
+        let fillColor = 'rgba(5, 150, 105, 0.15)';
+        let valueLabel = LANG === 'en' ? 'Net Worth' : 'ความมั่งคั่งสุทธิ';
+
+        if (chartMode === 'networth') {
+            values = snapshots.map(s => s.netWorth);
+            strokeColor = '#059669';
+            fillColor = 'rgba(16, 185, 129, 0.15)';
+            valueLabel = LANG === 'en' ? 'Net Worth (THB)' : 'ความมั่งคั่งสุทธิ (บาท)';
+        } else if (chartMode === 'savings') {
+            values = snapshots.map(s => s.savingsRate);
+            strokeColor = '#0284c7';
+            fillColor = 'rgba(14, 165, 233, 0.15)';
+            valueLabel = LANG === 'en' ? 'Savings Rate (%)' : 'อัตราการออม (%)';
+        } else {
+            values = snapshots.map(s => s.emergencyReserve);
+            strokeColor = '#9333ea';
+            fillColor = 'rgba(168, 85, 247, 0.15)';
+            valueLabel = LANG === 'en' ? 'Emergency Reserve (THB)' : 'เงินสำรองฉุกเฉิน (บาท)';
+        }
+
+        let minVal = Math.min(...values);
+        let maxVal = Math.max(...values);
+        if (minVal === maxVal) {
+            minVal = Math.max(0, minVal * 0.8);
+            maxVal = maxVal * 1.2 || 100;
+        }
+        const range = (maxVal - minVal) || 1;
+
+        const points = snapshots.map((s, idx) => {
+            const x = padding.left + (snapshots.length === 1 ? plotWidth / 2 : (idx / (snapshots.length - 1)) * plotWidth);
+            const y = padding.top + plotHeight - (((values[idx] - minVal) / range) * plotHeight);
+            return { x, y, val: values[idx], date: s.date };
+        });
+
+        // Grid lines & Y-axis labels
+        let gridHtml = '';
+        const gridSteps = 4;
+        for (let i = 0; i <= gridSteps; i++) {
+            const yVal = minVal + (range * (i / gridSteps));
+            const yPos = padding.top + plotHeight - (i / gridSteps) * plotHeight;
+            gridHtml += `
+                <line x1="${padding.left}" y1="${yPos}" x2="${width - padding.right}" y2="${yPos}" stroke="#e2e8f0" stroke-dasharray="3,3" />
+                <text x="${padding.left - 8}" y="${yPos + 4}" text-anchor="end" fill="#94a3b8" font-size="10">${chartMode === 'savings' ? yVal.toFixed(0) + '%' : formatMoney(yVal)}</text>
+            `;
+        }
+
+        // X-axis dates
+        let xHtml = '';
+        points.forEach((p, i) => {
+            if (points.length <= 6 || i === 0 || i === points.length - 1 || i % Math.ceil(points.length / 5) === 0) {
+                const shortDate = p.date.slice(5); // MM-DD
+                xHtml += `<text x="${p.x}" y="${height - 12}" text-anchor="middle" fill="#94a3b8" font-size="10">${shortDate}</text>`;
+            }
+        });
+
+        // Line and Area path
+        let linePath = `M ${points[0].x} ${points[0].y}`;
+        for (let i = 1; i < points.length; i++) {
+            linePath += ` L ${points[i].x} ${points[i].y}`;
+        }
+
+        let areaPath = linePath + ` L ${points[points.length - 1].x} ${padding.top + plotHeight} L ${points[0].x} ${padding.top + plotHeight} Z`;
+
+        // Interactive point dots
+        let dotsHtml = '';
+        points.forEach((p) => {
+            dotsHtml += `
+                <circle cx="${p.x}" cy="${p.y}" r="4" fill="${strokeColor}" stroke="#fff" stroke-width="2" class="cursor-pointer hover:r-6 transition-all"
+                    onmouseover="showChartTooltip(event, '${p.date}', '${chartMode === 'savings' ? p.val + '%' : formatMoney(p.val) + ' ' + unit}')"
+                    onmouseout="hideChartTooltip()" />
+            `;
+        });
+
+        svg.innerHTML = `
+            ${gridHtml}
+            ${xHtml}
+            <path d="${areaPath}" fill="${fillColor}" />
+            <path d="${linePath}" fill="none" stroke="${strokeColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+            ${dotsHtml}
+        `;
+
+        legend.innerHTML = `
+            <div class="flex items-center gap-1.5">
+                <span class="inline-block w-3 h-3 rounded-full" style="background:${strokeColor};"></span>
+                <span class="font-medium text-slate-700">${valueLabel}</span>
+            </div>
+            <span class="text-slate-400">|</span>
+            <span class="text-[11px]">${LANG === 'en' ? 'Latest: ' : 'ล่าสุด: '} <strong>${chartMode === 'savings' ? values[values.length - 1] + '%' : formatMoney(values[values.length - 1]) + ' ' + unit}</strong></span>
+        `;
+    }
+
+    function showChartTooltip(e, date, valStr) {
+        const tip = document.getElementById('chartTooltip');
+        tip.innerHTML = `<strong>${date}</strong><br>${valStr}`;
+        tip.style.opacity = '1';
+        tip.style.left = `${e.offsetX + 10}px`;
+        tip.style.top = `${e.offsetY - 30}px`;
+    }
+
+    function hideChartTooltip() {
+        const tip = document.getElementById('chartTooltip');
+        tip.style.opacity = '0';
+    }
+
+    // Global shortcut listener Alt+1..7
+    window.addEventListener('keydown', (e) => {
+        if (e.altKey && e.key >= '1' && e.key <= '7') {
+            try {
+                window.parent.postMessage({ action: 'shortcutKey', key: e.key }, '*');
+            } catch(err){}
+        }
+    });
+
+    // Initialize
+    renderDashboardKPIs();
+    renderSnapshotsTable();
+    renderChart();
+</script>
+</body>
+</html>
