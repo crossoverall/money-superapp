@@ -562,13 +562,13 @@
      * Render SVG chart offline without any external library
      */
     function renderChart() {
-        const svg = document.getElementById('trendSvg');
-        const legend = document.getElementById('chartLegend');
+        const svg = document.getElementById('svgChart');
+        const legend = document.getElementById('chartLegend'); if(!svg) return;
         const snapshots = getSnapshots();
 
         if (snapshots.length === 0) {
             svg.innerHTML = `<text x="300" y="110" text-anchor="middle" fill="#94a3b8" font-size="14">${LANG === 'en' ? 'No snapshot data available yet' : 'ยังไม่มีข้อมูลประวัติสแนปช็อต'}</text>`;
-            legend.innerHTML = '';
+            if(legend) legend.innerHTML = '';
             return;
         }
 
@@ -661,7 +661,7 @@
             ${dotsHtml}
         `;
 
-        legend.innerHTML = `
+        if(legend) legend.innerHTML = `
             <div class="flex items-center gap-1.5">
                 <span class="inline-block w-3 h-3 rounded-full" style="background:${strokeColor};"></span>
                 <span class="font-medium text-slate-700">${valueLabel}</span>
