@@ -9,7 +9,7 @@
 <style>
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Prompt", Helvetica, Arial, sans-serif; background: #f4f5f7; display: flex; flex-direction: column; }
+  body { height: 100vh; height: 100dvh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Prompt", Helvetica, Arial, sans-serif; background: #f4f5f7; display: flex; flex-direction: column; }
 
   /* Full-bleed dark background bar; its content is capped and centered so tabs
      don't stretch into huge gaps on ultra-wide monitors. */
@@ -82,6 +82,10 @@
     navButtons.forEach(b => b.textContent = b.dataset[lang]);
     themeButtons.forEach(b => b.textContent = b.dataset[lang]);
     document.documentElement.lang = lang;
+    const activeBtn = document.querySelector('nav button.active');
+    if (activeBtn) {
+      document.title = 'Money Superapp — ' + (activeBtn.dataset[lang] || activeBtn.textContent);
+    }
   }
   function applyTheme(theme){
     themeButtons.forEach(b => b.classList.toggle('active', b.dataset.themeBtn === theme));
@@ -99,6 +103,8 @@
       frame.src = btn.dataset.src;
     }
     const tabKey = btn.dataset.tab;
+    const lang = getLang();
+    document.title = 'Money Superapp — ' + (btn.dataset[lang] || btn.textContent);
     try { localStorage.setItem('moneySuperapp.activeTab', tabKey); } catch(e){}
     if (updateHash && window.location.hash !== '#' + tabKey) {
       history.replaceState(null, '', '#' + tabKey);
@@ -110,6 +116,7 @@
   };
 
   window.addEventListener('message', (e) => {
+    if (e.source !== frame.contentWindow) return;
     if (e.data && e.data.action === 'switchToTab') {
       activateTab(e.data.target, true);
     }

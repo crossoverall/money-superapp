@@ -111,6 +111,10 @@
       line-height: 1.35;
       transition: background 0.15s, color 0.15s;
       user-select: none;
+      border: none;
+      background: none;
+      font-family: inherit;
+      width: 100%;
     }
 
     .tab:hover { color: var(--ink); }
@@ -349,10 +353,10 @@
     <h1 id="lbl-h1">คำนวณภาษีเงินชดเชย + PVD</h1>
     <p class="subtitle" id="lbl-subtitle">เลือกเงื่อนไขที่ตรงกับสถานการณ์ของคุณ</p>
 
-    <div class="tabs">
-      <div class="tab active" onclick="setTab(0)" id="tab0">สมาชิก<br>&lt; 5 ปี</div>
-      <div class="tab" onclick="setTab(1)" id="tab1">≥ 5 ปี<br>อายุ &lt; 55</div>
-      <div class="tab" onclick="setTab(2)" id="tab2">≥ 5 ปี<br>อายุ ≥ 55</div>
+    <div class="tabs" role="tablist" aria-label="เงื่อนไขอายุสมาชิก PVD">
+      <button type="button" role="tab" class="tab active" onclick="setTab(0)" id="tab0" aria-selected="true">สมาชิก<br>&lt; 5 ปี</button>
+      <button type="button" role="tab" class="tab" onclick="setTab(1)" id="tab1" aria-selected="false">≥ 5 ปี<br>อายุ &lt; 55</button>
+      <button type="button" role="tab" class="tab" onclick="setTab(2)" id="tab2" aria-selected="false">≥ 5 ปี<br>อายุ ≥ 55</button>
     </div>
 
     <div class="condition-note" id="condNote">
@@ -521,7 +525,11 @@
 
     function setTab(n) {
       activeTab = n;
-      document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === n));
+      document.querySelectorAll('.tab').forEach((t, i) => {
+        const isActive = i === n;
+        t.classList.toggle('active', isActive);
+        t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
       document.getElementById('condNote').innerHTML = (condNotes[LANG] || condNotes.th)[n];
 
       const pvdExempt = n === 2;

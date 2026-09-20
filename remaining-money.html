@@ -451,6 +451,16 @@ function resolveNumericInput(raw, base){
 
 function fmtPlain(n){ return String(Math.round(n * 100) / 100); }
 
+function escapeAttr(str){
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 function enableDeltaInput(inputEl, getBase, onChange){
   inputEl.addEventListener('focus', () => {
     inputBaseValues.set(inputEl, getBase());
@@ -627,16 +637,20 @@ function createRowContainer(items, type, container){
          : item.name === AUTO_SSO_NAME_TH  ? t('autoSSOLabel')
          : item.name === AUTO_PVD_NAME_TH  ? t('pvdLabel')
          : EN.expenseDefaultName(i+1));
+    const safeName = escapeAttr(item.name);
+    const typeLabel = type === 'income' ? (LANG === 'en' ? 'Income' : 'รายได้') : (LANG === 'en' ? 'Expense' : 'รายจ่าย');
     row.innerHTML = `
       <input class="name-input" data-type="${type}" data-idx="${i}" data-field="name"
-             value="${item.name.replace(/"/g, '&quot;')}"
+             value="${safeName}"
+             aria-label="${typeLabel} ${i+1} name"
              ${isAuto ? 'readonly' : ''} placeholder="${type === 'income' ? EN.incomeDefaultName(i+1) : EN.expenseDefaultName(i+1)}">
       <input class="value-input" type="text" inputmode="decimal" data-type="${type}" data-idx="${i}" data-field="value"
-             value="${item.value}" ${isAuto ? 'readonly' : ''}>
+             value="${item.value}" aria-label="${safeName || typeLabel} amount" ${isAuto ? 'readonly' : ''}>
       <span class="unit">${type === 'income' ? 'บาท' : 'บาท'}</span>
       ${isAuto ? `<span class="auto-badge">${autoLabel}</span>` : ''}
       <button class="remove-btn ${isAuto || (type === 'income' && item.name === 'เงินเดือน') ? 'disabled' : ''}"
               data-type="${type}" data-idx="${i}"
+              aria-label="${t('remove')} ${safeName}"
               title="${isAuto ? 'คำนวณโดยอัตโนมัติ' : item.name === 'เงินเดือน' ? 'ไม่สามารถลบได้' : 'ลบ'}">×</button>
     `;
     container.appendChild(row);
@@ -650,9 +664,10 @@ function renderPvdRow(){
   pvdRow.innerHTML = `
     <input class="pvd-label" value="${
       LANG === 'en' ? 'PVD contribution (% of salary)' : 'กองทุนสำรองเลี้ยงชีพ (% ของเงินเดือน)'
-    }" readonly>
+    }" readonly aria-label="${LANG === 'en' ? 'PVD Contribution' : 'กองทุนสำรองเลี้ยงชีพ'}">
     <input class="pvd-pct-input" type="number" id="pvdPctInput"
-           value="${pvdPercent}" min="0" max="100" step="0.5" inputmode="decimal">
+           value="${pvdPercent}" min="0" max="100" step="0.5" inputmode="decimal"
+           aria-label="${LANG === 'en' ? 'PVD contribution percentage' : 'อัตราร้อยละเงินสะสมกองทุนสำรองเลี้ยงชีพ'}">
     <span class="pvd-unit">%</span>
     <span class="pvd-badge">PVD</span>
   `;
@@ -875,7 +890,8 @@ function sendToRebalance(){
     if (window.parent && typeof window.parent.switchToTab === 'function') {
       window.parent.switchToTab('rebalance');
     } else {
-      window.parent.postMessage({ action: 'switchToTab', target: 'rebalance' }, '*');
+      const targetOrigin = (window.location.origin && window.location.origin !== 'null') ? window.location.origin : '*';
+      window.parent.postMessage({ action: 'switchToTab', target: 'rebalance' }, targetOrigin);
     }
   }
 }

@@ -356,6 +356,16 @@ function fmtPlain(n){
   return String(Math.round(n * 100) / 100);
 }
 
+function escapeAttr(str){
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 // Wires "type +N / -N to add/subtract from the current value" onto a text input.
 // getBase() supplies the value to add/subtract from (snapshotted on focus, so a
 // mid-typing string like "+1" doesn't recompute against its own live preview).
@@ -478,7 +488,7 @@ function renderSplit(){
     splitBarEl.appendChild(seg);
 
     const item = document.createElement('span');
-    item.innerHTML = `<span class="dot" style="background:var(--${b.id})"></span>${b.label}<input type="number" data-bucket="${b.id}" value="${b.weight}" min="0" max="100" step="1">%`;
+    item.innerHTML = `<span class="dot" style="background:var(--${b.id})"></span>${b.label}<input type="number" data-bucket="${b.id}" value="${b.weight}" min="0" max="100" step="1" aria-label="${escapeAttr(b.label)} weight (%)">%`;
     splitLegendEl.appendChild(item);
   });
 
@@ -539,19 +549,22 @@ function renderAssetRows(bucket){
   bucket.assets.forEach((a, i) => {
     const row = document.createElement('div');
     row.className = 'asset-row';
+    const safeName = escapeAttr(a.name);
+    const safeBucket = escapeAttr(bucket.label);
+    const defName = escapeAttr(t('assetDefaultName', i+1));
     row.innerHTML = `
       <div class="asset-row-top">
-        <input class="name" data-bucket="${bucket.id}" data-idx="${i}" data-field="name" value="${a.name}">
-        <button class="remove-btn" data-bucket="${bucket.id}" data-idx="${i}" title="${t('remove')}">×</button>
+        <input class="name" data-bucket="${bucket.id}" data-idx="${i}" data-field="name" value="${safeName}" aria-label="${defName} - ${safeBucket}">
+        <button class="remove-btn" data-bucket="${bucket.id}" data-idx="${i}" title="${t('remove')}" aria-label="${t('remove')} ${safeName || defName}">×</button>
       </div>
       <div class="field-grid">
         <div class="field">
           <label>${t('fieldValue')}</label>
-          <input type="text" inputmode="decimal" data-bucket="${bucket.id}" data-idx="${i}" data-field="value" value="${a.value}">
+          <input type="text" inputmode="decimal" data-bucket="${bucket.id}" data-idx="${i}" data-field="value" value="${a.value}" aria-label="${t('fieldValue')} - ${safeName || defName}">
         </div>
         <div class="field">
           <label>${t('fieldWeight')}</label>
-          <input type="number" data-bucket="${bucket.id}" data-idx="${i}" data-field="weight" value="${a.weight}" min="0" max="100" step="1">
+          <input type="number" data-bucket="${bucket.id}" data-idx="${i}" data-field="weight" value="${a.weight}" min="0" max="100" step="1" aria-label="${t('fieldWeight')} - ${safeName || defName}">
         </div>
       </div>
     `;
