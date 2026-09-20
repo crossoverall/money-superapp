@@ -95,11 +95,39 @@
     .remove-btn.disabled{
       color: var(--ink-faint); cursor:not-allowed; opacity:0.4;
     }
+    .pvd-unit{
+      font-size: 12px; color: var(--ink-faint); font-weight:600; white-space:nowrap;
+    }
+
     .auto-badge{
       font-size: 9px; font-weight:700; color: var(--ink-faint);
       background: var(--panel); border:1px solid var(--line);
       border-radius: 99px; padding: 1px 5px; text-transform:uppercase;
       letter-spacing:.04em; margin-left:4px; white-space:nowrap;
+    }
+    .pvd-badge{
+      font-size: 9px; font-weight:700; color: var(--core);
+      background: var(--core-dim);
+      border-radius: 99px; padding: 1px 5px; text-transform:uppercase;
+      letter-spacing:.04em; white-space:nowrap;
+    }
+    .pvd-row{
+      display:flex; align-items:center; gap:10px;
+      background: var(--panel-2); border: 1px solid var(--line);
+      border-radius: 12px; padding: 10px 12px; margin-bottom: 8px;
+    }
+    .pvd-label{
+      flex:1; background:transparent; border:none; color: var(--ink-dim);
+      font-size: 13.5px; font-weight:600; padding: 4px 2px; outline:none; white-space:nowrap;
+    }
+    .pvd-pct-input{
+      width: 80px; background: var(--bg); border: 1px solid var(--line);
+      border-radius: 8px; color: var(--ink); font-size: 15px; font-weight:700;
+      padding: 6px 10px; text-align:right; font-variant-numeric: tabular-nums; outline:none;
+    }
+    .pvd-pct-input:focus{ border-color: var(--ink-dim); }
+    .pvd-unit{
+      font-size: 12px; color: var(--ink-faint); font-weight:600; white-space:nowrap;
     }
 
     .add-btn{
@@ -243,6 +271,10 @@ const EN = {
   // Auto-row display names (per language)
   autoTaxName: 'Estimated income tax (monthly)',
   autoSSOName: 'Social Security (SSO)',
+  autoPvdName: 'Provident Fund (PVD)',
+  pvdLabel: 'PVD',
+  pvdPlaceholder: 'เช่น 5',
+  pvdPlaceholderEn: 'e.g. 5',
 };
 if(LANG === 'en'){
   document.title = 'Remaining Money Calculator';
@@ -269,6 +301,8 @@ const T = {
     metaAutoPrefix: 'คำนวณโดยอัตโนมัติ',
     metaTaxDesc: 'ภาษีเงินได้ (ประมาณการ)',
     metaSSODesc: 'ประกันสังคม 5% (สูงสุด 875 บาท/เดือน)',
+    metaPvdDesc: 'กองทุนสำรองเลี้ยงชีพ (PVD) — ลดหย่อนภาษีได้',
+    pvdLabel: 'PVD',
   },
   en: {
     scIncomeValue: n => `${n} THB`,
@@ -282,6 +316,8 @@ const T = {
     metaAutoPrefix: 'Auto-calculated',
     metaTaxDesc: 'Estimated income tax (monthly)',
     metaSSODesc: 'Social Security 5% (max 875 THB/month)',
+    metaPvdDesc: 'Provident Fund (PVD) — tax-deductible contribution',
+    pvdLabel: 'PVD',
   },
 };
 function t(key, ...args){
@@ -292,7 +328,8 @@ function t(key, ...args){
 
 // ── Auto-row canonical names ( Thai, always used as state name) ────────────
 const AUTO_TAX_NAME_TH = 'ภาษีเงินได้ (ประมาณการ)',
-      AUTO_SSO_NAME_TH = 'ประกันสังคม (SSO)';
+      AUTO_SSO_NAME_TH  = 'ประกันสังคม (SSO)',
+      AUTO_PVD_NAME_TH  = 'กองทุนสำรองเลี้ยงชีพ (PVD)';
 
 // ── State ─────────────────────────────────────────────────────────────────
 const STORAGE_KEY = 'remainingMoneyCalculator.state.v1';
@@ -305,6 +342,7 @@ const defaultState = {
   expenses: [
     { name: AUTO_TAX_NAME_TH, value: 0, auto: true },
     { name: AUTO_SSO_NAME_TH,  value: 0, auto: true },
+    { name: AUTO_PVD_NAME_TH,  value: 0, auto: true },
     { name: 'ค่าเช่า / ค่า condo', value: 3000 },
     { name: 'ค่าไฟฟ้า', value: 500 },
     { name: 'ค่าน้ำ', value: 200 },
@@ -324,6 +362,9 @@ const state = (function(){
       }
       if(!expenses.find(e => e.name === AUTO_SSO_NAME_TH)){
         expenses.unshift({ name: AUTO_SSO_NAME_TH, value: 0, auto: true });
+      }
+      if(!expenses.find(e => e.name === AUTO_PVD_NAME_TH)){
+        expenses.unshift({ name: AUTO_PVD_NAME_TH, value: 0, auto: true });
       }
       return {
         incomes: Array.isArray(saved.incomes) ? saved.incomes : defaultState.incomes,
@@ -407,6 +448,10 @@ function calculateSSO(salary){
   return Math.min(salary * 0.05, 875);
 }
 
+function calculatePVD(salary, percent){
+  return salary * (percent / 100);
+}
+
 const TAX_BRACKETS = [
   { limit: 150000,  rate: 0.00 },
   { limit: 150000,  rate: 0.05 },
@@ -430,25 +475,40 @@ function progressiveTax(income){
   return tax;
 }
 
-function calculateMonthlyTax(salary){
+function calculateMonthlyTax(salary, pvdPercent){
   const ssoMonthly = calculateSSO(salary);
+  const pvdMonthly = calculatePVD(salary, pvdPercent);
   const annualIncome = salary * 12;
   const expenseDeduction = Math.min(annualIncome * 0.5, 100000);
   const personalDeduction = 60000;
-  const netAnnual = Math.max(0, annualIncome - expenseDeduction - personalDeduction - ssoMonthly * 12);
+  const netAnnual = Math.max(0, annualIncome - expenseDeduction - personalDeduction - ssoMonthly * 12 - pvdMonthly * 12);
   return progressiveTax(netAnnual) / 12;
 }
 
 // ── Auto-expense update ────────────────────────────────────────────────────
+const PVD_PERCENT_KEY = 'remainingMoneyCalculator.pvdPercent.v1';
+let pvdPercent = (function(){
+  try{
+    const saved = localStorage.getItem(PVD_PERCENT_KEY);
+    if(saved !== null){
+      const n = parseFloat(saved);
+      if(!isNaN(n) && n >= 0 && n <= 100) return n;
+    }
+  } catch(e){}
+  return 5;
+})();
+
 function getSalaryValue(){
   const first = state.incomes[0];
   return first && first.name === 'เงินเดือน' ? (first.value || 0) : 0;
 }
 
-function updateAutoExpenses(){
+function updateAutoExpenses(pvdPct){
+  pvdPct = pvdPct !== undefined ? pvdPct : pvdPercent;
   const salary = getSalaryValue();
-  const tax = salary > 0 ? calculateMonthlyTax(salary) : 0;
+  const tax = salary > 0 ? calculateMonthlyTax(salary, pvdPct) : 0;
   const sso = salary > 0 ? calculateSSO(salary) : 0;
+  const pvd = salary > 0 ? calculatePVD(salary, pvdPct) : 0;
 
   let taxItem = state.expenses.find(e => e.name === AUTO_TAX_NAME_TH);
   if(!taxItem){
@@ -465,12 +525,22 @@ function updateAutoExpenses(){
   }
   ssoItem.value = sso;
 
-  // Sync DOM inputs for auto rows so they reflect the new computed values
+  let pvdItem = state.expenses.find(e => e.name === AUTO_PVD_NAME_TH);
+  if(!pvdItem){
+    pvdItem = { name: AUTO_PVD_NAME_TH, value: 0, auto: true };
+    const ssoIdx = state.expenses.indexOf(ssoItem);
+    state.expenses.splice(ssoIdx + 1, 0, pvdItem);
+  }
+  pvdItem.value = pvd;
+
+  // Sync DOM inputs for auto rows
   if(expenseContainer){
     const taxRow = expenseContainer.querySelector(`.entry-row .name-input[value="${AUTO_TAX_NAME_TH.replace(/"/g, '&quot;')}"]`);
     const ssoRow = expenseContainer.querySelector(`.entry-row .name-input[value="${AUTO_SSO_NAME_TH.replace(/"/g, '&quot;')}"]`);
+    const pvdRow = expenseContainer.querySelector(`.entry-row .name-input[value="${AUTO_PVD_NAME_TH.replace(/"/g, '&quot;')}"]`);
     if(taxRow) taxRow.parentElement.querySelector('.value-input').value = fmtPlain(tax);
     if(ssoRow) ssoRow.parentElement.querySelector('.value-input').value = fmtPlain(sso);
+    if(pvdRow) pvdRow.parentElement.querySelector('.value-input').value = fmtPlain(pvd);
   }
 }
 
@@ -503,8 +573,15 @@ function createRowContainer(items, type, container){
     const row = document.createElement('div');
     row.className = 'entry-row';
     const isAuto = item.auto === true;
-    const autoLabel = LANG === 'en' ? (item.name === AUTO_TAX_NAME_TH ? EN.autoTaxName : EN.autoSSOName)
-                                    : (item.name === AUTO_TAX_NAME_TH ? t('autoTaxLabel') : t('autoSSOLabel'));
+    const autoLabel = LANG === 'en'
+      ? (item.name === AUTO_TAX_NAME_TH ? EN.autoTaxName
+         : item.name === AUTO_SSO_NAME_TH  ? EN.autoSSOName
+         : item.name === AUTO_PVD_NAME_TH  ? EN.autoPvdName
+         : EN.expenseDefaultName(i+1))
+      : (item.name === AUTO_TAX_NAME_TH ? t('autoTaxLabel')
+         : item.name === AUTO_SSO_NAME_TH  ? t('autoSSOLabel')
+         : item.name === AUTO_PVD_NAME_TH  ? t('pvdLabel')
+         : EN.expenseDefaultName(i+1));
     row.innerHTML = `
       <input class="name-input" data-type="${type}" data-idx="${i}" data-field="name"
              value="${item.name.replace(/"/g, '&quot;')}"
@@ -518,6 +595,49 @@ function createRowContainer(items, type, container){
               title="${isAuto ? 'คำนวณโดยอัตโนมัติ' : 'ลบ'}">×</button>
     `;
     container.appendChild(row);
+  });
+}
+
+// ── PVD % row (separate UI element appended to income container) ───────────
+function renderPvdRow(){
+  const pvdRow = document.createElement('div');
+  pvdRow.className = 'pvd-row';
+  pvdRow.innerHTML = `
+    <input class="pvd-label" value="${
+      LANG === 'en' ? 'PVD contribution (% of salary)' : 'กองทุนสำรองเลี้ยงชีพ (% ของเงินเดือน)'
+    }" readonly>
+    <input class="pvd-pct-input" type="number" id="pvdPctInput"
+           value="${pvdPercent}" min="0" max="100" step="0.5" inputmode="decimal">
+    <span class="pvd-unit">%</span>
+    <span class="pvd-badge">PVD</span>
+  `;
+  incomeContainer.appendChild(pvdRow);
+
+  const pvdInput = document.getElementById('pvdPctInput');
+
+  pvdInput.addEventListener('input', () => {
+    const val = parseFloat(pvdInput.value);
+    if(!isNaN(val) && val >= 0 && val <= 100){
+      pvdPercent = val;
+      try{ localStorage.setItem(PVD_PERCENT_KEY, String(val)); } catch(e){}
+      updateAutoExpenses(pvdPercent);
+      compute();
+    }
+  });
+
+  pvdInput.addEventListener('blur', () => {
+    let val = parseFloat(pvdInput.value);
+    if(isNaN(val) || val < 0){ val = 0; }
+    if(val > 100){ val = 100; }
+    pvdPercent = val;
+    pvdInput.value = val;
+    try{ localStorage.setItem(PVD_PERCENT_KEY, String(val)); } catch(e){}
+    updateAutoExpenses(pvdPercent);
+    compute();
+  });
+
+  pvdInput.addEventListener('keydown', e => {
+    if(e.key === 'Enter'){ pvdInput.blur(); }
   });
 }
 
@@ -545,7 +665,7 @@ function bindRows(container, type){
         if(type === 'income'){
           const item = items[idx];
           if(item && item.name === 'เงินเดือน'){
-            updateAutoExpenses();
+            updateAutoExpenses(pvdPercent);
           }
         }
         compute();
@@ -574,7 +694,7 @@ function bindRows(container, type){
       const idx = parseInt(inp.dataset.idx);
       const item = items[idx];
       if(item && item.name === 'เงินเดือน'){
-        updateAutoExpenses();
+        updateAutoExpenses(pvdPercent);
         compute();
       }
     });
@@ -606,8 +726,8 @@ expenseAddBtn.addEventListener('click', () => addRow('expense'));
 
 // ── Compute & display ──────────────────────────────────────────────────────
 function compute(){
-  // Auto-update tax/SSO from salary before computing totals
-  updateAutoExpenses();
+  // Refresh auto expenses (tax, SSO, PVD) before computing totals
+  updateAutoExpenses(pvdPercent);
 
   const totalIncome  = state.incomes.reduce((s, item) => s + (item.value || 0), 0);
   const totalExpense = state.expenses.reduce((s, item) => s + (item.value || 0), 0);
@@ -656,7 +776,7 @@ function compute(){
       row.innerHTML = `
         <div class="result-left">
           <div class="rname">${item.name}</div>
-          ${isAuto ? `<div class="rmeta" style="color:var(--ink-faint)">${t('metaAutoPrefix')} • ${item.name === AUTO_TAX_NAME_TH ? t('metaTaxDesc') : t('metaSSODesc')}</div>` : ''}
+          ${isAuto ? `<div class="rmeta" style="color:var(--ink-faint)">${t('metaAutoPrefix')} • ${item.name === AUTO_TAX_NAME_TH ? t('metaTaxDesc') : item.name === AUTO_SSO_NAME_TH ? t('metaSSODesc') : item.name === AUTO_PVD_NAME_TH ? t('metaPvdDesc') : ''}</div>` : ''}
         </div>
         <div class="result-right">
           <div class="rval" style="color:${signColor}">− ${fmtCurrency(item.value)}</div>
@@ -682,6 +802,7 @@ function compute(){
 
 // ── Init ───────────────────────────────────────────────────────────────────
 renderRows();
+renderPvdRow();
 compute();
 </script>
 </body>
