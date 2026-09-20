@@ -164,10 +164,13 @@
 
   <div class="panel">
     <div class="panel-title" id="lbl-quick-links">ไปหน้าเครื่องมือ (Tools)</div>
+    
     <div onclick="window.parent.postMessage({action:'switchToTab', key:'1'},'*')" class="quick-link">💰 คำนวณเงินคงเหลือ (Remaining) <span>Alt+1</span></div>
-    <div onclick="window.parent.postMessage({action:'switchToTab', key:'7'},'*')" class="quick-link">📉 วางแผนปลดหนี้ (Debt) <span>Alt+7</span></div>
     <div onclick="window.parent.postMessage({action:'switchToTab', key:'2'},'*')" class="quick-link">📊 Rebalance พอร์ต <span>Alt+2</span></div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', key:'3'},'*')" class="quick-link">📄 จำลองสลิปเงินเดือน <span>Alt+3</span></div>
     <div onclick="window.parent.postMessage({action:'switchToTab', key:'4'},'*')" class="quick-link">🧾 คำนวณภาษีประจำปี <span>Alt+4</span></div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', key:'6'},'*')" class="quick-link">📈 ตารางบันทึก PVD <span>Alt+6</span></div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', key:'7'},'*')" class="quick-link">📉 วางแผนปลดหนี้ (Debt) <span>Alt+7</span></div>
   </div>
 
   <p class="version-tag">Money Superapp v1.3.1</p>
@@ -260,38 +263,38 @@
     if (LANG === 'en') {
         const t = translations.en;
         document.title = 'Financial Dashboard — Money Superapp';
-        document.getElementById('txt-title').textContent = t.title;
-        document.getElementById('lbl-subtitle').textContent = t.subtitle;
-        document.getElementById('lbl-btn-snapshot').textContent = t.btnSnapshot;
-        document.getElementById('lbl-print-dash').textContent = t.printDash;
-        document.getElementById('lbl-kpi-networth').textContent = t.kpiNetworth;
-        document.getElementById('lbl-networth-sub').textContent = t.networthSub;
-        document.getElementById('lbl-kpi-savings-rate').textContent = t.kpiSavingsRate;
-        document.getElementById('lbl-savings-sub').textContent = t.savingsSub;
-        document.getElementById('lbl-kpi-runway').textContent = t.kpiRunway;
-        document.getElementById('lbl-runway-sub').textContent = t.runwaySub;
-        document.getElementById('lbl-kpi-tax-debt').textContent = t.kpiTaxDebt;
-        document.getElementById('lbl-tax-bracket-sub').textContent = t.taxBracketSub;
-        document.getElementById('lbl-quick-nav-title').textContent = t.quickNavTitle;
-        document.getElementById('qc-rebal-title').textContent = t.qcRebalTitle;
-        document.getElementById('qc-rem-title').textContent = t.qcRemTitle;
-        document.getElementById('qc-tax-title').textContent = t.qcTaxTitle;
-        document.getElementById('qc-debt-title').textContent = t.qcDebtTitle;
-        document.getElementById('qc-slip-title').textContent = t.qcSlipTitle;
-        document.getElementById('qc-pvd-title').textContent = t.qcPvdTitle;
-        document.getElementById('txt-history-title').textContent = t.historyTitle;
-        document.getElementById('lbl-history-sub').textContent = t.historySub;
-        document.getElementById('btn-chart-nw').textContent = t.btnChartNw;
-        document.getElementById('btn-chart-sav').textContent = t.btnChartSav;
-        document.getElementById('btn-chart-run').textContent = t.btnChartRun;
-        document.getElementById('th-snap-date').textContent = t.thSnapDate;
-        document.getElementById('th-snap-nw').textContent = t.thSnapNw;
-        document.getElementById('th-snap-port').textContent = t.thSnapPort;
-        document.getElementById('th-snap-res').textContent = t.thSnapRes;
-        document.getElementById('th-snap-debt').textContent = t.thSnapDebt;
-        document.getElementById('th-snap-rate').textContent = t.thSnapRate;
-        document.getElementById('btn-clear-history').textContent = t.btnClearHistory;
-        document.getElementById('lbl-privacy-badge').textContent = t.privacyBadge;
+        if (document.getElementById('txt-title')) document.getElementById('txt-title').textContent = t.title;
+        if (document.getElementById('lbl-subtitle')) document.getElementById('lbl-subtitle').textContent = t.subtitle;
+        if (document.getElementById('lbl-btn-snapshot')) document.getElementById('lbl-btn-snapshot').textContent = t.btnSnapshot;
+        if (document.getElementById('lbl-print-dash')) document.getElementById('lbl-print-dash').textContent = t.printDash;
+        if (document.getElementById('lbl-kpi-networth')) document.getElementById('lbl-kpi-networth').textContent = t.kpiNetworth;
+        if (document.getElementById('lbl-networth-sub')) document.getElementById('lbl-networth-sub').textContent = t.networthSub;
+        if (document.getElementById('lbl-kpi-savings-rate')) document.getElementById('lbl-kpi-savings-rate').textContent = t.kpiSavingsRate;
+        if (document.getElementById('lbl-savings-sub')) document.getElementById('lbl-savings-sub').textContent = t.savingsSub;
+        if (document.getElementById('lbl-kpi-runway')) document.getElementById('lbl-kpi-runway').textContent = t.kpiRunway;
+        if (document.getElementById('lbl-runway-sub')) document.getElementById('lbl-runway-sub').textContent = t.runwaySub;
+        if (document.getElementById('lbl-kpi-tax-debt')) document.getElementById('lbl-kpi-tax-debt').textContent = t.kpiTaxDebt;
+        if (document.getElementById('lbl-tax-bracket-sub')) document.getElementById('lbl-tax-bracket-sub').textContent = t.taxBracketSub;
+        if (document.getElementById('lbl-quick-nav-title')) document.getElementById('lbl-quick-nav-title').textContent = t.quickNavTitle;
+        if (document.getElementById('qc-rebal-title')) document.getElementById('qc-rebal-title').textContent = t.qcRebalTitle;
+        if (document.getElementById('qc-rem-title')) document.getElementById('qc-rem-title').textContent = t.qcRemTitle;
+        if (document.getElementById('qc-tax-title')) document.getElementById('qc-tax-title').textContent = t.qcTaxTitle;
+        if (document.getElementById('qc-debt-title')) document.getElementById('qc-debt-title').textContent = t.qcDebtTitle;
+        if (document.getElementById('qc-slip-title')) document.getElementById('qc-slip-title').textContent = t.qcSlipTitle;
+        if (document.getElementById('qc-pvd-title')) document.getElementById('qc-pvd-title').textContent = t.qcPvdTitle;
+        if (document.getElementById('txt-history-title')) document.getElementById('txt-history-title').textContent = t.historyTitle;
+        if (document.getElementById('lbl-history-sub')) document.getElementById('lbl-history-sub').textContent = t.historySub;
+        if (document.getElementById('btn-chart-nw')) document.getElementById('btn-chart-nw').textContent = t.btnChartNw;
+        if (document.getElementById('btn-chart-sav')) document.getElementById('btn-chart-sav').textContent = t.btnChartSav;
+        if (document.getElementById('btn-chart-run')) document.getElementById('btn-chart-run').textContent = t.btnChartRun;
+        if (document.getElementById('th-snap-date')) document.getElementById('th-snap-date').textContent = t.thSnapDate;
+        if (document.getElementById('th-snap-nw')) document.getElementById('th-snap-nw').textContent = t.thSnapNw;
+        if (document.getElementById('th-snap-port')) document.getElementById('th-snap-port').textContent = t.thSnapPort;
+        if (document.getElementById('th-snap-res')) document.getElementById('th-snap-res').textContent = t.thSnapRes;
+        if (document.getElementById('th-snap-debt')) document.getElementById('th-snap-debt').textContent = t.thSnapDebt;
+        if (document.getElementById('th-snap-rate')) document.getElementById('th-snap-rate').textContent = t.thSnapRate;
+        if (document.getElementById('btn-clear-history')) document.getElementById('btn-clear-history').textContent = t.btnClearHistory;
+        if (document.getElementById('lbl-privacy-badge')) document.getElementById('lbl-privacy-badge').textContent = t.privacyBadge;
     }
 
     const SNAPSHOT_KEY = 'moneySuperapp.historicalSnapshots.v1';
@@ -413,20 +416,20 @@
         const p = gatherFinancialProfile();
         const t = translations[LANG] || translations.th;
 
-        document.getElementById('kpi-networth-val').textContent = formatMoney(p.netWorth) + ' ' + unit;
-        document.getElementById('kpi-savings-rate-val').textContent = p.savingsRate.toFixed(1) + '%';
-        document.getElementById('kpi-monthly-savings-val').textContent = formatMoney(p.monthlySavings + p.monthlyInvest) + ' ' + unit;
-        document.getElementById('kpi-runway-months').textContent = p.runwayMonths > 0 ? p.runwayMonths.toFixed(1) + ' ' + (LANG === 'en' ? 'mos' : 'เดือน') : '-';
-        document.getElementById('kpi-runway-reserve-val').textContent = formatMoney(p.emergencyReserve) + ' ' + unit;
-        document.getElementById('kpi-debt-val').textContent = formatMoney(p.totalDebt) + ' ' + unit;
-        document.getElementById('kpi-tax-bracket-val').textContent = `${p.topMarginalRate}%`;
+        if (document.getElementById('kpi-networth-val')) document.getElementById('kpi-networth-val').textContent = formatMoney(p.netWorth) + ' ' + unit;
+        if (document.getElementById('kpi-savings-rate-val')) document.getElementById('kpi-savings-rate-val').textContent = p.savingsRate.toFixed(1) + '%';
+        if (document.getElementById('kpi-monthly-savings-val')) document.getElementById('kpi-monthly-savings-val').textContent = formatMoney(p.monthlySavings + p.monthlyInvest) + ' ' + unit;
+        if (document.getElementById('kpi-runway-months')) document.getElementById('kpi-runway-months').textContent = p.runwayMonths > 0 ? p.runwayMonths.toFixed(1) + ' ' + (LANG === 'en' ? 'mos' : 'เดือน') : '-';
+        if (document.getElementById('kpi-runway-reserve-val')) document.getElementById('kpi-runway-reserve-val').textContent = formatMoney(p.emergencyReserve) + ' ' + unit;
+        if (document.getElementById('kpi-debt-val')) document.getElementById('kpi-debt-val').textContent = formatMoney(p.totalDebt) + ' ' + unit;
+        if (document.getElementById('kpi-tax-bracket-val')) document.getElementById('kpi-tax-bracket-val').textContent = `${p.topMarginalRate}%`;
 
-        document.getElementById('kpi-networth-badge').textContent = p.netWorth >= 0 ? t.statusHealthy : t.statusCaution;
+        if (document.getElementById('kpi-networth-badge')) document.getElementById('kpi-networth-badge').textContent = p.netWorth >= 0 ? t.statusHealthy : t.statusCaution;
 
         // Subtitles in quick cards
-        document.getElementById('qc-rebal-sub').textContent = `${(LANG === 'en' ? 'Portfolio: ' : 'พอร์ต: ')}${formatMoney(p.portfolioVal)} ${unit}`;
-        document.getElementById('qc-rem-sub').textContent = `${(LANG === 'en' ? 'Investable: ' : 'คงเหลือลงทุน: ')}${formatMoney(p.monthlyInvest)} ${unit}`;
-        document.getElementById('qc-debt-sub').textContent = `${(LANG === 'en' ? 'Debt: ' : 'ยอดหนี้: ')}${formatMoney(p.totalDebt)} ${unit}`;
+        if (document.getElementById('qc-rebal-sub')) document.getElementById('qc-rebal-sub').textContent = `${(LANG === 'en' ? 'Portfolio: ' : 'พอร์ต: ')}${formatMoney(p.portfolioVal)} ${unit}`;
+        if (document.getElementById('qc-rem-sub')) document.getElementById('qc-rem-sub').textContent = `${(LANG === 'en' ? 'Investable: ' : 'คงเหลือลงทุน: ')}${formatMoney(p.monthlyInvest)} ${unit}`;
+        if (document.getElementById('qc-debt-sub')) document.getElementById('qc-debt-sub').textContent = `${(LANG === 'en' ? 'Debt: ' : 'ยอดหนี้: ')}${formatMoney(p.totalDebt)} ${unit}`;
     }
 
     function jumpToTab(tabId) {
@@ -506,7 +509,7 @@
         renderChart();
 
         const banner = document.getElementById('snapshotAlertBanner');
-        document.getElementById('snapshotAlertText').textContent = (LANG === 'en' ? translations.en.savedSuccess : translations.th.savedSuccess);
+        if (document.getElementById('snapshotAlertText')) document.getElementById('snapshotAlertText').textContent = (LANG === 'en' ? translations.en.savedSuccess : translations.th.savedSuccess);
         banner.style.display = 'flex';
         setTimeout(() => { banner.style.display = 'none'; }, 3500);
     }
@@ -539,7 +542,7 @@
         const snapshots = getSnapshots();
         const tbody = document.getElementById('snapshotsTableBody');
         tbody.innerHTML = '';
-        document.getElementById('lbl-snapshot-count').textContent = `${snapshots.length} ${LANG === 'en' ? 'snapshots' : 'บันทึก'}`;
+        if (document.getElementById('lbl-snapshot-count')) document.getElementById('lbl-snapshot-count').textContent = `${snapshots.length} ${LANG === 'en' ? 'snapshots' : 'บันทึก'}`;
 
         [...snapshots].reverse().forEach(s => {
             const tr = document.createElement('tr');

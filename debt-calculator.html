@@ -352,40 +352,35 @@
     if (LANG === 'en') {
         const t = translations.en;
         document.title = 'Debt Payoff Calculator — Money Superapp';
-        document.getElementById('txt-title').textContent = t.title;
-        document.getElementById('lbl-subtitle').textContent = t.subtitle;
-        document.getElementById('lbl-import-savings').textContent = t.importSavings;
-        document.getElementById('lbl-copy-plan').textContent = t.copyPlan;
-        document.getElementById('lbl-print-plan').textContent = t.printPlan;
-        document.getElementById('lbl-kpi-total-debt').textContent = t.kpiTotalDebt;
-        document.getElementById('lbl-kpi-debtfree-date').textContent = t.kpiDebtFreeDate;
-        document.getElementById('lbl-kpi-total-interest').textContent = t.kpiTotalInterest;
-        document.getElementById('lbl-kpi-interest-saved').textContent = t.kpiInterestSaved;
-        document.getElementById('lbl-strategy-title').textContent = t.strategyTitle;
-        document.getElementById('lbl-extra-pay').textContent = t.extraPay;
-        document.getElementById('lbl-unit-monthly').textContent = t.unitMonthly;
-        document.getElementById('lbl-debt-list-title').textContent = t.debtListTitle;
-        document.getElementById('lbl-btn-add-debt').textContent = t.btnAddDebt;
-        document.getElementById('th-name').textContent = t.thName;
-        document.getElementById('th-balance').textContent = t.thBalance;
-        document.getElementById('th-rate').textContent = t.thRate;
-        document.getElementById('th-min-pay').textContent = t.thMinPay;
-        document.getElementById('th-order').textContent = t.thOrder;
-        document.getElementById('td-total-label').textContent = t.tdTotalLabel;
-        document.getElementById('lbl-compare-title').textContent = t.compareTitle;
-        document.getElementById('lbl-cmp-av-months').textContent = t.cmpAvMonths;
-        document.getElementById('lbl-cmp-av-interest').textContent = t.cmpAvInterest;
-        document.getElementById('lbl-cmp-av-saved').textContent = t.cmpAvSaved;
-        document.getElementById('lbl-cmp-sn-months').textContent = t.cmpSnMonths;
-        document.getElementById('lbl-cmp-sn-interest').textContent = t.cmpSnInterest;
-        document.getElementById('lbl-cmp-sn-saved').textContent = t.cmpSnSaved;
-        document.getElementById('lbl-schedule-title').textContent = t.scheduleTitle;
-        document.getElementById('th-sch-month').textContent = t.thSchMonth;
-        document.getElementById('th-sch-payment').textContent = t.thSchPayment;
-        document.getElementById('th-sch-principal').textContent = t.thSchPrincipal;
-        document.getElementById('th-sch-interest').textContent = t.thSchInterest;
-        document.getElementById('th-sch-remaining').textContent = t.thSchRemaining;
-        document.getElementById('btn-reset-debts').textContent = t.btnResetDebts;
+        if (document.getElementById('txt-title')) document.getElementById('txt-title').textContent = t.title;
+        if (document.getElementById('lbl-subtitle')) document.getElementById('lbl-subtitle').textContent = t.subtitle;
+        if (document.getElementById('lbl-import-savings')) document.getElementById('lbl-import-savings').textContent = t.importSavings;
+        if (document.getElementById('lbl-copy-plan')) document.getElementById('lbl-copy-plan').textContent = t.copyPlan;
+        if (document.getElementById('lbl-print-plan')) document.getElementById('lbl-print-plan').textContent = t.printPlan;
+        if (document.getElementById('lbl-kpi-total-debt')) document.getElementById('lbl-kpi-total-debt').textContent = t.kpiTotalDebt;
+        if (document.getElementById('lbl-kpi-debtfree-date')) document.getElementById('lbl-kpi-debtfree-date').textContent = t.kpiDebtFreeDate;
+        if (document.getElementById('lbl-kpi-total-interest')) document.getElementById('lbl-kpi-total-interest').textContent = t.kpiTotalInterest;
+        if (document.getElementById('lbl-kpi-interest-saved')) document.getElementById('lbl-kpi-interest-saved').textContent = t.kpiInterestSaved;
+        if (document.getElementById('lbl-strategy-title')) document.getElementById('lbl-strategy-title').textContent = t.strategyTitle;
+        if (document.getElementById('lbl-extra-pay')) document.getElementById('lbl-extra-pay').textContent = t.extraPay;
+        if (document.getElementById('lbl-unit-monthly')) document.getElementById('lbl-unit-monthly').textContent = t.unitMonthly;
+        if (document.getElementById('lbl-debt-list-title')) document.getElementById('lbl-debt-list-title').textContent = t.debtListTitle;
+        if (document.getElementById('lbl-btn-add-debt')) document.getElementById('lbl-btn-add-debt').textContent = t.btnAddDebt;
+        if (document.getElementById('td-total-label')) document.getElementById('td-total-label').textContent = t.tdTotalLabel;
+        if (document.getElementById('lbl-compare-title')) document.getElementById('lbl-compare-title').textContent = t.compareTitle;
+        if (document.getElementById('lbl-cmp-av-months')) document.getElementById('lbl-cmp-av-months').textContent = t.cmpAvMonths;
+        if (document.getElementById('lbl-cmp-av-interest')) document.getElementById('lbl-cmp-av-interest').textContent = t.cmpAvInterest;
+        if (document.getElementById('lbl-cmp-av-saved')) document.getElementById('lbl-cmp-av-saved').textContent = t.cmpAvSaved;
+        if (document.getElementById('lbl-cmp-sn-months')) document.getElementById('lbl-cmp-sn-months').textContent = t.cmpSnMonths;
+        if (document.getElementById('lbl-cmp-sn-interest')) document.getElementById('lbl-cmp-sn-interest').textContent = t.cmpSnInterest;
+        if (document.getElementById('lbl-cmp-sn-saved')) document.getElementById('lbl-cmp-sn-saved').textContent = t.cmpSnSaved;
+        if (document.getElementById('lbl-schedule-title')) document.getElementById('lbl-schedule-title').textContent = t.scheduleTitle;
+        if (document.getElementById('th-sch-month')) document.getElementById('th-sch-month').textContent = t.thSchMonth;
+        if (document.getElementById('th-sch-payment')) document.getElementById('th-sch-payment').textContent = t.thSchPayment;
+        if (document.getElementById('th-sch-principal')) document.getElementById('th-sch-principal').textContent = t.thSchPrincipal;
+        if (document.getElementById('th-sch-interest')) document.getElementById('th-sch-interest').textContent = t.thSchInterest;
+        if (document.getElementById('th-sch-remaining')) document.getElementById('th-sch-remaining').textContent = t.thSchRemaining;
+        if (document.getElementById('btn-reset-debts')) document.getElementById('btn-reset-debts').textContent = t.btnResetDebts;
     }
 
     const STORAGE_KEY = 'moneySuperapp.debtCalculator.state.v1';
@@ -493,7 +488,7 @@
 
         state.debts.forEach((debt) => {
             const orderIndex = sorted.findIndex(s => s.id === debt.id) + 1;
-            
+
             const tr = document.createElement('div');
             tr.className = 'entry-row';
             tr.innerHTML = `
@@ -515,7 +510,225 @@
                     <input type="number" value="${debt.minPayment}" step="100" min="0" oninput="onDebtChange(${debt.id}, 'minPayment', this.value)" class="value-input" style="color:var(--blue);">
                 </div>
             `;
+            tbody.appendChild(tr);
+        });
+    }
 
+    /**
+     * Run simulation for a given debt list, extra monthly payment, and strategy
+     */
+    function simulate(debtsList, extra, strategy) {
+        let debts = debtsList.map(d => ({
+            id: d.id,
+            name: d.name,
+            balance: parseNum(d.balance),
+            rate: parseNum(d.rate),
+            minPayment: parseNum(d.minPayment),
+            initialBalance: parseNum(d.balance),
+            paidOffMonth: null
+        })).filter(d => d.balance > 0);
+
+        if (debts.length === 0) {
+            return { months: 0, totalInterest: 0, totalPaid: 0, schedule: [], payoffOrder: [] };
+        }
+
+        let months = 0;
+        let totalInterest = 0;
+        let totalPaid = 0;
+        const schedule = [];
+        const payoffOrder = [];
+
+        const MAX_MONTHS = 360; // 30 years safety limit
+
+        while (debts.some(d => d.balance > 0.01) && months < MAX_MONTHS) {
+            months++;
+            let monthInterest = 0;
+            let monthPayment = 0;
+            let monthPrincipal = 0;
+
+            // 1. Accrue interest
+            debts.forEach(d => {
+                if (d.balance > 0) {
+                    const interest = d.balance * (d.rate / 100 / 12);
+                    d.balance += interest;
+                    monthInterest += interest;
+                    totalInterest += interest;
+                }
+            });
+
+            // 2. Pay minimums
+            let totalAvailableBudget = extra;
+            debts.forEach(d => {
+                if (d.balance > 0) {
+                    const pay = Math.min(d.balance, d.minPayment);
+                    d.balance -= pay;
+                    monthPayment += pay;
+                    monthPrincipal += (pay - (d.balance === 0 ? 0 : 0));
+                } else {
+                    // Rollover minimum payment from already paid-off debt!
+                    totalAvailableBudget += d.minPayment;
+                }
+            });
+
+            // 3. Allocate extra budget according to strategy
+            let activeDebts = debts.filter(d => d.balance > 0.01);
+            activeDebts.sort((a, b) => {
+                if (strategy === 'snowball') return a.balance - b.balance;
+                return b.rate - a.rate;
+            });
+
+            for (let target of activeDebts) {
+                if (totalAvailableBudget <= 0.01) break;
+                const extraPay = Math.min(target.balance, totalAvailableBudget);
+                target.balance -= extraPay;
+                monthPayment += extraPay;
+                totalAvailableBudget -= extraPay;
+
+                if (target.balance <= 0.01 && target.paidOffMonth === null) {
+                    target.paidOffMonth = months;
+                    payoffOrder.push({ name: target.name, month: months });
+                }
+            }
+
+            // Check if remaining active debts got paid off in step 2
+            debts.forEach(d => {
+                if (d.balance <= 0.01 && d.paidOffMonth === null) {
+                    d.paidOffMonth = months;
+                    payoffOrder.push({ name: d.name, month: months });
+                }
+            });
+
+            const remainingBalance = debts.reduce((sum, d) => sum + Math.max(0, d.balance), 0);
+            totalPaid += monthPayment;
+
+            if (months <= 60 || remainingBalance <= 0 || months % 6 === 0) {
+                schedule.push({
+                    month: months,
+                    payment: monthPayment,
+                    interest: monthInterest,
+                    principal: monthPayment - monthInterest,
+                    remaining: remainingBalance
+                });
+            }
+        }
+
+        return { months, totalInterest, totalPaid, schedule, payoffOrder };
+    }
+
+    function computePayoff() {
+        const debts = state.debts;
+        const totalDebt = debts.reduce((sum, d) => sum + parseNum(d.balance), 0);
+        const totalMin = debts.reduce((sum, d) => sum + parseNum(d.minPayment), 0);
+        const avgRate = totalDebt > 0
+            ? debts.reduce((sum, d) => sum + (parseNum(d.balance) * parseNum(d.rate)), 0) / totalDebt
+            : 0;
+
+        if (document.getElementById('footTotalBalance')) document.getElementById('footTotalBalance').textContent = formatMoney(totalDebt) + ' ' + unit;
+        if (document.getElementById('footTotalMin')) document.getElementById('footTotalMin').textContent = formatMoney(totalMin) + ' ' + unit;
+        if (document.getElementById('footAvgRate')) document.getElementById('footAvgRate').textContent = avgRate > 0 ? avgRate.toFixed(1) + '%' : '-';
+
+        if (document.getElementById('kpi-total-debt')) document.getElementById('kpi-total-debt').textContent = formatMoney(totalDebt) + ' ' + unit;
+        if (document.getElementById('kpi-debt-count')) document.getElementById('kpi-debt-count').textContent = debts.length + (LANG === 'en' ? ' accounts' : ' รายการ');
+
+        // Simulations
+        const simCurrent = simulate(debts, state.extraPayment, state.strategy);
+        const simAvalanche = simulate(debts, state.extraPayment, 'avalanche');
+        const simSnowball = simulate(debts, state.extraPayment, 'snowball');
+        const simMinOnly = simulate(debts, 0, 'avalanche');
+
+        // Current strategy outputs
+        const now = new Date();
+        const freeDate = new Date(now.getFullYear(), now.getMonth() + simCurrent.months, 1);
+        const monthNamesTh = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        const monthNamesEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const dateStr = totalDebt <= 0
+            ? (LANG === 'en' ? 'Zero Debt!' : 'ไม่มีหนี้สิน!')
+            : (LANG === 'en'
+                ? `${monthNamesEn[freeDate.getMonth()]} ${freeDate.getFullYear()}`
+                : `${monthNamesTh[freeDate.getMonth()]} ${freeDate.getFullYear() + 543}`);
+
+        if (document.getElementById('kpi-debtfree-date')) document.getElementById('kpi-debtfree-date').textContent = dateStr;
+        if (document.getElementById('kpi-months-to-free')) document.getElementById('kpi-months-to-free').textContent = totalDebt <= 0 ? '0' : `${simCurrent.months} ${LANG === 'en' ? 'months' : 'เดือน'}`;
+
+        if (document.getElementById('kpi-total-interest')) document.getElementById('kpi-total-interest').textContent = formatMoney(simCurrent.totalInterest) + ' ' + unit;
+        if (document.getElementById('kpi-total-paid')) document.getElementById('kpi-total-paid').textContent = (LANG === 'en' ? 'Total paid: ' : 'รวมจ่ายทั้งหมด ') + formatMoney(simCurrent.totalPaid) + ' ' + unit;
+
+        const interestSaved = Math.max(0, simMinOnly.totalInterest - simCurrent.totalInterest);
+        const monthsSaved = Math.max(0, simMinOnly.months - simCurrent.months);
+
+        if (document.getElementById('kpi-interest-saved')) document.getElementById('kpi-interest-saved').textContent = formatMoney(interestSaved) + ' ' + unit;
+        if (document.getElementById('kpi-months-saved')) document.getElementById('kpi-months-saved').textContent = (LANG === 'en' ? 'Faster by ' : 'เร็วขึ้น ') + monthsSaved + (LANG === 'en' ? ' mos' : ' เดือน');
+
+        // Comparison cards
+        if (document.getElementById('cmp-av-months')) document.getElementById('cmp-av-months').textContent = `${simAvalanche.months} ${LANG === 'en' ? 'months' : 'เดือน'}`;
+        if (document.getElementById('cmp-av-interest')) document.getElementById('cmp-av-interest').textContent = `${formatMoney(simAvalanche.totalInterest)} ${unit}`;
+        if (document.getElementById('cmp-av-saved')) document.getElementById('cmp-av-saved').textContent = `+${formatMoney(Math.max(0, simMinOnly.totalInterest - simAvalanche.totalInterest))} ${unit}`;
+
+        if (document.getElementById('cmp-sn-months')) document.getElementById('cmp-sn-months').textContent = `${simSnowball.months} ${LANG === 'en' ? 'months' : 'เดือน'}`;
+        if (document.getElementById('cmp-sn-interest')) document.getElementById('cmp-sn-interest').textContent = `${formatMoney(simSnowball.totalInterest)} ${unit}`;
+        if (document.getElementById('cmp-sn-saved')) document.getElementById('cmp-sn-saved').textContent = `+${formatMoney(Math.max(0, simMinOnly.totalInterest - simSnowball.totalInterest))} ${unit}`;
+
+        // Milestones
+        const milestonesEl = document.getElementById('payoffMilestones');
+        if (simCurrent.payoffOrder.length > 0) {
+            milestonesEl.innerHTML = simCurrent.payoffOrder.map(m => {
+                const pDate = new Date(now.getFullYear(), now.getMonth() + m.month, 1);
+                const pDateStr = LANG === 'en'
+                    ? `${monthNamesEn[pDate.getMonth()]} ${pDate.getFullYear()}`
+                    : `${monthNamesTh[pDate.getMonth()]} ${pDate.getFullYear() + 543}`;
+                return `<div class="p-2 rounded bg-emerald-50 border border-emerald-200 text-emerald-900 flex justify-between items-center">
+                    <span>🎉 <strong>${m.name}</strong> ${LANG === 'en' ? 'paid off in month ' : 'ปลดหนี้สำเร็จในเดือนที่ '} <strong>${m.month}</strong></span>
+                    <span class="font-bold text-emerald-700">${pDateStr}</span>
+                </div>`;
+            }).join('');
+        } else {
+            milestonesEl.innerHTML = '';
+        }
+
+        // Schedule table
+        const schedBody = document.getElementById('scheduleTableBody');
+
+        schedBody.innerHTML = simCurrent.schedule.map(s => `
+            <tr>
+                <td>${s.month}</td>
+                <td>${formatMoney(s.payment)}</td>
+                <td style="color:var(--ok);">${formatMoney(s.principal)}</td>
+                <td style="color:var(--warn);">${formatMoney(s.interest)}</td>
+                <td style="font-weight:600;">${formatMoney(s.remaining)}</td>
+            </tr>
+        `).join('');
+
+        renderTable();
+    }
+
+    function importFromRemainingMoney() {
+        try {
+            const raw = localStorage.getItem('remainingMoneyCalculator.state.v1');
+            if (!raw) {
+                alert(LANG === 'en' ? 'No data found in Remaining Money calculator.' : 'ไม่พบข้อมูลในเครื่องมือคำนวณเงินคงเหลือ');
+                return;
+            }
+            const remState = JSON.parse(raw);
+            let monthlySaving = 0;
+            if (remState && Array.isArray(remState.savings)) {
+                monthlySaving = remState.savings.reduce((sum, s) => sum + parseNum(s.value), 0);
+            }
+            if (monthlySaving <= 0) {
+                // Check if remaining money itself has surplus
+                const totalIncome = (remState.incomes || []).reduce((sum, i) => sum + parseNum(i.value), 0);
+                const totalExpense = (remState.expenses || []).reduce((sum, e) => sum + parseNum(e.value), 0);
+                monthlySaving = Math.max(0, totalIncome - totalExpense);
+            }
+
+            if (monthlySaving > 0) {
+                state.extraPayment = monthlySaving;
+                document.getElementById('txtExtraPayment').value = monthlySaving;
+                computePayoff();
+                saveState();
+                const banner = document.getElementById('bridgeAlertBanner');
+                if (document.getElementById('bridgeAlertText')) document.getElementById('bridgeAlertText').textContent = LANG === 'en'
+                    ? `✓ Successfully imported ${formatMoney(monthlySaving)} THB monthly savings from Remaining Money calculator!`
+                    : `✓ ดึงเงินออมจำนวน ${formatMoney(monthlySaving)} บาท/เดือน จากหน้าคำนวณเงินคงเหลือสำเร็จ!`;
                 banner.style.display = 'flex';
                 setTimeout(() => { banner.style.display = 'none'; }, 4000);
             } else {
