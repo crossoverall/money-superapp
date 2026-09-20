@@ -10,8 +10,9 @@ A lightweight, client-side personal finance toolkit — four calculators in one 
 | Payslip Simulator | `months-slips.html` | จำลองสลิปเงินเดือน (รวมโบนัส) | Months Slips Calculator |
 | Income Tax Estimation | `tax-calculator-base.html` | ประมาณการภาษีเงินได้ | Income Tax Estimation |
 | PVD Tax Calculator | `tax-calculator.html` | คำนวณภาษี PVD | PVD Tax Calculator |
+| Remaining Money | `remaining-money.html` | คำนวณเงินคงเหลือ (รายได้ - ค่าใช้จ่าย) | Remaining Money Calculator |
 
-The shell (`index.html`) is a tabbed top bar that loads each tool into an iframe. Language (TH / EN) and theme (Light / Dark) are persisted in `localStorage` and applied across all four tools.
+The shell (`index.html`) is a tabbed top bar that loads each tool into an iframe. Language (TH / EN) and theme (Light / Dark) are persisted in `localStorage` and applied across all five tools.
 
 ## Getting started
 
@@ -30,11 +31,11 @@ python3 -m http.server 8000
 # then open http://localhost:8000
 ```
 
-Each tool also works standalone: open `rebalance.html`, `months-slips.html`, `tax-calculator-base.html`, or `tax-calculator.html` directly.
+Each tool also works standalone: open `rebalance.html`, `months-slips.html`, `tax-calculator-base.html`, `tax-calculator.html`, or `remaining-money.html` directly.
 
 ## Features
 
-- **Four calculators** in one navigation bar — switch between them without leaving the page.
+- **Five calculators** in one navigation bar — switch between them without leaving the page.
 - **Bilingual UI** — Thai and English, toggle in the top-right of the top bar.
 - **Light / Dark theme** — toggle in the top-right; preference saved to `localStorage`.
 - **Zero build step** — all files are self-contained HTML; edit and refresh.
@@ -56,7 +57,8 @@ money-superapp/
 ├── rebalance.html          # Rebalance Calculator
 ├── months-slips.html       # Payslip Simulator (Thai)
 ├── tax-calculator-base.html  # Income Tax Estimation
-└── tax-calculator.html     # PVD Tax Calculator
+├── tax-calculator.html     # PVD Tax Calculator
+└── remaining-money.html    # Remaining Money Calculator
 ```
 
 ## License

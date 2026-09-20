@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="version" content="0.1.0">
+  <title>คำนวณเงินคงเหลือ</title>
+  <style>
+    :root{
+      --bg: #F5F7F6;
+      --panel: #FFFFFF;
+      --panel-2: #EEF2F0;
+      --line: #DCE4E0;
+      --ink: #14201B;
+      --ink-dim: #57685F;
+      --ink-faint: #8B9A92;
+      --warn: #A9762F;
+      --warn-dim: rgba(169,118,47,0.12);
+      --danger: #C97D5A;
+      --danger-dim: rgba(201,125,90,0.12);
+      --ok: #2F8B76;
+      --ok-dim: rgba(47,139,118,0.10);
+      --core: #2F8B76;
+      --core-dim: rgba(47,139,118,0.10);
+    }
+    :root[data-theme="dark"]{
+      --bg: #0E1512;
+      --panel: #131E19;
+      --panel-2: #16221C;
+      --line: #24352C;
+      --ink: #EAF2EE;
+      --ink-dim: #8FA69C;
+      --ink-faint: #5B7168;
+      --warn: #C9A15A;
+      --warn-dim: rgba(201,161,90,0.14);
+      --danger: #C97D5A;
+      --danger-dim: rgba(201,125,90,0.14);
+      --ok: #4FA894;
+      --ok-dim: rgba(79,168,148,0.14);
+      --core: #4FA894;
+      --core-dim: rgba(79,168,148,0.14);
+    }
+    *{box-sizing:border-box;}
+    body{
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Helvetica Neue', -apple-system, 'Segoe UI', sans-serif;
+      margin:0;
+      padding: 26px 16px 70px;
+      max-width: 520px;
+      margin-inline: auto;
+    }
+    .eyebrow{
+      font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+      color: var(--ink-faint); margin-bottom: 6px;
+    }
+    h1{ font-size: 23px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 4px;}
+    .sub{ color: var(--ink-dim); font-size: 13px; margin-bottom: 22px; line-height:1.5;}
+
+    .panel{
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .panel-title{
+      font-size: 11px; text-transform: uppercase; letter-spacing: .1em;
+      color: var(--ink-faint); font-weight: 700; margin-bottom: 12px;
+    }
+
+    .row-head{ display:flex; align-items:center; gap:10px; margin-bottom: 4px; }
+    .row-head label{ font-size: 13.5px; color: var(--ink-dim); white-space:nowrap; font-weight:600; }
+    .row-head input[type="text"]{
+      flex:1; background: var(--panel-2); border: 1px solid var(--line);
+      border-radius: 10px; color: var(--ink); font-size: 14px; font-weight:500;
+      padding: 8px 12px; outline:none;
+    }
+    .row-head input[type="text"]:focus{ border-color: var(--ink-dim); }
+
+    .entry-row{
+      display:flex; align-items:center; gap:10px;
+      background: var(--panel-2); border: 1px solid var(--line);
+      border-radius: 12px; padding: 10px 12px; margin-bottom: 8px;
+    }
+    .entry-row .name-input{
+      flex:1; background:transparent; border:none; color: var(--ink);
+      font-size: 14px; font-weight: 600; padding: 4px 2px; outline:none;
+    }
+    .entry-row .value-input{
+      width: 110px; background: var(--bg); border: 1px solid var(--line);
+      border-radius: 8px; color: var(--ink); font-size: 15px; font-weight:700;
+      padding: 6px 10px; text-align:right; font-variant-numeric: tabular-nums; outline:none;
+    }
+    .entry-row .value-input:focus{ border-color: var(--ink-dim); }
+    .entry-row .unit{
+      font-size: 12px; color: var(--ink-faint); font-weight:600; white-space:nowrap;
+    }
+    .remove-btn{
+      background:none; border:none; color: var(--ink-faint); font-size:18px;
+      cursor:pointer; line-height:1; padding:2px 6px; flex:0 0 auto;
+    }
+    .remove-btn:hover{ color: var(--danger); }
+
+    .add-btn{
+      width:100%; background: rgba(255,255,255,0.04); border: 1px dashed var(--line);
+      color: var(--ink-dim); border-radius: 12px; padding: 10px;
+      font-size: 12.5px; font-weight: 700; cursor:pointer; margin-top: 6px;
+    }
+    .add-btn:hover{ background: rgba(255,255,255,0.07); }
+
+    .results{ margin-top: 6px; }
+    .result-row{
+      display:flex; justify-content: space-between; align-items:center;
+      padding: 12px 2px; border-bottom: 1px solid var(--line);
+    }
+    .result-row:last-child{ border-bottom:none; }
+    .result-left .rname{ font-size: 14px; font-weight: 600; }
+    .result-left .rmeta{ font-size: 11px; color: var(--ink-faint); margin-top:3px; }
+    .result-right{ text-align:right; }
+    .result-right .rval{ font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .result-right .rval.zero{ color: var(--ink-faint); }
+
+    .remaining-box{
+      margin-top: 16px; padding: 18px;
+      border-radius: 16px; text-align:center;
+      border: 2px solid var(--line); background: var(--panel);
+    }
+    .remaining-box .rlabel{
+      font-size: 11px; text-transform: uppercase; letter-spacing: .1em;
+      color: var(--ink-faint); font-weight:700; margin-bottom: 6px;
+    }
+    .remaining-box .rvalue{
+      font-size: 36px; font-weight: 700; font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em; transition: color 0.15s;
+    }
+    .remaining-box .rvalue.positive{ color: var(--ok); }
+    .remaining-box .rvalue.negative{ color: var(--danger); }
+    .remaining-box .rvalue.zero{ color: var(--ink-dim); }
+    .remaining-box .rnote{ font-size: 12px; color: var(--ink-dim); margin-top: 6px; }
+
+    .save-status{
+      display:flex; justify-content: space-between; align-items:center;
+      font-size: 11px; color: var(--ink-faint); margin-top: 14px; padding: 0 2px;
+    }
+    .save-status .reset-btn{
+      background:none; border:none; color: var(--ink-faint); font-size: 11px;
+      text-decoration: underline; cursor:pointer; padding:0;
+    }
+    .save-status .reset-btn:hover{ color: var(--danger); }
+
+    .version-tag{ font-size: 10px; color: var(--ink-faint); text-align: center; margin-top: 14px; }
+
+    /* summary strip at top */
+    .summary-strip{
+      display:flex; gap: 10px; margin-bottom: 18px;
+    }
+    .summary-card{
+      flex:1; background: var(--panel); border: 1px solid var(--line);
+      border-radius: 14px; padding: 12px 14px;
+    }
+    .summary-card .sc-label{
+      font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em;
+      color: var(--ink-faint); font-weight:700;
+    }
+    .summary-card .sc-value{
+      font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums;
+      margin-top: 2px;
+    }
+    .summary-card.income .sc-value{ color: var(--core); }
+    .summary-card.expense .sc-value{ color: var(--warn); }
+  </style>
+</head>
+<body>
+
+  <div class="eyebrow" id="eyebrow">เครื่องมือจัดการเงิน</div>
+  <h1 id="pageTitle">คำนวณเงินคงเหลือ</h1>
+  <div class="sub" id="subtitle">บันทึกรายได้และค่าใช้จ่าย แล้วดูว่าแต่ละเดือนเหลือเงินเท่าไหร่ — เพิ่มแถวได้ตามต้องการ</div>
+
+  <div class="summary-strip" id="summaryStrip">
+    <div class="summary-card income">
+      <div class="sc-label" id="scIncomeLabel">รวมรายได้</div>
+      <div class="sc-value" id="scIncomeValue">0 บาท</div>
+    </div>
+    <div class="summary-card expense">
+      <div class="sc-label" id="scExpenseLabel">รวมค่าใช้จ่าย</div>
+      <div class="sc-value" id="scExpenseValue">0 บาท</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title" id="incomePanelTitle">รายได้</div>
+    <div id="incomeContainer"></div>
+    <button class="add-btn" id="incomeAddBtn">+ เพิ่มรายได้</button>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title" id="expensePanelTitle">ค่าใช้จ่าย</div>
+    <div id="expenseContainer"></div>
+    <button class="add-btn" id="expenseAddBtn">+ เพิ่มค่าใช้จ่าย</button>
+  </div>
+
+  <div class="results" id="resultsContainer"></div>
+
+  <div class="remaining-box" id="remainingBox">
+    <div class="rlabel" id="remainingLabel">เงินคงเหลือ</div>
+    <div class="rvalue zero" id="remainingValue">0 บาท</div>
+    <div class="rnote" id="remainingNote">&nbsp;</div>
+  </div>
+
+  <div class="save-status">
+    <span id="saveStatus">&nbsp;</span>
+    <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
+  </div>
+  <p class="version-tag">v0.1</p>
+
+<script>
+// ── Language ──────────────────────────────────────────────────────────────
+const LANG = (function(){ try { return localStorage.getItem('moneySuperapp.lang') || 'th'; } catch(e){ return 'th'; } })();
+document.documentElement.lang = LANG;
+document.documentElement.dataset.theme = (function(){ try { return localStorage.getItem('moneySuperapp.theme') || 'light'; } catch(e){ return 'light'; } })();
+
+const EN = {
+  eyebrow: 'Money Manager',
+  pageTitle: 'Remaining Money Calculator',
+  subtitle: 'Log income and expenses, then see how much is left each month — add as many rows as you need.',
+  incomePanelTitle: 'Income',
+  expensePanelTitle: 'Expenses',
+  scIncomeLabel: 'Total Income',
+  scExpenseLabel: 'Total Expenses',
+  scIncomeValue: '0 THB',
+  scExpenseValue: '0 THB',
+  addIncome: '+ Add income',
+  addExpense: '+ Add expense',
+  incomeUnit: 'บาท',
+  expenseUnit: 'บาท',
+  remainingLabel: 'Remaining',
+  remainingNote: 'Income minus expenses',
+  remainingPositive: 'You have money left over this month.',
+  remainingNegative: 'Expenses exceed income — review your spending.',
+  remainingZero: 'Income and expenses are balanced.',
+  resetBtn: 'Clear saved data',
+  lastSaved: t => `Last saved ${t}`,
+  resetConfirm: 'Clear the data saved in this browser and go back to defaults?',
+  incomeDefaultName: n => `Income ${n}`,
+  expenseDefaultName: n => `Expense ${n}`,
+  fieldName: 'Description',
+  fieldValue: 'Amount',
+};
+if(LANG === 'en'){
+  document.title = 'Remaining Money Calculator';
+  ['eyebrow','pageTitle','subtitle','incomePanelTitle','expensePanelTitle',
+   'scIncomeLabel','scExpenseLabel','remainingLabel','remainingNote'].forEach(id => {
+    document.getElementById(id).textContent = EN[id];
+  });
+  document.getElementById('incomeAddBtn').textContent = EN.addIncome;
+  document.getElementById('expenseAddBtn').textContent = EN.addExpense;
+  document.getElementById('resetBtn').textContent = EN.resetBtn;
+  document.getElementById('remainingNote').textContent = EN.remainingNote;
+}
+
+const T = {
+  th: {
+    scIncomeValue: n => `${n} บาท`,
+    scExpenseValue: n => `${n} บาท`,
+    remainingValue: n => `${n} บาท`,
+    remainingPositive: 'เหลือเงินในเดือนนี้',
+    remainingNegative: 'ใช้จ่ายเกินรายได้ — ลดค่าใช้จ่ายหรือเพิ่มรายได้',
+    remainingZero: 'รายได้และค่าใช้จ่ายเท่ากันพอดี',
+  },
+  en: {
+    scIncomeValue: n => `${n} THB`,
+    scExpenseValue: n => `${n} THB`,
+    remainingValue: n => `${n} THB`,
+    remainingPositive: 'Money left over this month',
+    remainingNegative: 'Expenses exceed income — review spending or boost income',
+    remainingZero: 'Income and expenses are balanced',
+  },
+};
+function t(key, ...args){
+  const fn = (LANG === 'en' ? T.en : T.th)[key];
+  const v = typeof fn === 'function' ? fn(...args) : fn;
+  return v;
+}
+
+// ── State ─────────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'remainingMoneyCalculator.state.v1';
+
+const defaultState = {
+  incomes: [
+    { name: 'เงินเดือน', value: 10000 },
+    { name: 'เงิน allowances / อื่นๆ', value: 1000 },
+  ],
+  expenses: [
+    { name: 'ค่าเช่า / ค่า condo', value: 3000 },
+    { name: 'ค่าไฟฟ้า', value: 500 },
+    { name: 'ค่าน้ำ', value: 200 },
+  ],
+};
+
+const state = (function(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return JSON.parse(JSON.stringify(defaultState));
+    const saved = JSON.parse(raw);
+    if(saved && Array.isArray(saved.incomes) && Array.isArray(saved.expenses)){
+      return {
+        incomes: Array.isArray(saved.incomes) ? saved.incomes : defaultState.incomes,
+        expenses: Array.isArray(saved.expenses) ? saved.expenses : defaultState.expenses,
+      };
+    }
+  } catch(e){ /* corrupted — fall back to defaults */ }
+  return JSON.parse(JSON.stringify(defaultState));
+})();
+
+// ── DOM refs ───────────────────────────────────────────────────────────────
+const incomeContainer  = document.getElementById('incomeContainer');
+const expenseContainer = document.getElementById('expenseContainer');
+const incomeAddBtn     = document.getElementById('incomeAddBtn');
+const expenseAddBtn    = document.getElementById('expenseAddBtn');
+const scIncomeValue    = document.getElementById('scIncomeValue');
+const scExpenseValue   = document.getElementById('scExpenseValue');
+const remainingBox     = document.getElementById('remainingBox');
+const remainingValue   = document.getElementById('remainingValue');
+const remainingNote    = document.getElementById('remainingNote');
+const saveStatusEl     = document.getElementById('saveStatus');
+const resetBtn         = document.getElementById('resetBtn');
+
+// ── Formatting ─────────────────────────────────────────────────────────────
+function fmt(n){ return Math.round(n).toLocaleString(LANG === 'en' ? 'en-US' : 'th-TH'); }
+function fmtCurrency(n){ return fmt(Math.round(n)) + ' ' + (LANG === 'en' ? 'THB' : 'บาท'); }
+
+// ── Delta input (same pattern as rebalance.html) ──────────────────────────
+const inputBaseValues = new WeakMap();
+
+function isDeltaExpr(raw){
+  return /^\s*[+-]/.test(String(raw || ''));
+}
+
+function resolveNumericInput(raw, base){
+  if(raw == null) return 0;
+  const trimmed = String(raw).trim().replace(/,/g, '');
+  if(trimmed === '') return 0;
+  const m = trimmed.match(/^([+-])\s*(\d*\.?\d*)$/);
+  if(m){
+    const sign = m[1] === '-' ? -1 : 1;
+    const num = m[2] === '' ? 0 : parseFloat(m[2]);
+    return (base || 0) + sign * (isNaN(num) ? 0 : num);
+  }
+  const n = parseFloat(trimmed);
+  return isNaN(n) ? 0 : n;
+}
+
+function fmtPlain(n){ return String(Math.round(n * 100) / 100); }
+
+function enableDeltaInput(inputEl, getBase, onChange){
+  inputEl.addEventListener('focus', () => {
+    inputBaseValues.set(inputEl, getBase());
+    inputEl.select();
+  });
+  inputEl.addEventListener('input', () => {
+    const raw = inputEl.value;
+    const base = isDeltaExpr(raw)
+      ? (inputBaseValues.has(inputEl) ? inputBaseValues.get(inputEl) : getBase())
+      : 0;
+    onChange(resolveNumericInput(raw, base));
+  });
+  function finalize(){
+    const raw = inputEl.value;
+    if(isDeltaExpr(raw)){
+      const base = inputBaseValues.has(inputEl) ? inputBaseValues.get(inputEl) : getBase();
+      const result = resolveNumericInput(raw, base);
+      inputEl.value = fmtPlain(result);
+      inputBaseValues.set(inputEl, result);
+      onChange(result);
+    } else if(raw.trim() !== ''){
+      inputBaseValues.set(inputEl, resolveNumericInput(raw, 0));
+    }
+  }
+  inputEl.addEventListener('blur', finalize);
+  inputEl.addEventListener('keydown', e => {
+    if(e.key === 'Enter'){ finalize(); inputEl.blur(); }
+  });
+}
+
+// ── Autosave ───────────────────────────────────────────────────────────────
+function saveState(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    if(saveStatusEl){
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2,'0');
+      const mm = String(now.getMinutes()).padStart(2,'0');
+      saveStatusEl.textContent = t('lastSaved', `${hh}:${mm}`);
+    }
+  } catch(e){ /* localStorage unavailable — silently skip */ }
+}
+
+if(resetBtn){
+  resetBtn.addEventListener('click', () => {
+    if(confirm(typeof EN.resetConfirm === 'string' ? EN.resetConfirm : 'ล้างข้อมูลที่บันทึกไว้ในเบราว์เซอร์นี้ และกลับไปใช้ค่าตั้งต้น?')){
+      try{ localStorage.removeItem(STORAGE_KEY); } catch(e){}
+      location.reload();
+    }
+  });
+}
+
+// ── Render helpers ─────────────────────────────────────────────────────────
+function createRowContainer(items, type, container){
+  container.innerHTML = '';
+  items.forEach((item, i) => {
+    const row = document.createElement('div');
+    row.className = 'entry-row';
+    const label = type === 'income' ? 'incomeUnit' : 'expenseUnit';
+    row.innerHTML = `
+      <input class="name-input" data-type="${type}" data-idx="${i}" data-field="name"
+             value="${item.name.replace(/"/g, '&quot;')}" placeholder="${type === 'income' ? EN.incomeDefaultName(i+1) : EN.expenseDefaultName(i+1)}">
+      <input class="value-input" type="text" inputmode="decimal" data-type="${type}" data-idx="${i}" data-field="value"
+             value="${item.value}">
+      <span class="unit">${type === 'income' ? 'บาท' : 'บาท'}</span>
+      <button class="remove-btn" data-type="${type}" data-idx="${i}" title="ลบ">×</button>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function bindRows(container, type){
+  const items = type === 'income' ? state.incomes : state.expenses;
+
+  // Name input
+  container.querySelectorAll('input.name-input').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const idx = parseInt(e.target.dataset.idx);
+      items[idx].name = e.target.value || (type === 'income' ? EN.incomeDefaultName(idx+1) : EN.expenseDefaultName(idx+1));
+      compute();
+    });
+  });
+
+  // Value input — with delta support
+  container.querySelectorAll('input.value-input').forEach(inp => {
+    const idx = parseInt(inp.dataset.idx);
+    enableDeltaInput(
+      inp,
+      () => items[idx] ? items[idx].value : 0,
+      (val) => {
+        if(items[idx]) items[idx].value = val;
+        compute();
+      }
+    );
+  });
+
+  // Remove button
+  container.querySelectorAll('.remove-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx);
+      if(type === 'income') state.incomes.splice(idx, 1);
+      else state.expenses.splice(idx, 1);
+      createRowContainer(
+        type === 'income' ? state.incomes : state.expenses,
+        type, type === 'income' ? incomeContainer : expenseContainer
+      );
+      bindRows(type === 'income' ? incomeContainer : expenseContainer, type);
+      compute();
+    });
+  });
+}
+
+function renderRows(){
+  createRowContainer(state.incomes, 'income', incomeContainer);
+  createRowContainer(state.expenses, 'expense', expenseContainer);
+  bindRows(incomeContainer, 'income');
+  bindRows(expenseContainer, 'expense');
+}
+
+// ── Add row ────────────────────────────────────────────────────────────────
+function addRow(type){
+  const items = type === 'income' ? state.incomes : state.expenses;
+  const idx = items.length;
+  items.push({ name: type === 'income' ? EN.incomeDefaultName(idx+1) : EN.expenseDefaultName(idx+1), value: 0 });
+  createRowContainer(items, type, type === 'income' ? incomeContainer : expenseContainer);
+  bindRows(type === 'income' ? incomeContainer : expenseContainer, type);
+  // Focus the newly added name input
+  const container = type === 'income' ? incomeContainer : expenseContainer;
+  const nameInput = container.querySelector(`input.name-input[data-idx="${idx}"]`);
+  if(nameInput){ nameInput.focus(); nameInput.select(); }
+  compute();
+}
+
+incomeAddBtn.addEventListener('click', () => addRow('income'));
+expenseAddBtn.addEventListener('click', () => addRow('expense'));
+
+// ── Compute & display ──────────────────────────────────────────────────────
+function compute(){
+  const totalIncome  = state.incomes.reduce((s, item) => s + (item.value || 0), 0);
+  const totalExpense = state.expenses.reduce((s, item) => s + (item.value || 0), 0);
+  const remaining    = totalIncome - totalExpense;
+
+  // Summary strip
+  scIncomeValue.textContent  = fmtCurrency(totalIncome);
+  scExpenseValue.textContent = fmtCurrency(totalExpense);
+
+  // Per-item rows in the results area (shows the breakdown)
+  const resultsEl = document.getElementById('resultsContainer');
+  resultsEl.innerHTML = '';
+
+  // Income breakdown
+  if(state.incomes.length > 0){
+    const incHeader = document.createElement('div');
+    incHeader.style.cssText = 'font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);font-weight:700;margin:14px 0 6px;';
+    incHeader.textContent = LANG === 'en' ? 'Income breakdown' : 'รายได้แต่ละรายการ';
+    resultsEl.appendChild(incHeader);
+
+    state.incomes.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'result-row';
+      row.innerHTML = `
+        <div class="result-left">
+          <div class="rname">${item.name}</div>
+        </div>
+        <div class="result-right">
+          <div class="rval" style="color:var(--core)">+ ${fmtCurrency(item.value)}</div>
+        </div>
+      `;
+      resultsEl.appendChild(row);
+    });
+  }
+
+  // Expense breakdown
+  if(state.expenses.length > 0){
+    const expHeader = document.createElement('div');
+    expHeader.style.cssText = 'font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);font-weight:700;margin:14px 0 6px;';
+    expHeader.textContent = LANG === 'en' ? 'Expense breakdown' : 'ค่าใช้จ่ายแต่ละรายการ';
+    resultsEl.appendChild(expHeader);
+
+    state.expenses.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'result-row';
+      row.innerHTML = `
+        <div class="result-left">
+          <div class="rname">${item.name}</div>
+        </div>
+        <div class="result-right">
+          <div class="rval" style="color:var(--warn)">− ${fmtCurrency(item.value)}</div>
+        </div>
+      `;
+      resultsEl.appendChild(row);
+    });
+  }
+
+  // Remaining box
+  remainingValue.textContent = fmtCurrency(Math.round(remaining));
+  remainingValue.className = 'rvalue ' + (
+    remaining > 0.5 ? 'positive' : remaining < -0.5 ? 'negative' : 'zero'
+  );
+  remainingNote.textContent = remaining > 0.5
+    ? (LANG === 'en' ? 'Money left over this month' : 'เหลือเงินในเดือนนี้')
+    : remaining < -0.5
+    ? (LANG === 'en' ? 'Expenses exceed income — review spending or boost income' : 'ใช้จ่ายเกินรายได้ — ลดค่าใช้จ่ายหรือเพิ่มรายได้')
+    : (LANG === 'en' ? 'Income and expenses are balanced' : 'รายได้และค่าใช้จ่ายเท่ากันพอดี');
+
+  saveState();
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+renderRows();
+compute();
+</script>
+</body>
+</html>
