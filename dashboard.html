@@ -1,322 +1,176 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="1.2.2">
-    <meta name="description" content="หน้าหลักสรุปภาพรวมการเงินและประวัติการเติบโต (Unified Financial Dashboard & Historical Tracking)">
-    <title>ภาพรวมการเงิน (Financial Dashboard)</title>
-    <link rel="stylesheet" href="css/tailwind-lite.css">
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Prompt", sans-serif; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="version" content="1.3.1">
+  <title>ภาพรวมการเงิน</title>
+  <style>
+    :root{
+      --bg: #F5F7F6;
+      --panel: #FFFFFF;
+      --panel-2: #EEF2F0;
+      --line: #DCE4E0;
+      --ink: #14201B;
+      --ink-dim: #57685F;
+      --ink-faint: #8B9A92;
+      --warn: #A9762F;
+      --warn-dim: rgba(169,118,47,0.12);
+      --danger: #C97D5A;
+      --danger-dim: rgba(201,125,90,0.12);
+      --ok: #2F8B76;
+      --ok-dim: rgba(47,139,118,0.10);
+      --core: #2F8B76;
+      --blue: #2563eb;
+      --purple: #7e22ce;
+    }
+    :root[data-theme="dark"]{
+      --bg: #0E1512;
+      --panel: #131E19;
+      --panel-2: #16221C;
+      --line: #24352C;
+      --ink: #EAF2EE;
+      --ink-dim: #8FA69C;
+      --ink-faint: #5B7168;
+      --warn: #C9A15A;
+      --warn-dim: rgba(201,161,90,0.14);
+      --danger: #C97D5A;
+      --danger-dim: rgba(201,125,90,0.14);
+      --ok: #4FA894;
+      --ok-dim: rgba(79,168,148,0.14);
+      --core: #4FA894;
+      --blue: #60a5fa;
+      --purple: #a855f7;
+    }
+    *{box-sizing:border-box;}
+    body{
+      background: var(--bg); color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Prompt", Helvetica, Arial, sans-serif;
+      margin:0; padding: 26px 16px 70px; max-width: 520px; margin-inline: auto;
+    }
+    .eyebrow{ font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 6px; }
+    h1{ font-size: 23px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 4px; display:flex; justify-content:space-between; align-items:center;}
+    .sub{ color: var(--ink-dim); font-size: 13px; margin-bottom: 22px; line-height:1.5;}
 
-        [data-theme="dark"] body { background-color: #0f172a !important; }
-        [data-theme="dark"] .bg-white { background-color: #1e293b !important; color: #e2e8f0 !important; }
-        [data-theme="dark"] .bg-gray-50 { background-color: #0f172a !important; }
-        [data-theme="dark"] .bg-gray-100 { background-color: #0f172a !important; }
-        [data-theme="dark"] .bg-blue-50 { background-color: #172554 !important; border-color: #1d4ed8 !important; }
-        [data-theme="dark"] .bg-emerald-50 { background-color: #064e3b !important; border-color: #059669 !important; }
-        [data-theme="dark"] .bg-amber-50 { background-color: #78350f !important; border-color: #b45309 !important; }
-        [data-theme="dark"] .bg-purple-50 { background-color: #3b0764 !important; border-color: #7e22ce !important; }
-        [data-theme="dark"] .border, [data-theme="dark"] .border-gray-200 { border-color: #334155 !important; }
-        [data-theme="dark"] .text-gray-800, [data-theme="dark"] .text-gray-900 { color: #f8fafc !important; }
-        [data-theme="dark"] .text-gray-700, [data-theme="dark"] .text-gray-600, [data-theme="dark"] .text-gray-500 { color: #94a3b8 !important; }
-        [data-theme="dark"] input, [data-theme="dark"] select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
-        [data-theme="dark"] .table-row-alt:nth-child(even) { background-color: #0f172a !important; }
-        [data-theme="dark"] .quick-card { background-color: #1e293b !important; border-color: #334155 !important; }
-        [data-theme="dark"] .quick-card:hover { background-color: #334155 !important; }
+    .panel{ background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+    .panel-title{ font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-faint); font-weight: 700; margin-bottom: 12px; display:flex; justify-content:space-between; align-items:center;}
 
-        .kpi-stat-card {
-            border-radius: 16px;
-            padding: 16px;
-            border: 1px solid;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: relative;
-            overflow: hidden;
-        }
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom:16px; }
+    .summary-card { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+    .sc-label { font-size: 11px; color: var(--ink-dim); font-weight: 600; margin-bottom: 4px; }
+    .sc-value { font-size: 18px; font-weight: 700; color: var(--ink); }
+    .sc-sub { font-size: 11px; color: var(--ink-faint); margin-top:2px; }
+    .summary-card.ok .sc-value { color: var(--ok); }
+    .summary-card.warn .sc-value { color: var(--warn); }
+    .summary-card.blue .sc-value { color: var(--blue); }
+    .summary-card.purple .sc-value { color: var(--purple); }
 
-        .quick-card {
-            border-radius: 12px;
-            padding: 12px 14px;
-            border: 1px solid #e2e8f0;
-            background: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            text-decoration: none;
-        }
-        .quick-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-            border-color: #38bdf8;
-        }
+    .action-btn { background: var(--panel); border: 1px solid var(--line); color: var(--ink); padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; display:inline-flex; align-items:center; gap:6px;}
+    .action-btn:hover { background: var(--panel-2); }
+    .action-btn.primary { background: var(--ok-dim); border-color: var(--ok); color: var(--ok); width:100%; justify-content:center;}
+    .action-btn.primary:hover { background: var(--ok); color: #fff; }
 
-        .chart-tab-btn {
-            padding: 5px 12px;
-            border-radius: 9999px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            border: 1px solid #cbd5e1;
-            background: #fff;
-            color: #475569;
-            transition: all 0.15s;
-        }
-        .chart-tab-btn.active {
-            background: #0284c7;
-            color: #fff;
-            border-color: #0284c7;
-        }
-        [data-theme="dark"] .chart-tab-btn {
-            background: #1e293b;
-            color: #cbd5e1;
-            border-color: #475569;
-        }
-        [data-theme="dark"] .chart-tab-btn.active {
-            background: #38bdf8;
-            color: #0f172a;
-            border-color: #38bdf8;
-        }
+    .quick-link { display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:8px; cursor:pointer; text-decoration:none; color:var(--ink); font-weight:600; font-size:14px; transition:0.2s;}
+    .quick-link:hover { border-color:var(--ink-dim); }
+    .quick-link span { color: var(--ink-faint); font-size:12px; font-weight:400; }
 
-        @media print {
-            body { background: #fff !important; color: #000 !important; padding: 0 !important; }
-            .no-print, button { display: none !important; }
-            .bg-white { box-shadow: none !important; border: 1px solid #e2e8f0 !important; max-width: 100% !important; }
-        }
-    </style>
+    .chart-container { width: 100%; height: 200px; margin-top: 10px; position: relative; }
+    #svgChart { width:100%; height:100%; overflow:visible; }
+    .chart-axis { stroke: var(--line); stroke-width:1; }
+    .chart-line-nw { stroke: var(--blue); stroke-width:2.5; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+    .chart-line-sr { stroke: var(--ok); stroke-width:2.5; fill:none; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray: 4 4; }
+    .chart-point { fill: var(--panel); stroke: var(--blue); stroke-width:2; cursor:pointer; }
+    .chart-point.sr { stroke: var(--ok); }
+    .chart-text { font-size:10px; fill:var(--ink-faint); font-family:inherit; }
+
+    .tooltip { position:absolute; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 12px; font-size:12px; color:var(--ink); box-shadow:0 4px 12px rgba(0,0,0,0.1); pointer-events:none; opacity:0; transition:opacity 0.2s; z-index:10; white-space:nowrap;}
+    [data-theme="dark"] .tooltip { box-shadow:0 4px 12px rgba(0,0,0,0.4); }
+
+    .history-row{ display:flex; justify-content: space-between; align-items:center; padding: 10px 2px; border-bottom: 1px solid var(--line); font-size: 13px; font-weight: 600; }
+    .history-row:last-child{ border-bottom: none; }
+    .val{ font-variant-numeric: tabular-nums; }
+
+    .save-status{ display:flex; align-items:center; justify-content:space-between; margin-top:20px; font-size:12px; color: var(--ink-faint); }
+    .reset-btn{ background:none; border:none; color: var(--ink-faint); text-decoration:underline; cursor:pointer; font-size:12px; }
+    .reset-btn:hover{ color: var(--danger); }
+    .version-tag{ text-align:center; font-size:11px; color:var(--line); margin-top:16px; }
+  </style>
 </head>
-<body class="bg-gray-100 min-h-screen p-4 sm:p-6 flex justify-center">
+<body>
 
-<div class="bg-white rounded-2xl shadow-xl w-full max-w-4xl p-5 sm:p-8 space-y-6">
+  <div class="eyebrow">DASHBOARD</div>
+  <h1>
+    <span id="txt-title">ภาพรวมการเงิน</span>
+    <button onclick="refreshDashboard()" class="action-btn" style="padding:6px; margin:0; border-radius:12px;" id="btn-refresh" title="รีเฟรชข้อมูล">🔄</button>
+  </h1>
+  <div class="sub" id="lbl-subtitle">สรุปความมั่งคั่งและประวัติการเติบโต</div>
 
-    <!-- Top Header -->
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-gray-200 pb-4">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2" id="lbl-title">
-                <span>🏠</span> <span id="txt-title">ภาพรวมการเงิน (Financial Dashboard)</span>
-            </h1>
-            <p class="text-xs text-gray-500 mt-1" id="lbl-subtitle">สรุปความมั่งคั่งสุทธิ, สภาพคล่อง, ภาษี, ภาระหนี้สิน และติดตามประวัติการเติบโต</p>
-        </div>
-        <div class="flex items-center gap-2">
-            <button onclick="takeSnapshot()" id="btn-take-snapshot" class="py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shadow-sm">
-                <span>📸</span> <span id="lbl-btn-snapshot">บันทึกสแนปช็อตเดือนนี้</span>
-            </button>
-            <button onclick="window.print()" id="btn-print-dash" class="py-1.5 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 no-print">
-                <span id="lbl-print-dash">🖨️ พิมพ์</span>
-            </button>
-        </div>
+  <div class="panel">
+    <div class="summary-grid">
+      <div class="summary-card blue">
+        <div class="sc-label" id="lbl-kpi-networth">ความมั่งคั่งสุทธิ (Net Worth)</div>
+        <div class="sc-value" id="kpi-networth">0</div>
+        <div class="sc-sub" id="lbl-kpi-nw-sub">สินทรัพย์ - หนี้สิน</div>
+      </div>
+      <div class="summary-card ok">
+        <div class="sc-label" id="lbl-kpi-savings">เงินออมต่อเดือน (Cash Flow)</div>
+        <div class="sc-value" id="kpi-savings">0</div>
+        <div class="sc-sub" id="kpi-savings-rate">0% ออม</div>
+      </div>
+      <div class="summary-card purple">
+        <div class="sc-label" id="lbl-kpi-runway">สายป่าน (Runway)</div>
+        <div class="sc-value" id="kpi-runway">0 ด.</div>
+        <div class="sc-sub" id="lbl-kpi-rw-sub">ฉุกเฉินอยู่รอด</div>
+      </div>
+      <div class="summary-card warn">
+        <div class="sc-label" id="lbl-kpi-debt">ยอดหนี้รวม (Debt)</div>
+        <div class="sc-value" id="kpi-total-debt">0</div>
+        <div class="sc-sub" id="kpi-debtfree-date">วันปลดหนี้ -</div>
+      </div>
     </div>
-
-    <!-- Notification / Snapshot Toast Banner -->
-    <div id="snapshotAlertBanner" style="display:none;" class="p-3 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-xl text-xs flex items-center justify-between">
-        <span id="snapshotAlertText">✓ บันทึกภาพรวมการเงินประจำเดือนเรียบร้อยแล้ว!</span>
-        <button onclick="this.parentElement.style.display='none'" class="text-emerald-700 font-bold px-1.5">&times;</button>
+    
+    <div style="margin-top:16px; border-top:1px dashed var(--line); padding-top:12px; display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div style="font-size:11px; color:var(--ink-faint); font-weight:600;" id="lbl-tax-bracket">ฐานภาษีปัจจุบัน</div>
+        <div style="font-size:14px; font-weight:700; color:var(--warn);" id="kpi-tax-bracket">0%</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:11px; color:var(--ink-faint); font-weight:600;" id="lbl-tax-pay">ประมาณการภาษีที่ต้องจ่าย</div>
+        <div style="font-size:14px; font-weight:700; color:var(--danger);" id="kpi-tax-amount">0 บาท</div>
+      </div>
     </div>
+  </div>
 
-    <!-- Unified KPIs Grid (Task 2: Birds-eye view) -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- 1. Net Worth -->
-        <div class="kpi-stat-card bg-emerald-50 border-emerald-200 text-emerald-950">
-            <div>
-                <div class="flex justify-between items-center text-xs font-medium text-emerald-800">
-                    <span id="lbl-kpi-networth">ความมั่งคั่งสุทธิ (Net Worth)</span>
-                    <span>💎</span>
-                </div>
-                <div class="text-2xl font-extrabold text-emerald-700 mt-2" id="kpi-networth-val">0 บาท</div>
-            </div>
-            <div class="text-[11px] text-emerald-800/80 mt-2 pt-2 border-t border-emerald-200/60 flex justify-between">
-                <span id="lbl-networth-sub">พอร์ต + สำรอง - หนี้</span>
-                <span class="font-bold text-emerald-700" id="kpi-networth-badge">สุขภาพการเงินดี</span>
-            </div>
-        </div>
-
-        <!-- 2. Monthly Cash Flow & Savings Rate -->
-        <div class="kpi-stat-card bg-blue-50 border-blue-200 text-blue-950">
-            <div>
-                <div class="flex justify-between items-center text-xs font-medium text-blue-800">
-                    <span id="lbl-kpi-savings-rate">อัตราการออม (Savings Rate)</span>
-                    <span>💰</span>
-                </div>
-                <div class="text-2xl font-extrabold text-blue-700 mt-2" id="kpi-savings-rate-val">0.0%</div>
-            </div>
-            <div class="text-[11px] text-blue-800/80 mt-2 pt-2 border-t border-blue-200/60 flex justify-between">
-                <span id="lbl-savings-sub">ออม + ลงทุน/เดือน</span>
-                <span class="font-bold text-blue-700" id="kpi-monthly-savings-val">0 บาท</span>
-            </div>
-        </div>
-
-        <!-- 3. Emergency Runway -->
-        <div class="kpi-stat-card bg-purple-50 border-purple-200 text-purple-950">
-            <div>
-                <div class="flex justify-between items-center text-xs font-medium text-purple-800">
-                    <span id="lbl-kpi-runway">เงินสำรองฉุกเฉิน (Runway)</span>
-                    <span>🛡️</span>
-                </div>
-                <div class="text-2xl font-extrabold text-purple-700 mt-2" id="kpi-runway-months">0.0 เดือน</div>
-            </div>
-            <div class="text-[11px] text-purple-800/80 mt-2 pt-2 border-t border-purple-200/60 flex justify-between">
-                <span id="lbl-runway-sub">เงินสำรองคงเหลือ</span>
-                <span class="font-bold text-purple-700" id="kpi-runway-reserve-val">0 บาท</span>
-            </div>
-        </div>
-
-        <!-- 4. Debt & Tax Summary -->
-        <div class="kpi-stat-card bg-amber-50 border-amber-200 text-amber-950">
-            <div>
-                <div class="flex justify-between items-center text-xs font-medium text-amber-800">
-                    <span id="lbl-kpi-tax-debt">ภาษี & ภาระหนี้สิน</span>
-                    <span>📉</span>
-                </div>
-                <div class="text-2xl font-extrabold text-amber-700 mt-2" id="kpi-debt-val">0 บาท</div>
-            </div>
-            <div class="text-[11px] text-amber-800/80 mt-2 pt-2 border-t border-amber-200/60 flex justify-between">
-                <span id="lbl-tax-bracket-sub">ฐานภาษีสูงสุด</span>
-                <span class="font-bold text-amber-700" id="kpi-tax-bracket-val">0% (0 บาท)</span>
-            </div>
-        </div>
+  <div class="panel">
+    <div class="panel-title" id="lbl-chart-title">
+      แนวโน้มการเติบโต (Trends)
+      <button onclick="saveSnapshot()" class="action-btn" style="padding:4px 8px; font-size:10px;">+ บันทึกเดือนนี้</button>
     </div>
-
-    <!-- Quick Navigation to All Tools (Task 2: Fast Hub) -->
-    <div class="space-y-2.5">
-        <h3 class="text-xs font-bold text-gray-600 uppercase tracking-wide" id="lbl-quick-nav-title">ทางลัดเครื่องมือคำนวณการเงิน (Calculator Hub)</h3>
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
-            <div class="quick-card" onclick="jumpToTab('rebalance')">
-                <div class="flex items-center gap-2">
-                    <span class="text-base">⚖️</span>
-                    <div>
-                        <div class="font-bold text-gray-800" id="qc-rebal-title">Rebalance พอร์ต</div>
-                        <div class="text-[10px] text-gray-400" id="qc-rebal-sub">พอร์ต: 0 บาท</div>
-                    </div>
-                </div>
-                <span class="text-gray-400 font-bold">&rarr;</span>
-            </div>
-
-            <div class="quick-card" onclick="jumpToTab('remaining-money')">
-                <div class="flex items-center gap-2">
-                    <span class="text-base">💰</span>
-                    <div>
-                        <div class="font-bold text-gray-800" id="qc-rem-title">เงินคงเหลือ & งบ</div>
-                        <div class="text-[10px] text-gray-400" id="qc-rem-sub">คงเหลือลงทุน: 0 บาท</div>
-                    </div>
-                </div>
-                <span class="text-gray-400 font-bold">&rarr;</span>
-            </div>
-
-            <div class="quick-card" onclick="jumpToTab('tax-calculator-base')">
-                <div class="flex items-center gap-2">
-                    <span class="text-base">🧾</span>
-                    <div>
-                        <div class="font-bold text-gray-800" id="qc-tax-title">ประมาณการภาษี</div>
-                        <div class="text-[10px] text-gray-400" id="qc-tax-sub">ลดหย่อน ThaiESG/SSF</div>
-                    </div>
-                </div>
-                <span class="text-gray-400 font-bold">&rarr;</span>
-            </div>
-
-            <div class="quick-card" onclick="jumpToTab('debt-calculator')">
-                <div class="flex items-center gap-2">
-                    <span class="text-base">📉</span>
-                    <div>
-                        <div class="font-bold text-gray-800" id="qc-debt-title">วางแผนปลดหนี้</div>
-                        <div class="text-[10px] text-gray-400" id="qc-debt-sub">Snowball & Avalanche</div>
-                    </div>
-                </div>
-                <span class="text-gray-400 font-bold">&rarr;</span>
-            </div>
-
-            <div class="quick-card" onclick="jumpToTab('months-slips')">
-                <div class="flex items-center gap-2">
-                    <span class="text-base">📑</span>
-                    <div>
-                        <div class="font-bold text-gray-800" id="qc-slip-title">จำลองสลิปเงินเดือน</div>
-                        <div class="text-[10px] text-gray-400" id="qc-slip-sub">คำนวณหัก PVD & SSO</div>
-                    </div>
-                </div>
-                <span class="text-gray-400 font-bold">&rarr;</span>
-            </div>
-
-            <div class="quick-card" onclick="jumpToTab('tax-calculator')">
-                <div class="flex items-center gap-2">
-                    <span class="text-base">💼</span>
-                    <div>
-                        <div class="font-bold text-gray-800" id="qc-pvd-title">ภาษี PVD & ชดเชย</div>
-                        <div class="text-[10px] text-gray-400" id="qc-pvd-sub">ม.48(5) แยกคำนวณ</div>
-                    </div>
-                </div>
-                <span class="text-gray-400 font-bold">&rarr;</span>
-            </div>
-        </div>
+    <div style="display:flex; gap:12px; font-size:11px; font-weight:600;">
+      <span style="color:var(--blue);">— Net Worth</span>
+      <span style="color:var(--ok);">--- Savings Rate</span>
     </div>
-
-    <!-- Historical Tracking & Trends Analytics (Task 1: End of Month Snapshots & Charts) -->
-    <div class="p-4 rounded-xl border border-gray-200 bg-gray-50 space-y-4">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-            <div>
-                <h3 class="text-sm font-bold text-gray-800 flex items-center gap-1.5" id="lbl-history-title">
-                    <span>📈</span> <span id="txt-history-title">ประวัติและการเติบโต (Historical Trends)</span>
-                </h3>
-                <p class="text-xs text-gray-500" id="lbl-history-sub">ติดตามแนวโน้มความมั่งคั่งสุทธิและวินัยทางการเงินรายเดือน</p>
-            </div>
-            <div class="flex items-center gap-2">
-                <button type="button" class="chart-tab-btn active" id="btn-chart-nw" onclick="setChartMode('networth')">
-                    💎 ความมั่งคั่งสุทธิ
-                </button>
-                <button type="button" class="chart-tab-btn" id="btn-chart-sav" onclick="setChartMode('savings')">
-                    💰 อัตราการออม
-                </button>
-                <button type="button" class="chart-tab-btn" id="btn-chart-run" onclick="setChartMode('runway')">
-                    🛡️ เงินสำรอง
-                </button>
-            </div>
-        </div>
-
-        <!-- Interactive SVG Chart -->
-        <div class="bg-white p-3 rounded-xl border border-gray-200 relative overflow-hidden">
-            <div id="chartTooltip" class="absolute bg-slate-900 text-white text-[11px] px-2 py-1 rounded shadow-lg pointer-events-none opacity-0 transition-opacity z-10"></div>
-            <svg id="trendSvg" viewBox="0 0 600 220" class="w-full h-48 sm:h-56 block"></svg>
-            <div id="chartLegend" class="flex justify-center items-center gap-4 text-xs text-gray-500 mt-2"></div>
-        </div>
-
-        <!-- Snapshots Table / Log -->
-        <div class="overflow-x-auto border border-gray-200 rounded-xl bg-white">
-            <table class="w-full text-xs text-left">
-                <thead class="bg-gray-100 text-gray-600 uppercase font-semibold border-b border-gray-200">
-                    <tr>
-                        <th class="p-2.5 pl-3" id="th-snap-date">วันที่บันทึก</th>
-                        <th class="p-2.5 text-right" id="th-snap-nw">ความมั่งคั่งสุทธิ (บาท)</th>
-                        <th class="p-2.5 text-right" id="th-snap-port">พอร์ตลงทุน (บาท)</th>
-                        <th class="p-2.5 text-right" id="th-snap-res">สำรองฉุกเฉิน (บาท)</th>
-                        <th class="p-2.5 text-right" id="th-snap-debt">หนี้สิน (บาท)</th>
-                        <th class="p-2.5 text-right" id="th-snap-rate">อัตราออม (%)</th>
-                        <th class="p-2.5 text-center no-print" style="width: 40px;"></th>
-                    </tr>
-                </thead>
-                <tbody id="snapshotsTableBody" class="divide-y divide-gray-200">
-                    <!-- Inserted by JS -->
-                </tbody>
-            </table>
-        </div>
-
-        <div class="flex justify-between items-center text-xs text-gray-400 pt-1">
-            <button onclick="clearAllSnapshots()" class="text-gray-400 hover:text-red-500 underline transition-all" id="btn-clear-history">
-                🗑️ ล้างประวัติสแนปช็อตทั้งหมด
-            </button>
-            <span id="lbl-snapshot-count">0 บันทึก</span>
-        </div>
+    <div class="chart-container">
+      <svg id="svgChart" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+      <div id="chartTooltip" class="tooltip"></div>
     </div>
+  </div>
 
-    <!-- Footer Action Bar -->
-    <div class="flex justify-between items-center pt-4 border-t border-gray-200 text-xs text-gray-400">
-        <span id="lbl-privacy-badge">🔒 100% Client-Side Privacy — ทุกตัวเลขประมวลผลบนเครื่องของคุณ</span>
-        <span>Money Superapp v1.3.1</span>
-    </div>
+  <div class="panel">
+    <div class="panel-title" id="lbl-history-title">ประวัติที่บันทึกไว้ (History)</div>
+    <div id="historyListContainer" style="margin-bottom:12px;"></div>
+    <button onclick="clearHistory()" class="reset-btn" style="width:100%; text-align:center;">ลบประวัติทั้งหมด</button>
+  </div>
 
-</div>
+  <div class="panel">
+    <div class="panel-title" id="lbl-quick-links">ไปหน้าเครื่องมือ (Tools)</div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', key:'1'},'*')" class="quick-link">💰 คำนวณเงินคงเหลือ (Remaining) <span>Alt+1</span></div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', key:'7'},'*')" class="quick-link">📉 วางแผนปลดหนี้ (Debt) <span>Alt+7</span></div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', key:'2'},'*')" class="quick-link">📊 Rebalance พอร์ต <span>Alt+2</span></div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', key:'4'},'*')" class="quick-link">🧾 คำนวณภาษีประจำปี <span>Alt+4</span></div>
+  </div>
+
+  <p class="version-tag">Money Superapp v1.3.1</p>
 
 <script>
     const LANG = (function(){ try { return localStorage.getItem('moneySuperapp.lang') || 'th'; } catch(e){ return 'th'; } })();

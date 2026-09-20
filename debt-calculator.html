@@ -1,343 +1,258 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="1.3.1">
-    <title>วางแผนปลดหนี้ (Debt Payoff)</title>
-    <link rel="stylesheet" href="css/tailwind-lite.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-color: #fbfbfd;
-            --surface: #ffffff;
-            --text-main: #1d1d1f;
-            --text-secondary: #86868b;
-            --border-light: #d2d2d7;
-            --accent: #0066cc;
-            --accent-hover: #0077ed;
-        }
-        
-        [data-theme="dark"] {
-            --bg-color: #000000;
-            --surface: #1c1c1e;
-            --text-main: #f5f5f7;
-            --text-secondary: #a1a1a6;
-            --border-light: #38383a;
-            --accent: #2997ff;
-            --accent-hover: #31a0ff;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="version" content="1.3.1">
+  <title>วางแผนปลดหนี้ (Debt Payoff)</title>
+  <style>
+    :root{
+      --bg: #F5F7F6;
+      --panel: #FFFFFF;
+      --panel-2: #EEF2F0;
+      --line: #DCE4E0;
+      --ink: #14201B;
+      --ink-dim: #57685F;
+      --ink-faint: #8B9A92;
+      --warn: #A9762F;
+      --warn-dim: rgba(169,118,47,0.12);
+      --danger: #C97D5A;
+      --danger-dim: rgba(201,125,90,0.12);
+      --ok: #2F8B76;
+      --ok-dim: rgba(47,139,118,0.10);
+      --core: #2F8B76;
+      --core-dim: rgba(47,139,118,0.10);
+      --blue: #2563eb;
+      --blue-dim: rgba(37,99,235,0.10);
+    }
+    :root[data-theme="dark"]{
+      --bg: #0E1512;
+      --panel: #131E19;
+      --panel-2: #16221C;
+      --line: #24352C;
+      --ink: #EAF2EE;
+      --ink-dim: #8FA69C;
+      --ink-faint: #5B7168;
+      --warn: #C9A15A;
+      --warn-dim: rgba(201,161,90,0.14);
+      --danger: #C97D5A;
+      --danger-dim: rgba(201,125,90,0.14);
+      --ok: #4FA894;
+      --ok-dim: rgba(79,168,148,0.14);
+      --core: #4FA894;
+      --core-dim: rgba(79,168,148,0.14);
+      --blue: #60a5fa;
+      --blue-dim: rgba(96,165,250,0.14);
+    }
+    *{box-sizing:border-box;}
+    body{
+      background: var(--bg); color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Prompt", Helvetica, Arial, sans-serif;
+      margin:0; padding: 26px 16px 70px; max-width: 520px; margin-inline: auto;
+    }
+    .eyebrow{
+      font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+      color: var(--ink-faint); margin-bottom: 6px;
+    }
+    h1{ font-size: 23px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 4px; display:flex; justify-content:space-between; align-items:center;}
+    .sub{ color: var(--ink-dim); font-size: 13px; margin-bottom: 22px; line-height:1.5;}
 
-        body { 
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            -webkit-font-smoothing: antialiased;
-        }
-        
-        .card {
-            background: var(--surface);
-            border-radius: 24px;
-            padding: 32px;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.04);
-            border: 1px solid rgba(0,0,0,0.02);
-        }
-        
-        [data-theme="dark"] .card {
-            box-shadow: 0 4px 24px rgba(0,0,0,0.2);
-            border: 1px solid rgba(255,255,255,0.05);
-        }
+    .panel{ background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+    .panel-title{ font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-faint); font-weight: 700; margin-bottom: 12px; }
 
-        .kpi-block {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom:16px; }
+    .summary-card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+    .sc-label { font-size: 11px; color: var(--ink-dim); font-weight: 600; margin-bottom: 4px; }
+    .sc-value { font-size: 18px; font-weight: 700; color: var(--ink); }
+    .sc-sub { font-size: 11px; color: var(--ink-faint); margin-top:2px; }
+    .summary-card.ok .sc-value { color: var(--ok); }
+    .summary-card.warn .sc-value { color: var(--warn); }
+    .summary-card.blue .sc-value { color: var(--blue); }
 
-        .kpi-label {
-            font-size: 13px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-secondary);
-        }
+    .btn-row { display: flex; gap: 8px; margin-bottom: 16px; }
+    .action-btn { flex:1; background: var(--panel); border: 1px solid var(--line); color: var(--ink); padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; text-align:center;}
+    .action-btn:hover { background: var(--panel-2); }
+    .action-btn.primary { background: var(--ok-dim); border-color: var(--ok); color: var(--ok); }
+    .action-btn.primary:hover { background: var(--ok); color: #fff; }
 
-        .kpi-value {
-            font-size: 32px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-        }
+    .entry-row{ display:flex; align-items:center; gap:8px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; flex-wrap:wrap; }
+    .name-input{ flex:1 1 100%; background:transparent; border:none; color: var(--ink); font-size: 14px; font-weight: 600; padding: 0; outline:none; margin-bottom: 4px; }
+    
+    .val-group { display: flex; align-items:center; gap: 4px; flex: 1; }
+    .val-group label { font-size: 10px; color: var(--ink-faint); width: 40px; }
+    .value-input{ width: 100%; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; color: var(--ink); font-size: 13px; font-weight:600; padding: 4px 8px; text-align:right; font-variant-numeric: tabular-nums; outline:none; }
+    .value-input:focus{ border-color: var(--ink-dim); }
+    .unit{ font-size: 11px; color: var(--ink-faint); font-weight:600; }
+    .remove-btn{ background:none; border:none; color: var(--ink-faint); font-size:18px; cursor:pointer; line-height:1; padding:2px 6px; }
+    .remove-btn:hover{ color: var(--danger); }
+    
+    .add-btn{ width:100%; background: rgba(255,255,255,0.04); border: 1px dashed var(--line); color: var(--ink-dim); border-radius: 12px; padding: 10px; font-size: 12.5px; font-weight: 700; cursor:pointer; margin-top: 6px; }
+    .add-btn:hover{ background: rgba(255,255,255,0.07); }
 
-        .input-minimal {
-            background: transparent;
-            border: none;
-            border-bottom: 2px solid var(--border-light);
-            border-radius: 0;
-            padding: 8px 0;
-            font-size: 16px;
-            font-weight: 500;
-            color: var(--text-main);
-            transition: border-color 0.2s ease;
-        }
-        
-        .input-minimal:focus {
-            outline: none;
-            border-bottom-color: var(--accent);
-        }
+    .strategy-toggle { display: flex; gap: 8px; margin-bottom: 12px; }
+    .strategy-btn { flex: 1; text-align:center; padding: 10px; border: 1px solid var(--line); border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--ink-dim); background: var(--panel-2); transition: 0.2s;}
+    .strategy-btn.active { background: var(--panel); border-color: var(--ink); color: var(--ink); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    
+    .result-row{ display:flex; justify-content: space-between; align-items:center; padding: 10px 2px; border-bottom: 1px solid var(--line); font-size: 13px; font-weight: 600; }
+    .result-row:last-child{ border-bottom: none; }
+    .val{ font-variant-numeric: tabular-nums; }
+    .val.ok{ color: var(--ok); }
+    .val.warn{ color: var(--warn); }
+    
+    details summary { font-size: 13px; font-weight: 600; cursor:pointer; color: var(--ink-dim); padding: 8px 0; outline:none;}
+    .table-container { overflow-x: auto; margin-top: 8px;}
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { text-align: right; font-weight: 600; color: var(--ink-faint); padding: 8px; border-bottom: 1px solid var(--line); }
+    th:first-child { text-align: left; }
+    td { text-align: right; padding: 8px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums;}
+    td:first-child { text-align: left; }
 
-        .table-input {
-            width: 100%;
-            background: transparent;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            color: var(--text-main);
-            transition: background 0.2s;
-        }
+    .save-status{ display:flex; align-items:center; justify-content:space-between; margin-top:20px; font-size:12px; color: var(--ink-faint); }
+    .reset-btn{ background:none; border:none; color: var(--ink-faint); text-decoration:underline; cursor:pointer; font-size:12px; }
+    .reset-btn:hover{ color: var(--danger); }
+    .version-tag{ text-align:center; font-size:11px; color:var(--line); margin-top:16px; }
 
-        .table-input:hover {
-            background: rgba(134, 134, 139, 0.1);
-        }
-
-        .table-input:focus {
-            outline: none;
-            background: var(--surface);
-            box-shadow: 0 0 0 2px var(--accent);
-        }
-
-        .btn-primary {
-            background: var(--accent);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 980px;
-            font-weight: 500;
-            font-size: 14px;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .btn-primary:hover {
-            background: var(--accent-hover);
-            transform: scale(1.02);
-        }
-
-        .btn-secondary {
-            background: rgba(134, 134, 139, 0.1);
-            color: var(--text-main);
-            padding: 8px 16px;
-            border-radius: 980px;
-            font-weight: 500;
-            font-size: 13px;
-            transition: all 0.2s;
-        }
-        .btn-secondary:hover {
-            background: rgba(134, 134, 139, 0.2);
-        }
-
-        .strategy-toggle {
-            display: flex;
-            background: rgba(134, 134, 139, 0.1);
-            border-radius: 14px;
-            padding: 4px;
-            width: max-content;
-        }
-
-        .strategy-btn {
-            padding: 8px 24px;
-            border-radius: 10px;
-            font-weight: 500;
-            font-size: 14px;
-            color: var(--text-secondary);
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-
-        .strategy-btn.active {
-            background: var(--surface);
-            color: var(--text-main);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-        [data-theme="dark"] .strategy-btn.active { box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-
-        th { color: var(--text-secondary); font-weight: 500; font-size: 13px; border-bottom: 1px solid var(--border-light); padding-bottom: 12px; }
-        td { border-bottom: 1px solid rgba(134,134,139,0.1); padding-top: 12px; padding-bottom: 12px; }
-        tr:last-child td { border-bottom: none; }
-
-        @media print {
-            body { background: #fff !important; color: #000 !important; }
-            .no-print { display: none !important; }
-            .card { box-shadow: none !important; padding: 0 !important; }
-        }
-    </style>
+    #bridgeAlertBanner { display: none; margin-bottom: 16px; padding: 12px 16px; border-radius: 10px; background: var(--ok-dim); border: 1px solid var(--ok); color: var(--ok); font-size: 13px; font-weight: 600; align-items: center; justify-content: space-between; }
+  </style>
 </head>
-<body class="min-h-screen p-4 md:p-10 flex justify-center">
+<body>
 
-<div class="card w-full max-w-5xl space-y-12">
+  <div class="eyebrow">DEBT PAYOFF</div>
+  <h1>
+    <span id="txt-title">วางแผนปลดหนี้</span>
+    <div style="display:flex; gap:6px;">
+      <button onclick="window.print()" class="action-btn no-print" style="padding:4px 8px; margin:0;" id="lbl-print-plan">🖨️</button>
+      <button onclick="copyPayoffPlan()" class="action-btn no-print" style="padding:4px 8px; margin:0;" id="lbl-copy-plan">📋</button>
+    </div>
+  </h1>
+  <div class="sub" id="lbl-subtitle">เปรียบเทียบ Snowball และ Avalanche</div>
 
-    <!-- Header Section -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-[var(--border-light)] pb-8">
-        <div>
-            <h1 class="text-4xl md:text-5xl font-bold tracking-tight mb-2" id="txt-title">วางแผนปลดหนี้</h1>
-            <p class="text-[var(--text-secondary)] text-lg" id="lbl-subtitle" style="display:none;">เปรียบเทียบวิธี Snowball และ Avalanche</p>
-            <p class="text-[var(--text-secondary)] text-lg" id="lbl-title">Debt Payoff Calculator</p>
-        </div>
-        <div class="flex flex-wrap items-center gap-3">
-            <button onclick="importFromRemainingMoney()" id="btn-import-remaining" class="btn-secondary" title="นำเข้าเงินออมจากหน้าคำนวณเงินคงเหลือ">
-                <span id="lbl-import-savings">ดึงเงินออมจากหน้าคงเหลือ</span>
-            </button>
-            <button onclick="copyPayoffPlan()" id="btn-copy-plan" class="btn-secondary no-print">
-                <span id="lbl-copy-plan">คัดลอกแผน</span>
-            </button>
-            <button onclick="window.print()" id="btn-print-plan" class="btn-secondary no-print">
-                <span id="lbl-print-plan">พิมพ์</span>
-            </button>
-        </div>
+  <div id="bridgeAlertBanner">
+    <span id="bridgeAlertText">✓ นำเข้าข้อมูลสำเร็จ</span>
+    <button type="button" onclick="this.parentElement.style.display='none'" style="background:none; border:none; color:inherit; font-size:16px; cursor:pointer;">×</button>
+  </div>
+
+  <div class="btn-row">
+    <button onclick="importFromRemainingMoney()" id="btn-import-remaining" class="action-btn primary" title="นำเข้าเงินออมจากหน้าคำนวณเงินคงเหลือ">
+      📥 <span id="lbl-import-savings">ดึงเงินออมจากหน้าคงเหลือ</span>
+    </button>
+  </div>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="sc-label" id="lbl-kpi-total-debt">ยอดหนี้รวม</div>
+      <div class="sc-value" id="kpi-total-debt">0</div>
+      <div class="sc-sub" id="kpi-debt-count">0 รายการ</div>
+    </div>
+    <div class="summary-card blue">
+      <div class="sc-label" id="lbl-kpi-debtfree-date">วันปลดหนี้สำเร็จ</div>
+      <div class="sc-value" id="kpi-debtfree-date">-</div>
+      <div class="sc-sub" id="kpi-months-to-free">0 เดือน</div>
+    </div>
+    <div class="summary-card warn">
+      <div class="sc-label" id="lbl-kpi-total-interest">ดอกเบี้ยรวม</div>
+      <div class="sc-value" id="kpi-total-interest">0</div>
+      <div class="sc-sub" id="kpi-total-paid">จ่ายทั้งหมด 0</div>
+    </div>
+    <div class="summary-card ok">
+      <div class="sc-label" id="lbl-kpi-interest-saved">ประหยัดดอกเบี้ย</div>
+      <div class="sc-value" id="kpi-interest-saved">0</div>
+      <div class="sc-sub" id="kpi-months-saved">เร็วขึ้น 0 เดือน</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title" id="lbl-strategy-title">กลยุทธ์ (Strategy)</div>
+    <div class="strategy-toggle">
+      <div class="strategy-btn active" id="btn-strat-avalanche" onclick="setStrategy('avalanche')">Avalanche<br><span style="font-size:10px; font-weight:400;">ดอกสูงสุดก่อน</span></div>
+      <div class="strategy-btn" id="btn-strat-snowball" onclick="setStrategy('snowball')">Snowball<br><span style="font-size:10px; font-weight:400;">ยอดน้อยสุดก่อน</span></div>
+    </div>
+    
+    <div style="margin-top:16px;">
+      <div class="panel-title" id="lbl-extra-pay">เงินจ่ายเพิ่มต่อเดือน (Extra)</div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <input type="number" id="txtExtraPayment" value="5000" min="0" step="500" class="value-input" style="flex:1; font-size:16px; padding:8px 12px;" oninput="onExtraPaymentChange(this.value)">
+        <span class="unit" id="lbl-unit-monthly">บาท/เดือน</span>
+      </div>
+    </div>
+    <div style="font-size:11px; color:var(--ink-faint); margin-top:12px; line-height:1.4;" id="strategy-explanation">
+      <strong>Avalanche Method:</strong> นำเงินส่วนเกินโปะหนี้ดอกเบี้ยสูงสุด ประหยัดเงินมากที่สุด
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title" id="lbl-debt-list-title">รายการหนี้สิน (Debts)</div>
+    <div id="debtTableBody">
+      <!-- Injected JS -->
+    </div>
+    <button class="add-btn" onclick="addDebtRow()" id="lbl-btn-add-debt">+ เพิ่มรายการหนี้</button>
+    
+    <div style="margin-top:16px; padding-top:12px; border-top:1px dashed var(--line);">
+      <div class="result-row">
+        <span id="td-total-label">รวมทุกรายการ</span>
+        <span class="val" id="footTotalBalance" style="font-size:15px; color:var(--ink);">0</span>
+      </div>
+      <div class="result-row">
+        <span style="color:var(--ink-dim); font-size:11px;">ดอกเบี้ยเฉลี่ย</span>
+        <span class="val" id="footAvgRate" style="color:var(--ink-dim); font-size:11px;">-</span>
+      </div>
+      <div class="result-row">
+        <span style="color:var(--ink-dim); font-size:11px;">ขั้นต่ำรวมต่อเดือน</span>
+        <span class="val" id="footTotalMin" style="color:var(--ink-dim); font-size:11px;">0</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title" id="lbl-compare-title">เปรียบเทียบผลลัพธ์ (Compare)</div>
+    
+    <div style="margin-bottom:16px; border:1px solid var(--line); border-radius:12px; padding:12px; background:var(--panel-2);" id="card-compare-avalanche">
+      <div style="font-weight:700; font-size:14px; margin-bottom:8px; display:flex; justify-content:space-between;">
+        <span>⚡ Avalanche</span>
+        <span style="font-size:10px; background:var(--ok-dim); color:var(--ok); padding:2px 6px; border-radius:4px;">คุ้มค่าเงินที่สุด</span>
+      </div>
+      <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-av-months" style="font-weight:400;">ระยะเวลา:</span> <span class="val" id="cmp-av-months">-</span></div>
+      <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-av-interest" style="font-weight:400;">ดอกเบี้ยรวม:</span> <span class="val warn" id="cmp-av-interest">-</span></div>
+      <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-av-saved" style="font-weight:400;">ประหยัด vs ขั้นต่ำ:</span> <span class="val ok" id="cmp-av-saved">-</span></div>
     </div>
 
-    <!-- Alert / Bridge Confirmation Banner -->
-    <div id="bridgeAlertBanner" style="display:none;" class="p-4 bg-[var(--surface)] border border-[var(--accent)] text-[var(--accent)] rounded-xl text-sm font-medium flex justify-between items-center">
-        <span id="bridgeAlertText">✓ นำเข้าเงินออมเรียบร้อยแล้ว</span>
-        <button onclick="this.parentElement.style.display='none'" class="text-xl">&times;</button>
+    <div style="border:1px solid var(--line); border-radius:12px; padding:12px; background:var(--panel-2);" id="card-compare-snowball">
+      <div style="font-weight:700; font-size:14px; margin-bottom:8px; display:flex; justify-content:space-between;">
+        <span>⛄ Snowball</span>
+        <span style="font-size:10px; background:var(--blue-dim); color:var(--blue); padding:2px 6px; border-radius:4px;">สร้างกำลังใจ</span>
+      </div>
+      <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-sn-months" style="font-weight:400;">ระยะเวลา:</span> <span class="val" id="cmp-sn-months">-</span></div>
+      <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-sn-interest" style="font-weight:400;">ดอกเบี้ยรวม:</span> <span class="val warn" id="cmp-sn-interest">-</span></div>
+      <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-sn-saved" style="font-weight:400;">ประหยัด vs ขั้นต่ำ:</span> <span class="val ok" id="cmp-sn-saved">-</span></div>
     </div>
+  </div>
 
-    <!-- Top KPI Overview Grid -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-8">
-        <div class="kpi-block">
-            <div class="kpi-label" id="lbl-kpi-total-debt">ยอดหนี้รวมทั้งหมด</div>
-            <div class="kpi-value" id="kpi-total-debt">0</div>
-            <div class="text-sm text-[var(--text-secondary)]" id="kpi-debt-count">0 รายการ</div>
-        </div>
-        <div class="kpi-block">
-            <div class="kpi-label text-[var(--accent)]" id="lbl-kpi-debtfree-date">วันปลดหนี้สำเร็จ</div>
-            <div class="kpi-value text-[var(--accent)]" id="kpi-debtfree-date">-</div>
-            <div class="text-sm text-[var(--text-secondary)]" id="kpi-months-to-free">0 เดือน</div>
-        </div>
-        <div class="kpi-block">
-            <div class="kpi-label text-orange-500" id="lbl-kpi-total-interest">ดอกเบี้ยรวมที่ต้องจ่าย</div>
-            <div class="kpi-value text-orange-500" id="kpi-total-interest">0</div>
-            <div class="text-sm text-[var(--text-secondary)]" id="kpi-total-paid">รวมจ่ายทั้งหมด 0</div>
-        </div>
-        <div class="kpi-block">
-            <div class="kpi-label text-emerald-500" id="lbl-kpi-interest-saved">ประหยัดดอกเบี้ยได้</div>
-            <div class="kpi-value text-emerald-500" id="kpi-interest-saved">0</div>
-            <div class="text-sm text-[var(--text-secondary)]" id="kpi-months-saved">เร็วขึ้น 0 เดือน</div>
-        </div>
-    </div>
-
-    <!-- Strategy & Extra Payment Controls -->
-    <div class="flex flex-col md:flex-row gap-12 pt-8 border-t border-[var(--border-light)]">
-        <div class="flex-1 space-y-6">
-            <label class="kpi-label" id="lbl-strategy-title">กลยุทธ์การปลดหนี้ (Strategy)</label>
-            <div class="strategy-toggle">
-                <div class="strategy-btn active" id="btn-strat-avalanche" onclick="setStrategy('avalanche')">Avalanche (ดอกเบี้ยสูงสุด)</div>
-                <div class="strategy-btn" id="btn-strat-snowball" onclick="setStrategy('snowball')">Snowball (หนี้น้อยสุด)</div>
-            </div>
-            <p class="text-sm text-[var(--text-secondary)] leading-relaxed" id="strategy-explanation">
-                <strong>Avalanche Method:</strong> จ่ายยอดขั้นต่ำทุกรายการ แล้วนำเงินส่วนเกินทั้งหมดไปโปะหนี้ที่มีอัตราดอกเบี้ยสูงสุด ช่วยประหยัดเงินได้มากที่สุด
-            </p>
-        </div>
-        
-        <div class="flex-1 space-y-6">
-            <label class="kpi-label" id="lbl-extra-pay">เงินจ่ายเพิ่มต่อเดือน (Extra Payment)</label>
-            <div class="flex items-end gap-4">
-                <input type="number" id="txtExtraPayment" value="5000" min="0" step="500" class="input-minimal w-48 text-2xl text-[var(--accent)]" oninput="onExtraPaymentChange(this.value)">
-                <span class="text-lg font-medium mb-2 text-[var(--text-secondary)]" id="lbl-unit-monthly">บาท/เดือน</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Strategy Comparison Section -->
-    <div class="pt-8 border-t border-[var(--border-light)] space-y-6">
-        <h3 class="text-2xl font-bold" id="lbl-compare-title">เปรียบเทียบผลลัพธ์ (Comparison)</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="p-6 rounded-2xl bg-[var(--surface)] border border-[var(--border-light)] space-y-4" id="card-compare-avalanche">
-                <div class="text-lg font-bold">Avalanche</div>
-                <div class="flex justify-between border-b border-[var(--border-light)] pb-2"><span id="lbl-cmp-av-months">ระยะเวลา:</span> <strong id="cmp-av-months">-</strong></div>
-                <div class="flex justify-between border-b border-[var(--border-light)] pb-2"><span id="lbl-cmp-av-interest">ดอกเบี้ยรวม:</span> <strong class="text-orange-500" id="cmp-av-interest">-</strong></div>
-                <div class="flex justify-between"><span id="lbl-cmp-av-saved">ประหยัดดอกเบี้ย vs ขั้นต่ำ:</span> <strong class="text-emerald-500" id="cmp-av-saved">-</strong></div>
-            </div>
-            <div class="p-6 rounded-2xl bg-[var(--surface)] border border-[var(--border-light)] space-y-4" id="card-compare-snowball">
-                <div class="text-lg font-bold">Snowball</div>
-                <div class="flex justify-between border-b border-[var(--border-light)] pb-2"><span id="lbl-cmp-sn-months">ระยะเวลา:</span> <strong id="cmp-sn-months">-</strong></div>
-                <div class="flex justify-between border-b border-[var(--border-light)] pb-2"><span id="lbl-cmp-sn-interest">ดอกเบี้ยรวม:</span> <strong class="text-orange-500" id="cmp-sn-interest">-</strong></div>
-                <div class="flex justify-between"><span id="lbl-cmp-sn-saved">ประหยัดดอกเบี้ย vs ขั้นต่ำ:</span> <strong class="text-emerald-500" id="cmp-sn-saved">-</strong></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Debt Items Table / List -->
-    <div class="pt-8 border-t border-[var(--border-light)] space-y-6">
-        <div class="flex justify-between items-center">
-            <h3 class="text-2xl font-bold" id="lbl-debt-list-title">รายการหนี้สิน (Debt Accounts)</h3>
-            <button onclick="addDebtRow()" class="btn-primary">
-                <span id="lbl-btn-add-debt">+ เพิ่มรายการหนี้</span>
-            </button>
-        </div>
-
-        <div class="overflow-x-auto pb-4">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr>
-                        <th class="pt-2" id="th-name">ชื่อหนี้สิน</th>
-                        <th class="pt-2 text-right" id="th-balance">ยอดเงินต้นคงเหลือ</th>
-                        <th class="pt-2 text-right" id="th-rate">ดอกเบี้ย (%/ปี)</th>
-                        <th class="pt-2 text-right" id="th-min-pay">ขั้นต่ำต่อเดือน</th>
-                        <th class="pt-2 text-center" id="th-order">ลำดับ</th>
-                        <th class="pt-2 w-12 no-print"></th>
-                    </tr>
-                </thead>
-                <tbody id="debtTableBody">
-                    <!-- Dynamic rows inserted by JS -->
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td class="pt-6 font-bold" id="td-total-label">รวมทุกรายการ</td>
-                        <td class="pt-6 text-right text-xl font-bold" id="footTotalBalance">0</td>
-                        <td class="pt-6 text-right font-medium text-[var(--text-secondary)]" id="footAvgRate">-</td>
-                        <td class="pt-6 text-right text-xl font-bold text-[var(--accent)]" id="footTotalMin">0</td>
-                        <td class="pt-6 text-center text-[var(--text-secondary)]">-</td>
-                        <td class="no-print pt-6"></td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-    </div>
-
-    <!-- Monthly Payoff Schedule / Projection Details -->
-    <details class="pt-8 border-t border-[var(--border-light)] group cursor-pointer">
-        <summary class="text-xl font-bold outline-none flex items-center gap-2 text-[var(--accent)]" id="lbl-schedule-title">
-            ดูตารางกำหนดการปลดหนี้ (Timeline & Schedule)
-        </summary>
-        <div class="mt-6">
-            <div id="payoffMilestones" class="space-y-2 mb-8"></div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr>
-                            <th id="th-sch-month">เดือนที่</th>
-                            <th class="text-right" id="th-sch-payment">จ่ายรวม</th>
-                            <th class="text-right" id="th-sch-principal">ตัดเงินต้น</th>
-                            <th class="text-right" id="th-sch-interest">ดอกเบี้ย</th>
-                            <th class="text-right" id="th-sch-remaining">คงเหลือ</th>
-                        </tr>
-                    </thead>
-                    <tbody id="scheduleTableBody">
-                        <!-- Inserted by JS -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
+  <div class="panel">
+    <details>
+      <summary id="lbl-schedule-title">📅 ดูตารางกำหนดการปลดหนี้</summary>
+      <div id="payoffMilestones" style="margin-top:12px; font-size:11px; color:var(--ok); display:flex; flex-direction:column; gap:6px;"></div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th id="th-sch-month">ด.</th>
+              <th id="th-sch-payment">จ่ายรวม</th>
+              <th id="th-sch-principal" style="color:var(--ok);">ต้น</th>
+              <th id="th-sch-interest" style="color:var(--warn);">ดอก</th>
+              <th id="th-sch-remaining">เหลือ</th>
+            </tr>
+          </thead>
+          <tbody id="scheduleTableBody"></tbody>
+        </table>
+      </div>
     </details>
+  </div>
 
-    <div class="flex justify-between items-center pt-8 border-t border-[var(--border-light)] text-sm">
-        <button onclick="resetDefaults()" class="text-[var(--text-secondary)] hover:text-red-500 transition-colors" id="btn-reset-debts">
-            รีเซ็ตรายการเริ่มต้น (Reset)
-        </button>
-        <span class="text-[var(--text-secondary)] font-medium">Money Superapp v1.3.1</span>
-    </div>
-
-</div>
+  <div class="save-status">
+    <span id="saveStatus">&nbsp;</span>
+    <button class="reset-btn" id="btn-reset-debts" onclick="resetDefaults()">รีเซ็ตค่าเริ่มต้น</button>
+  </div>
+  <p class="version-tag">v1.3.1</p>
 
 <script>
     const LANG = (function(){ try { return localStorage.getItem('moneySuperapp.lang') || 'th'; } catch(e){ return 'th'; } })();
@@ -578,248 +493,29 @@
 
         state.debts.forEach((debt) => {
             const orderIndex = sorted.findIndex(s => s.id === debt.id) + 1;
-            const tr = document.createElement('tr');
-            tr.className = 'table-row-alt hover:bg-slate-50';
+            
+            const tr = document.createElement('div');
+            tr.className = 'entry-row';
             tr.innerHTML = `
-                <td class="p-4 pl-3">
-                    <input type="text" value="${debt.name}" onchange="onDebtChange(${debt.id}, 'name', this.value)" class="table-input font-semibold text-slate-800">
-                </td>
-                <td class="p-4 text-right">
-                    <input type="number" value="${debt.balance}" step="1000" min="0" oninput="onDebtChange(${debt.id}, 'balance', this.value)" class="table-input w-28 text-right font-bold text-slate-900">
-                </td>
-                <td class="p-4 text-right">
-                    <input type="number" value="${debt.rate}" step="0.1" min="0" oninput="onDebtChange(${debt.id}, 'rate', this.value)" class="table-input w-20 text-right font-bold text-amber-600">
-                </td>
-                <td class="p-4 text-right">
-                    <input type="number" value="${debt.minPayment}" step="100" min="0" oninput="onDebtChange(${debt.id}, 'minPayment', this.value)" class="table-input w-24 text-right font-bold text-blue-600">
-                </td>
-                <td class="p-4 text-center">
-                    <span class="inline-block w-7 h-7 leading-7 rounded-full font-extrabold text-xs shadow-sm ${orderIndex === 1 ? 'bg-emerald-500 text-white ring-2 ring-emerald-200' : 'bg-slate-100 text-slate-500 border border-slate-200'}">
-                        #${orderIndex}
-                    </span>
-                </td>
-                <td class="p-4 text-center no-print">
-                    <button onclick="removeDebtRow(${debt.id})" class="text-slate-300 hover:text-red-500 hover:bg-red-50 font-bold p-2 rounded-lg text-lg transition-all flex items-center justify-center" title="ลบรายการ">&times;</button>
-                </td>
+                <div style="display:flex; width:100%; align-items:center; gap:8px;">
+                    <span style="font-size:10px; font-weight:700; color:#fff; padding:2px 6px; border-radius:10px; ${orderIndex === 1 ? 'background:var(--ok);' : 'background:var(--ink-faint);'}">#${orderIndex}</span>
+                    <input type="text" value="${debt.name}" onchange="onDebtChange(${debt.id}, 'name', this.value)" class="name-input">
+                    <button onclick="removeDebtRow(${debt.id})" class="remove-btn" title="ลบ">&times;</button>
+                </div>
+                <div class="val-group" style="flex-basis:100%;">
+                    <label>ยอดคงเหลือ</label>
+                    <input type="number" value="${debt.balance}" step="1000" min="0" oninput="onDebtChange(${debt.id}, 'balance', this.value)" class="value-input">
+                </div>
+                <div class="val-group">
+                    <label>ดอกเบี้ย %</label>
+                    <input type="number" value="${debt.rate}" step="0.1" min="0" oninput="onDebtChange(${debt.id}, 'rate', this.value)" class="value-input" style="color:var(--warn);">
+                </div>
+                <div class="val-group">
+                    <label>ขั้นต่ำ</label>
+                    <input type="number" value="${debt.minPayment}" step="100" min="0" oninput="onDebtChange(${debt.id}, 'minPayment', this.value)" class="value-input" style="color:var(--blue);">
+                </div>
             `;
-            tbody.appendChild(tr);
-        });
-    }
 
-    /**
-     * Run simulation for a given debt list, extra monthly payment, and strategy
-     */
-    function simulate(debtsList, extra, strategy) {
-        let debts = debtsList.map(d => ({
-            id: d.id,
-            name: d.name,
-            balance: parseNum(d.balance),
-            rate: parseNum(d.rate),
-            minPayment: parseNum(d.minPayment),
-            initialBalance: parseNum(d.balance),
-            paidOffMonth: null
-        })).filter(d => d.balance > 0);
-
-        if (debts.length === 0) {
-            return { months: 0, totalInterest: 0, totalPaid: 0, schedule: [], payoffOrder: [] };
-        }
-
-        let months = 0;
-        let totalInterest = 0;
-        let totalPaid = 0;
-        const schedule = [];
-        const payoffOrder = [];
-
-        const MAX_MONTHS = 360; // 30 years safety limit
-
-        while (debts.some(d => d.balance > 0.01) && months < MAX_MONTHS) {
-            months++;
-            let monthInterest = 0;
-            let monthPayment = 0;
-            let monthPrincipal = 0;
-
-            // 1. Accrue interest
-            debts.forEach(d => {
-                if (d.balance > 0) {
-                    const interest = d.balance * (d.rate / 100 / 12);
-                    d.balance += interest;
-                    monthInterest += interest;
-                    totalInterest += interest;
-                }
-            });
-
-            // 2. Pay minimums
-            let totalAvailableBudget = extra;
-            debts.forEach(d => {
-                if (d.balance > 0) {
-                    const pay = Math.min(d.balance, d.minPayment);
-                    d.balance -= pay;
-                    monthPayment += pay;
-                    monthPrincipal += (pay - (d.balance === 0 ? 0 : 0));
-                } else {
-                    // Rollover minimum payment from already paid-off debt!
-                    totalAvailableBudget += d.minPayment;
-                }
-            });
-
-            // 3. Allocate extra budget according to strategy
-            let activeDebts = debts.filter(d => d.balance > 0.01);
-            activeDebts.sort((a, b) => {
-                if (strategy === 'snowball') return a.balance - b.balance;
-                return b.rate - a.rate;
-            });
-
-            for (let target of activeDebts) {
-                if (totalAvailableBudget <= 0.01) break;
-                const extraPay = Math.min(target.balance, totalAvailableBudget);
-                target.balance -= extraPay;
-                monthPayment += extraPay;
-                totalAvailableBudget -= extraPay;
-
-                if (target.balance <= 0.01 && target.paidOffMonth === null) {
-                    target.paidOffMonth = months;
-                    payoffOrder.push({ name: target.name, month: months });
-                }
-            }
-
-            // Check if remaining active debts got paid off in step 2
-            debts.forEach(d => {
-                if (d.balance <= 0.01 && d.paidOffMonth === null) {
-                    d.paidOffMonth = months;
-                    payoffOrder.push({ name: d.name, month: months });
-                }
-            });
-
-            const remainingBalance = debts.reduce((sum, d) => sum + Math.max(0, d.balance), 0);
-            totalPaid += monthPayment;
-
-            if (months <= 60 || remainingBalance <= 0 || months % 6 === 0) {
-                schedule.push({
-                    month: months,
-                    payment: monthPayment,
-                    interest: monthInterest,
-                    principal: monthPayment - monthInterest,
-                    remaining: remainingBalance
-                });
-            }
-        }
-
-        return { months, totalInterest, totalPaid, schedule, payoffOrder };
-    }
-
-    function computePayoff() {
-        const debts = state.debts;
-        const totalDebt = debts.reduce((sum, d) => sum + parseNum(d.balance), 0);
-        const totalMin = debts.reduce((sum, d) => sum + parseNum(d.minPayment), 0);
-        const avgRate = totalDebt > 0
-            ? debts.reduce((sum, d) => sum + (parseNum(d.balance) * parseNum(d.rate)), 0) / totalDebt
-            : 0;
-
-        document.getElementById('footTotalBalance').textContent = formatMoney(totalDebt) + ' ' + unit;
-        document.getElementById('footTotalMin').textContent = formatMoney(totalMin) + ' ' + unit;
-        document.getElementById('footAvgRate').textContent = avgRate > 0 ? avgRate.toFixed(1) + '%' : '-';
-
-        document.getElementById('kpi-total-debt').textContent = formatMoney(totalDebt) + ' ' + unit;
-        document.getElementById('kpi-debt-count').textContent = debts.length + (LANG === 'en' ? ' accounts' : ' รายการ');
-
-        // Simulations
-        const simCurrent = simulate(debts, state.extraPayment, state.strategy);
-        const simAvalanche = simulate(debts, state.extraPayment, 'avalanche');
-        const simSnowball = simulate(debts, state.extraPayment, 'snowball');
-        const simMinOnly = simulate(debts, 0, 'avalanche');
-
-        // Current strategy outputs
-        const now = new Date();
-        const freeDate = new Date(now.getFullYear(), now.getMonth() + simCurrent.months, 1);
-        const monthNamesTh = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-        const monthNamesEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const dateStr = totalDebt <= 0
-            ? (LANG === 'en' ? 'Zero Debt!' : 'ไม่มีหนี้สิน!')
-            : (LANG === 'en'
-                ? `${monthNamesEn[freeDate.getMonth()]} ${freeDate.getFullYear()}`
-                : `${monthNamesTh[freeDate.getMonth()]} ${freeDate.getFullYear() + 543}`);
-
-        document.getElementById('kpi-debtfree-date').textContent = dateStr;
-        document.getElementById('kpi-months-to-free').textContent = totalDebt <= 0 ? '0' : `${simCurrent.months} ${LANG === 'en' ? 'months' : 'เดือน'}`;
-
-        document.getElementById('kpi-total-interest').textContent = formatMoney(simCurrent.totalInterest) + ' ' + unit;
-        document.getElementById('kpi-total-paid').textContent = (LANG === 'en' ? 'Total paid: ' : 'รวมจ่ายทั้งหมด ') + formatMoney(simCurrent.totalPaid) + ' ' + unit;
-
-        const interestSaved = Math.max(0, simMinOnly.totalInterest - simCurrent.totalInterest);
-        const monthsSaved = Math.max(0, simMinOnly.months - simCurrent.months);
-
-        document.getElementById('kpi-interest-saved').textContent = formatMoney(interestSaved) + ' ' + unit;
-        document.getElementById('kpi-months-saved').textContent = (LANG === 'en' ? 'Faster by ' : 'เร็วขึ้น ') + monthsSaved + (LANG === 'en' ? ' mos' : ' เดือน');
-
-        // Comparison cards
-        document.getElementById('cmp-av-months').textContent = `${simAvalanche.months} ${LANG === 'en' ? 'months' : 'เดือน'}`;
-        document.getElementById('cmp-av-interest').textContent = `${formatMoney(simAvalanche.totalInterest)} ${unit}`;
-        document.getElementById('cmp-av-saved').textContent = `+${formatMoney(Math.max(0, simMinOnly.totalInterest - simAvalanche.totalInterest))} ${unit}`;
-
-        document.getElementById('cmp-sn-months').textContent = `${simSnowball.months} ${LANG === 'en' ? 'months' : 'เดือน'}`;
-        document.getElementById('cmp-sn-interest').textContent = `${formatMoney(simSnowball.totalInterest)} ${unit}`;
-        document.getElementById('cmp-sn-saved').textContent = `+${formatMoney(Math.max(0, simMinOnly.totalInterest - simSnowball.totalInterest))} ${unit}`;
-
-        // Milestones
-        const milestonesEl = document.getElementById('payoffMilestones');
-        if (simCurrent.payoffOrder.length > 0) {
-            milestonesEl.innerHTML = simCurrent.payoffOrder.map(m => {
-                const pDate = new Date(now.getFullYear(), now.getMonth() + m.month, 1);
-                const pDateStr = LANG === 'en'
-                    ? `${monthNamesEn[pDate.getMonth()]} ${pDate.getFullYear()}`
-                    : `${monthNamesTh[pDate.getMonth()]} ${pDate.getFullYear() + 543}`;
-                return `<div class="p-2 rounded bg-emerald-50 border border-emerald-200 text-emerald-900 flex justify-between items-center">
-                    <span>🎉 <strong>${m.name}</strong> ${LANG === 'en' ? 'paid off in month ' : 'ปลดหนี้สำเร็จในเดือนที่ '} <strong>${m.month}</strong></span>
-                    <span class="font-bold text-emerald-700">${pDateStr}</span>
-                </div>`;
-            }).join('');
-        } else {
-            milestonesEl.innerHTML = '';
-        }
-
-        // Schedule table
-        const schedBody = document.getElementById('scheduleTableBody');
-        schedBody.innerHTML = simCurrent.schedule.map(s => `
-            <tr>
-                <td class="py-3 font-medium">${s.month}</td>
-                <td class="py-3 text-right">${formatMoney(s.payment)}</td>
-                <td class="py-3 text-right text-emerald-600">${formatMoney(s.principal)}</td>
-                <td class="py-3 text-right text-orange-500">${formatMoney(s.interest)}</td>
-                <td class="py-3 text-right font-semibold">${formatMoney(s.remaining)}</td>
-            </tr>
-        `).join('');
-
-        renderTable();
-    }
-
-    function importFromRemainingMoney() {
-        try {
-            const raw = localStorage.getItem('remainingMoneyCalculator.state.v1');
-            if (!raw) {
-                alert(LANG === 'en' ? 'No data found in Remaining Money calculator.' : 'ไม่พบข้อมูลในเครื่องมือคำนวณเงินคงเหลือ');
-                return;
-            }
-            const remState = JSON.parse(raw);
-            let monthlySaving = 0;
-            if (remState && Array.isArray(remState.savings)) {
-                monthlySaving = remState.savings.reduce((sum, s) => sum + parseNum(s.value), 0);
-            }
-            if (monthlySaving <= 0) {
-                // Check if remaining money itself has surplus
-                const totalIncome = (remState.incomes || []).reduce((sum, i) => sum + parseNum(i.value), 0);
-                const totalExpense = (remState.expenses || []).reduce((sum, e) => sum + parseNum(e.value), 0);
-                monthlySaving = Math.max(0, totalIncome - totalExpense);
-            }
-
-            if (monthlySaving > 0) {
-                state.extraPayment = monthlySaving;
-                document.getElementById('txtExtraPayment').value = monthlySaving;
-                computePayoff();
-                saveState();
-                const banner = document.getElementById('bridgeAlertBanner');
-                document.getElementById('bridgeAlertText').textContent = LANG === 'en'
-                    ? `✓ Successfully imported ${formatMoney(monthlySaving)} THB monthly savings from Remaining Money calculator!`
-                    : `✓ ดึงเงินออมจำนวน ${formatMoney(monthlySaving)} บาท/เดือน จากหน้าคำนวณเงินคงเหลือสำเร็จ!`;
                 banner.style.display = 'flex';
                 setTimeout(() => { banner.style.display = 'none'; }, 4000);
             } else {
