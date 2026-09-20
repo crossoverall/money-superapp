@@ -55,23 +55,31 @@
                 </select>
             </div>
             <details class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm">
-                <summary class="font-medium text-gray-700 cursor-pointer select-none" id="lbl-more-deduct">+ ค่าลดหย่อนเพิ่มเติม (SSF, RMF, ประกัน, ดอกเบี้ยบ้าน)</summary>
+                <summary class="font-medium text-gray-700 cursor-pointer select-none" id="lbl-more-deduct">+ ค่าลดหย่อนเพิ่มเติม (SSF, RMF, ThaiESG, ประกัน, ดอกเบี้ยบ้าน)</summary>
                 <div class="space-y-3 mt-3 pt-3 border-t border-gray-200">
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1" id="lbl-fund-deduct">กองทุนลดหย่อนภาษี SSF / RMF / ThaiESG (บาท/ปี)</label>
-                        <input type="number" id="fundDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" oninput="calculateTax()">
+                        <label class="block text-xs font-medium text-gray-600 mb-1" id="lbl-fund-deduct">กองทุนเกษียณ SSF / RMF (รวม PVD สูงสุด 500,000 บาท/ปี)</label>
+                        <input type="number" id="fundDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" oninput="calculateTax()" aria-label="กองทุนเกษียณ SSF / RMF">
+                        <div id="warn-fund" style="display:none; color:#d97706; font-size:11px; margin-top:3px; font-weight:500;"></div>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1" id="lbl-ins-deduct">เบี้ยประกันชีวิต + สุขภาพ (บาท/ปี)</label>
-                        <input type="number" id="insuranceDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" oninput="calculateTax()">
+                        <label class="block text-xs font-medium text-gray-600 mb-1" id="lbl-thaiesg-deduct">กองทุน ThaiESG (สูงสุด 300,000 บาท/ปี)</label>
+                        <input type="number" id="thaiEsgDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" oninput="calculateTax()" aria-label="กองทุน ThaiESG">
+                        <div id="warn-thaiesg" style="display:none; color:#d97706; font-size:11px; margin-top:3px; font-weight:500;"></div>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1" id="lbl-mortgage-deduct">ดอกเบี้ยเงินกู้ยืมเพื่อที่อยู่อาศัย (บาท/ปี)</label>
-                        <input type="number" id="mortgageDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" oninput="calculateTax()">
+                        <label class="block text-xs font-medium text-gray-600 mb-1" id="lbl-ins-deduct">เบี้ยประกันชีวิต + สุขภาพ (สูงสุด 100,000 บาท/ปี)</label>
+                        <input type="number" id="insuranceDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" oninput="calculateTax()" aria-label="เบี้ยประกันชีวิตและสุขภาพ">
+                        <div id="warn-insurance" style="display:none; color:#d97706; font-size:11px; margin-top:3px; font-weight:500;"></div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1" id="lbl-mortgage-deduct">ดอกเบี้ยเงินกู้ยืมเพื่อที่อยู่อาศัย (สูงสุด 100,000 บาท/ปี)</label>
+                        <input type="number" id="mortgageDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" oninput="calculateTax()" aria-label="ดอกเบี้ยเงินกู้ยืมเพื่อที่อยู่อาศัย">
+                        <div id="warn-mortgage" style="display:none; color:#d97706; font-size:11px; margin-top:3px; font-weight:500;"></div>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1" id="lbl-other-deduct">ลดหย่อนอื่นๆ เช่น บิดามารดา บุตร ช้อปดีมีคืน (บาท/ปี)</label>
-                        <input type="number" id="otherDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" oninput="calculateTax()">
+                        <input type="number" id="otherDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" oninput="calculateTax()" aria-label="ลดหย่อนอื่นๆ">
                     </div>
                 </div>
             </details>
@@ -127,7 +135,7 @@
             <button onclick="copyTaxSummary()" id="btn-copy-tax" class="py-1.5 px-3 bg-gray-100 hover:bg-gray-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-200 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5">
                 <span id="lbl-copy-tax">📋 คัดลอกสรุปภาษี</span>
             </button>
-            <p class="text-xs text-gray-400">v1.0</p>
+            <p class="text-xs text-gray-400">v1.1</p>
         </div>
     </div>
 
@@ -147,10 +155,11 @@
                 'lbl-sso-ceiling': 'Social Security (SSO) Cap',
                 'opt-sso-750': '750 THB (15k wage cap)',
                 'opt-sso-875': '875 THB (17.5k new cap)',
-                'lbl-more-deduct': '+ Additional Deductions (SSF, RMF, Insurance, Loan)',
-                'lbl-fund-deduct': 'Tax-saving funds: SSF / RMF / ThaiESG (THB/yr)',
-                'lbl-ins-deduct': 'Life & Health Insurance premium (THB/yr)',
-                'lbl-mortgage-deduct': 'Mortgage loan interest (THB/yr)',
+                'lbl-more-deduct': '+ Additional Deductions (SSF, RMF, ThaiESG, Insurance, Loan)',
+                'lbl-fund-deduct': 'Retirement Funds: SSF / RMF (incl. PVD max 500k THB/yr)',
+                'lbl-thaiesg-deduct': 'ThaiESG Fund (max 300k THB/yr)',
+                'lbl-ins-deduct': 'Life & Health Insurance (max 100k THB/yr)',
+                'lbl-mortgage-deduct': 'Mortgage loan interest (max 100k THB/yr)',
                 'lbl-other-deduct': 'Other deductions (parents, children, etc.) (THB/yr)',
                 'lbl-totalIncome': 'Total annual income:',
                 'lbl-expenseDeduct': 'Expense deduction (up to 100,000):',
@@ -195,6 +204,7 @@
                 pvd: document.getElementById('pvd').value,
                 ssoCap: document.getElementById('ssoCap').value,
                 fundDeduct: document.getElementById('fundDeduct').value,
+                thaiEsgDeduct: document.getElementById('thaiEsgDeduct') ? document.getElementById('thaiEsgDeduct').value : '',
                 insuranceDeduct: document.getElementById('insuranceDeduct').value,
                 mortgageDeduct: document.getElementById('mortgageDeduct').value,
                 otherDeduct: document.getElementById('otherDeduct').value
@@ -207,7 +217,11 @@
                 if (data.pvd) prof.pvdPercent = data.pvd;
                 if (data.bonus) prof.bonus = data.bonus;
                 if (data.ssoCap) prof.ssoCap = data.ssoCap;
+                prof.updatedAt = Date.now();
                 localStorage.setItem(PROFILE_KEY, JSON.stringify(prof));
+                try {
+                    window.parent.postMessage({ action: 'sharedProfileUpdated', profile: prof }, '*');
+                } catch(e){}
             } catch(e){}
         }
 
@@ -220,10 +234,10 @@
             const ssoCapVal = parseFloat(document.getElementById('ssoCap').value) || 875;
 
             const fundDeduct = parseFloat(document.getElementById('fundDeduct').value) || 0;
+            const thaiEsgDeduct = parseFloat(document.getElementById('thaiEsgDeduct')?.value) || 0;
             const insuranceDeduct = parseFloat(document.getElementById('insuranceDeduct').value) || 0;
             const mortgageDeduct = parseFloat(document.getElementById('mortgageDeduct').value) || 0;
             const otherDeduct = parseFloat(document.getElementById('otherDeduct').value) || 0;
-            const additionalDeductions = fundDeduct + insuranceDeduct + mortgageDeduct + otherDeduct;
 
             // คำนวณรายได้
             const totalIncome = (salary * 12) + bonus;
@@ -237,6 +251,67 @@
             let ssoMonthly = salary * 0.05;
             if (ssoMonthly > ssoCapVal) ssoMonthly = ssoCapVal;
             const ssoDeduction = ssoMonthly * 12;
+
+            // กฎหมายภาษี: ตรวจสอบและบังคับใช้เพดานลดหย่อนตามประมวลรัษฎากร
+            // 1. ดอกเบี้ยกู้บ้าน: สูงสุด 100,000 บาท
+            const effectiveMortgage = Math.min(mortgageDeduct, 100000);
+            const warnMortgageEl = document.getElementById('warn-mortgage');
+            if (warnMortgageEl) {
+                if (mortgageDeduct > 100000) {
+                    warnMortgageEl.textContent = LANG === 'en'
+                        ? `⚠️ Capped at 100,000 THB (excess of ${formatMoney(mortgageDeduct - 100000)} THB not deductible)`
+                        : `⚠️ ใช้สิทธิ์ได้สูงสุด 100,000 บาท (ส่วนเกิน ${formatMoney(mortgageDeduct - 100000)} บาท ไม่นำมาลดหย่อน)`;
+                    warnMortgageEl.style.display = 'block';
+                } else {
+                    warnMortgageEl.style.display = 'none';
+                }
+            }
+
+            // 2. ประกันชีวิต + สุขภาพ: รวมสูงสุด 100,000 บาท
+            const effectiveInsurance = Math.min(insuranceDeduct, 100000);
+            const warnInsEl = document.getElementById('warn-insurance');
+            if (warnInsEl) {
+                if (insuranceDeduct > 100000) {
+                    warnInsEl.textContent = LANG === 'en'
+                        ? `⚠️ Capped at 100,000 THB (excess of ${formatMoney(insuranceDeduct - 100000)} THB not deductible)`
+                        : `⚠️ ใช้สิทธิ์ได้สูงสุด 100,000 บาท (ส่วนเกิน ${formatMoney(insuranceDeduct - 100000)} บาท ไม่นำมาลดหย่อน)`;
+                    warnInsEl.style.display = 'block';
+                } else {
+                    warnInsEl.style.display = 'none';
+                }
+            }
+
+            // 3. กองทุน ThaiESG: สูงสุด 300,000 บาท หรือ 30% ของเงินได้
+            const maxThaiEsg = Math.min(300000, totalIncome > 0 ? totalIncome * 0.3 : 300000);
+            const effectiveThaiEsg = Math.min(thaiEsgDeduct, maxThaiEsg);
+            const warnEsgEl = document.getElementById('warn-thaiesg');
+            if (warnEsgEl) {
+                if (thaiEsgDeduct > maxThaiEsg && totalIncome > 0) {
+                    warnEsgEl.textContent = LANG === 'en'
+                        ? `⚠️ Capped at ${formatMoney(maxThaiEsg)} THB (max 30% of income or 300,000 THB)`
+                        : `⚠️ ใช้สิทธิ์ได้สูงสุด ${formatMoney(maxThaiEsg)} บาท (ไม่เกิน 30% ของรายได้ หรือ 300,000 บาท)`;
+                    warnEsgEl.style.display = 'block';
+                } else {
+                    warnEsgEl.style.display = 'none';
+                }
+            }
+
+            // 4. กองทุนเกษียณ (SSF + RMF + PVD): เพดานรวมกันไม่เกิน 500,000 บาท
+            const maxFundAllowed = Math.max(0, 500000 - pvdDeduction);
+            const effectiveFund = Math.min(fundDeduct, maxFundAllowed);
+            const warnFundEl = document.getElementById('warn-fund');
+            if (warnFundEl) {
+                if (fundDeduct + pvdDeduction > 500000) {
+                    warnFundEl.textContent = LANG === 'en'
+                        ? `⚠️ Combined with PVD (${formatMoney(pvdDeduction)} THB), max retirement pool is 500,000 THB (allowed: ${formatMoney(effectiveFund)} THB)`
+                        : `⚠️ เมื่อรวมกับ PVD (${formatMoney(pvdDeduction)} บาท) แล้วเกินเพดาน 500,000 บาท ใช้สิทธิ์กองทุนได้ ${formatMoney(effectiveFund)} บาท`;
+                    warnFundEl.style.display = 'block';
+                } else {
+                    warnFundEl.style.display = 'none';
+                }
+            }
+
+            const additionalDeductions = effectiveFund + effectiveThaiEsg + effectiveInsurance + effectiveMortgage + otherDeduct;
 
             // คำนวณเงินได้สุทธิ
             const totalDeductions = expenseDeduction + personalDeduction + pvdDeduction + ssoDeduction + additionalDeductions;
@@ -310,6 +385,34 @@
             }).catch(() => {});
         }
 
+        function syncFromProfile() {
+            try {
+                const profRaw = localStorage.getItem(PROFILE_KEY);
+                if (!profRaw) return;
+                const prof = JSON.parse(profRaw);
+                let changed = false;
+                if (prof.salary !== undefined && prof.salary !== '' && document.getElementById('salary').value !== String(prof.salary)) {
+                    document.getElementById('salary').value = prof.salary;
+                    changed = true;
+                }
+                if (prof.bonus !== undefined && prof.bonus !== '' && document.getElementById('bonus').value !== String(prof.bonus)) {
+                    document.getElementById('bonus').value = prof.bonus;
+                    changed = true;
+                }
+                if (prof.pvdPercent !== undefined && prof.pvdPercent !== '' && document.getElementById('pvd').value !== String(prof.pvdPercent)) {
+                    document.getElementById('pvd').value = prof.pvdPercent;
+                    changed = true;
+                }
+                if (prof.ssoCap !== undefined && prof.ssoCap !== '' && document.getElementById('ssoCap').value !== String(prof.ssoCap)) {
+                    document.getElementById('ssoCap').value = prof.ssoCap;
+                    changed = true;
+                }
+                if (changed && parseFloat(document.getElementById('salary').value) > 0) {
+                    calculateTax();
+                }
+            } catch(e){}
+        }
+
         function loadState() {
             try {
                 const raw = localStorage.getItem(STORAGE_KEY);
@@ -317,10 +420,10 @@
                 const prof = profRaw ? JSON.parse(profRaw) : {};
                 const data = raw ? JSON.parse(raw) : null;
 
-                const salary = data?.salary || prof?.salary;
-                const bonus = data?.bonus || prof?.bonus || '';
-                const pvd = data?.pvd || prof?.pvdPercent || '';
-                const ssoCap = data?.ssoCap || prof?.ssoCap || '875';
+                const salary = (prof && prof.salary !== undefined && prof.salary !== '') ? prof.salary : (data?.salary || '');
+                const bonus = (prof && prof.bonus !== undefined && prof.bonus !== '') ? prof.bonus : (data?.bonus || '');
+                const pvd = (prof && prof.pvdPercent !== undefined && prof.pvdPercent !== '') ? prof.pvdPercent : (data?.pvd || '');
+                const ssoCap = (prof && prof.ssoCap !== undefined && prof.ssoCap !== '') ? prof.ssoCap : (data?.ssoCap || '875');
 
                 if (salary !== undefined && salary !== '') document.getElementById('salary').value = salary;
                 if (bonus !== '') document.getElementById('bonus').value = bonus;
@@ -328,6 +431,7 @@
                 if (ssoCap !== '') document.getElementById('ssoCap').value = ssoCap;
 
                 if (data?.fundDeduct) document.getElementById('fundDeduct').value = data.fundDeduct;
+                if (data?.thaiEsgDeduct && document.getElementById('thaiEsgDeduct')) document.getElementById('thaiEsgDeduct').value = data.thaiEsgDeduct;
                 if (data?.insuranceDeduct) document.getElementById('insuranceDeduct').value = data.insuranceDeduct;
                 if (data?.mortgageDeduct) document.getElementById('mortgageDeduct').value = data.mortgageDeduct;
                 if (data?.otherDeduct) document.getElementById('otherDeduct').value = data.otherDeduct;
@@ -337,6 +441,17 @@
                 }
             } catch(e){}
         }
+
+        window.addEventListener('storage', (e) => {
+            if (e.key === PROFILE_KEY) {
+                syncFromProfile();
+            }
+        });
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.action === 'sharedProfileUpdated') {
+                syncFromProfile();
+            }
+        });
 
         loadState();
     </script>

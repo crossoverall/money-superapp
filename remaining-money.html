@@ -226,6 +226,11 @@
   <h1 id="pageTitle">คำนวณเงินคงเหลือ</h1>
   <div class="sub" id="subtitle">บันทึกรายได้และค่าใช้จ่าย แล้วดูว่าแต่ละเดือนเหลือเงินเท่าไหร่ — เมื่อกรอกเงินเดือน ระบบจะคำนวณภาษีและประกันสังคมโดยอัตโนมัติ</div>
 
+  <div id="bridgeAlertBanner" style="display: none; margin-bottom: 16px; padding: 12px 16px; border-radius: 10px; background: #ecfdf5; border: 1px solid #10b981; color: #065f46; font-size: 13px; font-weight: 600; align-items: center; justify-content: space-between;">
+    <span id="bridgeAlertText">✓ นำเข้าข้อมูลสำเร็จ</span>
+    <button type="button" onclick="document.getElementById('bridgeAlertBanner').style.display='none'" style="background: none; border: none; color: #065f46; font-size: 16px; cursor: pointer;">×</button>
+  </div>
+
   <div class="summary-strip" id="summaryStrip">
     <div class="summary-card income">
       <div class="sc-label" id="scIncomeLabel">รวมรายได้</div>
@@ -264,7 +269,7 @@
     <span id="saveStatus">&nbsp;</span>
     <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
   </div>
-  <p class="version-tag">v1.0</p>
+  <p class="version-tag">v1.1</p>
 
 <script>
 // ── Language ──────────────────────────────────────────────────────────────
@@ -493,7 +498,15 @@ function enableDeltaInput(inputEl, getBase, onChange){
 
 // ── Tax & SSO calculation (annualized method, same as months-slips.html) ──
 function calculateSSO(salary){
-  return Math.min(salary * 0.05, 875);
+  let cap = 875;
+  try {
+    const profRaw = localStorage.getItem('moneySuperapp.sharedProfile');
+    if(profRaw){
+      const prof = JSON.parse(profRaw);
+      if(prof.ssoCap) cap = parseFloat(prof.ssoCap) || 875;
+    }
+  } catch(e){}
+  return Math.min(salary * 0.05, cap);
 }
 
 function calculatePVD(salary, percent){
@@ -601,7 +614,11 @@ function saveState(){
     const sal = getSalaryValue();
     if(sal > 0) prof.salary = sal;
     if(pvdPercent !== undefined) prof.pvdPercent = pvdPercent;
+    prof.updatedAt = Date.now();
     localStorage.setItem(PROFILE_KEY, JSON.stringify(prof));
+    try {
+      window.parent.postMessage({ action: 'sharedProfileUpdated', profile: prof }, '*');
+    } catch(e){}
 
     if(saveStatusEl){
       const now = new Date();
@@ -610,6 +627,108 @@ function saveState(){
       saveStatusEl.textContent = t('lastSaved', `${hh}:${mm}`);
     }
   } catch(e){ /* localStorage unavailable — silently skip */ }
+}
+
+function syncFromProfile(){
+  try{
+    const profRaw = localStorage.getItem(PROFILE_KEY);
+    if(!profRaw) return;
+    const prof = JSON.parse(profRaw);
+    let changed = false;
+    if(prof.salary !== undefined && prof.salary !== ''){
+      const salNum = parseFloat(prof.salary);
+      if(!isNaN(salNum) && salNum > 0 && state.incomes.length > 0 && state.incomes[0].name === 'เงินเดือน'){
+        if(state.incomes[0].value !== salNum){
+          state.incomes[0].value = salNum;
+          changed = true;
+        }
+      }
+    }
+    if(prof.pvdPercent !== undefined && prof.pvdPercent !== ''){
+      const pvdNum = parseFloat(prof.pvdPercent);
+      if(!isNaN(pvdNum) && pvdPercent !== pvdNum){
+        pvdPercent = pvdNum;
+        try{ localStorage.setItem(PVD_PERCENT_KEY, String(pvdNum)); } catch(e){}
+        const pvdInput = document.getElementById('pvdPctInput');
+        if(pvdInput) pvdInput.value = pvdNum;
+        changed = true;
+      }
+    }
+    if(changed){
+      renderRows();
+      renderPvdRow();
+      compute();
+    }
+  } catch(e){}
+}
+
+function showBridgeNotification(msg){
+  const banner = document.getElementById('bridgeAlertBanner');
+  const textEl = document.getElementById('bridgeAlertText');
+  if (banner && textEl) {
+    textEl.textContent = msg;
+    banner.style.display = 'flex';
+    setTimeout(() => {
+      banner.style.display = 'none';
+    }, 5000);
+  }
+}
+
+function checkPendingLumpSum(){
+  try{
+    const raw = localStorage.getItem('moneySuperapp.pendingLumpSum');
+    if(!raw) return;
+    const lump = JSON.parse(raw);
+    if(lump && lump.value > 0){
+      let existing = state.incomes.find(item => item.name === lump.name);
+      if(existing){
+        existing.value = lump.value;
+      } else {
+        state.incomes.push({ name: lump.name, value: lump.value });
+      }
+      localStorage.removeItem('moneySuperapp.pendingLumpSum');
+      renderRows();
+      renderPvdRow();
+      compute();
+      showBridgeNotification(LANG === 'en'
+        ? `✓ Imported ${lump.name}: ${fmtCurrency(lump.value)}`
+        : `✓ นำเข้า${lump.name}: ${fmtCurrency(lump.value)} เรียบร้อยแล้ว`);
+    }
+  } catch(e){}
+}
+
+function checkPendingSlipImport(){
+  try{
+    const raw = localStorage.getItem('moneySuperapp.pendingSlipImport');
+    if(!raw) return;
+    const slip = JSON.parse(raw);
+    if(slip && slip.salary > 0){
+      if(state.incomes.length > 0 && state.incomes[0].name === 'เงินเดือน'){
+        state.incomes[0].value = slip.salary;
+      }
+      if(slip.allowance !== undefined){
+        let allowRow = state.incomes.find(item => item.name.includes('allowance') || item.name.includes('อื่น'));
+        if(allowRow){
+          allowRow.value = slip.allowance;
+        } else if(slip.allowance > 0){
+          state.incomes.push({ name: 'เงิน allowances / อื่นๆ', value: slip.allowance });
+        }
+      }
+      if(slip.pvd !== undefined){
+        pvdPercent = slip.pvd;
+        try{ localStorage.setItem(PVD_PERCENT_KEY, String(slip.pvd)); } catch(e){}
+        const pvdInput = document.getElementById('pvdPctInput');
+        if(pvdInput) pvdInput.value = slip.pvd;
+      }
+      localStorage.removeItem('moneySuperapp.pendingSlipImport');
+      renderRows();
+      renderPvdRow();
+      compute();
+      showBridgeNotification(LANG === 'en'
+        ? `✓ Synced salary (${fmtCurrency(slip.salary)}) and allowances from payslip simulator`
+        : `✓ ซิงค์เงินเดือน (${fmtCurrency(slip.salary)}) และ allowances จากสลิปเงินเดือนเรียบร้อยแล้ว`);
+    }
+  } catch(e){}
 }
 
 if(resetBtn){
@@ -897,9 +1016,33 @@ function sendToRebalance(){
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────
+syncFromProfile();
+checkPendingLumpSum();
+checkPendingSlipImport();
 renderRows();
 renderPvdRow();
 compute();
+
+window.addEventListener('storage', (e) => {
+  if (e.key === PROFILE_KEY) {
+    syncFromProfile();
+  }
+  if (e.key === 'moneySuperapp.pendingLumpSum') {
+    checkPendingLumpSum();
+  }
+  if (e.key === 'moneySuperapp.pendingSlipImport') {
+    checkPendingSlipImport();
+  }
+});
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.action === 'sharedProfileUpdated') {
+    syncFromProfile();
+  }
+  if (e.data && e.data.action === 'importPendingData') {
+    checkPendingLumpSum();
+    checkPendingSlipImport();
+  }
+});
 </script>
 </body>
 </html>

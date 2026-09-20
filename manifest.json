@@ -1,0 +1,20 @@
+{
+  "name": "Money Superapp",
+  "short_name": "MoneyApp",
+  "description": "All-in-one personal finance, tax simulation, salary calculation, and portfolio rebalancing suite for Thailand.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0d9488",
+  "orientation": "any",
+  "categories": ["finance", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "192x192 512x512 any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

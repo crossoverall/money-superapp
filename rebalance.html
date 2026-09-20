@@ -183,6 +183,19 @@
   .save-status .reset-btn:hover{ color: var(--satellite); }
 
   .version-tag{ font-size: 10px; color: var(--ink-faint); text-align: center; margin-top: 14px; }
+
+  .drift-badge {
+    display: inline-flex; align-items: center; font-size: 10px; font-weight: 700;
+    padding: 1px 6px; border-radius: 999px; letter-spacing: 0.02em; line-height: 1.4;
+  }
+  .drift-ok { background: var(--core-dim); color: var(--core); }
+  .drift-over { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+  .drift-under { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+
+  .below-min-badge {
+    font-size: 10px; color: var(--warn); font-weight: 600;
+    background: var(--warn-dim); padding: 1px 5px; border-radius: 4px; display: inline-block; margin-top: 2px;
+  }
 </style>
 </head>
 <body>
@@ -204,6 +217,46 @@
     <div class="split-bar" id="splitBar"></div>
     <div class="split-legend" id="splitLegend"></div>
     <div class="split-warn" id="splitWarn"></div>
+
+    <!-- Donut Chart (Task 4.2) -->
+    <div id="donutChartContainer" style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-around; gap:16px; margin-top:14px; padding-top:14px; border-top:1px solid var(--line);">
+      <div style="display:flex; align-items:center; gap:14px;">
+        <svg id="portfolioDonut" viewBox="0 0 100 100" width="90" height="90" style="transform: rotate(-90deg); flex-shrink:0;">
+          <circle cx="50" cy="50" r="38" fill="none" stroke="var(--panel-2)" stroke-width="14" />
+          <circle id="donutCore" cx="50" cy="50" r="38" fill="none" stroke="var(--core)" stroke-width="14" stroke-dasharray="0 238.76" stroke-dashoffset="0" />
+          <circle id="donutBallast" cx="50" cy="50" r="38" fill="none" stroke="var(--ballast)" stroke-width="14" stroke-dasharray="0 238.76" stroke-dashoffset="0" />
+          <circle id="donutSatellite" cx="50" cy="50" r="38" fill="none" stroke="var(--satellite)" stroke-width="14" stroke-dasharray="0 238.76" stroke-dashoffset="0" />
+        </svg>
+        <div>
+          <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-faint); font-weight:700;" id="lblDonutTitle">มูลค่าพอร์ตปัจจุบัน</div>
+          <div style="font-size:17px; font-weight:700; color:var(--ink);" id="donutTotalVal">0 บาท</div>
+          <div style="font-size:11px; color:var(--ink-dim); margin-top:2px;" id="donutAfterVal">หลังเติมเงิน: 0 บาท</div>
+        </div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px; font-size:11px; color:var(--ink-dim);">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="width:8px; height:8px; border-radius:50%; background:var(--core); display:inline-block;"></span>
+          <span id="donutCoreStat">Core: 0%</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="width:8px; height:8px; border-radius:50%; background:var(--ballast); display:inline-block;"></span>
+          <span id="donutBallastStat">Ballast: 0%</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="width:8px; height:8px; border-radius:50%; background:var(--satellite); display:inline-block;"></span>
+          <span id="donutSatelliteStat">Satellite: 0%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Min Trade Cutoff (Task 4.1) -->
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-top:12px; padding-top:10px; border-top:1px dashed var(--line); font-size:12px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <label for="minTradeThreshold" style="color:var(--ink-dim); font-weight:600;" id="lblMinTrade">ยอดซื้อขั้นต่ำ (Min Trade):</label>
+        <input type="number" id="minTradeThreshold" value="0" min="0" step="100" style="width:100px; padding:4px 8px; border:1px solid var(--line); border-radius:6px; background:var(--panel-2); color:var(--ink); font-size:12px; font-family:inherit;" oninput="compute()" placeholder="0">
+        <span style="color:var(--ink-faint); font-size:11px;" id="lblMinTradeDesc">บาท (เตือนหากคำนวณได้ต่ำกว่านี้)</span>
+      </div>
+    </div>
   </div>
 
   <div id="bucketsContainer"></div>
@@ -221,7 +274,7 @@
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v1.0</p>
+  <p class="version-tag">v1.1</p>
 
 <script>
 // Language: read once from localStorage (shared origin with the shell nav's toggle).
@@ -235,12 +288,16 @@ const EN = {
   subtitle: 'Split this month\'s budget across Core / Ballast / Satellite, then work out how much to add to each asset so allocations move closest to target — without selling anything.',
   budgetPanelTitle: "This month's investment budget",
   budgetUnit: 'THB',
+  lblDonutTitle: 'Current Portfolio Value',
+  lblMinTrade: 'Min Trade Threshold:',
+  lblMinTradeDesc: 'THB (warn if calculated trade is below this)',
   howto: '<b>How it works</b> — The total budget is split by Core/Ballast/Satellite weights first. Within each group, the system tops up whichever asset lags its target weight the most. Anything already over target gets nothing this month (= 0), and its share goes to the laggards instead — nothing is ever sold.<br><br><b>Monthly routine</b> — Before buying each month, update every "Current value" with the real price, then check the new results.<br><br><b>Tip</b> — In "Current value" or the total budget, type <code>+10000</code> or <code>-5000</code> then press Enter/click away to add/subtract from the existing value without doing the math yourself.',
 };
 if(LANG === 'en'){
   document.title = 'Monthly Top-up Calculator';
-  ['eyebrow','pageTitle','subtitle','budgetPanelTitle','budgetUnit'].forEach(id => {
-    document.getElementById(id).textContent = EN[id];
+  ['eyebrow','pageTitle','subtitle','budgetPanelTitle','budgetUnit','lblDonutTitle','lblMinTrade','lblMinTradeDesc'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el && EN[id]) el.textContent = EN[id];
   });
   document.getElementById('howto').innerHTML = EN.howto;
   document.getElementById('resetBtn').textContent = 'Clear saved data';
@@ -406,9 +463,11 @@ const STORAGE_KEY = 'rebalanceCalculator.state.v1';
 
 function saveState(){
   try{
+    const minTrade = parseFloat(document.getElementById('minTradeThreshold')?.value) || 0;
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       totalBudget: state.totalBudget,
       buckets: state.buckets,
+      minTradeThreshold: minTrade,
     }));
     if(saveStatusEl){
       const now = new Date();
@@ -435,6 +494,9 @@ const savedState = loadState();
 if(savedState){
   state.totalBudget = savedState.totalBudget;
   state.buckets = savedState.buckets;
+  if(savedState.minTradeThreshold !== undefined && document.getElementById('minTradeThreshold')){
+    document.getElementById('minTradeThreshold').value = savedState.minTradeThreshold;
+  }
   totalBudgetEl.value = state.totalBudget;
 }
 
@@ -608,9 +670,64 @@ function renderAssetRows(bucket){
   });
 }
 
+function renderDonutChart(){
+  const totalVal = state.buckets.reduce((acc, b) => acc + b.assets.reduce((sum, a) => sum + a.value, 0), 0);
+  const totalBudget = state.totalBudget || 0;
+  const newTotalVal = totalVal + totalBudget;
+
+  const totalValEl = document.getElementById('donutTotalVal');
+  const afterValEl = document.getElementById('donutAfterVal');
+  if (totalValEl) totalValEl.textContent = t('amount', fmt(totalVal));
+  if (afterValEl) {
+    afterValEl.textContent = (LANG === 'en' ? 'After top-up: ' : 'หลังเติมเงิน: ') + t('amount', fmt(newTotalVal));
+  }
+
+  const C = 238.761;
+  const bCore = state.buckets.find(b => b.id === 'core');
+  const bBallast = state.buckets.find(b => b.id === 'ballast');
+  const bSatellite = state.buckets.find(b => b.id === 'satellite');
+
+  const vCore = bCore ? bCore.assets.reduce((s, a) => s + a.value, 0) : 0;
+  const vBallast = bBallast ? bBallast.assets.reduce((s, a) => s + a.value, 0) : 0;
+  const vSatellite = bSatellite ? bSatellite.assets.reduce((s, a) => s + a.value, 0) : 0;
+
+  const pCore = totalVal > 0 ? (vCore / totalVal * 100) : 0;
+  const pBallast = totalVal > 0 ? (vBallast / totalVal * 100) : 0;
+  const pSatellite = totalVal > 0 ? (vSatellite / totalVal * 100) : 0;
+
+  const statCore = document.getElementById('donutCoreStat');
+  const statBallast = document.getElementById('donutBallastStat');
+  const statSatellite = document.getElementById('donutSatelliteStat');
+  if (statCore) statCore.textContent = `Core: ${pCore.toFixed(1)}% (${fmt(vCore)})`;
+  if (statBallast) statBallast.textContent = `Ballast: ${pBallast.toFixed(1)}% (${fmt(vBallast)})`;
+  if (statSatellite) statSatellite.textContent = `Satellite: ${pSatellite.toFixed(1)}% (${fmt(vSatellite)})`;
+
+  const segCore = (pCore / 100) * C;
+  const segBallast = (pBallast / 100) * C;
+  const segSatellite = (pSatellite / 100) * C;
+
+  const elCore = document.getElementById('donutCore');
+  const elBallast = document.getElementById('donutBallast');
+  const elSatellite = document.getElementById('donutSatellite');
+
+  if (elCore) {
+    elCore.setAttribute('stroke-dasharray', `${segCore} ${C - segCore}`);
+    elCore.setAttribute('stroke-dashoffset', '0');
+  }
+  if (elBallast) {
+    elBallast.setAttribute('stroke-dasharray', `${segBallast} ${C - segBallast}`);
+    elBallast.setAttribute('stroke-dashoffset', String(-segCore));
+  }
+  if (elSatellite) {
+    elSatellite.setAttribute('stroke-dasharray', `${segSatellite} ${C - segSatellite}`);
+    elSatellite.setAttribute('stroke-dashoffset', String(-(segCore + segBallast)));
+  }
+}
+
 function compute(){
   const totalBudget = state.totalBudget || 0;
   renderSplit();
+  renderDonutChart();
 
   const totalBucketW = state.buckets.reduce((s,b) => s + b.weight, 0) || 1;
 
@@ -641,15 +758,34 @@ function compute(){
       const newPct = newTotal > 0 ? (newValue / newTotal * 100) : 0;
       if(add <= 0.5 && a.value > 0) cappedCount++;
 
+      const currPct = currentTotal > 0 ? (a.value / currentTotal * 100) : 0;
+      const drift = currPct - a.weight;
+      let driftClass = 'drift-ok';
+      let driftText = `✓ ${drift >= 0 ? '+' : ''}${drift.toFixed(1)}%`;
+      if (drift > 2) {
+        driftClass = 'drift-over';
+        driftText = `+${drift.toFixed(1)}% 🔼`;
+      } else if (drift < -2) {
+        driftClass = 'drift-under';
+        driftText = `${drift.toFixed(1)}% 🔽`;
+      }
+
+      const minTrade = parseFloat(document.getElementById('minTradeThreshold')?.value) || 0;
+      const isBelowMin = minTrade > 0 && add > 0 && add < minTrade;
+
       const row = document.createElement('div');
       row.className = 'result-row';
       row.innerHTML = `
         <div class="result-left">
-          <div class="rname">${a.name}</div>
-          <div class="rmeta">${t('rmeta', fmt(a.value), a.weight)}</div>
+          <div class="rname" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <span>${a.name}</span>
+            <span class="drift-badge ${driftClass}" title="${LANG === 'en' ? 'Drift from target' : 'ส่วนต่างจากเป้าหมาย'}">${driftText}</span>
+          </div>
+          <div class="rmeta">${t('rmeta', fmt(a.value), a.weight)} (${LANG === 'en' ? 'Current' : 'ปัจจุบัน'}: ${currPct.toFixed(1)}%)</div>
         </div>
         <div class="result-right">
           <div class="radd ${add <= 0.5 ? 'zero' : ''}">${add > 0.5 ? '+' + fmt(add) : '—'}</div>
+          ${isBelowMin ? `<div class="below-min-badge" title="${LANG === 'en' ? 'Below minimum trade threshold' : 'ต่ำกว่ายอดซื้อขั้นต่ำ'}">⚠️ &lt; ${fmt(minTrade)}</div>` : ''}
           <div class="rnewpct">${t('rnewpct', newPct.toFixed(1))}</div>
         </div>
       `;

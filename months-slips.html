@@ -29,8 +29,13 @@
         [data-theme="dark"] .text-gray-500 { color: #94a3b8 !important; }
         [data-theme="dark"] .text-blue-800 { color: #93c5fd !important; }
         [data-theme="dark"] .text-green-800 { color: #86efac !important; }
-        [data-theme="dark"] input { background-color: #0f172a !important; color: #e2e8f0 !important; border-color: #334155 !important; }
         [data-theme="dark"] .slip-bg { background-image: repeating-linear-gradient(0deg, transparent, transparent 19px, #1e293b 19px, #1e293b 20px); }
+        @media print {
+            body { background: #fff !important; color: #000 !important; padding: 0 !important; }
+            .md\:col-span-5, header, button, .no-print { display: none !important; }
+            .md\:col-span-7 { width: 100% !important; grid-column: span 12 / span 12 !important; box-shadow: none !important; border: 1px solid #94a3b8 !important; }
+            .w-full { max-width: 100% !important; }
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
@@ -144,11 +149,17 @@
                         <p class="font-bold text-gray-800 mb-2 uppercase" id="lbl-breakdownTitle">รายละเอียดภาษีตามขั้นบันได (ทั้งปี)</p>
                         <div id="taxBreakdown" class="space-y-1"></div>
                     </div>
-                    <div class="flex justify-between items-center mt-3 pt-2 border-t border-gray-200">
+                    <div class="flex flex-wrap items-center gap-2 mt-3 pt-2 border-t border-gray-200 no-print">
                         <button onclick="copySlipSummary()" id="btn-copy-slip" class="py-1.5 px-3 bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-200 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5">
                             <span id="lbl-copy-text">📋 คัดลอกสรุปสลิป</span>
                         </button>
-                        <p class="text-xs text-gray-400">v1.0</p>
+                        <button onclick="exportSlipToRemaining()" id="btn-export-slip" class="py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-all flex items-center gap-1.5">
+                            <span id="lbl-export-slip">📤 ส่งเงินเดือนไปยัง เงินคงเหลือ</span>
+                        </button>
+                        <button onclick="window.print()" id="btn-print-slip" class="py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all flex items-center gap-1.5">
+                            <span id="lbl-print-slip">🖨️ พิมพ์ / บันทึก PDF</span>
+                        </button>
+                        <p class="text-xs text-gray-400 ml-auto">v1.1</p>
                     </div>
                 </div>
             </div>
@@ -192,6 +203,8 @@
                 'lbl-netPayment': 'NET PAYMENT',
                 'lbl-breakdownTitle': 'Tax breakdown by bracket (annual)',
                 'lbl-copy-text': '📋 Copy Payslip Summary',
+                'lbl-export-slip': '📤 Export to Remaining Money',
+                'lbl-print-slip': '🖨️ Print / Save PDF',
             };
             Object.keys(EN).forEach(id => {
                 const el = document.getElementById(id);
@@ -222,7 +235,11 @@
                 if (data.pvd) prof.pvdPercent = data.pvd;
                 if (data.bonus) prof.bonus = data.bonus;
                 if (data.ssoCap) prof.ssoCap = data.ssoCap;
+                prof.updatedAt = Date.now();
                 localStorage.setItem(PROFILE_KEY, JSON.stringify(prof));
+                try {
+                    window.parent.postMessage({ action: 'sharedProfileUpdated', profile: prof }, '*');
+                } catch(e){}
             } catch(e){}
         }
 
@@ -331,6 +348,59 @@
             }).catch(() => {});
         }
 
+        function exportSlipToRemaining() {
+            const salary = parseFloat(document.getElementById('salary').value) || 0;
+            const allowance = parseFloat(document.getElementById('allowance').value) || 0;
+            const pvd = parseFloat(document.getElementById('pvd').value) || 0;
+            const ssoCap = parseFloat(document.getElementById('ssoCap').value) || 875;
+            const net = parseFloat(document.getElementById('out-net').innerText.replace(/,/g, '')) || 0;
+
+            const slipData = {
+                salary,
+                allowance,
+                pvd,
+                ssoCap,
+                net,
+                timestamp: Date.now()
+            };
+            try {
+                localStorage.setItem('moneySuperapp.pendingSlipImport', JSON.stringify(slipData));
+            } catch(e){}
+            if (window.parent && typeof window.parent.switchToTab === 'function') {
+                window.parent.switchToTab('remaining-money');
+            } else {
+                window.parent.postMessage({ action: 'switchToTab', target: 'remaining-money' }, '*');
+            }
+        }
+
+        function syncFromProfile() {
+            try {
+                const profRaw = localStorage.getItem(PROFILE_KEY);
+                if (!profRaw) return;
+                const prof = JSON.parse(profRaw);
+                let changed = false;
+                if (prof.salary !== undefined && prof.salary !== '' && document.getElementById('salary').value !== String(prof.salary)) {
+                    document.getElementById('salary').value = prof.salary;
+                    changed = true;
+                }
+                if (prof.bonus !== undefined && prof.bonus !== '' && document.getElementById('bonus').value !== String(prof.bonus)) {
+                    document.getElementById('bonus').value = prof.bonus;
+                    changed = true;
+                }
+                if (prof.pvdPercent !== undefined && prof.pvdPercent !== '' && document.getElementById('pvd').value !== String(prof.pvdPercent)) {
+                    document.getElementById('pvd').value = prof.pvdPercent;
+                    changed = true;
+                }
+                if (prof.ssoCap !== undefined && prof.ssoCap !== '' && document.getElementById('ssoCap').value !== String(prof.ssoCap)) {
+                    document.getElementById('ssoCap').value = prof.ssoCap;
+                    changed = true;
+                }
+                if (changed && parseFloat(document.getElementById('salary').value) > 0) {
+                    calculateSlip();
+                }
+            } catch(e){}
+        }
+
         function loadState() {
             try {
                 const raw = localStorage.getItem(STORAGE_KEY);
@@ -338,11 +408,11 @@
                 const prof = profRaw ? JSON.parse(profRaw) : {};
                 const data = raw ? JSON.parse(raw) : null;
                 
-                const salary = data?.salary || prof?.salary;
+                const salary = (prof && prof.salary !== undefined && prof.salary !== '') ? prof.salary : (data?.salary || '');
                 const allowance = data?.allowance || '';
-                const bonus = data?.bonus || prof?.bonus || '';
-                const pvd = data?.pvd || prof?.pvdPercent || '';
-                const ssoCap = data?.ssoCap || prof?.ssoCap || '875';
+                const bonus = (prof && prof.bonus !== undefined && prof.bonus !== '') ? prof.bonus : (data?.bonus || '');
+                const pvd = (prof && prof.pvdPercent !== undefined && prof.pvdPercent !== '') ? prof.pvdPercent : (data?.pvd || '');
+                const ssoCap = (prof && prof.ssoCap !== undefined && prof.ssoCap !== '') ? prof.ssoCap : (data?.ssoCap || '875');
 
                 if (salary !== undefined && salary !== '') document.getElementById('salary').value = salary;
                 if (allowance !== '') document.getElementById('allowance').value = allowance;
@@ -355,6 +425,17 @@
                 }
             } catch(e){}
         }
+
+        window.addEventListener('storage', (e) => {
+            if (e.key === PROFILE_KEY) {
+                syncFromProfile();
+            }
+        });
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.action === 'sharedProfileUpdated') {
+                syncFromProfile();
+            }
+        });
 
         loadState();
     </script>

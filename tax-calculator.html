@@ -365,11 +365,48 @@
     <div class="section-label" id="lbl-severance">เงินชดเชย</div>
     <div class="pvd-group">
       <div class="field">
-        <label>
-          <span id="lbl-severanceLegal">เงินชดเชยตามกฎหมาย</span>
-          <span class="badge-exempt" id="badge-severanceLegal">ยกเว้น 600,000 บาท</span>
-        </label>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <label style="margin-bottom: 0;">
+            <span id="lbl-severanceLegal">เงินชดเชยตามกฎหมาย</span>
+            <span class="badge-exempt" id="badge-severanceLegal">ยกเว้น 600,000 บาท</span>
+          </label>
+          <button type="button" id="btn-toggle-sev-calc" onclick="toggleSeveranceCalc()" style="background: none; border: none; color: var(--accent); font-size: 0.75rem; font-weight: 600; cursor: pointer; padding: 2px 4px; text-decoration: underline; font-family: inherit;">
+            🧮 ช่วยคำนวณตามอายุงาน
+          </button>
+        </div>
         <input type="number" id="severanceLegal" placeholder="300000" min="0" step="0.01" />
+
+        <!-- Severance Auto-Calculator Panel -->
+        <div id="severance-calc-panel" style="display: none; margin-top: 8px; padding: 12px; background: var(--surface-2); border: 1px dashed var(--line); border-radius: 8px;">
+          <div style="font-size: 0.78rem; font-weight: 700; color: var(--ink); margin-bottom: 8px;" id="lbl-sev-calc-title">
+            คำนวณเงินชดเชยตามอายุงาน (พ.ร.บ. คุ้มครองแรงงาน)
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+            <div>
+              <label style="font-size: 0.72rem; color: var(--ink-dim); margin-bottom: 2px;" id="lbl-last-wage">เงินเดือนงวดสุดท้าย (บาท)</label>
+              <input type="number" id="lastMonthlyWage" placeholder="50000" min="0" step="0.01" style="font-size: 0.82rem; padding: 6px 8px;" oninput="updateSeveranceCalc()" />
+            </div>
+            <div>
+              <label style="font-size: 0.72rem; color: var(--ink-dim); margin-bottom: 2px;" id="lbl-tenure-bracket">เกณฑ์อายุงาน</label>
+              <select id="tenureBracket" style="width: 100%; font-size: 0.82rem; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--card-bg); color: var(--ink); height: 32px;" onchange="updateSeveranceCalc()">
+                <option value="0">&lt; 120 วัน (0 วัน)</option>
+                <option value="1">120 วัน – &lt; 1 ปี (30 วัน / 1 เดือน)</option>
+                <option value="2">1 ปี – &lt; 3 ปี (90 วัน / 3 เดือน)</option>
+                <option value="3" selected>3 ปี – &lt; 6 ปี (180 วัน / 6 เดือน)</option>
+                <option value="4">6 ปี – &lt; 10 ปี (240 วัน / 8 เดือน)</option>
+                <option value="5">10 ปี – &lt; 20 ปี (300 วัน / 10 เดือน)</option>
+                <option value="6">≥ 20 ปี (400 วัน / 13.33 เดือน)</option>
+              </select>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 8px 10px; border-radius: 6px; margin-bottom: 8px;">
+            <span style="font-size: 0.75rem; color: var(--ink-dim);" id="lbl-sev-calc-result">ยอดชดเชยตามสิทธิ์:</span>
+            <span style="font-size: 0.85rem; font-weight: 700; color: var(--accent);" id="sev-calc-preview">0.00 บาท (180 วัน)</span>
+          </div>
+          <button type="button" class="calc-btn" onclick="applySeveranceCalc()" style="margin-top: 0; padding: 6px 12px; font-size: 0.78rem; width: 100%;" id="btn-apply-sev">
+            ✓ นำค่ายอดเงินชดเชยไปใช้
+          </button>
+        </div>
       </div>
       <div class="field">
         <label>
@@ -458,9 +495,19 @@
         </span>
         <span class="result-value" id="res-tax"></span>
       </div>
+      <div class="result-row highlight" style="background: rgba(16, 185, 129, 0.08); border-radius: 8px; padding: 10px; margin-top: 8px; border-bottom: none;">
+        <span class="result-label" style="color: #059669; font-weight: 700;">
+          <span id="lbl-res-net">ยอดรับสุทธิหลังหักภาษี</span>
+          <span class="tip" style="background: #10b981; color: #fff;">?<span class="tip-box" id="tip-net">= ยอดเงินชดเชยทั้งหมด + ยอด PVD ทั้งหมด − ภาษีที่ต้องจ่าย</span></span>
+        </span>
+        <span class="result-value" id="res-net" style="color: #059669; font-size: 1.25rem; font-weight: 700;"></span>
+      </div>
+      <button type="button" class="calc-btn" id="btn-export-to-remaining" onclick="exportPayoutToRemaining()" style="background: #059669; margin-top: 10px; width: 100%;">
+        📤 <span id="lbl-export-remaining">ส่งยอดสุทธินี้ไปยัง เงินคงเหลือ (Remaining Money)</span>
+      </button>
       <button class="reset-btn" onclick="reset()" id="btn-reset">ล้างข้อมูล</button>
     </div>
-    <p style="text-align:center;font-size:0.72rem;color:#94a3b8;margin-top:16px;">v1.0</p>
+    <p style="text-align:center;font-size:0.72rem;color:#94a3b8;margin-top:16px;">v1.1</p>
   </div>
 
   <script>
@@ -498,8 +545,35 @@
         'tip-extra': 'Severance beyond statutory amount has no exemption<br>fully taxed',
         'tip-pvd': '= return on accumulated contribution + employer contribution<br>+ return on employer contribution<br>(excludes the employee\'s own accumulated contribution, which is exempt)',
         'tip-tax': 'Calculated using progressive tax brackets<br>0–150k: 0% / 150k–300k: 5%<br>300k–500k: 10% / 500k–750k: 15% / 750k–1M: 20%<br>1M–2M: 25% / 2M–5M: 30% / &gt;5M: 35%',
+        'btn-toggle-sev-calc': '🧮 Auto-calc by tenure',
+        'lbl-sev-calc-title': 'Statutory Severance Calculator (Labor Act)',
+        'lbl-last-wage': 'Last Monthly Wage (THB)',
+        'lbl-tenure-bracket': 'Statutory Tenure Bracket',
+        'lbl-sev-calc-result': 'Statutory Severance:',
+        'btn-apply-sev': '✓ Apply to Statutory Severance',
+        'lbl-res-net': 'Net payout after tax',
+        'tip-net': '= Total severance + Total PVD − Tax payable',
+        'lbl-export-remaining': 'Export Net Payout to Remaining Money',
       };
-      Object.keys(EN).forEach(id => { document.getElementById(id).innerHTML = EN[id]; });
+      Object.keys(EN).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = EN[id];
+      });
+      const bracketSelect = document.getElementById('tenureBracket');
+      if (bracketSelect) {
+        const enBrackets = [
+          '< 120 days (0 days)',
+          '120 days – < 1 yr (30 days / 1 mo)',
+          '1 yr – < 3 yrs (90 days / 3 mos)',
+          '3 yrs – < 6 yrs (180 days / 6 mos)',
+          '6 yrs – < 10 yrs (240 days / 8 mos)',
+          '10 yrs – < 20 yrs (300 days / 10 mos)',
+          '≥ 20 yrs (400 days / 13.33 mos)'
+        ];
+        Array.from(bracketSelect.options).forEach((opt, idx) => {
+          if (enBrackets[idx]) opt.textContent = enBrackets[idx];
+        });
+      }
       document.getElementById('tab0').innerHTML = 'Member<br>&lt; 5 yrs';
       document.getElementById('tab1').innerHTML = '≥ 5 yrs<br>age &lt; 55';
       document.getElementById('tab2').innerHTML = '≥ 5 yrs<br>age ≥ 55';
@@ -584,7 +658,89 @@
     }
 
     const STORAGE_KEY = 'moneySuperapp.pvdTax';
-    const inputIds = ['severanceLegal','severanceExtra','pvdEmpContrib','pvdEmpReturn','pvdEmrContrib','pvdEmrReturn','years'];
+    const inputIds = ['severanceLegal','severanceExtra','pvdEmpContrib','pvdEmpReturn','pvdEmrContrib','pvdEmrReturn','years','lastMonthlyWage','tenureBracket'];
+
+    function getSeveranceDays(bracket) {
+      switch (String(bracket)) {
+        case '0': return 0;
+        case '1': return 30;
+        case '2': return 90;
+        case '3': return 180;
+        case '4': return 240;
+        case '5': return 300;
+        case '6': return 400;
+        default: return 0;
+      }
+    }
+
+    function calculateSeveranceAmount(wage, bracket) {
+      const days = getSeveranceDays(bracket);
+      if (days === 0) return 0;
+      if (days === 30) return wage * 1;
+      if (days === 90) return wage * 3;
+      if (days === 180) return wage * 6;
+      if (days === 240) return wage * 8;
+      if (days === 300) return wage * 10;
+      if (days === 400) return Math.round((wage / 30 * 400) * 100) / 100;
+      return 0;
+    }
+
+    function updateSeveranceCalc() {
+      const wage = parseFloat(document.getElementById('lastMonthlyWage').value) || 0;
+      const bracket = document.getElementById('tenureBracket').value;
+      const days = getSeveranceDays(bracket);
+      const amount = calculateSeveranceAmount(wage, bracket);
+      const previewEl = document.getElementById('sev-calc-preview');
+      if (previewEl) {
+        previewEl.textContent = fmt(amount) + ` (${days} ` + (LANG === 'en' ? 'days' : 'วัน') + `)`;
+      }
+      return amount;
+    }
+
+    function applySeveranceCalc() {
+      const amount = updateSeveranceCalc();
+      document.getElementById('severanceLegal').value = amount > 0 ? amount : '';
+      saveState();
+      if (parseFloat(document.getElementById('years').value) > 0) {
+        calculate();
+      }
+    }
+
+    function syncBracketFromYears(yrs) {
+      const bracketEl = document.getElementById('tenureBracket');
+      if (!bracketEl) return;
+      if (yrs >= 20) bracketEl.value = '6';
+      else if (yrs >= 10) bracketEl.value = '5';
+      else if (yrs >= 6) bracketEl.value = '4';
+      else if (yrs >= 3) bracketEl.value = '3';
+      else if (yrs >= 1) bracketEl.value = '2';
+      else if (yrs >= 0.33) bracketEl.value = '1';
+      else bracketEl.value = '0';
+      updateSeveranceCalc();
+    }
+
+    function toggleSeveranceCalc() {
+      const panel = document.getElementById('severance-calc-panel');
+      const isHidden = panel.style.display === 'none';
+      panel.style.display = isHidden ? 'block' : 'none';
+      if (isHidden) {
+        const yrs = parseFloat(document.getElementById('years').value);
+        if (!isNaN(yrs) && yrs > 0) {
+          syncBracketFromYears(yrs);
+        }
+        if (!document.getElementById('lastMonthlyWage').value) {
+          try {
+            const base = JSON.parse(localStorage.getItem('moneySuperapp.taxBase') || '{}');
+            const slip = JSON.parse(localStorage.getItem('moneySuperapp.monthsSlips') || '{}');
+            const defaultWage = base.salary || slip.salary;
+            if (defaultWage) {
+              document.getElementById('lastMonthlyWage').value = defaultWage;
+            }
+          } catch(e){}
+        }
+        updateSeveranceCalc();
+      }
+    }
 
     function saveState() {
       const data = { activeTab };
@@ -678,10 +834,36 @@
       document.getElementById('res-taxable').textContent = fmt(taxable);
       document.getElementById('res-tax').textContent     = fmt(tax);
 
+      const pvdEmpContrib = parseFloat(document.getElementById('pvdEmpContrib').value) || 0;
+      const totalGrossPayout = severanceLegal + severanceExtra + pvdEmpContrib + pvdEmpReturn + pvdEmrContrib + pvdEmrReturn;
+      const netPayout = Math.max(0, totalGrossPayout - tax);
+      currentNetPayout = netPayout;
+      document.getElementById('res-net').textContent = fmt(netPayout);
+
       document.getElementById('results').classList.add('show');
     }
 
+    let currentNetPayout = 0;
+
+    function exportPayoutToRemaining() {
+      if (currentNetPayout <= 0) return;
+      const lump = {
+        name: LANG === 'en' ? 'Net Severance & PVD Payout' : 'เงินชดเชยและ PVD สุทธิ',
+        value: Math.round(currentNetPayout),
+        timestamp: Date.now()
+      };
+      try {
+        localStorage.setItem('moneySuperapp.pendingLumpSum', JSON.stringify(lump));
+      } catch(e){}
+      if (window.parent && typeof window.parent.switchToTab === 'function') {
+        window.parent.switchToTab('remaining-money');
+      } else {
+        window.parent.postMessage({ action: 'switchToTab', target: 'remaining-money' }, '*');
+      }
+    }
+
     function reset() {
+      currentNetPayout = 0;
       inputIds.forEach(id => document.getElementById(id).value = '');
       try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
       document.getElementById('results').classList.remove('show');
@@ -708,9 +890,18 @@
     }
 
     inputIds.forEach(id => {
-      document.getElementById(id).addEventListener('input', () => {
-        saveState();
-      });
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('input', () => saveState());
+        el.addEventListener('change', () => saveState());
+      }
+    });
+
+    document.getElementById('years').addEventListener('input', (e) => {
+      const yrs = parseFloat(e.target.value);
+      if (!isNaN(yrs) && yrs > 0) {
+        syncBracketFromYears(yrs);
+      }
     });
 
     // Restore state if available

@@ -1,22 +1,22 @@
-# Money Superapp
+# Money Superapp (v1.1.0)
 
-A lightweight, client-side personal finance toolkit — five calculators in one page, no build step, no server, no dependencies beyond a CDN.
+A lightweight, offline-first personal finance toolkit for Thailand — five calculators in one unified PWA, no build step, no server, 100% client-side privacy.
 
 ## What's inside
 
 | Tool | File | Description (TH) | Description (EN) |
 |---|---|---|---|
-| Rebalance Calculator | `rebalance.html` | คำนวณ Rebalance | Rebalance Calculator |
-| Payslip Simulator | `months-slips.html` | จำลองสลิปเงินเดือน (รวมโบนัส) | Months Slips Calculator |
-| Income Tax Estimation | `tax-calculator-base.html` | ประมาณการภาษีเงินได้ | Income Tax Estimation |
-| PVD Tax Calculator | `tax-calculator.html` | คำนวณภาษี PVD | PVD Tax Calculator |
-| Remaining Money | `remaining-money.html` | คำนวณเงินคงเหลือ (รายได้ - ค่าใช้จ่าย) | Remaining Money Calculator |
+| Rebalance Calculator | `rebalance.html` | คำนวณ Rebalance รายเดือน พร้อมกราฟสัดส่วนพอร์ต | DCA Monthly Top-up & Portfolio Rebalance |
+| Payslip Simulator | `months-slips.html` | จำลองสลิปเงินเดือน (หัก ณ ที่จ่าย, ประกันสังคม, กองทุน) พร้อมพิมพ์ PDF | Payslip Simulator with Print/PDF export |
+| Income Tax Estimation | `tax-calculator-base.html` | ประมาณการภาษีเงินได้บุคคลธรรมดา (เช็คเพดานลดหย่อนอัตโนมัติ) | Personal Income Tax Estimation with deduction caps |
+| PVD Tax Calculator | `tax-calculator.html` | คำนวณภาษีเงินชดเชย & PVD (มาตรา 48(5)) พร้อมเครื่องคิดเงินชดเชยตามอายุงาน | Severance & PVD Tax Calculator with tenure brackets |
+| Remaining Money | `remaining-money.html` | คำนวณเงินคงเหลือ (รายได้ - ค่าใช้จ่าย) พร้อมส่งต่อเข้างบลงทุน | Remaining Money (Cash Flow) with DCA bridge |
 
-The shell (`index.html`) is a tabbed top bar that loads each tool into an iframe. Language (TH / EN) and theme (Light / Dark) are persisted in `localStorage` and applied across all five tools.
+The shell (`index.html`) is a responsive tabbed interface that hosts each tool. Language (TH / EN) and theme (Light / Dark) are persisted in `localStorage` and synchronized across all tools.
 
 ## Getting started
 
-No installation needed — open any file directly in a browser.
+No installation needed — open any file directly in a browser or install as a PWA.
 
 ### Run locally
 
@@ -33,36 +33,45 @@ python3 -m http.server 8000
 
 Each tool also works standalone: open `rebalance.html`, `months-slips.html`, `tax-calculator-base.html`, `tax-calculator.html`, or `remaining-money.html` directly.
 
-## Features
+## Features in v1.1
 
-- **Five calculators** in one navigation bar — switch between them without leaving the page.
-- **Deep Linking & Hash Routing** — bookmark or refresh any tool using URL hash (`#rebalance`, `#months-slips`, etc.).
-- **Cross-Tool Synergy** — share common profile inputs (Salary, PVD %, Bonus) and send remaining money straight into the Rebalance DCA budget with 1 click.
-- **Bilingual UI** — Thai and English, toggle in the top-right of the top bar.
-- **Light / Dark theme** — toggle in the top-right; preference saved to `localStorage`.
-- **Accurate Thai Tax Logic** — full progressive PIT brackets, Section 48(5) separate calculations, and expanded deductions (SSF/RMF/ThaiESG, Insurance, Mortgage).
-- **Persistent State** — all calculators save input state to `localStorage` so data is never lost on theme/language switch or refresh.
-- **Zero build step** — all files are self-contained HTML; edit and refresh.
-- **Responsive** — tabs scroll horizontally on narrow screens; iframe fills the remaining height.
-- **Standalone-capable** — each tool reads lang/theme from `localStorage` on its own, so it can be opened outside the shell.
-
-## Tech
-
-- Plain HTML + CSS + vanilla JavaScript — no framework, no bundler, zero external JavaScript runtime.
-- Lightweight standalone utility CSS (`css/tailwind-lite.css`) for offline-first resilience.
-- Google Fonts (Prompt) loaded with system font fallback stack.
-- Theme implemented via `data-theme` attribute on `<html>` and CSS variables.
+- **PWA & 100% Offline Capability**: Installable on iOS, Android, macOS, and Windows. Service Worker precaches all core assets for full offline operation.
+- **Privacy First & Data Portability**:
+  - 100% Client-side privacy — zero data sent to external servers.
+  - Full Backup Export & Import as JSON to safely migrate or archive your data.
+  - Master Reset button with confirmation dialog.
+- **Intelligent Cross-Tool Synchronization**:
+  - Live shared profile (Salary, Bonus, PVD %, SSO Cap) synced bi-directionally across tabs.
+  - Bridge Net Severance/PVD Payouts directly into Remaining Money.
+  - Bridge Net Monthly Salary & Deductions directly from Payslips into Remaining Money.
+  - Bridge Remaining Cash Balance directly into the Rebalance DCA investment budget.
+- **Financial & Tax Engine Precision**:
+  - Statutory deduction caps enforced with inline warnings (ThaiESG ≤ 300k/30%, Combined Retirement ≤ 500k, Insurance ≤ 100k, Mortgage ≤ 100k).
+  - Thai Labor Protection Act tenure-based severance calculator (up to 400 days statutory pay) with tenure bracket auto-suggest.
+  - Section 48(5) tax engine without the standard 150k PIT bracket exemption.
+- **Portfolio & DCA Analytics**:
+  - Interactive SVG Donut Chart visualizing Core, Ballast, and Satellite allocation proportions.
+  - Asset Allocation Drift Badges (`+X% 🔼`, `-X% 🔽`, `✓ OK`) showing variance from target weights.
+  - Minimum Trade Cutoff setting to prevent fee drag on small rebalance transactions.
+- **Print & PDF Support**: Clean payslip printable format (`@media print`) hiding input controls for direct PDF generation.
+- **Bilingual & Dark Mode**: Full Thai and English localization with instant Light/Dark theme switching.
+- **Zero Build Step**: Native Web standards (ES modules, Vanilla JS, CSS variables, SVG).
 
 ## Project structure
 
 ```
 money-superapp/
-├── index.html              # App shell / router (top bar + iframe)
-├── rebalance.html          # Rebalance Calculator
-├── months-slips.html       # Payslip Simulator (Thai)
-├── tax-calculator-base.html  # Income Tax Estimation
-├── tax-calculator.html     # PVD Tax Calculator
-└── remaining-money.html    # Remaining Money Calculator
+├── index.html              # App shell / router & backup modal
+├── rebalance.html          # Rebalance Calculator & Portfolio Donut
+├── months-slips.html       # Payslip Simulator & Print Export
+├── tax-calculator-base.html  # Income Tax Estimation with deduction caps
+├── tax-calculator.html     # PVD & Severance Tax Calculator
+├── remaining-money.html    # Remaining Money & Budget Bridge
+├── manifest.json           # Progressive Web App manifest
+├── sw.js                   # Offline Service Worker cache
+├── icon.svg                # Vector PWA application icon
+└── css/
+    └── tailwind-lite.css   # Offline utility classes
 ```
 
 ## License

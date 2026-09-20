@@ -3,7 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="1.0.0">
+<meta name="version" content="1.1.0">
+<meta name="theme-color" content="#0d9488">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Money Superapp">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
 <meta name="description" content="Money Superapp — five financial calculators (rebalance, payslip simulator, income tax, PVD tax, remaining money) in Thai and English with light/dark theme.">
 <title>Money Superapp</title>
 <style>
@@ -65,15 +72,113 @@
     <button data-theme-btn="light" data-th="☀ สว่าง" data-en="☀ Light">☀ Light</button>
     <button data-theme-btn="dark" data-th="☾ มืด" data-en="☾ Dark">☾ Dark</button>
   </div>
-  <span class="version-badge">v1.0</span>
+  <span class="version-badge">v1.1</span>
+  <button id="btn-settings-modal" onclick="openSettingsModal()" title="Data & Backup Management" style="background: none; border: 1px solid #4b5563; color: #cbd5e1; padding: 6px 12px; border-radius: 999px; cursor: pointer; font-size: 12px; font-weight: 700; margin: auto 6px auto 0; display: flex; align-items: center; gap: 4px; font-family: inherit;">
+    ⚙️ <span id="lbl-settings-btn">ข้อมูล</span>
+  </button>
  </div>
 </div>
 <iframe id="app" src="rebalance.html"></iframe>
+
+<!-- Privacy Footer Notice -->
+<div class="privacy-bar" style="flex: 0 0 auto; background: #111827; color: #94a3b8; font-size: 11px; padding: 6px 16px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #374151;">
+  <span id="lbl-privacy-footer">🔒 100% Client-Side Privacy — ทุกการคำนวณและข้อมูลถูกเก็บไว้ในอุปกรณ์ของคุณเท่านั้น ไม่มีการส่งข้อมูลสู่เซิร์ฟเวอร์</span>
+  <span style="color: #64748b; font-size: 10px;">Money Superapp v1.1</span>
+</div>
+
+<!-- Settings & Data Management Modal -->
+<div id="settingsModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.65); z-index: 9999; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(2px);">
+  <div style="background: #1f2937; color: #f8fafc; border: 1px solid #374151; border-radius: 16px; max-width: 500px; width: 100%; padding: 22px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #374151; padding-bottom: 10px;">
+      <h3 style="margin: 0; font-size: 16px; font-weight: 700;" id="lbl-modal-title">จัดการข้อมูล & ความเป็นส่วนตัว</h3>
+      <button onclick="closeSettingsModal()" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; padding: 0 4px;">&times;</button>
+    </div>
+
+    <!-- Privacy Banner -->
+    <div style="background: rgba(16,185,129,0.1); border: 1px solid #10b981; border-radius: 10px; padding: 10px 12px; margin-bottom: 16px; color: #6ee7b7; font-size: 11.5px; line-height: 1.45;">
+      <div style="font-weight: 700; margin-bottom: 2px;" id="lbl-modal-privacy-title">🔒 ความเป็นส่วนตัว 100% ปลอดภัยบนเครื่องของคุณ</div>
+      <div id="lbl-modal-privacy-desc">ข้อมูลการเงินและผลการคำนวณทั้งหมดได้รับการบันทึกและประมวลผลภายในเบราว์เซอร์ของคุณเท่านั้น (Client-Side Storage) ไม่มีการส่งข้อมูลใดๆ ไปยังเซิร์ฟเวอร์ภายนอก</div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <!-- Export -->
+      <div style="display: flex; justify-content: space-between; align-items: center; background: #111827; padding: 12px 14px; border-radius: 10px; border: 1px solid #374151;">
+        <div>
+          <div style="font-weight: 600; font-size: 13px;" id="lbl-export-title">สำรองข้อมูลทั้งหมด (JSON)</div>
+          <div style="font-size: 11px; color: #94a3b8;" id="lbl-export-desc">ดาวน์โหลดไฟล์สำรองข้อมูลทุกเครื่องมือคำนวณ</div>
+        </div>
+        <button onclick="exportBackupData()" id="btn-export-backup" style="background: #0284c7; color: #fff; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+          <span id="lbl-btn-export">📤 ส่งออก</span>
+        </button>
+      </div>
+
+      <!-- Import -->
+      <div style="display: flex; justify-content: space-between; align-items: center; background: #111827; padding: 12px 14px; border-radius: 10px; border: 1px solid #374151;">
+        <div>
+          <div style="font-weight: 600; font-size: 13px;" id="lbl-import-title">กู้คืนข้อมูลจากไฟล์สำรอง</div>
+          <div style="font-size: 11px; color: #94a3b8;" id="lbl-import-desc">นำเข้าไฟล์ JSON เพื่อกู้คืนข้อมูลที่เคยสำรองไว้</div>
+        </div>
+        <div>
+          <input type="file" id="backupFileInput" accept=".json" style="display: none;" onchange="handleImportFile(this)">
+          <button onclick="document.getElementById('backupFileInput').click()" id="btn-import-backup" style="background: #059669; color: #fff; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+            <span id="lbl-btn-import">📥 นำเข้า</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Reset -->
+      <div style="display: flex; justify-content: space-between; align-items: center; background: #111827; padding: 12px 14px; border-radius: 10px; border: 1px dashed #ef4444;">
+        <div>
+          <div style="font-weight: 600; font-size: 13px; color: #f87171;" id="lbl-reset-title">ล้างข้อมูลทั้งหมด (Master Reset)</div>
+          <div style="font-size: 11px; color: #94a3b8;" id="lbl-reset-desc">ลบข้อมูลในเครื่องมือทั้งหมดและคืนค่าเริ่มต้น</div>
+        </div>
+        <button onclick="resetAllData()" id="btn-master-reset" style="background: #dc2626; color: #fff; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+          <span id="lbl-btn-reset">🗑️ ล้างทั้งหมด</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 <script>
   const frame = document.getElementById('app');
   const navButtons = document.querySelectorAll('nav button');
   const langButtons = document.querySelectorAll('.lang-toggle button');
   const themeButtons = document.querySelectorAll('.theme-toggle button');
+
+  const translations = {
+    th: {
+      settingsBtn: "ข้อมูล",
+      privacyFooter: "🔒 100% Client-Side Privacy — ทุกการคำนวณและข้อมูลถูกเก็บไว้ในอุปกรณ์ของคุณเท่านั้น ไม่มีการส่งข้อมูลสู่เซิร์ฟเวอร์",
+      modalTitle: "จัดการข้อมูล & ความเป็นส่วนตัว",
+      modalPrivacyTitle: "🔒 ความเป็นส่วนตัว 100% ปลอดภัยบนเครื่องของคุณ",
+      modalPrivacyDesc: "ข้อมูลการเงินและผลการคำนวณทั้งหมดได้รับการบันทึกและประมวลผลภายในเบราว์เซอร์ของคุณเท่านั้น (Client-Side Storage) ไม่มีการส่งข้อมูลใดๆ ไปยังเซิร์ฟเวอร์ภายนอก",
+      exportTitle: "สำรองข้อมูลทั้งหมด (JSON)",
+      exportDesc: "ดาวน์โหลดไฟล์สำรองข้อมูลทุกเครื่องมือคำนวณ",
+      btnExport: "📤 ส่งออก",
+      importTitle: "กู้คืนข้อมูลจากไฟล์สำรอง",
+      importDesc: "นำเข้าไฟล์ JSON เพื่อกู้คืนข้อมูลที่เคยสำรองไว้",
+      btnImport: "📥 นำเข้า",
+      resetTitle: "ล้างข้อมูลทั้งหมด (Master Reset)",
+      resetDesc: "ลบข้อมูลในเครื่องมือทั้งหมดและคืนค่าเริ่มต้น",
+      btnReset: "🗑️ ล้างทั้งหมด"
+    },
+    en: {
+      settingsBtn: "Data",
+      privacyFooter: "🔒 100% Client-Side Privacy — All calculations and data are stored locally on your device only. No data is sent to any server.",
+      modalTitle: "Data & Privacy Management",
+      modalPrivacyTitle: "🔒 100% Privacy — Secure on Your Device",
+      modalPrivacyDesc: "All financial data and calculation results are saved and processed entirely within your browser (Client-Side Storage). No data is sent to external servers.",
+      exportTitle: "Backup All Data (JSON)",
+      exportDesc: "Download backup file for all calculator tools",
+      btnExport: "📤 Export",
+      importTitle: "Restore Data from Backup",
+      importDesc: "Import JSON file to restore previously backed up data",
+      btnImport: "📥 Import",
+      resetTitle: "Master Reset (Clear All Data)",
+      resetDesc: "Delete data across all tools and reset to defaults",
+      btnReset: "🗑️ Reset All"
+    }
+  };
 
   function getLang(){ try { return localStorage.getItem('moneySuperapp.lang') || 'th'; } catch(e){ return 'th'; } }
   function getTheme(){ try { return localStorage.getItem('moneySuperapp.theme') || 'light'; } catch(e){ return 'light'; } }
@@ -86,6 +191,97 @@
     if (activeBtn) {
       document.title = 'Money Superapp — ' + (activeBtn.dataset[lang] || activeBtn.textContent);
     }
+    const t = translations[lang] || translations.th;
+    if(document.getElementById('lbl-settings-btn')) document.getElementById('lbl-settings-btn').textContent = t.settingsBtn;
+    if(document.getElementById('lbl-privacy-footer')) document.getElementById('lbl-privacy-footer').textContent = t.privacyFooter;
+    if(document.getElementById('lbl-modal-title')) document.getElementById('lbl-modal-title').textContent = t.modalTitle;
+    if(document.getElementById('lbl-modal-privacy-title')) document.getElementById('lbl-modal-privacy-title').textContent = t.modalPrivacyTitle;
+    if(document.getElementById('lbl-modal-privacy-desc')) document.getElementById('lbl-modal-privacy-desc').textContent = t.modalPrivacyDesc;
+    if(document.getElementById('lbl-export-title')) document.getElementById('lbl-export-title').textContent = t.exportTitle;
+    if(document.getElementById('lbl-export-desc')) document.getElementById('lbl-export-desc').textContent = t.exportDesc;
+    if(document.getElementById('lbl-btn-export')) document.getElementById('lbl-btn-export').textContent = t.btnExport;
+    if(document.getElementById('lbl-import-title')) document.getElementById('lbl-import-title').textContent = t.importTitle;
+    if(document.getElementById('lbl-import-desc')) document.getElementById('lbl-import-desc').textContent = t.importDesc;
+    if(document.getElementById('lbl-btn-import')) document.getElementById('lbl-btn-import').textContent = t.btnImport;
+    if(document.getElementById('lbl-reset-title')) document.getElementById('lbl-reset-title').textContent = t.resetTitle;
+    if(document.getElementById('lbl-reset-desc')) document.getElementById('lbl-reset-desc').textContent = t.resetDesc;
+    if(document.getElementById('lbl-btn-reset')) document.getElementById('lbl-btn-reset').textContent = t.btnReset;
+  }
+
+  function openSettingsModal() {
+    document.getElementById('settingsModal').style.display = 'flex';
+  }
+  function closeSettingsModal() {
+    document.getElementById('settingsModal').style.display = 'none';
+  }
+
+  function exportBackupData() {
+    const backup = {
+      version: "1.0.0",
+      appName: "Money Superapp",
+      exportedAt: new Date().toISOString(),
+      data: {}
+    };
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('moneySuperapp.') || key.startsWith('remainingMoneyCalculator.') || key.startsWith('rebalanceCalculator.'))) {
+        backup.data[key] = localStorage.getItem(key);
+      }
+    }
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const d = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `money-superapp-backup-${d}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    return backup;
+  }
+
+  function handleImportFile(input) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const backup = JSON.parse(e.target.result);
+        if (!backup || typeof backup !== 'object' || !backup.data) {
+          alert(getLang() === 'en' ? 'Invalid backup file format' : 'รูปแบบไฟล์สำรองข้อมูลไม่ถูกต้อง');
+          return;
+        }
+        Object.keys(backup.data).forEach(key => {
+          localStorage.setItem(key, backup.data[key]);
+        });
+        alert(getLang() === 'en' ? '✓ Backup restored successfully!' : '✓ นำเข้าข้อมูลสำรองเรียบร้อยแล้ว!');
+        reloadFrame();
+        closeSettingsModal();
+      } catch(err) {
+        alert(getLang() === 'en' ? 'Error reading backup file' : 'เกิดข้อผิดพลาดในการอ่านไฟล์สำรอง');
+      }
+    };
+    reader.readAsText(file);
+    input.value = '';
+  }
+
+  function resetAllData() {
+    const msg = getLang() === 'en'
+      ? 'Are you sure you want to reset ALL data across all calculators? This action cannot be undone.'
+      : 'คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลทั้งหมดในทุกเครื่องมือคำนวณ? การกระทำนี้ไม่สามารถยกเลิกได้';
+    if (!confirm(msg)) return;
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('moneySuperapp.') || key.startsWith('remainingMoneyCalculator.') || key.startsWith('rebalanceCalculator.'))) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+    alert(getLang() === 'en' ? '✓ All data has been reset to defaults.' : '✓ ล้างข้อมูลทั้งหมดเรียบร้อยแล้ว');
+    reloadFrame();
+    closeSettingsModal();
   }
   function applyTheme(theme){
     themeButtons.forEach(b => b.classList.toggle('active', b.dataset.themeBtn === theme));
@@ -158,6 +354,17 @@
   const initialHash = window.location.hash.replace(/^#/, '');
   const savedTab = (function(){ try { return localStorage.getItem('moneySuperapp.activeTab'); } catch(e){ return null; } })();
   activateTab(initialHash || savedTab || 'rebalance', false);
+
+  // Register Service Worker for PWA and offline access
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').then(reg => {
+        console.log('PWA ServiceWorker registered with scope: ', reg.scope);
+      }).catch(err => {
+        console.warn('PWA ServiceWorker registration failed: ', err);
+      });
+    });
+  }
 </script>
 </body>
 </html>
