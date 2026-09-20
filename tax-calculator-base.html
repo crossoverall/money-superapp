@@ -26,6 +26,15 @@
         [data-theme="dark"] .text-blue-800 { color: #93c5fd !important; }
         [data-theme="dark"] input, [data-theme="dark"] select { background-color: #0f172a !important; color: #e2e8f0 !important; border-color: #334155 !important; }
         [data-theme="dark"] details { background-color: #1e293b !important; border-color: #334155 !important; }
+
+        @media print {
+            body { background: #fff !important; color: #000 !important; padding: 0 !important; }
+            .no-print, button, details summary { display: none !important; }
+            details { display: block !important; border: 1px solid #e2e8f0 !important; }
+            details > div { display: block !important; }
+            .bg-white { box-shadow: none !important; border: 1px solid #e2e8f0 !important; max-width: 100% !important; }
+            .bg-blue-50 { background-color: #f8fafc !important; border-color: #cbd5e1 !important; }
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
@@ -52,20 +61,36 @@
                 <select id="ssoCap" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" onchange="calculateTax()">
                     <option value="750" id="opt-sso-750">750 บาท (เพดานเดิม 15,000)</option>
                     <option value="875" id="opt-sso-875" selected>875 บาท (เพดานใหม่ 17,500)</option>
+                    <option value="1000" id="opt-sso-1000">1,000 บาท (เพดานใหม่ 20,000)</option>
+                    <option value="1150" id="opt-sso-1150">1,150 บาท (เพดานใหม่ 23,000)</option>
                 </select>
             </div>
             <details class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm">
-                <summary class="font-medium text-gray-700 cursor-pointer select-none" id="lbl-more-deduct">+ ค่าลดหย่อนเพิ่มเติม (SSF, RMF, ThaiESG, ประกัน, ดอกเบี้ยบ้าน)</summary>
+                <summary class="font-medium text-gray-700 cursor-pointer select-none" id="lbl-more-deduct">+ ค่าลดหย่อนเพิ่มเติม (SSF, RMF, ThaiESG, ประกัน, ดอกเบี้ยบ้าน, Easy E-Receipt)</summary>
                 <div class="space-y-3 mt-3 pt-3 border-t border-gray-200">
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1" id="lbl-fund-deduct">กองทุนเกษียณ SSF / RMF (รวม PVD สูงสุด 500,000 บาท/ปี)</label>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-medium text-gray-600" id="lbl-fund-deduct">กองทุนเกษียณ SSF / RMF (รวม PVD สูงสุด 500,000 บาท/ปี)</label>
+                            <span class="text-xs text-gray-400 cursor-help" title="เพดานกลุ่มเกษียณ: SSF + RMF + PVD รวมกันไม่เกิน 500,000 บาทต่อปี" id="tip-fund">ℹ️</span>
+                        </div>
                         <input type="number" id="fundDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" oninput="calculateTax()" aria-label="กองทุนเกษียณ SSF / RMF">
                         <div id="warn-fund" style="display:none; color:#d97706; font-size:11px; margin-top:3px; font-weight:500;"></div>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1" id="lbl-thaiesg-deduct">กองทุน ThaiESG (สูงสุด 300,000 บาท/ปี)</label>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-medium text-gray-600" id="lbl-thaiesg-deduct">กองทุน ThaiESG (สูงสุด 300,000 บาท/ปี)</label>
+                            <span class="text-xs text-gray-400 cursor-help" title="Thai ESG: ลดหย่อนได้ไม่เกิน 30% ของเงินได้ และสูงสุดไม่เกิน 300,000 บาท (ถือครอง 5 ปี แยกต่างหากจากเพดานเกษียณ 500,000 บาท)" id="tip-thaiesg">ℹ️</span>
+                        </div>
                         <input type="number" id="thaiEsgDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" oninput="calculateTax()" aria-label="กองทุน ThaiESG">
                         <div id="warn-thaiesg" style="display:none; color:#d97706; font-size:11px; margin-top:3px; font-weight:500;"></div>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-medium text-gray-600" id="lbl-easyreceipt-deduct">มาตรการ Easy E-Receipt (สูงสุด 50,000 บาท/ปี)</label>
+                            <span class="text-xs text-gray-400 cursor-help" title="Easy E-Receipt: ค่าซื้อสินค้าหรือบริการที่มีใบกำกับภาษีอิเล็กทรอนิกส์ (e-Tax Invoice & e-Receipt) สูงสุด 50,000 บาท" id="tip-easyreceipt">ℹ️</span>
+                        </div>
+                        <input type="number" id="easyReceiptDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" oninput="calculateTax()" aria-label="มาตรการ Easy E-Receipt">
+                        <div id="warn-easyreceipt" style="display:none; color:#d97706; font-size:11px; margin-top:3px; font-weight:500;"></div>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1" id="lbl-ins-deduct">เบี้ยประกันชีวิต + สุขภาพ (สูงสุด 100,000 บาท/ปี)</label>
@@ -78,7 +103,7 @@
                         <div id="warn-mortgage" style="display:none; color:#d97706; font-size:11px; margin-top:3px; font-weight:500;"></div>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1" id="lbl-other-deduct">ลดหย่อนอื่นๆ เช่น บิดามารดา บุตร ช้อปดีมีคืน (บาท/ปี)</label>
+                        <label class="block text-xs font-medium text-gray-600 mb-1" id="lbl-other-deduct">ลดหย่อนอื่นๆ เช่น บิดามารดา บุตร เงินบริจาค (บาท/ปี)</label>
                         <input type="number" id="otherDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" oninput="calculateTax()" aria-label="ลดหย่อนอื่นๆ">
                     </div>
                 </div>
@@ -132,10 +157,15 @@
         </div>
 
         <div class="flex justify-between items-center mt-4 pt-3 border-t border-gray-200">
-            <button onclick="copyTaxSummary()" id="btn-copy-tax" class="py-1.5 px-3 bg-gray-100 hover:bg-gray-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-200 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5">
-                <span id="lbl-copy-tax">📋 คัดลอกสรุปภาษี</span>
-            </button>
-            <p class="text-xs text-gray-400">v1.1.3</p>
+            <div class="flex items-center gap-2">
+                <button onclick="copyTaxSummary()" id="btn-copy-tax" class="py-1.5 px-3 bg-gray-100 hover:bg-gray-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-200 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5">
+                    <span id="lbl-copy-tax">📋 คัดลอกสรุปภาษี</span>
+                </button>
+                <button onclick="window.print()" id="btn-print-tax" class="py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 no-print">
+                    <span id="lbl-print-tax">🖨️ พิมพ์ / PDF</span>
+                </button>
+            </div>
+            <p class="text-xs text-gray-400">v1.2.0</p>
         </div>
     </div>
 
@@ -155,12 +185,15 @@
                 'lbl-sso-ceiling': 'Social Security (SSO) Cap',
                 'opt-sso-750': '750 THB (15k wage cap)',
                 'opt-sso-875': '875 THB (17.5k new cap)',
-                'lbl-more-deduct': '+ Additional Deductions (SSF, RMF, ThaiESG, Insurance, Loan)',
+                'opt-sso-1000': '1,000 THB (20k wage cap)',
+                'opt-sso-1150': '1,150 THB (23k wage cap)',
+                'lbl-more-deduct': '+ Additional Deductions (SSF, RMF, ThaiESG, Easy E-Receipt, Loan)',
                 'lbl-fund-deduct': 'Retirement Funds: SSF / RMF (incl. PVD max 500k THB/yr)',
                 'lbl-thaiesg-deduct': 'ThaiESG Fund (max 300k THB/yr)',
+                'lbl-easyreceipt-deduct': 'Easy E-Receipt Scheme (max 50,000 THB/yr)',
                 'lbl-ins-deduct': 'Life & Health Insurance (max 100k THB/yr)',
                 'lbl-mortgage-deduct': 'Mortgage loan interest (max 100k THB/yr)',
-                'lbl-other-deduct': 'Other deductions (parents, children, etc.) (THB/yr)',
+                'lbl-other-deduct': 'Other deductions (parents, children, donation) (THB/yr)',
                 'lbl-totalIncome': 'Total annual income:',
                 'lbl-expenseDeduct': 'Expense deduction (up to 100,000):',
                 'lbl-personalDeduct': 'Personal allowance:',
@@ -171,6 +204,7 @@
                 'lbl-taxAmount': 'Estimated tax payable',
                 'lbl-breakdownTitle': 'Tax breakdown by bracket',
                 'lbl-copy-tax': '📋 Copy Tax Summary',
+                'lbl-print-tax': '🖨️ Print / Save PDF',
             };
             Object.keys(EN).forEach(id => {
                 const el = document.getElementById(id);
@@ -205,6 +239,7 @@
                 ssoCap: document.getElementById('ssoCap').value,
                 fundDeduct: document.getElementById('fundDeduct').value,
                 thaiEsgDeduct: document.getElementById('thaiEsgDeduct') ? document.getElementById('thaiEsgDeduct').value : '',
+                easyReceiptDeduct: document.getElementById('easyReceiptDeduct') ? document.getElementById('easyReceiptDeduct').value : '',
                 insuranceDeduct: document.getElementById('insuranceDeduct').value,
                 mortgageDeduct: document.getElementById('mortgageDeduct').value,
                 otherDeduct: document.getElementById('otherDeduct').value
@@ -225,19 +260,27 @@
             } catch(e){}
         }
 
+        function parseNum(val) {
+            if (typeof val === 'number') return val;
+            if (!val) return 0;
+            const clean = String(val).replace(/,/g, '').trim();
+            return parseFloat(clean) || 0;
+        }
+
         function calculateTax() {
             saveState();
 
-            const salary = parseFloat(document.getElementById('salary').value) || 0;
-            const bonus = parseFloat(document.getElementById('bonus').value) || 0;
-            const pvdPercent = parseFloat(document.getElementById('pvd').value) || 0;
-            const ssoCapVal = parseFloat(document.getElementById('ssoCap').value) || 875;
+            const salary = parseNum(document.getElementById('salary').value);
+            const bonus = parseNum(document.getElementById('bonus').value);
+            const pvdPercent = parseNum(document.getElementById('pvd').value);
+            const ssoCapVal = parseNum(document.getElementById('ssoCap').value) || 875;
 
-            const fundDeduct = parseFloat(document.getElementById('fundDeduct').value) || 0;
-            const thaiEsgDeduct = parseFloat(document.getElementById('thaiEsgDeduct')?.value) || 0;
-            const insuranceDeduct = parseFloat(document.getElementById('insuranceDeduct').value) || 0;
-            const mortgageDeduct = parseFloat(document.getElementById('mortgageDeduct').value) || 0;
-            const otherDeduct = parseFloat(document.getElementById('otherDeduct').value) || 0;
+            const fundDeduct = parseNum(document.getElementById('fundDeduct').value);
+            const thaiEsgDeduct = parseNum(document.getElementById('thaiEsgDeduct')?.value);
+            const easyReceiptDeduct = parseNum(document.getElementById('easyReceiptDeduct')?.value);
+            const insuranceDeduct = parseNum(document.getElementById('insuranceDeduct').value);
+            const mortgageDeduct = parseNum(document.getElementById('mortgageDeduct').value);
+            const otherDeduct = parseNum(document.getElementById('otherDeduct').value);
 
             // คำนวณรายได้
             const totalIncome = (salary * 12) + bonus;
@@ -311,7 +354,21 @@
                 }
             }
 
-            const additionalDeductions = effectiveFund + effectiveThaiEsg + effectiveInsurance + effectiveMortgage + otherDeduct;
+            // 5. Easy E-Receipt: สูงสุด 50,000 บาท
+            const effectiveEasyReceipt = Math.min(easyReceiptDeduct, 50000);
+            const warnEasyReceiptEl = document.getElementById('warn-easyreceipt');
+            if (warnEasyReceiptEl) {
+                if (easyReceiptDeduct > 50000) {
+                    warnEasyReceiptEl.textContent = LANG === 'en'
+                        ? `⚠️ Capped at 50,000 THB (excess of ${formatMoney(easyReceiptDeduct - 50000)} THB not deductible)`
+                        : `⚠️ ใช้สิทธิ์ได้สูงสุด 50,000 บาท (ส่วนเกิน ${formatMoney(easyReceiptDeduct - 50000)} บาท ไม่นำมาลดหย่อน)`;
+                    warnEasyReceiptEl.style.display = 'block';
+                } else {
+                    warnEasyReceiptEl.style.display = 'none';
+                }
+            }
+
+            const additionalDeductions = effectiveFund + effectiveThaiEsg + effectiveEasyReceipt + effectiveInsurance + effectiveMortgage + otherDeduct;
 
             // คำนวณเงินได้สุทธิ
             const totalDeductions = expenseDeduction + personalDeduction + pvdDeduction + ssoDeduction + additionalDeductions;
@@ -432,6 +489,7 @@
 
                 if (data?.fundDeduct) document.getElementById('fundDeduct').value = data.fundDeduct;
                 if (data?.thaiEsgDeduct && document.getElementById('thaiEsgDeduct')) document.getElementById('thaiEsgDeduct').value = data.thaiEsgDeduct;
+                if (data?.easyReceiptDeduct && document.getElementById('easyReceiptDeduct')) document.getElementById('easyReceiptDeduct').value = data.easyReceiptDeduct;
                 if (data?.insuranceDeduct) document.getElementById('insuranceDeduct').value = data.insuranceDeduct;
                 if (data?.mortgageDeduct) document.getElementById('mortgageDeduct').value = data.mortgageDeduct;
                 if (data?.otherDeduct) document.getElementById('otherDeduct').value = data.otherDeduct;
@@ -450,6 +508,15 @@
         window.addEventListener('message', (e) => {
             if (e.data && e.data.action === 'sharedProfileUpdated') {
                 syncFromProfile();
+            }
+        });
+
+        // Forward global Alt+1..5 shortcuts to parent
+        window.addEventListener('keydown', (e) => {
+            if (e.altKey && e.key >= '1' && e.key <= '5') {
+                try {
+                    window.parent.postMessage({ action: 'shortcutKey', key: e.key }, '*');
+                } catch(err){}
             }
         });
 

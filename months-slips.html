@@ -69,6 +69,8 @@
                     <select id="ssoCap" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all text-sm" onchange="calculateSlip()">
                         <option value="750" id="opt-sso-750">750 บาท (เพดานเดิม 15,000)</option>
                         <option value="875" id="opt-sso-875" selected>875 บาท (เพดานใหม่ 17,500)</option>
+                        <option value="1000" id="opt-sso-1000">1,000 บาท (เพดานใหม่ 20,000)</option>
+                        <option value="1150" id="opt-sso-1150">1,150 บาท (เพดานใหม่ 23,000)</option>
                     </select>
                 </div>
             </div>
@@ -159,12 +161,37 @@
                         <button onclick="window.print()" id="btn-print-slip" class="py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all flex items-center gap-1.5">
                             <span id="lbl-print-slip">🖨️ พิมพ์ / บันทึก PDF</span>
                         </button>
-                        <p class="text-xs text-gray-400 ml-auto">v1.1.3</p>
+                        <p class="text-xs text-gray-400 ml-auto">v1.2.0</p>
                     </div>
                 </div>
             </div>
         </div>
 
+    </div>
+
+    <!-- Job Scenario Comparison Panel -->
+    <div class="max-w-xl mx-auto mt-4 px-4">
+      <button id="compareToggleBtn" onclick="toggleCompare()" class="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2">
+        <span id="lblCompareToggle">⚖️ เปรียบเทียบข้อเสนองาน</span>
+      </button>
+      <div id="comparePanel" style="display:none;" class="mt-3 bg-white dark:bg-slate-800 rounded-xl shadow-lg p-4 border border-gray-200 dark:border-slate-700">
+        <h3 class="font-bold text-sm mb-3" id="lblCompareTitle">📊 เปรียบเทียบ Scenario A vs B</h3>
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div>
+            <label class="font-semibold block mb-1" id="lblScenarioA">Scenario A</label>
+            <input type="number" id="cmpSalaryA" placeholder="เงินเดือน" class="w-full px-2 py-1.5 border rounded-lg text-sm mb-1" oninput="runCompare()">
+            <input type="number" id="cmpBonusA" placeholder="โบนัส (เดือน)" value="0" class="w-full px-2 py-1.5 border rounded-lg text-sm mb-1" oninput="runCompare()">
+            <input type="number" id="cmpPvdA" placeholder="PVD %" value="0" class="w-full px-2 py-1.5 border rounded-lg text-sm" oninput="runCompare()">
+          </div>
+          <div>
+            <label class="font-semibold block mb-1" id="lblScenarioB">Scenario B</label>
+            <input type="number" id="cmpSalaryB" placeholder="เงินเดือน" class="w-full px-2 py-1.5 border rounded-lg text-sm mb-1" oninput="runCompare()">
+            <input type="number" id="cmpBonusB" placeholder="โบนัส (เดือน)" value="0" class="w-full px-2 py-1.5 border rounded-lg text-sm mb-1" oninput="runCompare()">
+            <input type="number" id="cmpPvdB" placeholder="PVD %" value="0" class="w-full px-2 py-1.5 border rounded-lg text-sm" oninput="runCompare()">
+          </div>
+        </div>
+        <div id="compareResult" class="mt-3 p-3 bg-gray-50 dark:bg-slate-900 rounded-lg text-xs" style="display:none;"></div>
+      </div>
     </div>
 
     <script>
@@ -184,6 +211,8 @@
                 'lbl-sso-ceiling': 'Social Security (SSO) Cap',
                 'opt-sso-750': '750 THB (15k wage cap)',
                 'opt-sso-875': '875 THB (17.5k new cap)',
+                'opt-sso-1000': '1,000 THB (20k wage cap)',
+                'opt-sso-1150': '1,150 THB (23k wage cap)',
                 'lbl-taxnote': '<strong>How tax is calculated:</strong> the bonus is added to annual income to get the total taxable base, then divided by 12 to spread the monthly withholding (annualized method).',
                 'lbl-earnings': 'Earnings',
                 'lbl-deductions': 'Deductions',
@@ -205,14 +234,23 @@
                 'lbl-copy-text': '📋 Copy Payslip Summary',
                 'lbl-export-slip': '📤 Export to Remaining Money',
                 'lbl-print-slip': '🖨️ Print / Save PDF',
+                'lblCompareToggle': '⚖️ Compare Job Offers',
+                'lblCompareTitle': '📊 Compare Scenario A vs B',
+                'lblScenarioA': 'Scenario A',
+                'lblScenarioB': 'Scenario B',
             };
             Object.keys(EN).forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.innerHTML = EN[id];
             });
-            const placeholders = { salary: 'e.g. 50000', allowance: 'e.g. 7000', bonus: 'e.g. 100000', pvd: 'e.g. 15' };
+            const placeholders = {
+                salary: 'e.g. 50000', allowance: 'e.g. 7000', bonus: 'e.g. 100000', pvd: 'e.g. 15',
+                cmpSalaryA: 'e.g. 60000', cmpBonusA: 'e.g. 2 (months)', cmpPvdA: 'e.g. 5',
+                cmpSalaryB: 'e.g. 70000', cmpBonusB: 'e.g. 1 (month)', cmpPvdB: 'e.g. 7'
+            };
             Object.keys(placeholders).forEach(id => {
-                document.getElementById(id).placeholder = placeholders[id];
+                const el = document.getElementById(id);
+                if (el) el.placeholder = placeholders[id];
             });
         }
 
@@ -243,12 +281,19 @@
             } catch(e){}
         }
 
+        function parseNum(val) {
+            if (typeof val === 'number') return val;
+            if (!val) return 0;
+            const clean = String(val).replace(/,/g, '').trim();
+            return parseFloat(clean) || 0;
+        }
+
         function calculateSlip() {
-            const salary = parseFloat(document.getElementById('salary').value) || 0;
-            const allowance = parseFloat(document.getElementById('allowance').value) || 0;
-            const bonus = parseFloat(document.getElementById('bonus').value) || 0;
-            const pvdPercent = parseFloat(document.getElementById('pvd').value) || 0;
-            const ssoCapVal = parseFloat(document.getElementById('ssoCap').value) || 875;
+            const salary = parseNum(document.getElementById('salary').value);
+            const allowance = parseNum(document.getElementById('allowance').value);
+            const bonus = parseNum(document.getElementById('bonus').value);
+            const pvdPercent = parseNum(document.getElementById('pvd').value);
+            const ssoCapVal = parseNum(document.getElementById('ssoCap').value) || 875;
 
             saveState();
 
@@ -436,6 +481,138 @@
                 syncFromProfile();
             }
         });
+
+        // Forward global Alt+1..5 shortcuts to parent
+        window.addEventListener('keydown', (e) => {
+            if (e.altKey && e.key >= '1' && e.key <= '5') {
+                try { window.parent.postMessage({ action: 'shortcutKey', key: e.key }, '*'); } catch(err){}
+            }
+        });
+
+        function toggleCompare() {
+            const panel = document.getElementById('comparePanel');
+            if (!panel) return;
+            const isHidden = panel.style.display === 'none' || panel.style.display === '';
+            panel.style.display = isHidden ? 'block' : 'none';
+            if (isHidden) {
+                // Pre-fill Scenario A from current inputs if empty
+                const curSal = document.getElementById('salary')?.value || '';
+                const curBon = document.getElementById('bonus')?.value || '';
+                const curPvd = document.getElementById('pvd')?.value || '';
+                const cmpA = document.getElementById('cmpSalaryA');
+                if (cmpA && !cmpA.value && curSal) cmpA.value = curSal;
+                const bonA = document.getElementById('cmpBonusA');
+                if (bonA && (!bonA.value || bonA.value === '0') && curBon) bonA.value = curBon;
+                const pvdA = document.getElementById('cmpPvdA');
+                if (pvdA && (!pvdA.value || pvdA.value === '0') && curPvd) pvdA.value = curPvd;
+                runCompare();
+            }
+        }
+
+        function calcScenario(salary, bonus, pvdPercent, ssoCapVal) {
+            if (!salary || salary <= 0) return null;
+            const bonusTHB = (bonus <= 24 && bonus > 0) ? (bonus * salary) : bonus;
+            const annualIncome = (salary * 12) + bonusTHB;
+            const monthlySso = Math.min(salary * 0.05, ssoCapVal);
+            const annualSso = monthlySso * 12;
+            const monthlyPvd = salary * (pvdPercent / 100);
+            const annualPvd = monthlyPvd * 12;
+
+            const expenseDeduction = Math.min(annualIncome * 0.5, 100000);
+            const personalDeduction = 60000;
+            let netTaxable = annualIncome - (expenseDeduction + personalDeduction + annualSso + annualPvd);
+            if (netTaxable < 0) netTaxable = 0;
+
+            const brackets = [
+                { limit: 150000, rate: 0 },
+                { limit: 150000, rate: 0.05 },
+                { limit: 200000, rate: 0.10 },
+                { limit: 250000, rate: 0.15 },
+                { limit: 250000, rate: 0.20 },
+                { limit: 1000000, rate: 0.25 },
+                { limit: 3000000, rate: 0.30 },
+                { limit: Infinity, rate: 0.35 }
+            ];
+            let annualTax = 0;
+            let rem = netTaxable;
+            for (let i = 0; i < brackets.length; i++) {
+                if (rem <= 0) break;
+                const cur = Math.min(rem, brackets[i].limit);
+                annualTax += cur * brackets[i].rate;
+                rem -= cur;
+            }
+            const monthlyTax = annualTax / 12;
+            const monthlyNet = salary - monthlySso - monthlyPvd - monthlyTax;
+            const annualNet = annualIncome - annualSso - annualPvd - annualTax;
+            return {
+                salary, bonusTHB, annualIncome, monthlySso, annualSso,
+                monthlyPvd, annualPvd, annualTax, monthlyTax, monthlyNet, annualNet
+            };
+        }
+
+        function runCompare() {
+            const ssoCapVal = parseFloat(document.getElementById('ssoCap').value) || 875;
+            const salA = parseFloat(document.getElementById('cmpSalaryA').value) || 0;
+            const bonA = parseFloat(document.getElementById('cmpBonusA').value) || 0;
+            const pvdA = parseFloat(document.getElementById('cmpPvdA').value) || 0;
+
+            const salB = parseFloat(document.getElementById('cmpSalaryB').value) || 0;
+            const bonB = parseFloat(document.getElementById('cmpBonusB').value) || 0;
+            const pvdB = parseFloat(document.getElementById('cmpPvdB').value) || 0;
+
+            const resA = calcScenario(salA, bonA, pvdA, ssoCapVal);
+            const resB = calcScenario(salB, bonB, pvdB, ssoCapVal);
+
+            const out = document.getElementById('compareResult');
+            if (!out) return;
+            if (!resA && !resB) {
+                out.style.display = 'none';
+                return;
+            }
+            out.style.display = 'block';
+
+            const isEN = LANG === 'en';
+            const curUnit = isEN ? 'THB' : 'บาท';
+            const fmt = (n) => Math.round(n).toLocaleString(isEN ? 'en-US' : 'th-TH');
+
+            const diffMonthly = (resB ? resB.monthlyNet : 0) - (resA ? resA.monthlyNet : 0);
+            const diffAnnual = (resB ? resB.annualNet : 0) - (resA ? resA.annualNet : 0);
+
+            let verdict = '';
+            if (resA && resB) {
+                if (Math.abs(diffMonthly) < 1) {
+                    verdict = `<div class="p-2 rounded bg-gray-100 dark:bg-slate-800 text-center font-bold text-gray-700 dark:text-gray-300">
+                        ${isEN ? '🤝 Both scenarios provide equal net monthly pay' : '🤝 ทั้งสองข้อเสนอให้เงินได้สุทธิต่อเดือนเท่ากัน'}
+                    </div>`;
+                } else if (diffMonthly > 0) {
+                    verdict = `<div class="p-2 rounded bg-emerald-50 dark:bg-emerald-950/40 text-center font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                        ${isEN ? `🎉 Scenario B gives +${fmt(diffMonthly)} ${curUnit}/mo (+${fmt(diffAnnual)} ${curUnit}/yr net)` : `🎉 Scenario B ให้เงินได้สุทธิมากกว่า +${fmt(diffMonthly)} ${curUnit}/เดือน (+${fmt(diffAnnual)} ${curUnit}/ปี)`}
+                    </div>`;
+                } else {
+                    verdict = `<div class="p-2 rounded bg-indigo-50 dark:bg-indigo-950/40 text-center font-bold text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                        ${isEN ? `💡 Scenario A gives +${fmt(Math.abs(diffMonthly))} ${curUnit}/mo (+${fmt(Math.abs(diffAnnual))} ${curUnit}/yr net)` : `💡 Scenario A ให้เงินได้สุทธิมากกว่า +${fmt(Math.abs(diffMonthly))} ${curUnit}/เดือน (+${fmt(Math.abs(diffAnnual))} ${curUnit}/ปี)`}
+                    </div>`;
+                }
+            }
+
+            out.innerHTML = `
+                <div class="grid grid-cols-2 gap-2 pb-2 border-b border-gray-200 dark:border-slate-700 mb-2">
+                    <div>
+                        <div class="font-bold text-gray-800 dark:text-gray-200 mb-1">${isEN ? 'Scenario A' : 'ข้อเสนอ A'}</div>
+                        <div>${isEN ? 'Net / Month:' : 'สุทธิ / เดือน:'} <span class="font-bold ${diffMonthly <= 0 && resB ? 'text-indigo-600' : ''}">${resA ? fmt(resA.monthlyNet) : '-'}</span> ${curUnit}</div>
+                        <div>${isEN ? 'Net / Year:' : 'สุทธิ / ทั้งปี:'} <span class="font-medium">${resA ? fmt(resA.annualNet) : '-'}</span> ${curUnit}</div>
+                        <div class="text-[11px] text-gray-500">${isEN ? 'Tax / Year:' : 'ภาษีทั้งปี:'} ${resA ? fmt(resA.annualTax) : '-'} | PVD: ${resA ? fmt(resA.annualPvd) : '-'}</div>
+                    </div>
+                    <div>
+                        <div class="font-bold text-gray-800 dark:text-gray-200 mb-1">${isEN ? 'Scenario B' : 'ข้อเสนอ B'}</div>
+                        <div>${isEN ? 'Net / Month:' : 'สุทธิ / เดือน:'} <span class="font-bold ${diffMonthly > 0 ? 'text-emerald-600' : ''}">${resB ? fmt(resB.monthlyNet) : '-'}</span> ${curUnit}</div>
+                        <div>${isEN ? 'Net / Year:' : 'สุทธิ / ทั้งปี:'} <span class="font-medium">${resB ? fmt(resB.annualNet) : '-'}</span> ${curUnit}</div>
+                        <div class="text-[11px] text-gray-500">${isEN ? 'Tax / Year:' : 'ภาษีทั้งปี:'} ${resB ? fmt(resB.annualTax) : '-'} | PVD: ${resB ? fmt(resB.annualPvd) : '-'}</div>
+                    </div>
+                </div>
+                ${verdict}
+            `;
+        }
 
         loadState();
     </script>

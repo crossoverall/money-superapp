@@ -196,6 +196,14 @@
     font-size: 10px; color: var(--warn); font-weight: 600;
     background: var(--warn-dim); padding: 1px 5px; border-radius: 4px; display: inline-block; margin-top: 2px;
   }
+
+  @media print {
+    body { background: #fff !important; color: #000 !important; padding: 10px; }
+    .panel { box-shadow: none !important; border: 1px solid #ddd; break-inside: avoid; }
+    button, .reset-btn, .version-tag, .save-status, .eyebrow, .sub,
+    #splitForm, #bucketForm, #addBucketBtn, #printRebalanceBtn { display: none !important; }
+    #resultsPanel { display: block !important; }
+  }
 </style>
 </head>
 <body>
@@ -269,12 +277,15 @@
 
   <div class="save-status">
     <span id="saveStatus">&nbsp;</span>
-    <div style="display:flex;gap:8px;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="reset-btn" id="copyPortfolioBtn" onclick="copyPortfolioSummary()">📋 <span id="lblCopyPortfolio">คัดลอกสรุป</span></button>
+      <button class="reset-btn" id="copyTradeBtn" onclick="copyTradeOrders()">📋 <span id="lblCopyTrade">คัดลอกรายการสั่งซื้อ</span></button>
+      <button class="reset-btn" id="exportCsvBtn" onclick="exportCSV()">📥 <span id="lblExportCsv">ดาวน์โหลด CSV</span></button>
+      <button class="reset-btn" id="printRebalanceBtn" onclick="window.print()">🖨️ <span id="lblPrintRebalance">พิมพ์ / บันทึก PDF</span></button>
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v1.1.3</p>
+  <p class="version-tag">v1.2.0</p>
 
 <script>
 // Language: read once from localStorage (shared origin with the shell nav's toggle).
@@ -303,6 +314,12 @@ if(LANG === 'en'){
   document.getElementById('resetBtn').textContent = 'Clear saved data';
   const copyBtnLbl = document.getElementById('lblCopyPortfolio');
   if (copyBtnLbl) copyBtnLbl.textContent = 'Copy Summary';
+  const printBtnLbl = document.getElementById('lblPrintRebalance');
+  if (printBtnLbl) printBtnLbl.textContent = 'Print / Save PDF';
+  const tradeBtnLbl = document.getElementById('lblCopyTrade');
+  if (tradeBtnLbl) tradeBtnLbl.textContent = 'Copy Trade Orders';
+  const csvBtnLbl = document.getElementById('lblExportCsv');
+  if (csvBtnLbl) csvBtnLbl.textContent = 'Export CSV';
 }
 
 // Small dict for text regenerated on every render (compute/renderSplit/renderBuckets).
@@ -859,9 +876,64 @@ function copyPortfolioSummary(){
   }).catch(() => {});
 }
 
+function copyTradeOrders(){
+  const totalBudget = state.totalBudget || 0;
+  const totalBucketW = state.buckets.reduce((s,b) => s + b.weight, 0) || 1;
+  const isEN = LANG === 'en';
+  let lines = [isEN ? `📋 Trade Orders (Budget: ${fmt(totalBudget)} THB)` : `📋 รายการสั่งซื้อ (งบ: ${fmt(totalBudget)} บาท)`, ''];
+  state.buckets.forEach(bucket => {
+    const bucketBudget = (bucket.weight / totalBucketW) * totalBudget;
+    const x = allocate(bucket.assets, bucketBudget);
+    lines.push(`[${bucket.label}]`);
+    bucket.assets.forEach((a, i) => {
+      const add = Math.round(x[i]);
+      if (add > 0) {
+        lines.push(`  ${a.name}: ${isEN ? '+' : '+'}${fmt(add)} ${isEN ? 'THB' : 'บาท'} (${a.weight}%)`);
+      }
+    });
+    lines.push('');
+  });
+  navigator.clipboard.writeText(lines.join('\n')).then(() => {
+    const lbl = document.getElementById('lblCopyTrade');
+    if (lbl) {
+      const orig = lbl.innerText;
+      lbl.innerText = isEN ? '✓ Copied!' : '✓ คัดลอกแล้ว!';
+      setTimeout(() => { lbl.innerText = orig; }, 1800);
+    }
+  }).catch(() => {});
+}
+
+function exportCSV(){
+  const totalBudget = state.totalBudget || 0;
+  const totalBucketW = state.buckets.reduce((s,b) => s + b.weight, 0) || 1;
+  let rows = ['Group,Asset,Target %,Current Value (THB),Buy Amount (THB)'];
+  state.buckets.forEach(bucket => {
+    const bucketBudget = (bucket.weight / totalBucketW) * totalBudget;
+    const x = allocate(bucket.assets, bucketBudget);
+    bucket.assets.forEach((a, i) => {
+      const add = Math.round(x[i]);
+      rows.push(`"${bucket.label}","${a.name}",${a.weight},${a.value},${add}`);
+    });
+  });
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `rebalance_${new Date().toISOString().slice(0,10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 window.addEventListener('focus', () => {
   checkPendingBudget();
   compute();
+});
+
+// Forward global Alt+1..5 shortcuts to parent
+window.addEventListener('keydown', (e) => {
+  if (e.altKey && e.key >= '1' && e.key <= '5') {
+    try { window.parent.postMessage({ action: 'shortcutKey', key: e.key }, '*'); } catch(err){}
+  }
 });
 
 renderSplit();
