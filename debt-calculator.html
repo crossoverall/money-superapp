@@ -164,8 +164,8 @@
   <div class="panel">
     <div class="panel-title" id="lbl-strategy-title">กลยุทธ์ (Strategy)</div>
     <div class="strategy-toggle">
-      <div class="strategy-btn active" id="btn-strat-avalanche" onclick="setStrategy('avalanche')">Avalanche<br><span style="font-size:10px; font-weight:400;">ดอกสูงสุดก่อน</span></div>
-      <div class="strategy-btn" id="btn-strat-snowball" onclick="setStrategy('snowball')">Snowball<br><span style="font-size:10px; font-weight:400;">ยอดน้อยสุดก่อน</span></div>
+      <div class="strategy-btn active" id="btn-strat-avalanche" onclick="setStrategy('avalanche')">Avalanche<br><span id="strat-av-sub" style="font-size:10px; font-weight:400;">ดอกสูงสุดก่อน</span></div>
+      <div class="strategy-btn" id="btn-strat-snowball" onclick="setStrategy('snowball')">Snowball<br><span id="strat-sn-sub" style="font-size:10px; font-weight:400;">ยอดน้อยสุดก่อน</span></div>
     </div>
     
     <div style="margin-top:16px;">
@@ -193,11 +193,11 @@
         <span class="val" id="footTotalBalance" style="font-size:15px; color:var(--ink);">0</span>
       </div>
       <div class="result-row">
-        <span style="color:var(--ink-dim); font-size:11px;">ดอกเบี้ยเฉลี่ย</span>
+        <span id="lbl-avg-rate" style="color:var(--ink-dim); font-size:11px;">ดอกเบี้ยเฉลี่ย</span>
         <span class="val" id="footAvgRate" style="color:var(--ink-dim); font-size:11px;">-</span>
       </div>
       <div class="result-row">
-        <span style="color:var(--ink-dim); font-size:11px;">ขั้นต่ำรวมต่อเดือน</span>
+        <span id="lbl-min-pay" style="color:var(--ink-dim); font-size:11px;">ขั้นต่ำรวมต่อเดือน</span>
         <span class="val" id="footTotalMin" style="color:var(--ink-dim); font-size:11px;">0</span>
       </div>
     </div>
@@ -209,7 +209,7 @@
     <div style="margin-bottom:16px; border:1px solid var(--line); border-radius:12px; padding:12px; background:var(--panel-2);" id="card-compare-avalanche">
       <div style="font-weight:700; font-size:14px; margin-bottom:8px; display:flex; justify-content:space-between;">
         <span>⚡ Avalanche</span>
-        <span style="font-size:10px; background:var(--ok-dim); color:var(--ok); padding:2px 6px; border-radius:4px;">คุ้มค่าเงินที่สุด</span>
+        <span id="cmp-av-sub" style="font-size:10px; background:var(--ok-dim); color:var(--ok); padding:2px 6px; border-radius:4px;">คุ้มค่าเงินที่สุด</span>
       </div>
       <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-av-months" style="font-weight:400;">ระยะเวลา:</span> <span class="val" id="cmp-av-months">-</span></div>
       <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-av-interest" style="font-weight:400;">ดอกเบี้ยรวม:</span> <span class="val warn" id="cmp-av-interest">-</span></div>
@@ -219,7 +219,7 @@
     <div style="border:1px solid var(--line); border-radius:12px; padding:12px; background:var(--panel-2);" id="card-compare-snowball">
       <div style="font-weight:700; font-size:14px; margin-bottom:8px; display:flex; justify-content:space-between;">
         <span>⛄ Snowball</span>
-        <span style="font-size:10px; background:var(--blue-dim); color:var(--blue); padding:2px 6px; border-radius:4px;">สร้างกำลังใจ</span>
+        <span id="cmp-sn-sub" style="font-size:10px; background:var(--blue-dim); color:var(--blue); padding:2px 6px; border-radius:4px;">สร้างกำลังใจ</span>
       </div>
       <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-sn-months" style="font-weight:400;">ระยะเวลา:</span> <span class="val" id="cmp-sn-months">-</span></div>
       <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-sn-interest" style="font-weight:400;">ดอกเบี้ยรวม:</span> <span class="val warn" id="cmp-sn-interest">-</span></div>
@@ -252,7 +252,7 @@
     <span id="saveStatus">&nbsp;</span>
     <button class="reset-btn" id="btn-reset-debts" onclick="resetDefaults()">รีเซ็ตค่าเริ่มต้น</button>
   </div>
-  <p class="version-tag">v1.3.2</p>
+  <p class="version-tag">v1.3.3</p>
 
 <script>
     const LANG = (function(){ try { return localStorage.getItem('moneySuperapp.lang') || 'th'; } catch(e){ return 'th'; } })();
@@ -261,11 +261,11 @@
     const unit = LANG === 'en' ? 'THB' : 'บาท';
 
     const translations = {
-        th: {
+                th: {
             title: 'วางแผนปลดหนี้ (Debt Payoff)',
             subtitle: 'เปรียบเทียบวิธี Snowball (หนี้เล็กก่อน) และ Avalanche (ดอกสูงก่อน) เพื่อปลดหนี้เร็วที่สุด',
             importSavings: 'ดึงเงินออมจากหน้าคงเหลือ',
-            copyPlan: '📋 คัดลอก',
+            copyPlan: '📋 คัดลอกแผน',
             copied: '✓ คัดลอกแล้ว!',
             printPlan: '🖨️ พิมพ์',
             kpiTotalDebt: 'ยอดหนี้รวมทั้งหมด',
@@ -275,40 +275,43 @@
             kpiTotalPaid: 'รวมจ่ายทั้งหมด',
             kpiMonthsSaved: 'เร็วขึ้น',
             kpiMonthsToFree: 'เดือน',
-            strategyTitle: 'กลยุทธ์การปลดหนี้ (Payoff Strategy)',
+            strategyTitle: 'กลยุทธ์การปลดหนี้ (Strategy)',
             extraPay: 'เงินจ่ายเพิ่มรายเดือน (Extra Payment)',
             unitMonthly: 'บาท/เดือน',
-            debtListTitle: 'รายการหนี้สินของคุณ (Debt Accounts)',
-            btnAddDebt: 'เพิ่มรายการหนี้',
-            thName: 'ชื่อหนี้สิน',
-            thBalance: 'ยอดเงินต้นคงเหลือ (บาท)',
-            thRate: 'ดอกเบี้ย (%/ปี)',
-            thMinPay: 'ขั้นต่ำต่อเดือน (บาท)',
-            thOrder: 'ลำดับการโปะ',
+            debtListTitle: 'รายการหนี้สิน (Debt Accounts)',
+            btnAddDebt: '+ เพิ่มรายการหนี้',
             tdTotalLabel: 'รวมทุกรายการ',
-            compareTitle: 'เปรียบเทียบผลลัพธ์ระหว่าง 2 วิธี (Strategy Comparison)',
-            cmpAvMonths: 'ระยะเวลาปลดหนี้:',
+            compareTitle: 'เปรียบเทียบผลลัพธ์ (Comparison)',
+            cmpAvMonths: 'ระยะเวลา:',
             cmpAvInterest: 'ดอกเบี้ยรวม:',
             cmpAvSaved: 'ประหยัดดอกเบี้ย vs ขั้นต่ำ:',
-            cmpSnMonths: 'ระยะเวลาปลดหนี้:',
+            cmpSnMonths: 'ระยะเวลา:',
             cmpSnInterest: 'ดอกเบี้ยรวม:',
             cmpSnSaved: 'ประหยัดดอกเบี้ย vs ขั้นต่ำ:',
-            scheduleTitle: '📅 ดูตารางกำหนดการปลดหนี้ทีละรายการ (Payoff Timeline & Schedule)',
+            scheduleTitle: '📅 ดูตารางกำหนดการปลดหนี้ (Timeline & Schedule)',
             thSchMonth: 'เดือนที่',
-            thSchPayment: 'จ่ายรวม (บาท)',
-            thSchPrincipal: 'ตัดเงินต้น (บาท)',
-            thSchInterest: 'ดอกเบี้ย (บาท)',
-            thSchRemaining: 'หนี้คงเหลือ (บาท)',
-            btnResetDebts: '↺ รีเซ็ตรายการเริ่มต้น',
-            avalancheExpl: '<strong>Avalanche Method:</strong> จ่ายยอดขั้นต่ำทุกรายการ แล้วนำเงินส่วนเกินทั้งหมดไปโปะหนี้ที่มี "อัตราดอกเบี้ยสูงสุด" ช่วยประหยัดเงินดอกเบี้ยได้มากที่สุดตามหลักคณิตศาสตร์',
-            snowballExpl: '<strong>Snowball Method:</strong> จ่ายยอดขั้นต่ำทุกรายการ แล้วนำเงินส่วนเกินทั้งหมดไปโปะหนี้ที่มี "ยอดเงินต้นน้อยที่สุด" ช่วยปิดหนี้ทีละก้อนได้อย่างรวดเร็ว สร้างกำลังใจที่ดีเยี่ยม',
-            debtFreeAlert: '🎉 ยินดีด้วย! คุณไม่มีภาระหนี้สินคงค้าง'
-        },
-        en: {
+            thSchPayment: 'จ่ายรวม',
+            thSchPrincipal: 'ตัดเงินต้น',
+            thSchInterest: 'ดอกเบี้ย',
+            thSchRemaining: 'คงเหลือ',
+            btnResetDebts: 'รีเซ็ตค่าเริ่มต้น',
+            avalancheExpl: '<strong>Avalanche Method:</strong> นำเงินส่วนเกินทั้งหมดไปโปะหนี้ที่มีอัตราดอกเบี้ยสูงสุด ช่วยประหยัดเงินได้มากที่สุด',
+            stratAvSub: 'ดอกสูงสุดก่อน',
+            stratSnSub: 'ยอดน้อยสุดก่อน',
+            cmpAvSub: 'คุ้มค่าเงินที่สุด',
+            cmpSnSub: 'สร้างกำลังใจ',
+            avgRateLabel: 'ดอกเบี้ยเฉลี่ย',
+            minPayLabel: 'ขั้นต่ำรวมต่อเดือน',
+            colBalance: 'ยอดคงเหลือ',
+            colRate: 'ดอกเบี้ย %',
+            colMin: 'ขั้นต่ำ',
+            rowItemsCount: 'รายการ'
+        },,
+                en: {
             title: 'Debt Payoff Calculator',
-            subtitle: 'Compare Snowball (smallest balance) and Avalanche (highest rate) to become debt-free fastest',
-            importSavings: 'Import Savings from Remaining',
-            copyPlan: '📋 Copy',
+            subtitle: 'Compare Snowball and Avalanche to become debt-free fastest',
+            importSavings: 'Import Savings',
+            copyPlan: '📋 Copy Plan',
             copied: '✓ Copied!',
             printPlan: '🖨️ Print',
             kpiTotalDebt: 'Total Debt Balance',
@@ -322,65 +325,81 @@
             extraPay: 'Extra Monthly Payment',
             unitMonthly: 'THB/month',
             debtListTitle: 'Your Debt Accounts',
-            btnAddDebt: 'Add Debt Account',
-            thName: 'Account Name',
-            thBalance: 'Balance (THB)',
-            thRate: 'APR (%)',
-            thMinPay: 'Min Payment (THB)',
-            thOrder: 'Payoff Order',
+            btnAddDebt: '+ Add Debt Account',
             tdTotalLabel: 'Total',
             compareTitle: 'Strategy Comparison',
-            cmpAvMonths: 'Payoff Timeline:',
+            cmpAvMonths: 'Timeline:',
             cmpAvInterest: 'Total Interest:',
-            cmpAvSaved: 'Interest Saved vs Minimum:',
-            cmpSnMonths: 'Payoff Timeline:',
+            cmpAvSaved: 'Saved vs Minimum:',
+            cmpSnMonths: 'Timeline:',
             cmpSnInterest: 'Total Interest:',
-            cmpSnSaved: 'Interest Saved vs Minimum:',
-            scheduleTitle: '📅 View Payoff Timeline & Monthly Schedule',
+            cmpSnSaved: 'Saved vs Minimum:',
+            scheduleTitle: '📅 View Payoff Timeline & Schedule',
             thSchMonth: 'Month',
-            thSchPayment: 'Total Paid (THB)',
-            thSchPrincipal: 'Principal (THB)',
-            thSchInterest: 'Interest (THB)',
-            thSchRemaining: 'Remaining Balance (THB)',
-            btnResetDebts: '↺ Reset to Defaults',
-            avalancheExpl: '<strong>Avalanche Method:</strong> Pay minimums on all debts, then put all extra cash towards the debt with the highest interest rate. Mathematically saves the most money.',
-            snowballExpl: '<strong>Snowball Method:</strong> Pay minimums on all debts, then put all extra cash towards the debt with the smallest balance. Delivers fast psychological wins and momentum.',
-            debtFreeAlert: '🎉 Congratulations! You have zero outstanding debt.'
+            thSchPayment: 'Total Paid',
+            thSchPrincipal: 'Principal',
+            thSchInterest: 'Interest',
+            thSchRemaining: 'Remaining',
+            btnResetDebts: 'Reset to Defaults',
+            avalancheExpl: '<strong>Avalanche Method:</strong> Put all extra cash towards the debt with the highest interest rate. Mathematically saves the most money.',
+            stratAvSub: 'Highest Rate First',
+            stratSnSub: 'Smallest Bal First',
+            cmpAvSub: 'Mathematically Optimal',
+            cmpSnSub: 'Psychological Wins',
+            avgRateLabel: 'Avg Interest',
+            minPayLabel: 'Total Min Payment',
+            colBalance: 'Balance',
+            colRate: 'Interest %',
+            colMin: 'Min Pay',
+            rowItemsCount: 'Accounts'
         }
     };
 
-    if (LANG === 'en') {
+        if (LANG === 'en') {
         const t = translations.en;
         document.title = 'Debt Payoff Calculator — Money Superapp';
-        if (document.getElementById('txt-title')) document.getElementById('txt-title').textContent = t.title;
-        if (document.getElementById('lbl-subtitle')) document.getElementById('lbl-subtitle').textContent = t.subtitle;
-        if (document.getElementById('lbl-import-savings')) document.getElementById('lbl-import-savings').textContent = t.importSavings;
-        if (document.getElementById('lbl-copy-plan')) document.getElementById('lbl-copy-plan').textContent = t.copyPlan;
-        if (document.getElementById('lbl-print-plan')) document.getElementById('lbl-print-plan').textContent = t.printPlan;
-        if (document.getElementById('lbl-kpi-total-debt')) document.getElementById('lbl-kpi-total-debt').textContent = t.kpiTotalDebt;
-        if (document.getElementById('lbl-kpi-debtfree-date')) document.getElementById('lbl-kpi-debtfree-date').textContent = t.kpiDebtFreeDate;
-        if (document.getElementById('lbl-kpi-total-interest')) document.getElementById('lbl-kpi-total-interest').textContent = t.kpiTotalInterest;
-        if (document.getElementById('lbl-kpi-interest-saved')) document.getElementById('lbl-kpi-interest-saved').textContent = t.kpiInterestSaved;
-        if (document.getElementById('lbl-strategy-title')) document.getElementById('lbl-strategy-title').textContent = t.strategyTitle;
-        if (document.getElementById('lbl-extra-pay')) document.getElementById('lbl-extra-pay').textContent = t.extraPay;
-        if (document.getElementById('lbl-unit-monthly')) document.getElementById('lbl-unit-monthly').textContent = t.unitMonthly;
-        if (document.getElementById('lbl-debt-list-title')) document.getElementById('lbl-debt-list-title').textContent = t.debtListTitle;
-        if (document.getElementById('lbl-btn-add-debt')) document.getElementById('lbl-btn-add-debt').textContent = t.btnAddDebt;
-        if (document.getElementById('td-total-label')) document.getElementById('td-total-label').textContent = t.tdTotalLabel;
-        if (document.getElementById('lbl-compare-title')) document.getElementById('lbl-compare-title').textContent = t.compareTitle;
-        if (document.getElementById('lbl-cmp-av-months')) document.getElementById('lbl-cmp-av-months').textContent = t.cmpAvMonths;
-        if (document.getElementById('lbl-cmp-av-interest')) document.getElementById('lbl-cmp-av-interest').textContent = t.cmpAvInterest;
-        if (document.getElementById('lbl-cmp-av-saved')) document.getElementById('lbl-cmp-av-saved').textContent = t.cmpAvSaved;
-        if (document.getElementById('lbl-cmp-sn-months')) document.getElementById('lbl-cmp-sn-months').textContent = t.cmpSnMonths;
-        if (document.getElementById('lbl-cmp-sn-interest')) document.getElementById('lbl-cmp-sn-interest').textContent = t.cmpSnInterest;
-        if (document.getElementById('lbl-cmp-sn-saved')) document.getElementById('lbl-cmp-sn-saved').textContent = t.cmpSnSaved;
-        if (document.getElementById('lbl-schedule-title')) document.getElementById('lbl-schedule-title').textContent = t.scheduleTitle;
-        if (document.getElementById('th-sch-month')) document.getElementById('th-sch-month').textContent = t.thSchMonth;
-        if (document.getElementById('th-sch-payment')) document.getElementById('th-sch-payment').textContent = t.thSchPayment;
-        if (document.getElementById('th-sch-principal')) document.getElementById('th-sch-principal').textContent = t.thSchPrincipal;
-        if (document.getElementById('th-sch-interest')) document.getElementById('th-sch-interest').textContent = t.thSchInterest;
-        if (document.getElementById('th-sch-remaining')) document.getElementById('th-sch-remaining').textContent = t.thSchRemaining;
-        if (document.getElementById('btn-reset-debts')) document.getElementById('btn-reset-debts').textContent = t.btnResetDebts;
+        
+        const map = {
+            'txt-title': t.title,
+            'lbl-subtitle': t.subtitle,
+            'lbl-import-savings': t.importSavings,
+            'lbl-copy-plan': t.copyPlan,
+            'lbl-print-plan': t.printPlan,
+            'lbl-kpi-total-debt': t.kpiTotalDebt,
+            'lbl-kpi-debtfree-date': t.kpiDebtFreeDate,
+            'lbl-kpi-total-interest': t.kpiTotalInterest,
+            'lbl-kpi-interest-saved': t.kpiInterestSaved,
+            'lbl-strategy-title': t.strategyTitle,
+            'lbl-extra-pay': t.extraPay,
+            'lbl-unit-monthly': t.unitMonthly,
+            'lbl-debt-list-title': t.debtListTitle,
+            'lbl-btn-add-debt': t.btnAddDebt,
+            'td-total-label': t.tdTotalLabel,
+            'lbl-compare-title': t.compareTitle,
+            'lbl-cmp-av-months': t.cmpAvMonths,
+            'lbl-cmp-av-interest': t.cmpAvInterest,
+            'lbl-cmp-av-saved': t.cmpAvSaved,
+            'lbl-cmp-sn-months': t.cmpSnMonths,
+            'lbl-cmp-sn-interest': t.cmpSnInterest,
+            'lbl-cmp-sn-saved': t.cmpSnSaved,
+            'lbl-schedule-title': t.scheduleTitle,
+            'th-sch-month': t.thSchMonth,
+            'th-sch-payment': t.thSchPayment,
+            'th-sch-principal': t.thSchPrincipal,
+            'th-sch-interest': t.thSchInterest,
+            'th-sch-remaining': t.thSchRemaining,
+            'btn-reset-debts': t.btnResetDebts,
+            'strat-av-sub': t.stratAvSub,
+            'strat-sn-sub': t.stratSnSub,
+            'cmp-av-sub': t.cmpAvSub,
+            'cmp-sn-sub': t.cmpSnSub,
+            'lbl-avg-rate': t.avgRateLabel,
+            'lbl-min-pay': t.minPayLabel
+        };
+        for (let id in map) {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = map[id];
+        }
     }
 
     const STORAGE_KEY = 'moneySuperapp.debtCalculator.state.v1';

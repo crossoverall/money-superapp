@@ -115,11 +115,11 @@
       <div class="summary-card ok">
         <div class="sc-label" id="lbl-kpi-savings">เงินออมต่อเดือน (Cash Flow)</div>
         <div class="sc-value" id="kpi-savings">0</div>
-        <div class="sc-sub" id="kpi-savings-rate">0% ออม</div>
+        <div class="sc-sub" id="kpi-savings-rate">0% ' + (LANG === 'en' ? ' saved' : ' ออม')</div>
       </div>
       <div class="summary-card purple">
         <div class="sc-label" id="lbl-kpi-runway">สายป่าน (Runway)</div>
-        <div class="sc-value" id="kpi-runway">0 ด.</div>
+        <div class="sc-value" id="kpi-runway">0 ' + (LANG === 'en' ? ' mo' : ' ด.')</div>
         <div class="sc-sub" id="lbl-kpi-rw-sub">ฉุกเฉินอยู่รอด</div>
       </div>
       <div class="summary-card warn">
@@ -135,7 +135,7 @@
         <div style="font-size:14px; font-weight:700; color:var(--warn);" id="kpi-tax-bracket">0%</div>
       </div>
       <div style="text-align:right;">
-        <div style="font-size:11px; color:var(--ink-faint); font-weight:600;" id="lbl-tax-pay">ประมาณการภาษีที่ต้องจ่าย</div>
+        <div style="font-size:11px; color:var(--ink-faint); font-weight:600;" id="lbl-tax-pay"><span id="lbl-tax-pay">ประมาณการภาษีที่ต้องจ่าย</span></div>
         <div style="font-size:14px; font-weight:700; color:var(--danger);" id="kpi-tax-amount">0 บาท</div>
       </div>
     </div>
@@ -143,12 +143,12 @@
 
   <div class="panel">
     <div class="panel-title" id="lbl-chart-title">
-      แนวโน้มการเติบโต (Trends)
-      <button onclick="saveSnapshot()" class="action-btn" style="padding:4px 8px; font-size:10px;">+ บันทึกเดือนนี้</button>
+      <span id="lbl-chart-title-txt">แนวโน้มการเติบโต (Trends)</span>
+      <button onclick="saveSnapshot()" class="action-btn" style="padding:4px 8px; font-size:10px;"><span id="lbl-btn-snapshot">+ บันทึกเดือนนี้</span></button>
     </div>
     <div style="display:flex; gap:12px; font-size:11px; font-weight:600;">
-      <span style="color:var(--blue);">— Net Worth</span>
-      <span style="color:var(--ok);">--- Savings Rate</span>
+      <span id="btn-chart-nw" style="color:var(--blue);">— Net Worth</span>
+      <span id="btn-chart-sav" style="color:var(--ok);">--- Savings Rate</span>
     </div>
     <div class="chart-container">
       <svg id="svgChart" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
@@ -159,21 +159,21 @@
   <div class="panel">
     <div class="panel-title" id="lbl-history-title">ประวัติที่บันทึกไว้ (History)</div>
     <div id="historyListContainer" style="margin-bottom:12px;"></div>
-    <button onclick="clearHistory()" class="reset-btn" style="width:100%; text-align:center;">ลบประวัติทั้งหมด</button>
+    <button onclick="clearHistory()" class="reset-btn" style="width:100%; text-align:center;"><span id="btn-clear-history">ลบประวัติทั้งหมด</span></button>
   </div>
 
   <div class="panel">
     <div class="panel-title" id="lbl-quick-links">ไปหน้าเครื่องมือ (Tools)</div>
     
-    <div onclick="window.parent.postMessage({action:'switchToTab', key:'1'},'*')" class="quick-link">💰 คำนวณเงินคงเหลือ (Remaining) <span>Alt+1</span></div>
-    <div onclick="window.parent.postMessage({action:'switchToTab', key:'2'},'*')" class="quick-link">📊 Rebalance พอร์ต <span>Alt+2</span></div>
-    <div onclick="window.parent.postMessage({action:'switchToTab', key:'3'},'*')" class="quick-link">📄 จำลองสลิปเงินเดือน <span>Alt+3</span></div>
-    <div onclick="window.parent.postMessage({action:'switchToTab', key:'4'},'*')" class="quick-link">🧾 คำนวณภาษีประจำปี <span>Alt+4</span></div>
-    <div onclick="window.parent.postMessage({action:'switchToTab', key:'6'},'*')" class="quick-link">📈 ตารางบันทึก PVD <span>Alt+6</span></div>
-    <div onclick="window.parent.postMessage({action:'switchToTab', key:'7'},'*')" class="quick-link">📉 วางแผนปลดหนี้ (Debt) <span>Alt+7</span></div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', key:'1'},'*')" class="quick-link"><span id="qc-rem-title">💰 คำนวณเงินคงเหลือ (Remaining)</span> <span>Alt+1</span></div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', key:'2'},'*')" class="quick-link"><span id="qc-rebal-title">📊 Rebalance พอร์ต</span> <span>Alt+2</span></div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', key:'3'},'*')" class="quick-link"><span id="qc-slip-title">📄 จำลองสลิปเงินเดือน</span> <span>Alt+3</span></div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', key:'4'},'*')" class="quick-link"><span id="qc-tax-title">🧾 คำนวณภาษีประจำปี</span> <span>Alt+4</span></div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', key:'6'},'*')" class="quick-link"><span id="qc-pvd-title">📈 ตารางบันทึก PVD</span> <span>Alt+6</span></div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', key:'7'},'*')" class="quick-link"><span id="qc-debt-title">📉 วางแผนปลดหนี้ (Debt)</span> <span>Alt+7</span></div>
   </div>
 
-  <p class="version-tag">Money Superapp v1.3.2</p>
+  <p class="version-tag">Money Superapp v1.3.3</p>
 
 <script>
     const LANG = (function(){ try { return localStorage.getItem('moneySuperapp.lang') || 'th'; } catch(e){ return 'th'; } })();
@@ -182,81 +182,73 @@
     const unit = LANG === 'en' ? 'THB' : 'บาท';
 
     const translations = {
-        th: {
-            title: 'ภาพรวมการเงิน (Financial Dashboard)',
-            subtitle: 'สรุปความมั่งคั่งสุทธิ, สภาพคล่อง, ภาษี, ภาระหนี้สิน และติดตามประวัติการเติบโต',
-            btnSnapshot: 'บันทึกสแนปช็อตเดือนนี้',
-            printDash: '🖨️ พิมพ์',
+                th: {
+            title: 'ภาพรวมการเงิน',
+            subtitle: 'สรุปความมั่งคั่งและประวัติการเติบโต',
+            btnSnapshot: '<span id="lbl-btn-snapshot">+ บันทึกเดือนนี้</span>',
+            printDash: '🖨️',
             kpiNetworth: 'ความมั่งคั่งสุทธิ (Net Worth)',
-            networthSub: 'พอร์ต + สำรอง - หนี้',
-            kpiSavingsRate: 'อัตราการออม (Savings Rate)',
-            savingsSub: 'ออม + ลงทุน/เดือน',
-            kpiRunway: 'เงินสำรองฉุกเฉิน (Runway)',
-            runwaySub: 'เงินสำรองคงเหลือ',
-            kpiTaxDebt: 'ภาษี & ภาระหนี้สิน',
-            taxBracketSub: 'ฐานภาษีสูงสุด',
-            quickNavTitle: 'ทางลัดเครื่องมือคำนวณการเงิน (Calculator Hub)',
-            qcRebalTitle: 'Rebalance พอร์ต',
-            qcRemTitle: 'เงินคงเหลือ & งบ',
-            qcTaxTitle: 'ประมาณการภาษี',
-            qcDebtTitle: 'วางแผนปลดหนี้',
-            qcSlipTitle: 'จำลองสลิปเงินเดือน',
-            qcPvdTitle: 'ภาษี PVD & ชดเชย',
-            historyTitle: 'ประวัติและการเติบโต (Historical Trends)',
-            historySub: 'ติดตามแนวโน้มความมั่งคั่งสุทธิและวินัยทางการเงินรายเดือน',
-            btnChartNw: '💎 ความมั่งคั่งสุทธิ',
-            btnChartSav: '💰 อัตราการออม',
-            btnChartRun: '🛡️ เงินสำรอง',
-            thSnapDate: 'วันที่บันทึก',
-            thSnapNw: 'ความมั่งคั่งสุทธิ (บาท)',
-            thSnapPort: 'พอร์ตลงทุน (บาท)',
-            thSnapRes: 'สำรองฉุกเฉิน (บาท)',
-            thSnapDebt: 'หนี้สิน (บาท)',
-            thSnapRate: 'อัตราออม (%)',
-            btnClearHistory: '🗑️ ล้างประวัติสแนปช็อตทั้งหมด',
-            privacyBadge: '🔒 100% Client-Side Privacy — ทุกตัวเลขประมวลผลบนเครื่องของคุณ',
-            savedSuccess: '✓ บันทึกภาพรวมการเงินประจำเดือนเรียบร้อยแล้ว!',
-            statusHealthy: 'สุขภาพการเงินดีเยี่ยม',
-            statusCaution: 'ควรเพิ่มเงินสำรอง',
-            statusSolid: 'กันชนปลอดภัย'
-        },
-        en: {
+            networthSub: 'สินทรัพย์ - หนี้สิน',
+            kpiSavingsRate: 'เงินออมต่อเดือน (Cash Flow)',
+            savingsSub: 'ออม',
+            kpiRunway: 'สายป่าน (Runway)',
+            runwaySub: 'ฉุกเฉินอยู่รอด',
+            kpiTaxDebt: 'ยอดหนี้รวม (Debt)',
+            taxBracketSub: 'ฐานภาษีปัจจุบัน',
+            taxAmountSub: '<span id="lbl-tax-pay">ประมาณการภาษีที่ต้องจ่าย</span>',
+            quickNavTitle: 'ไปหน้าเครื่องมือ (Tools)',
+            qcRebalTitle: '<span id="qc-rebal-title">📊 Rebalance พอร์ต</span>',
+            qcRemTitle: '<span id="qc-rem-title">💰 คำนวณเงินคงเหลือ (Remaining)</span>',
+            qcTaxTitle: '<span id="qc-tax-title">🧾 คำนวณภาษีประจำปี</span>',
+            qcDebtTitle: '<span id="qc-debt-title">📉 วางแผนปลดหนี้ (Debt)</span>',
+            qcSlipTitle: '<span id="qc-slip-title">📄 จำลองสลิปเงินเดือน</span>',
+            qcPvdTitle: '<span id="qc-pvd-title">📈 ตารางบันทึก PVD</span>',
+            historyTitle: 'ประวัติที่บันทึกไว้ (History)',
+            historySub: 'ประวัติการเติบโตของความมั่งคั่ง',
+            btnChartNw: '— Net Worth',
+            btnChartSav: '--- Savings Rate',
+            thSnapDate: 'วันที่',
+            thSnapNw: 'ความมั่งคั่ง',
+            thSnapPort: 'พอร์ตลงทุน',
+            thSnapRes: 'เงินฉุกเฉิน',
+            thSnapDebt: 'หนี้สิน',
+            thSnapRate: 'อัตราออม',
+            btnClearHistory: '<span id="btn-clear-history">ลบประวัติทั้งหมด</span>',
+            chartTitle: '<span id="lbl-chart-title-txt">แนวโน้มการเติบโต (Trends)</span>'
+        },,
+                en: {
             title: 'Financial Dashboard',
-            subtitle: 'Birds-eye overview of Net Worth, Cash Flow, Taxes, Debt, and Historical Trends',
-            btnSnapshot: 'Record Monthly Snapshot',
-            printDash: '🖨️ Print',
-            kpiNetworth: 'Total Net Worth',
-            networthSub: 'Portfolio + Cash - Debt',
-            kpiSavingsRate: 'Savings Rate',
-            savingsSub: 'Saved + Invested / mo',
+            subtitle: 'Overview of Net Worth and Historical Growth',
+            btnSnapshot: '+ Save Snapshot',
+            printDash: '🖨️',
+            kpiNetworth: 'Net Worth',
+            networthSub: 'Assets - Liabilities',
+            kpiSavingsRate: 'Monthly Cash Flow',
+            savingsSub: 'saved',
             kpiRunway: 'Emergency Runway',
-            runwaySub: 'Liquid Cash Buffer',
-            kpiTaxDebt: 'Tax & Debt Status',
-            taxBracketSub: 'Top Marginal Bracket',
-            quickNavTitle: 'Financial Calculator Hub',
-            qcRebalTitle: 'Rebalance Calculator',
-            qcRemTitle: 'Remaining Money & Budget',
-            qcTaxTitle: 'Income Tax Estimation',
-            qcDebtTitle: 'Debt Payoff Calculator',
-            qcSlipTitle: 'Payslip Simulator',
-            qcPvdTitle: 'PVD Tax Calculator',
-            historyTitle: 'Historical Trends & Analytics',
-            historySub: 'Track Net Worth growth and savings discipline over time',
-            btnChartNw: '💎 Net Worth',
-            btnChartSav: '💰 Savings Rate',
-            btnChartRun: '🛡️ Emergency Reserve',
-            thSnapDate: 'Snapshot Date',
-            thSnapNw: 'Net Worth (THB)',
-            thSnapPort: 'Portfolio (THB)',
-            thSnapRes: 'Emergency Reserve (THB)',
-            thSnapDebt: 'Debt Balance (THB)',
-            thSnapRate: 'Savings Rate (%)',
-            btnClearHistory: '🗑️ Clear All Snapshots',
-            privacyBadge: '🔒 100% Client-Side Privacy — All calculations stored locally on your device',
-            savedSuccess: '✓ Monthly snapshot recorded successfully!',
-            statusHealthy: 'Healthy Net Worth',
-            statusCaution: 'Build Emergency Buffer',
-            statusSolid: 'Solid Safety Margin'
+            runwaySub: 'Liquid Survival',
+            kpiTaxDebt: 'Total Debt Balance',
+            taxBracketSub: 'Current Tax Bracket',
+            taxAmountSub: 'Est. Tax Payable',
+            quickNavTitle: 'Tools & Calculators',
+            qcRebalTitle: '📊 Rebalance Portfolio',
+            qcRemTitle: '💰 Remaining Money & Budget',
+            qcTaxTitle: '🧾 Income Tax Estimation',
+            qcDebtTitle: '📉 Debt Payoff Calculator',
+            qcSlipTitle: '📄 Payslip Simulator',
+            qcPvdTitle: '📈 PVD Tracking Table',
+            historyTitle: 'Historical History',
+            historySub: 'Track Net Worth growth over time',
+            btnChartNw: '— Net Worth',
+            btnChartSav: '--- Savings Rate',
+            thSnapDate: 'Date',
+            thSnapNw: 'Net Worth',
+            thSnapPort: 'Portfolio',
+            thSnapRes: 'Reserve',
+            thSnapDebt: 'Debt',
+            thSnapRate: 'Save Rate',
+            btnClearHistory: 'Clear All History',
+            chartTitle: 'Growth Trends'
         }
     };
 
