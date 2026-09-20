@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="1.1.0">
+<meta name="version" content="1.1.1">
 <meta name="theme-color" content="#0d9488">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,75 +16,252 @@
 <style>
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
-  body { height: 100vh; height: 100dvh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Prompt", Helvetica, Arial, sans-serif; background: #f4f5f7; display: flex; flex-direction: column; }
+  body {
+    height: 100vh;
+    height: 100dvh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Prompt", Helvetica, Arial, sans-serif;
+    background: #f4f5f7;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 
   /* Full-bleed dark background bar; its content is capped and centered so tabs
      don't stretch into huge gaps on ultra-wide monitors. */
   .topbar { flex: 0 0 auto; background: #1f2937; }
   .topbar-inner {
-    max-width: 1280px; margin: 0 auto; display: flex; align-items: stretch;
+    max-width: 1280px; margin: 0 auto; display: flex; align-items: stretch; justify-content: space-between;
   }
 
-  /* Tabs scroll horizontally instead of wrapping, so the bar's height never
-     changes with screen width (that's what keeps the iframe below sized right). */
-  nav { display: flex; flex: 1 1 auto; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  nav button {
+  /* Mobile brand / logo (hidden on desktop) */
+  .topbar-brand {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 12px;
+    color: #f8fafc;
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+    user-select: none;
+  }
+  .brand-icon { font-size: 18px; line-height: 1; }
+  .brand-title { letter-spacing: -0.01em; }
+
+  /* Desktop Tabs scroll horizontally instead of wrapping */
+  .top-nav { display: flex; flex: 1 1 auto; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .top-nav button {
     flex: 0 0 auto; white-space: nowrap; padding: 14px 16px; border: none; background: none;
     color: #cbd5e1; font-size: 14px; cursor: pointer; border-bottom: 3px solid transparent;
-    font-family: inherit;
+    font-family: inherit; transition: background 0.15s, color 0.15s;
   }
-  nav button:hover { background: #374151; }
-  nav button.active { color: #fff; border-bottom-color: #38bdf8; background: #111827; }
+  .top-nav button:hover { background: #374151; }
+  .top-nav button.active { color: #fff; border-bottom-color: #38bdf8; background: #111827; font-weight: 600; }
+
+  .topbar-actions {
+    display: flex; align-items: center; flex: 0 0 auto;
+  }
 
   .lang-toggle, .theme-toggle {
-    display: flex; align-items: center; gap: 4px; padding: 0 10px; flex: 0 0 auto;
+    display: flex; align-items: center; gap: 4px; padding: 0 8px; flex: 0 0 auto;
   }
   .theme-toggle { border-left: 1px solid #374151; }
   .version-badge {
-    flex: 0 0 auto; padding: 0 10px; font-size: 11px; font-weight: 600;
+    flex: 0 0 auto; padding: 0 8px; font-size: 11px; font-weight: 600;
     color: #94a3b8; letter-spacing: 0.05em; align-self: center;
   }
   .lang-toggle button, .theme-toggle button {
     border: 1px solid #4b5563; background: none; color: #cbd5e1; white-space: nowrap;
-    font-size: 12px; font-weight: 700; padding: 8px 12px; border-radius: 999px; cursor: pointer;
-    font-family: inherit;
+    font-size: 12px; font-weight: 700; padding: 7px 11px; border-radius: 999px; cursor: pointer;
+    font-family: inherit; display: inline-flex; align-items: center; justify-content: center;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
   }
+  .lang-toggle button:hover, .theme-toggle button:hover { background: #374151; }
   .lang-toggle button.active, .theme-toggle button.active { background: #38bdf8; color: #0f172a; border-color: #38bdf8; }
 
+  #btn-settings-modal {
+    background: none; border: 1px solid #4b5563; color: #cbd5e1; padding: 6px 12px;
+    border-radius: 999px; cursor: pointer; font-size: 12px; font-weight: 700;
+    margin: auto 8px auto 2px; display: inline-flex; align-items: center; gap: 4px;
+    font-family: inherit; transition: background 0.15s;
+  }
+  #btn-settings-modal:hover { background: #374151; }
+
   iframe { display: block; width: 100%; flex: 1 1 auto; border: none; background: #fff; }
+
+  /* Privacy Footer Notice */
+  .privacy-bar {
+    flex: 0 0 auto; background: #111827; color: #94a3b8; font-size: 11px;
+    padding: 6px 16px; display: flex; justify-content: space-between; align-items: center;
+    border-top: 1px solid #374151;
+  }
+
+  /* Mobile Bottom Navigation Bar (hidden on desktop) */
+  .bottom-nav {
+    display: none;
+    background: #1f2937;
+    border-top: 1px solid #374151;
+    flex: 0 0 auto;
+    z-index: 100;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* Mobile / Narrow Screen Optimizations (<= 768px) */
+  @media (max-width: 768px) {
+    .top-nav { display: none !important; }
+    .topbar-brand { display: flex; }
+    .version-badge { display: none; }
+    .privacy-bar { display: none; }
+
+    .topbar-inner {
+      height: 48px;
+      padding: 0 6px 0 10px;
+    }
+    .topbar-brand {
+      padding: 0;
+      font-size: 13.5px;
+    }
+
+    .lang-toggle {
+      padding: 0 4px;
+      gap: 3px;
+    }
+    .lang-toggle button {
+      padding: 4px 7px;
+      font-size: 11px;
+    }
+
+    .theme-toggle {
+      padding: 0 4px;
+      gap: 3px;
+      border-left: 1px solid #374151;
+    }
+    .theme-toggle button {
+      padding: 4px 6px;
+      font-size: 12px;
+    }
+    .theme-text { display: none; }
+
+    #btn-settings-modal {
+      padding: 4px 8px;
+      font-size: 13px;
+      margin: auto 4px auto 2px;
+    }
+    #lbl-settings-btn { display: none; }
+
+    .bottom-nav {
+      display: flex;
+      align-items: stretch;
+      justify-content: space-around;
+      height: 56px;
+      padding-bottom: env(safe-area-inset-bottom, 0);
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.35);
+    }
+    .bottom-nav button {
+      flex: 1 1 0;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      padding: 6px 2px 4px;
+      color: #94a3b8;
+      cursor: pointer;
+      font-family: inherit;
+      border-top: 3px solid transparent;
+      transition: all 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .bottom-nav button:active {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .bottom-nav button.active {
+      color: #38bdf8;
+      border-top-color: #38bdf8;
+      background: #111827;
+    }
+    .bottom-nav button .b-icon {
+      font-size: 18px;
+      line-height: 1.1;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .bottom-nav button .b-label {
+      font-size: 10px;
+      font-weight: 600;
+      line-height: 1.1;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      max-width: 100%;
+    }
+  }
 </style>
 </head>
 <body>
 <div class="topbar">
  <div class="topbar-inner">
-  <nav>
+  <div class="topbar-brand">
+    <span class="brand-icon">💰</span>
+    <span class="brand-title">Money Superapp</span>
+  </div>
+  <nav class="top-nav" aria-label="Desktop Navigation">
     <button class="active" data-src="rebalance.html" data-tab="rebalance" data-th="คำนวณ Rebalance" data-en="Rebalance Calculator">คำนวณ Rebalance</button>
     <button data-src="months-slips.html" data-tab="months-slips" data-th="จำลองสลิปเงินเดือน" data-en="Payslip Simulator">จำลองสลิปเงินเดือน</button>
     <button data-src="tax-calculator-base.html" data-tab="tax-calculator-base" data-th="ประมาณการภาษีเงินได้" data-en="Income Tax Estimation">ประมาณการภาษีเงินได้</button>
     <button data-src="tax-calculator.html" data-tab="tax-calculator" data-th="คำนวณภาษี PVD" data-en="PVD Tax Calculator">คำนวณภาษี PVD</button>
     <button data-src="remaining-money.html" data-tab="remaining-money" data-th="คำนวณเงินคงเหลือ" data-en="Remaining Money">คำนวณเงินคงเหลือ</button>
   </nav>
-  <div class="lang-toggle">
-    <button data-lang="th">TH</button>
-    <button data-lang="en">EN</button>
+  <div class="topbar-actions">
+    <div class="lang-toggle">
+      <button data-lang="th">TH</button>
+      <button data-lang="en">EN</button>
+    </div>
+    <div class="theme-toggle">
+      <button data-theme-btn="light" data-th="สว่าง" data-en="Light" title="Light Theme"><span class="theme-icon">☀</span><span class="theme-text"> Light</span></button>
+      <button data-theme-btn="dark" data-th="มืด" data-en="Dark" title="Dark Theme"><span class="theme-icon">☾</span><span class="theme-text"> Dark</span></button>
+    </div>
+    <span class="version-badge">v1.1</span>
+    <button id="btn-settings-modal" onclick="openSettingsModal()" title="Data & Backup Management">
+      ⚙️ <span id="lbl-settings-btn">ข้อมูล</span>
+    </button>
   </div>
-  <div class="theme-toggle">
-    <button data-theme-btn="light" data-th="☀ สว่าง" data-en="☀ Light">☀ Light</button>
-    <button data-theme-btn="dark" data-th="☾ มืด" data-en="☾ Dark">☾ Dark</button>
-  </div>
-  <span class="version-badge">v1.1</span>
-  <button id="btn-settings-modal" onclick="openSettingsModal()" title="Data & Backup Management" style="background: none; border: 1px solid #4b5563; color: #cbd5e1; padding: 6px 12px; border-radius: 999px; cursor: pointer; font-size: 12px; font-weight: 700; margin: auto 6px auto 0; display: flex; align-items: center; gap: 4px; font-family: inherit;">
-    ⚙️ <span id="lbl-settings-btn">ข้อมูล</span>
-  </button>
  </div>
 </div>
 <iframe id="app" src="rebalance.html"></iframe>
 
 <!-- Privacy Footer Notice -->
-<div class="privacy-bar" style="flex: 0 0 auto; background: #111827; color: #94a3b8; font-size: 11px; padding: 6px 16px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #374151;">
+<div class="privacy-bar">
   <span id="lbl-privacy-footer">🔒 100% Client-Side Privacy — ทุกการคำนวณและข้อมูลถูกเก็บไว้ในอุปกรณ์ของคุณเท่านั้น ไม่มีการส่งข้อมูลสู่เซิร์ฟเวอร์</span>
   <span style="color: #64748b; font-size: 10px;">Money Superapp v1.1</span>
 </div>
+
+<!-- Mobile Bottom Navigation Bar (Visible on Mobile <= 768px) -->
+<nav class="bottom-nav" id="bottomNav" aria-label="Mobile Navigation">
+  <button class="active" data-tab="rebalance" data-src="rebalance.html" data-th="Rebalance" data-en="Rebalance" title="Rebalance Calculator">
+    <span class="b-icon">⚖️</span>
+    <span class="b-label">Rebalance</span>
+  </button>
+  <button data-tab="months-slips" data-src="months-slips.html" data-th="สลิป" data-en="Payslip" title="Payslip Simulator">
+    <span class="b-icon">📑</span>
+    <span class="b-label">สลิป</span>
+  </button>
+  <button data-tab="tax-calculator-base" data-src="tax-calculator-base.html" data-th="ภาษี" data-en="Tax" title="Income Tax Estimation">
+    <span class="b-icon">🧾</span>
+    <span class="b-label">ภาษี</span>
+  </button>
+  <button data-tab="tax-calculator" data-src="tax-calculator.html" data-th="PVD" data-en="PVD" title="PVD Tax Calculator">
+    <span class="b-icon">💼</span>
+    <span class="b-label">PVD</span>
+  </button>
+  <button data-tab="remaining-money" data-src="remaining-money.html" data-th="คงเหลือ" data-en="Remaining" title="Remaining Money">
+    <span class="b-icon">💰</span>
+    <span class="b-label">คงเหลือ</span>
+  </button>
+</nav>
 
 <!-- Settings & Data Management Modal -->
 <div id="settingsModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.65); z-index: 9999; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(2px);">
@@ -141,7 +318,9 @@
 </div>
 <script>
   const frame = document.getElementById('app');
-  const navButtons = document.querySelectorAll('nav button');
+  const topNavButtons = document.querySelectorAll('.top-nav button');
+  const bottomNavButtons = document.querySelectorAll('.bottom-nav button');
+  const allNavButtons = document.querySelectorAll('button[data-tab]');
   const langButtons = document.querySelectorAll('.lang-toggle button');
   const themeButtons = document.querySelectorAll('.theme-toggle button');
 
@@ -184,12 +363,25 @@
   function getTheme(){ try { return localStorage.getItem('moneySuperapp.theme') || 'light'; } catch(e){ return 'light'; } }
   function applyLang(lang){
     langButtons.forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
-    navButtons.forEach(b => b.textContent = b.dataset[lang]);
-    themeButtons.forEach(b => b.textContent = b.dataset[lang]);
+    topNavButtons.forEach(b => { if (b.dataset[lang]) b.textContent = b.dataset[lang]; });
+    bottomNavButtons.forEach(b => {
+      const label = b.querySelector('.b-label');
+      if (label && b.dataset[lang]) label.textContent = b.dataset[lang];
+    });
+    themeButtons.forEach(b => {
+      const textSpan = b.querySelector('.theme-text');
+      if (textSpan && b.dataset[lang]) {
+        textSpan.textContent = ' ' + b.dataset[lang];
+      } else if (b.dataset[lang]) {
+        b.textContent = b.dataset[lang];
+      }
+    });
     document.documentElement.lang = lang;
-    const activeBtn = document.querySelector('nav button.active');
+    const activeBtn = document.querySelector('.top-nav button.active') || document.querySelector('.bottom-nav button.active');
     if (activeBtn) {
-      document.title = 'Money Superapp — ' + (activeBtn.dataset[lang] || activeBtn.textContent);
+      const desktopBtn = document.querySelector('.top-nav button[data-tab="' + activeBtn.dataset.tab + '"]');
+      const titleText = (desktopBtn && desktopBtn.dataset[lang]) || activeBtn.dataset[lang] || activeBtn.textContent;
+      document.title = 'Money Superapp — ' + titleText;
     }
     const t = translations[lang] || translations.th;
     if(document.getElementById('lbl-settings-btn')) document.getElementById('lbl-settings-btn').textContent = t.settingsBtn;
@@ -291,19 +483,26 @@
   }
 
   function activateTab(tabIdOrSrc, updateHash = true) {
-    const btn = Array.from(navButtons).find(b => b.dataset.tab === tabIdOrSrc || b.dataset.src === tabIdOrSrc) || navButtons[0];
-    const currentActive = document.querySelector('nav button.active');
-    if (currentActive) currentActive.classList.remove('active');
-    btn.classList.add('active');
-    if (frame.getAttribute('src') !== btn.dataset.src) {
-      frame.src = btn.dataset.src;
+    const target = Array.from(allNavButtons).find(b => b.dataset.tab === tabIdOrSrc || b.dataset.src === tabIdOrSrc) || allNavButtons[0];
+    const activeTab = target.dataset.tab;
+    const targetSrc = target.dataset.src;
+
+    allNavButtons.forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === activeTab);
+    });
+
+    if (frame.getAttribute('src') !== targetSrc) {
+      frame.src = targetSrc;
     }
-    const tabKey = btn.dataset.tab;
+
     const lang = getLang();
-    document.title = 'Money Superapp — ' + (btn.dataset[lang] || btn.textContent);
-    try { localStorage.setItem('moneySuperapp.activeTab', tabKey); } catch(e){}
-    if (updateHash && window.location.hash !== '#' + tabKey) {
-      history.replaceState(null, '', '#' + tabKey);
+    const desktopBtn = document.querySelector('.top-nav button[data-tab="' + activeTab + '"]');
+    const titleText = (desktopBtn && desktopBtn.dataset[lang]) || target.dataset[lang] || activeTab;
+    document.title = 'Money Superapp — ' + titleText;
+
+    try { localStorage.setItem('moneySuperapp.activeTab', activeTab); } catch(e){}
+    if (updateHash && window.location.hash !== '#' + activeTab) {
+      history.replaceState(null, '', '#' + activeTab);
     }
   }
 
@@ -318,7 +517,7 @@
     }
   });
 
-  navButtons.forEach(btn => {
+  allNavButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       activateTab(btn.dataset.tab, true);
     });
