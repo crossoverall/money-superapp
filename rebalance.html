@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="version" content="0.1.0">
 <title>คำนวณการเติมเงินรายเดือน</title>
 <style>
   :root{
@@ -180,6 +181,8 @@
     text-decoration: underline; cursor:pointer; padding:0;
   }
   .save-status .reset-btn:hover{ color: var(--satellite); }
+
+  .version-tag{ font-size: 10px; color: var(--ink-faint); text-align: center; margin-top: 14px; }
 </style>
 </head>
 <body>
@@ -211,6 +214,7 @@
     <span id="saveStatus">&nbsp;</span>
     <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
   </div>
+  <p class="version-tag">v0.1</p>
 
 <script>
 // Language: read once from localStorage (shared origin with the shell nav's toggle).

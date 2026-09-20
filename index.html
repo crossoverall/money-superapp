@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="version" content="0.1.0">
 <meta name="description" content="Money Superapp — four financial calculators (rebalance, payslip simulator, income tax, PVD tax) in Thai and English with light/dark theme.">
 <title>Money Superapp</title>
 <style>
@@ -31,6 +32,10 @@
     display: flex; align-items: center; gap: 4px; padding: 0 10px; flex: 0 0 auto;
   }
   .theme-toggle { border-left: 1px solid #374151; }
+  .version-badge {
+    flex: 0 0 auto; padding: 0 10px; font-size: 11px; font-weight: 600;
+    color: #94a3b8; letter-spacing: 0.05em;
+  }
   .lang-toggle button, .theme-toggle button {
     border: 1px solid #4b5563; background: none; color: #cbd5e1; white-space: nowrap;
     font-size: 12px; font-weight: 700; padding: 8px 12px; border-radius: 999px; cursor: pointer;
@@ -57,6 +62,7 @@
     <button data-theme-btn="light" data-th="☀ สว่าง" data-en="☀ Light">☀ Light</button>
     <button data-theme-btn="dark" data-th="☾ มืด" data-en="☾ Dark">☾ Dark</button>
   </div>
+  <span class="version-badge">v0.1</span>
  </div>
 </div>
 <iframe id="app" src="rebalance.html"></iframe>
