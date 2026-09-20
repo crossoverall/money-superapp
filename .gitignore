@@ -1,0 +1,19 @@
+# Local config / OS files
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build / dependency dirs (if any are ever added)
+node_modules/
+dist/
+build/

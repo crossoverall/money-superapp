@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="จำลองสลิปเงินเดือนรวมโบนัส — คำนวณรายได้ ภาษี เงินสมทบประกันสังคม และกองทุนสำรองเลี้ยงชีพ per เดือน">
     <title>จำลองสลิปเงินเดือน (รวมโบนัส)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -167,10 +168,10 @@
                 'lbl-basicSalary': 'Basic Salary',
                 'lbl-slipAllowance': 'Allowance',
                 'lbl-taxPeriod': 'Tax this period',
-                'lbl-ssoAmount': 'SS EE Contrib Amount',
-                'lbl-pvdAmount': 'PF EE Contrib Amount',
+                'lbl-ssoAmount': 'Social Security Contrib. (SSO)',
+                'lbl-pvdAmount': 'PF Contrib. (Employee)',
                 'lbl-totalGross': 'Total Gross',
-                'lbl-totalDedns': 'Total Dedns',
+                'lbl-totalDedns': 'Total Deductions',
                 'lbl-netPayment': 'NET PAYMENT',
                 'lbl-breakdownTitle': 'Tax breakdown by bracket (annual)',
             };
@@ -238,7 +239,7 @@
             const unit = LANG === 'en' ? 'THB' : 'บาท';
             document.getElementById('taxBreakdown').innerHTML = breakdown.map(b => {
                 const label = LANG === 'en' ? b.bracket.labelEn : b.bracket.labelTh;
-                return `<div class="flex justify-between"><span>${label} (${(b.bracket.rate * 100).toFixed(0)}%)</span><span class="font-medium">${b.tax.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${unit}</span></div>`;
+                return `<div class="flex justify-between"><span>${label} (${(b.bracket.rate * 100).toFixed(0)}%)</span><span class="font-medium">${b.tax.toLocaleString(LANG === 'en' ? 'en-US' : 'th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${unit}</span></div>`;
             }).join('');
 
             // เฉลี่ยภาษีเป็นรายเดือน (ระบบ Payroll ส่วนใหญ่จะเกลี่ยภาษีโบนัสหาร 12 เดือน เพื่อไม่ให้พนักงานจ่ายหนักเดือนเดียว)
@@ -247,7 +248,7 @@
             const totalDeductions = sso + pvd + monthlyTax;
             const netPayout = monthlyEarnings - totalDeductions;
 
-            const fmt = (num) => num.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const fmt = (num) => num.toLocaleString(LANG === 'en' ? 'en-US' : 'th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
             // อัปเดตยอดรายเดือน (Monthly Slip)
             document.getElementById('out-salary').innerText = fmt(salary);

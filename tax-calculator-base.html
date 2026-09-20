@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="คำนวณภาษีเงินได้บุคคลธรรมดา — ประมาณการภาษีเงินได้จากเงินเดือนและโบนัส พร้อมแสดงรายละเอียดตามขั้นบันได">
     <title>คำนวณภาษีเงินได้บุคคลธรรมดา</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -128,7 +129,7 @@
         }
 
         function formatMoney(amount) {
-            return amount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            return amount.toLocaleString(LANG === 'en' ? 'en-US' : 'th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
         function calculateTax() {

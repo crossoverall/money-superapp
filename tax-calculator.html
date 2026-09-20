@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="คำนวณภาษีเงินชดเชยและเงินสะสมกองทุนสำรองเลี้ยงชีพ (PVD) — ครอบคลุมสมาชิกไม่เกิน 5 ปี, 5 ปีขึ้นไปอายุไม่ถึง 55, และ 5 ปีขึ้นไปอายุ 55 ปีขึ้นไป">
   <title>คำนวณภาษีเงินชดเชย + PVD</title>
   <style>
     :root{
@@ -454,7 +455,6 @@
       </div>
       <button class="reset-btn" onclick="reset()" id="btn-reset">ล้างข้อมูล</button>
     </div>
-    <p style="text-align:center;font-size:0.72rem;color:#cbd5e1;margin-top:20px;">v1.0.0</p>
   </div>
 
   <script>
@@ -545,7 +545,7 @@
     setTab(0);
 
     function fmt(n) {
-      return n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + unit;
+      return n.toLocaleString(LANG === 'en' ? 'en-US' : 'th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + unit;
     }
 
     function progressiveTax(income) {
