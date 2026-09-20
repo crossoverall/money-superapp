@@ -179,22 +179,24 @@
     .version-tag{ font-size: 10px; color: var(--ink-faint); text-align: center; margin-top: 14px; }
 
     .summary-strip{
-      display:flex; gap: 10px; margin-bottom: 18px;
+      display:flex; gap: 8px; margin-bottom: 18px;
     }
     .summary-card{
-      flex:1; background: var(--panel); border: 1px solid var(--line);
-      border-radius: 14px; padding: 12px 14px;
+      flex:1; min-width: 0; background: var(--panel); border: 1px solid var(--line);
+      border-radius: 14px; padding: 11px 10px;
     }
     .summary-card .sc-label{
-      font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em;
-      color: var(--ink-faint); font-weight:700;
+      font-size: 10px; text-transform: uppercase; letter-spacing: .06em;
+      color: var(--ink-faint); font-weight:700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .summary-card .sc-value{
-      font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums;
-      margin-top: 2px;
+      font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums;
+      margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .summary-card.income .sc-value{ color: var(--core); }
     .summary-card.expense .sc-value{ color: var(--warn); }
+    .summary-card.saving .sc-value{ color: #2563eb; }
+    :root[data-theme="dark"] .summary-card.saving .sc-value{ color: #60a5fa; }
 
     .rebalance-bridge-btn {
       margin-top: 14px;
@@ -240,6 +242,10 @@
       <div class="sc-label" id="scExpenseLabel">รวมค่าใช้จ่าย</div>
       <div class="sc-value" id="scExpenseValue">0 บาท</div>
     </div>
+    <div class="summary-card saving">
+      <div class="sc-label" id="scSavingLabel">รวมเงินออม</div>
+      <div class="sc-value" id="scSavingValue">0 บาท</div>
+    </div>
   </div>
 
   <div class="panel">
@@ -254,14 +260,20 @@
     <button class="add-btn" id="expenseAddBtn">+ เพิ่มค่าใช้จ่าย</button>
   </div>
 
+  <div class="panel">
+    <div class="panel-title" id="savingPanelTitle">เงินออม</div>
+    <div id="savingContainer"></div>
+    <button class="add-btn" id="savingAddBtn">+ เพิ่มเงินออม</button>
+  </div>
+
   <div class="results" id="resultsContainer"></div>
 
   <div class="remaining-box" id="remainingBox">
-    <div class="rlabel" id="remainingLabel">เงินคงเหลือ</div>
+    <div class="rlabel" id="remainingLabel">เงินคงเหลือสำหรับลงทุน</div>
     <div class="rvalue zero" id="remainingValue">0 บาท</div>
     <div class="rnote" id="remainingNote">&nbsp;</div>
     <button class="rebalance-bridge-btn" id="bridgeToRebalanceBtn" style="display:none;" onclick="sendToRebalance()">
-      📊 <span id="lblBridgeBtn">นำเงินคงเหลือไปคำนวณ Rebalance</span>
+      📊 <span id="lblBridgeBtn">นำเงินเหลือลงทุนไปคำนวณ Rebalance</span>
     </button>
   </div>
 
@@ -282,7 +294,7 @@
     <span id="saveStatus">&nbsp;</span>
     <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
   </div>
-  <p class="version-tag">v1.2.0</p>
+  <p class="version-tag">v1.2.1</p>
 
 <script>
 // ── Language ──────────────────────────────────────────────────────────────
@@ -296,28 +308,33 @@ const EN = {
   subtitle: 'Log income and expenses, then see how much is left each month — enter a salary and tax + social security are calculated automatically.',
   incomePanelTitle: 'Income',
   expensePanelTitle: 'Expenses',
+  savingPanelTitle: 'Savings',
   scIncomeLabel: 'Total Income',
   scExpenseLabel: 'Total Expenses',
+  scSavingLabel: 'Total Savings',
   scIncomeValue: '0 THB',
   scExpenseValue: '0 THB',
+  scSavingValue: '0 THB',
   addIncome: '+ Add income',
   addExpense: '+ Add expense',
-  remainingLabel: 'Remaining',
-  remainingNote: 'Income minus expenses',
-  remainingPositive: 'You have money left over this month.',
-  remainingNegative: 'Expenses exceed income — review your spending.',
-  remainingZero: 'Income and expenses are balanced.',
+  addSaving: '+ Add savings',
+  remainingLabel: 'Remaining for Investment',
+  remainingNote: 'Income minus expenses and savings',
+  remainingPositive: 'You have money left over for investment this month.',
+  remainingNegative: 'Expenses and savings exceed income — review your spending.',
+  remainingZero: 'Income, expenses, and savings are balanced.',
   resetBtn: 'Clear saved data',
   lastSaved: t => `Last saved ${t}`,
   resetConfirm: 'Clear the data saved in this browser and go back to defaults?',
   incomeDefaultName: n => `Income ${n}`,
   expenseDefaultName: n => `Expense ${n}`,
+  savingDefaultName: n => `Savings ${n}`,
   autoTaxName: 'Estimated Income Tax',
   autoSSOName: 'Social Security (SSO)',
   autoPvdName: 'Provident Fund (PVD)',
   pvdLabel: 'PVD',
   pvdPlaceholder: 'e.g. 5',
-  lblBridgeBtn: 'Send remaining money to Rebalance',
+  lblBridgeBtn: 'Send investable money to Rebalance',
   bridgeAlertDefault: '✓ Data imported successfully',
   runwayTitle: '🛡️ Emergency Runway',
   runwayUnit: 'months',
@@ -330,6 +347,7 @@ const T = {
   th: {
     scIncomeValue: n => `${n} บาท`,
     scExpenseValue: n => `${n} บาท`,
+    scSavingValue: n => `${n} บาท`,
     remainingValue: n => `${n} บาท`,
     remainingPositive: 'เหลือเงินในเดือนนี้',
     remainingNegative: 'ใช้จ่ายเกินรายได้ — ลดค่าใช้จ่ายหรือเพิ่มรายได้',
@@ -350,10 +368,12 @@ const T = {
     lastSaved: t => `บันทึกล่าสุด ${t}`,
     incomeBreakdown: 'รายได้แต่ละรายการ',
     expenseBreakdown: 'ค่าใช้จ่ายแต่ละรายการ',
+    savingBreakdown: 'เงินออมแต่ละรายการ',
   },
   en: {
     scIncomeValue: n => `${n} THB`,
     scExpenseValue: n => `${n} THB`,
+    scSavingValue: n => `${n} THB`,
     remainingValue: n => `${n} THB`,
     remainingPositive: 'Money left over this month',
     remainingNegative: 'Expenses exceed income — review spending or boost income',
@@ -374,6 +394,7 @@ const T = {
     lastSaved: t => `Last saved ${t}`,
     incomeBreakdown: 'Income breakdown',
     expenseBreakdown: 'Expense breakdown',
+    savingBreakdown: 'Savings breakdown',
   },
 };
 function t(key, ...args){
@@ -384,17 +405,21 @@ function t(key, ...args){
 
 if(LANG === 'en'){
   document.title = 'Remaining Money Calculator';
-  ['eyebrow','pageTitle','subtitle','incomePanelTitle','expensePanelTitle',
-   'scIncomeLabel','scExpenseLabel','remainingLabel','remainingNote'].forEach(id => {
+  ['eyebrow','pageTitle','subtitle','incomePanelTitle','expensePanelTitle','savingPanelTitle',
+   'scIncomeLabel','scExpenseLabel','scSavingLabel','remainingLabel','remainingNote'].forEach(id => {
     const el = document.getElementById(id);
     if(el && EN[id]) el.textContent = EN[id];
   });
   document.getElementById('incomeAddBtn').textContent = EN.addIncome;
   document.getElementById('expenseAddBtn').textContent = EN.addExpense;
+  const savAddBtn = document.getElementById('savingAddBtn');
+  if (savAddBtn) savAddBtn.textContent = EN.addSaving;
   document.getElementById('resetBtn').textContent = EN.resetBtn;
   document.getElementById('remainingNote').textContent = EN.remainingNote;
   document.getElementById('scIncomeValue').textContent = EN.scIncomeValue;
   document.getElementById('scExpenseValue').textContent = EN.scExpenseValue;
+  const scSavVal = document.getElementById('scSavingValue');
+  if (scSavVal) scSavVal.textContent = EN.scSavingValue;
   document.getElementById('remainingValue').textContent = EN.scIncomeValue;
   const bridgeLbl = document.getElementById('lblBridgeBtn');
   if (bridgeLbl) bridgeLbl.textContent = EN.lblBridgeBtn;
@@ -421,6 +446,8 @@ const CANONICAL_NAMES = {
   'Electricity': { th: 'ค่าไฟฟ้า', en: 'Electricity' },
   'ค่าน้ำ': { th: 'ค่าน้ำ', en: 'Water' },
   'Water': { th: 'ค่าน้ำ', en: 'Water' },
+  'เงินออมฉุกเฉิน / เงินสำรอง': { th: 'เงินออมฉุกเฉิน / เงินสำรอง', en: 'Emergency Savings / Reserve' },
+  'Emergency Savings / Reserve': { th: 'เงินออมฉุกเฉิน / เงินสำรอง', en: 'Emergency Savings / Reserve' },
   'เงินชดเชยและ PVD สุทธิ': { th: 'เงินชดเชยและ PVD สุทธิ', en: 'Net Severance & PVD Payout' },
   'เงินชดเชย & PVD สุทธิ': { th: 'เงินชดเชยและ PVD สุทธิ', en: 'Net Severance & PVD Payout' },
   'Net Severance & PVD Payout': { th: 'เงินชดเชยและ PVD สุทธิ', en: 'Net Severance & PVD Payout' }
@@ -461,6 +488,9 @@ const defaultState = {
     { name: 'ค่าไฟฟ้า', value: 500 },
     { name: 'ค่าน้ำ', value: 200 },
   ],
+  savings: [
+    { name: 'เงินออมฉุกเฉิน / เงินสำรอง', value: 1000 },
+  ],
 };
 
 const state = (function(){
@@ -490,9 +520,11 @@ const state = (function(){
       if(saved.incomes.length > 0 && !isSalaryRow(saved.incomes[0])){
         saved.incomes[0].name = 'เงินเดือน';
       }
+      const savings = Array.isArray(saved.savings) ? saved.savings : (defaultState.savings ? defaultState.savings.map(s => ({...s})) : []);
       return {
         incomes: Array.isArray(saved.incomes) ? saved.incomes : defaultState.incomes,
         expenses,
+        savings,
       };
     }
   } catch(e){ /* corrupted — fall back to defaults */ }
@@ -502,10 +534,13 @@ const state = (function(){
 // ── DOM refs ───────────────────────────────────────────────────────────────
 const incomeContainer  = document.getElementById('incomeContainer');
 const expenseContainer = document.getElementById('expenseContainer');
+const savingContainer  = document.getElementById('savingContainer');
 const incomeAddBtn     = document.getElementById('incomeAddBtn');
 const expenseAddBtn    = document.getElementById('expenseAddBtn');
+const savingAddBtn     = document.getElementById('savingAddBtn');
 const scIncomeValue    = document.getElementById('scIncomeValue');
 const scExpenseValue   = document.getElementById('scExpenseValue');
+const scSavingValue    = document.getElementById('scSavingValue');
 const remainingBox     = document.getElementById('remainingBox');
 const remainingValue   = document.getElementById('remainingValue');
 const remainingNote    = document.getElementById('remainingNote');
@@ -912,7 +947,7 @@ function renderPvdRow(){
 }
 
 function bindRows(container, type){
-  const items = type === 'income' ? state.incomes : state.expenses;
+  const items = type === 'income' ? state.incomes : type === 'expense' ? state.expenses : state.savings;
 
   // Name input (only editable for non-auto rows)
   container.querySelectorAll('input.name-input:not([readonly])').forEach(inp => {
@@ -920,7 +955,9 @@ function bindRows(container, type){
       const idx = parseInt(e.target.dataset.idx);
       const defaultPlaceholder = type === 'income'
         ? (LANG === 'en' ? `Income ${idx+1}` : `รายได้ ${idx+1}`)
-        : (LANG === 'en' ? `Expense ${idx+1}` : `ค่าใช้จ่าย ${idx+1}`);
+        : type === 'expense'
+        ? (LANG === 'en' ? `Expense ${idx+1}` : `ค่าใช้จ่าย ${idx+1}`)
+        : (LANG === 'en' ? `Savings ${idx+1}` : `เงินออม ${idx+1}`);
       items[idx].name = e.target.value || defaultPlaceholder;
       compute();
     });
@@ -956,16 +993,16 @@ function bindRows(container, type){
         if(!state.incomes.find(item => isSalaryRow(item))){
           state.incomes.unshift({ name: 'เงินเดือน', value: 0 });
         }
-      } else {
+      } else if(type === 'expense'){
         state.expenses.splice(idx, 1);
+      } else if(type === 'saving'){
+        state.savings.splice(idx, 1);
       }
-      createRowContainer(
-        type === 'income' ? state.incomes : state.expenses,
-        type, type === 'income' ? incomeContainer : expenseContainer
-      );
+      const targetContainer = type === 'income' ? incomeContainer : type === 'expense' ? expenseContainer : savingContainer;
+      createRowContainer(items, type, targetContainer);
       // Re-add PVD % row after container rebuild (createRowContainer wipes it)
       if(type === 'income') renderPvdRow();
-      bindRows(type === 'income' ? incomeContainer : expenseContainer, type);
+      bindRows(targetContainer, type);
       compute();
     });
   });
@@ -986,23 +1023,28 @@ function bindRows(container, type){
 function renderRows(){
   createRowContainer(state.incomes, 'income', incomeContainer);
   createRowContainer(state.expenses, 'expense', expenseContainer);
+  if (savingContainer) {
+    if (!Array.isArray(state.savings)) state.savings = [];
+    createRowContainer(state.savings, 'saving', savingContainer);
+    bindRows(savingContainer, 'saving');
+  }
   bindRows(incomeContainer, 'income');
   bindRows(expenseContainer, 'expense');
 }
 
 // ── Add row ────────────────────────────────────────────────────────────────
 function addRow(type){
-  const items = type === 'income' ? state.incomes : state.expenses;
+  const items = type === 'income' ? state.incomes : type === 'expense' ? state.expenses : state.savings;
+  const container = type === 'income' ? incomeContainer : type === 'expense' ? expenseContainer : savingContainer;
   const idx = items.length;
   const defaultName = LANG === 'en'
-    ? (type === 'income' ? `Income ${idx+1}` : `Expense ${idx+1}`)
-    : (type === 'income' ? `รายได้ ${idx+1}` : `ค่าใช้จ่าย ${idx+1}`);
+    ? (type === 'income' ? `Income ${idx+1}` : type === 'expense' ? `Expense ${idx+1}` : `Savings ${idx+1}`)
+    : (type === 'income' ? `รายได้ ${idx+1}` : type === 'expense' ? `ค่าใช้จ่าย ${idx+1}` : `เงินออม ${idx+1}`);
   items.push({ name: defaultName, value: 0 });
-  createRowContainer(items, type, type === 'income' ? incomeContainer : expenseContainer);
+  createRowContainer(items, type, container);
   // Re-add PVD % row after container rebuild (createRowContainer wipes it)
   if(type === 'income') renderPvdRow();
-  bindRows(type === 'income' ? incomeContainer : expenseContainer, type);
-  const container = type === 'income' ? incomeContainer : expenseContainer;
+  bindRows(container, type);
   const nameInput = container.querySelector(`input.name-input[data-idx="${idx}"]`);
   if(nameInput){ nameInput.focus(); nameInput.select(); }
   compute();
@@ -1010,6 +1052,7 @@ function addRow(type){
 
 incomeAddBtn.addEventListener('click', () => addRow('income'));
 expenseAddBtn.addEventListener('click', () => addRow('expense'));
+if (savingAddBtn) savingAddBtn.addEventListener('click', () => addRow('saving'));
 
 // ── Compute & display ──────────────────────────────────────────────────────
 function compute(){
@@ -1018,10 +1061,12 @@ function compute(){
 
   const totalIncome  = state.incomes.reduce((s, item) => s + (item.value || 0), 0);
   const totalExpense = state.expenses.reduce((s, item) => s + (item.value || 0), 0);
-  const remaining    = totalIncome - totalExpense;
+  const totalSavings = (state.savings || []).reduce((s, item) => s + (item.value || 0), 0);
+  const remaining    = totalIncome - totalExpense - totalSavings;
 
   scIncomeValue.textContent  = fmtCurrency(totalIncome);
   scExpenseValue.textContent = fmtCurrency(totalExpense);
+  if (scSavingValue) scSavingValue.textContent = fmtCurrency(totalSavings);
 
   const resultsEl = document.getElementById('resultsContainer');
   resultsEl.innerHTML = '';
@@ -1076,20 +1121,66 @@ function compute(){
     });
   }
 
+  // Savings breakdown (not in expenses, deducted before rebalance)
+  if(state.savings && state.savings.length > 0){
+    const savHeader = document.createElement('div');
+    savHeader.style.cssText = 'font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);font-weight:700;margin:14px 0 6px;';
+    savHeader.textContent = t('savingBreakdown');
+    resultsEl.appendChild(savHeader);
+
+    state.savings.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'result-row';
+      row.innerHTML = `
+        <div class="result-left">
+          <div class="rname">${escapeAttr(getDisplayName(item.name))}</div>
+        </div>
+        <div class="result-right">
+          <div class="rval" style="color:#2563eb">− ${fmtCurrency(item.value)}</div>
+        </div>
+      `;
+      resultsEl.appendChild(row);
+    });
+  }
+
   // Remaining box
   remainingValue.textContent = fmtCurrency(Math.round(remaining));
   remainingValue.className = 'rvalue ' + (
     remaining > 0.5 ? 'positive' : remaining < -0.5 ? 'negative' : 'zero'
   );
-  remainingNote.textContent = remaining > 0.5
-    ? (LANG === 'en' ? 'Money left over this month' : 'เหลือเงินในเดือนนี้')
-    : remaining < -0.5
-    ? (LANG === 'en' ? 'Expenses exceed income — review spending or boost income' : 'ใช้จ่ายเกินรายได้ — ลดค่าใช้จ่ายหรือเพิ่มรายได้')
-    : (LANG === 'en' ? 'Income and expenses are balanced' : 'รายได้และค่าใช้จ่ายเท่ากันพอดี');
+
+  const remLabelEl = document.getElementById('remainingLabel');
+  if (remLabelEl) {
+    remLabelEl.textContent = totalSavings > 0
+      ? (LANG === 'en' ? 'Remaining for Investment (Rebalance)' : 'เงินคงเหลือสำหรับลงทุน (Rebalance)')
+      : (LANG === 'en' ? 'Remaining Money' : 'เงินคงเหลือ');
+  }
+
+  if (remaining > 0.5) {
+    remainingNote.textContent = totalSavings > 0
+      ? (LANG === 'en'
+          ? `Income (${fmt(totalIncome)}) − Expenses (${fmt(totalExpense)}) − Savings (${fmt(totalSavings)}) = ${fmt(remaining)} THB for investment`
+          : `รายได้ (${fmt(totalIncome)}) − ค่าใช้จ่าย (${fmt(totalExpense)}) − เงินออม (${fmt(totalSavings)}) = เหลือลงทุน ${fmt(remaining)} บาท`)
+      : (LANG === 'en' ? 'Money left over this month' : 'เหลือเงินในเดือนนี้');
+  } else if (remaining < -0.5) {
+    remainingNote.textContent = totalSavings > 0
+      ? (LANG === 'en'
+          ? `Expenses and savings exceed income by ${fmt(Math.abs(remaining))} THB`
+          : `รายจ่ายและเงินออมเกินรายได้ ${fmt(Math.abs(remaining))} บาท`)
+      : (LANG === 'en' ? 'Expenses exceed income — review spending or boost income' : 'ใช้จ่ายเกินรายได้ — ลดค่าใช้จ่ายหรือเพิ่มรายได้');
+  } else {
+    remainingNote.textContent = LANG === 'en' ? 'Income, expenses, and savings are balanced' : 'รายได้ ค่าใช้จ่าย และเงินออมเท่ากันพอดี';
+  }
 
   const bridgeBtn = document.getElementById('bridgeToRebalanceBtn');
   if (bridgeBtn) {
     bridgeBtn.style.display = remaining > 0.5 ? 'inline-flex' : 'none';
+    const bridgeLbl = document.getElementById('lblBridgeBtn');
+    if (bridgeLbl) {
+      bridgeLbl.textContent = LANG === 'en'
+        ? `Send investable money (${fmt(remaining)} THB) to Rebalance`
+        : `นำเงินเหลือลงทุน (${fmt(remaining)} บาท) ไป Rebalance`;
+    }
   }
 
   saveState();
@@ -1139,7 +1230,8 @@ function compute(){
 function sendToRebalance(){
   const totalIncome  = state.incomes.reduce((s, item) => s + (item.value || 0), 0);
   const totalExpense = state.expenses.reduce((s, item) => s + (item.value || 0), 0);
-  const remaining    = Math.round(totalIncome - totalExpense);
+  const totalSavings = (state.savings || []).reduce((s, item) => s + (item.value || 0), 0);
+  const remaining    = Math.round(totalIncome - totalExpense - totalSavings);
   if (remaining > 0) {
     try {
       localStorage.setItem('moneySuperapp.pendingBudget', String(remaining));
