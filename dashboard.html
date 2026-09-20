@@ -502,8 +502,8 @@
 
         const banner = document.getElementById('snapshotAlertBanner');
         if (document.getElementById('snapshotAlertText')) document.getElementById('snapshotAlertText').textContent = (LANG === 'en' ? translations.en.savedSuccess : translations.th.savedSuccess);
-        banner.style.display = 'flex';
-        setTimeout(() => { banner.style.display = 'none'; }, 3500);
+        if(banner) banner.style.display = 'flex';
+        setTimeout(() => { if(banner) banner.style.display = 'none'; }, 3500);
     }
 
     function deleteSnapshot(id) {
