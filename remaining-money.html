@@ -700,6 +700,8 @@ function bindRows(container, type){
         type === 'income' ? state.incomes : state.expenses,
         type, type === 'income' ? incomeContainer : expenseContainer
       );
+      // Re-add PVD % row after container rebuild (createRowContainer wipes it)
+      if(type === 'income') renderPvdRow();
       bindRows(type === 'income' ? incomeContainer : expenseContainer, type);
       compute();
     });
@@ -731,6 +733,8 @@ function addRow(type){
   const idx = items.length;
   items.push({ name: type === 'income' ? EN.incomeDefaultName(idx+1) : EN.expenseDefaultName(idx+1), value: 0 });
   createRowContainer(items, type, type === 'income' ? incomeContainer : expenseContainer);
+  // Re-add PVD % row after container rebuild (createRowContainer wipes it)
+  if(type === 'income') renderPvdRow();
   bindRows(type === 'income' ? incomeContainer : expenseContainer, type);
   const container = type === 'income' ? incomeContainer : expenseContainer;
   const nameInput = container.querySelector(`input.name-input[data-idx="${idx}"]`);
