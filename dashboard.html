@@ -532,23 +532,27 @@
 
     function renderSnapshotsTable() {
         const snapshots = getSnapshots();
-        const tbody = document.getElementById('snapshotsTableBody');
+        const tbody = document.getElementById('historyListContainer');
+        if (!tbody) return;
         tbody.innerHTML = '';
         if (document.getElementById('lbl-snapshot-count')) document.getElementById('lbl-snapshot-count').textContent = `${snapshots.length} ${LANG === 'en' ? 'snapshots' : 'บันทึก'}`;
 
         [...snapshots].reverse().forEach(s => {
-            const tr = document.createElement('tr');
-            tr.className = 'table-row-alt hover:bg-gray-50';
+            const tr = document.createElement('div');
+            tr.className = 'history-row';
             tr.innerHTML = `
-                <td class="p-2.5 pl-3 font-semibold text-slate-800">${s.date}</td>
-                <td class="p-2.5 text-right font-bold text-emerald-600">${formatMoney(s.netWorth)}</td>
-                <td class="p-2.5 text-right">${formatMoney(s.portfolioVal)}</td>
-                <td class="p-2.5 text-right text-purple-600">${formatMoney(s.emergencyReserve)}</td>
-                <td class="p-2.5 text-right text-amber-600">${formatMoney(s.totalDebt)}</td>
-                <td class="p-2.5 text-right font-medium text-blue-600">${s.savingsRate}%</td>
-                <td class="p-2.5 text-center no-print">
-                    <button onclick="deleteSnapshot(${s.id})" class="text-gray-400 hover:text-red-500 font-bold p-1 transition-all" title="ลบ">&times;</button>
-                </td>
+                <div class="date-badge">${s.date}</div>
+                <div class="h-stats">
+                    <span style="color:var(--ok);">NW: ${formatMoney(s.netWorth)}</span>
+                    <span style="color:var(--blue);">Port: ${formatMoney(s.portfolioVal)}</span>
+                    <span style="color:var(--purple);">Res: ${formatMoney(s.emergencyReserve)}</span>
+                    <span style="color:var(--warn);">Debt: ${formatMoney(s.totalDebt)}</span>
+                </div>
+                <div class="h-side">
+                    <span style="font-size:14px; font-weight:700; color:var(--ink);">${s.savingsRate}%</span>
+                    <span style="font-size:10px; color:var(--ink-dim); font-weight:400;">${formatMoney(s.savings)}/m</span>
+                    <button onclick="deleteSnapshot(${s.id})" class="h-del" title="ลบ">&times;</button>
+                </div>
             `;
             tbody.appendChild(tr);
         });
