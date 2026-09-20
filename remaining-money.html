@@ -355,7 +355,7 @@ const state = (function(){
     if(!raw) return JSON.parse(JSON.stringify(defaultState));
     const saved = JSON.parse(raw);
     if(saved && Array.isArray(saved.incomes) && Array.isArray(saved.expenses)){
-      // Ensure auto rows exist in loaded state
+      // Ensure auto rows exist in loaded state (and update existing ones to have auto: true)
       const expenses = Array.isArray(saved.expenses) ? saved.expenses : defaultState.expenses.slice();
       if(!expenses.find(e => e.name === AUTO_TAX_NAME_TH)){
         expenses.unshift({ name: AUTO_TAX_NAME_TH, value: 0, auto: true });
@@ -365,6 +365,16 @@ const state = (function(){
       }
       if(!expenses.find(e => e.name === AUTO_PVD_NAME_TH)){
         expenses.unshift({ name: AUTO_PVD_NAME_TH, value: 0, auto: true });
+      }
+      // Ensure all auto items (including any loaded from old saved state) have auto: true
+      expenses.forEach(e => {
+        if(e.name === AUTO_TAX_NAME_TH || e.name === AUTO_SSO_NAME_TH || e.name === AUTO_PVD_NAME_TH){
+          e.auto = true;
+        }
+      });
+      // Ensure income names are correct (safeguard against stale saved income names)
+      if(saved.incomes.length > 0 && saved.incomes[0].name !== 'เงินเดือน'){
+        saved.incomes[0].name = 'เงินเดือน';
       }
       return {
         incomes: Array.isArray(saved.incomes) ? saved.incomes : defaultState.incomes,
