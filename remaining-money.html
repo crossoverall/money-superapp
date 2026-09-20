@@ -590,9 +590,9 @@ function createRowContainer(items, type, container){
              value="${item.value}" ${isAuto ? 'readonly' : ''}>
       <span class="unit">${type === 'income' ? 'บาท' : 'บาท'}</span>
       ${isAuto ? `<span class="auto-badge">${autoLabel}</span>` : ''}
-      <button class="remove-btn ${isAuto ? 'disabled' : ''}"
+      <button class="remove-btn ${isAuto || (type === 'income' && item.name === 'เงินเดือน') ? 'disabled' : ''}"
               data-type="${type}" data-idx="${i}"
-              title="${isAuto ? 'คำนวณโดยอัตโนมัติ' : 'ลบ'}">×</button>
+              title="${isAuto ? 'คำนวณโดยอัตโนมัติ' : item.name === 'เงินเดือน' ? 'ไม่สามารถลบได้' : 'ลบ'}">×</button>
     `;
     container.appendChild(row);
   });
@@ -673,12 +673,19 @@ function bindRows(container, type){
     );
   });
 
-  // Remove button (only for non-auto rows)
+  // Remove button (only for non-auto rows and non-protected rows)
   container.querySelectorAll('.remove-btn:not(.disabled)').forEach(btn => {
     btn.addEventListener('click', () => {
       const idx = parseInt(btn.dataset.idx);
-      if(type === 'income') state.incomes.splice(idx, 1);
-      else state.expenses.splice(idx, 1);
+      if(type === 'income'){
+        state.incomes.splice(idx, 1);
+        // Safeguard: ensure salary row always exists
+        if(!state.incomes.find(item => item.name === 'เงินเดือน')){
+          state.incomes.unshift({ name: 'เงินเดือน', value: 0 });
+        }
+      } else {
+        state.expenses.splice(idx, 1);
+      }
       createRowContainer(
         type === 'income' ? state.incomes : state.expenses,
         type, type === 'income' ? incomeContainer : expenseContainer
