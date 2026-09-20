@@ -524,9 +524,9 @@
 
     function setChartMode(mode) {
         chartMode = mode;
-        document.getElementById('btn-chart-nw').classList.toggle('active', mode === 'networth');
-        document.getElementById('btn-chart-sav').classList.toggle('active', mode === 'savings');
-        document.getElementById('btn-chart-run').classList.toggle('active', mode === 'runway');
+        if(document.getElementById('btn-chart-nw')) document.getElementById('btn-chart-nw').classList.toggle('active', mode === 'networth');
+        if(document.getElementById('btn-chart-sav')) document.getElementById('btn-chart-sav').classList.toggle('active', mode === 'savings');
+        // document.getElementById('btn-chart-run').classList.toggle('active', mode === 'runway');
         renderChart();
     }
 
