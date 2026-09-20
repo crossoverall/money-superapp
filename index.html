@@ -71,6 +71,7 @@
     langButtons.forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
     navButtons.forEach(b => b.textContent = b.dataset[lang]);
     themeButtons.forEach(b => b.textContent = b.dataset[lang]);
+    document.documentElement.lang = lang;
   }
   function applyTheme(theme){
     themeButtons.forEach(b => b.classList.toggle('active', b.dataset.themeBtn === theme));

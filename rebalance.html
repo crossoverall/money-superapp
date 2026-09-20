@@ -282,25 +282,23 @@ const state = {
     {
       id: 'core', label: 'Core', weight: 45,
       assets: [
-        { name: 'K-WORLDX', value: 98000, weight: 90 },
-        { name: 'KFCSI300-A', value: 0, weight: 5 },
-        { name: 'SCBCE', value: 0, weight: 5 },
+        { name: 'Asset 1', value: 0, weight: 50 },
+        { name: 'Asset 2', value: 0, weight: 50 },
       ]
     },
     {
       id: 'ballast', label: 'Ballast', weight: 15,
       assets: [
-        { name: 'CLICX', value: 65540, weight: 90 },
-        { name: 'GLD', value: 0, weight: 10 },
+        { name: 'Asset 3', value: 0, weight: 70 },
+        { name: 'Asset 4', value: 0, weight: 30 },
       ]
     },
     {
       id: 'satellite', label: 'Satellite', weight: 40,
       assets: [
-        { name: 'NVDA', value: 34243, weight: 25 },
-        { name: 'NVO', value: 32124, weight: 25 },
-        { name: 'NFLX', value: 18774, weight: 25 },
-        { name: 'Bitcoin', value: 0, weight: 25 },
+        { name: 'Asset 5', value: 0, weight: 33 },
+        { name: 'Asset 6', value: 0, weight: 33 },
+        { name: 'Asset 7', value: 0, weight: 34 },
       ]
     },
   ]
@@ -314,7 +312,7 @@ const splitWarnEl = document.getElementById('splitWarn');
 const saveStatusEl = document.getElementById('saveStatus');
 const resetBtn = document.getElementById('resetBtn');
 
-function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
+function fmt(n){ return Math.round(n).toLocaleString(LANG === 'en' ? 'en-US' : 'th-TH'); }
 
 // --- Quick math entry (+10000 / -5000 adds/subtracts from the field's current value) ---
 const inputBaseValues = new WeakMap();
