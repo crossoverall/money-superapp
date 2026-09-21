@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="1.3.6">
+  <meta name="version" content="1.3.7">
   <title>ภาพรวมการเงิน</title>
   <style>
     :root{
@@ -107,22 +107,22 @@
 
   <div class="panel">
     <div class="summary-grid">
-      <div class="summary-card blue">
+      <div class="summary-card blue" id="kpi-networth">
         <div class="sc-label" id="lbl-kpi-networth">ความมั่งคั่งสุทธิ (Net Worth)</div>
         <div class="sc-value" id="kpi-networth-val">0</div>
         <div class="sc-sub" id="lbl-kpi-nw-sub">สินทรัพย์ - หนี้สิน</div>
       </div>
-      <div class="summary-card ok">
+      <div class="summary-card ok" id="kpi-savings">
         <div class="sc-label" id="lbl-kpi-savings">เงินออมต่อเดือน (Cash Flow)</div>
         <div class="sc-value" id="kpi-monthly-savings-val">0</div>
-        <div class="sc-sub" id="kpi-savings-rate-val">0%</div>
+        <div class="sc-sub" id="kpi-savings-rate-val"><span id="kpi-savings-rate">0%</span></div>
       </div>
-      <div class="summary-card purple">
+      <div class="summary-card purple" id="kpi-runway">
         <div class="sc-label" id="lbl-kpi-runway">สายป่าน (Runway)</div>
         <div class="sc-value" id="kpi-runway-months">0</div>
         <div class="sc-sub" id="lbl-kpi-rw-sub">ฉุกเฉินอยู่รอด</div>
       </div>
-      <div class="summary-card warn">
+      <div class="summary-card warn" id="kpi-total-debt">
         <div class="sc-label" id="lbl-kpi-debt">ยอดหนี้รวม (Debt)</div>
         <div class="sc-value" id="kpi-debt-val">0</div>
         <div class="sc-sub" id="kpi-debtfree-date">วันปลดหนี้ -</div>
@@ -178,7 +178,7 @@
     <div onclick="window.parent.postMessage({action:'switchToTab', target:'debt-calculator'},'*')" class="quick-link"><span id="qc-debt-title">📉 วางแผนปลดหนี้ (Debt)</span> <span>Alt+7</span><span id="qc-debt-sub" style="display:none;"></span></div>
   </div>
 
-  <p class="version-tag">Money Superapp v1.3.6</p>
+  <p class="version-tag">Money Superapp v1.3.7</p>
 
 <script>
     const LANG = (function(){ try { return localStorage.getItem('moneySuperapp.lang') || 'th'; } catch(e){ return 'th'; } })();
