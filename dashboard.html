@@ -109,22 +109,22 @@
     <div class="summary-grid">
       <div class="summary-card blue">
         <div class="sc-label" id="lbl-kpi-networth">ความมั่งคั่งสุทธิ (Net Worth)</div>
-        <div class="sc-value" id="kpi-networth">0</div>
+        <div class="sc-value" id="kpi-networth-val">0</div>
         <div class="sc-sub" id="lbl-kpi-nw-sub">สินทรัพย์ - หนี้สิน</div>
       </div>
       <div class="summary-card ok">
         <div class="sc-label" id="lbl-kpi-savings">เงินออมต่อเดือน (Cash Flow)</div>
-        <div class="sc-value" id="kpi-savings">0</div>
-        <div class="sc-sub" id="kpi-savings-rate">0% ' + (LANG === 'en' ? ' saved' : ' ออม')</div>
+        <div class="sc-value" id="kpi-monthly-savings-val">0</div>
+        <div class="sc-sub" id="kpi-savings-rate-val">0%</div>
       </div>
       <div class="summary-card purple">
         <div class="sc-label" id="lbl-kpi-runway">สายป่าน (Runway)</div>
-        <div class="sc-value" id="kpi-runway">0 ' + (LANG === 'en' ? ' mo' : ' ด.')</div>
+        <div class="sc-value" id="kpi-runway-months">0</div>
         <div class="sc-sub" id="lbl-kpi-rw-sub">ฉุกเฉินอยู่รอด</div>
       </div>
       <div class="summary-card warn">
         <div class="sc-label" id="lbl-kpi-debt">ยอดหนี้รวม (Debt)</div>
-        <div class="sc-value" id="kpi-total-debt">0</div>
+        <div class="sc-value" id="kpi-debt-val">0</div>
         <div class="sc-sub" id="kpi-debtfree-date">วันปลดหนี้ -</div>
       </div>
     </div>
@@ -132,10 +132,10 @@
     <div style="margin-top:16px; border-top:1px dashed var(--line); padding-top:12px; display:flex; justify-content:space-between; align-items:center;">
       <div>
         <div style="font-size:11px; color:var(--ink-faint); font-weight:600;" id="lbl-tax-bracket">ฐานภาษีปัจจุบัน</div>
-        <div style="font-size:14px; font-weight:700; color:var(--warn);" id="kpi-tax-bracket">0%</div>
+        <div style="font-size:14px; font-weight:700; color:var(--warn);" id="kpi-tax-bracket-val">0%</div>
       </div>
       <div style="text-align:right;">
-        <div style="font-size:11px; color:var(--ink-faint); font-weight:600;" id="lbl-tax-pay">ประมาณการภาษีที่ต้องจ่าย</div>
+        <div style="font-size:11px; color:var(--ink-faint); font-weight:600;" id="lbl-tax-pay-label">ประมาณการภาษีที่ต้องจ่าย</div>
         <div style="font-size:14px; font-weight:700; color:var(--danger);" id="kpi-tax-amount">0 บาท</div>
       </div>
     </div>
@@ -151,25 +151,31 @@
       <span id="btn-chart-sav" style="color:var(--ok);">--- Savings Rate</span>
     </div>
     <div class="chart-container">
-      <svg id="svgChart" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+      <svg id="svgChart" viewBox="0 0 600 220" preserveAspectRatio="none"></svg>
+      <div id="chartLegend" class="tooltip" style="position:static; opacity:1; box-shadow:none; margin-top:8px; font-size:11px;"></div>
       <div id="chartTooltip" class="tooltip"></div>
+    </div>
+    <div id="snapshotAlertBanner" style="display:none; margin-top:12px; padding:10px 14px; background:var(--ok-dim); border:1px solid var(--ok); border-radius:8px; color:var(--ok); font-size:12px; font-weight:600; align-items:center; justify-content:space-between;">
+      <span id="snapshotAlertText"></span>
+      <button onclick="this.parentElement.style.display='none'" style="background:none; border:none; color:inherit; font-size:16px; cursor:pointer; padding:0 4px;">&times;</button>
     </div>
   </div>
 
   <div class="panel">
-    <div class="panel-title" id="lbl-history-title">ประวัติที่บันทึกไว้ (History)</div>
-    <div id="historyListContainer" style="margin-bottom:12px;"></div>
-    <button onclick="clearHistory()" class="reset-btn" style="width:100%; text-align:center;"><span id="btn-clear-history">ลบประวัติทั้งหมด</span></button>
+  <div class="panel-title" id="lbl-history-title">ประวัติที่บันทึกไว้ (History)</div>
+  <div id="lbl-snapshot-count" style="margin-bottom:12px; font-size:12px; color:var(--ink-dim);"></div>
+  <div id="historyListContainer" style="margin-bottom:12px;"></div>
+  <button onclick="clearHistory()" class="reset-btn" style="width:100%; text-align:center;"><span id="btn-clear-history">ลบประวัติทั้งหมด</span></button>
   </div>
 
   <div class="panel">
     <div class="panel-title" id="lbl-quick-links">ไปหน้าเครื่องมือ (Tools)</div>
-    <div onclick="window.parent.postMessage({action:'switchToTab', target:'rebalance', key:'2'},'*')" class="quick-link"><span id="qc-rebal-title">📊 Rebalance พอร์ต</span> <span>Alt+2</span></div>
-    <div onclick="window.parent.postMessage({action:'switchToTab', target:'months-slips', key:'3'},'*')" class="quick-link"><span id="qc-slip-title">📄 จำลองสลิปเงินเดือน</span> <span>Alt+3</span></div>
-    <div onclick="window.parent.postMessage({action:'switchToTab', target:'tax-calculator-base', key:'4'},'*')" class="quick-link"><span id="qc-tax-title">🧾 คำนวณภาษีประจำปี</span> <span>Alt+4</span></div>
-    <div onclick="window.parent.postMessage({action:'switchToTab', target:'tax-calculator', key:'5'},'*')" class="quick-link"><span id="qc-pvd-title">📈 ตารางบันทึก PVD</span> <span>Alt+5</span></div>
-    <div onclick="window.parent.postMessage({action:'switchToTab', target:'remaining-money', key:'6'},'*')" class="quick-link"><span id="qc-rem-title">💰 คำนวณเงินคงเหลือ (Remaining)</span> <span>Alt+6</span></div>
-    <div onclick="window.parent.postMessage({action:'switchToTab', target:'debt-calculator', key:'7'},'*')" class="quick-link"><span id="qc-debt-title">📉 วางแผนปลดหนี้ (Debt)</span> <span>Alt+7</span></div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', target:'remaining-money'},'*')" class="quick-link"><span id="qc-rem-title">💰 คำนวณเงินคงเหลือ (Remaining)</span> <span>Alt+6</span></div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', target:'rebalance'},'*')" class="quick-link"><span id="qc-rebal-title">📊 Rebalance พอร์ต</span> <span>Alt+2</span><span id="qc-rebal-sub" style="display:none;"></span></div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', target:'months-slips'},'*')" class="quick-link"><span id="qc-slip-title">📄 จำลองสลิปเงินเดือน</span> <span>Alt+3</span></div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', target:'tax-calculator-base'},'*')" class="quick-link"><span id="qc-tax-title">🧾 คำนวณภาษีประจำปี</span> <span>Alt+4</span></div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', target:'tax-calculator'},'*')" class="quick-link"><span id="qc-pvd-title">📈 ตารางบันทึก PVD</span> <span>Alt+5</span></div>
+    <div onclick="window.parent.postMessage({action:'switchToTab', target:'debt-calculator'},'*')" class="quick-link"><span id="qc-debt-title">📉 วางแผนปลดหนี้ (Debt)</span> <span>Alt+7</span><span id="qc-debt-sub" style="display:none;"></span></div>
   </div>
 
   <p class="version-tag">Money Superapp v1.3.6</p>
@@ -213,7 +219,10 @@
             thSnapDebt: 'หนี้สิน',
             thSnapRate: 'อัตราออม',
             btnClearHistory: 'ลบประวัติทั้งหมด',
-            chartTitle: 'แนวโน้มการเติบโต (Trends)'
+            chartTitle: 'แนวโน้มการเติบโต (Trends)',
+            savedSuccess: '✓ บันทึกสำเร็จ',
+            statusHealthy: 'สุขภาพการเงินดี',
+            statusCaution: 'ต้องระวัง'
         },
                 en: {
             title: 'Financial Dashboard',
@@ -247,7 +256,10 @@
             thSnapDebt: 'Debt',
             thSnapRate: 'Save Rate',
             btnClearHistory: 'Clear All History',
-            chartTitle: 'Growth Trends'
+            chartTitle: 'Growth Trends',
+            savedSuccess: '✓ Saved successfully',
+            statusHealthy: 'Financially Healthy',
+            statusCaution: 'Caution'
         }
     };
 
@@ -455,6 +467,7 @@
                 emergencyReserve: Math.round(cur.emergencyReserve * factor),
                 totalDebt: Math.round(cur.totalDebt * (1 + (i * 0.04))),
                 savingsRate: Math.max(10, Math.round(cur.savingsRate + (i * 2))),
+                savings: Math.round(cur.monthlySavings + cur.monthlyInvest),
                 runwayMonths: parseFloat((cur.runwayMonths * factor).toFixed(1))
             });
         }
@@ -483,6 +496,7 @@
             emergencyReserve: cur.emergencyReserve,
             totalDebt: cur.totalDebt,
             savingsRate: parseFloat(cur.savingsRate.toFixed(1)),
+            savings: Math.round(cur.monthlySavings + cur.monthlyInvest),
             runwayMonths: parseFloat(cur.runwayMonths.toFixed(1))
         };
 
@@ -549,7 +563,7 @@
                 </div>
                 <div class="h-side">
                     <span style="font-size:14px; font-weight:700; color:var(--ink);">${s.savingsRate}%</span>
-                    <span style="font-size:10px; color:var(--ink-dim); font-weight:400;">${formatMoney(s.savings)}/m</span>
+                    <span style="font-size:10px; color:var(--ink-dim); font-weight:400;">${formatMoney(s.savings || 0)}/m</span>
                     <button onclick="deleteSnapshot(${s.id})" class="h-del" title="ลบ">&times;</button>
                 </div>
             `;
@@ -562,7 +576,7 @@
      */
     function renderChart() {
         const svg = document.getElementById('svgChart');
-        const legend = document.getElementById('chartLegend'); if(!svg) return;
+        const legend = document.getElementById('chartLegend');
         const snapshots = getSnapshots();
 
         if (snapshots.length === 0) {
@@ -599,6 +613,14 @@
             valueLabel = LANG === 'en' ? 'Emergency Reserve (THB)' : 'เงินสำรองฉุกเฉิน (บาท)';
         }
 
+        // Check if all values are effectively zero
+        const nonZero = values.some(v => v > 0);
+        if (!nonZero && values.every(v => v === 0)) {
+            svg.innerHTML = `<text x="300" y="110" text-anchor="middle" fill="#94a3b8" font-size="14">${LANG === 'en' ? 'No data to display — save a snapshot to see trends' : 'ยังไม่มีข้อมูลสำหรับแสดง — บันทึกสแนปช็อตเพื่อดูแนวโน้ม'}</text>`;
+            if(legend) legend.innerHTML = '';
+            return;
+        }
+
         let minVal = Math.min(...values);
         let maxVal = Math.max(...values);
         if (minVal === maxVal) {
@@ -629,7 +651,7 @@
         let xHtml = '';
         points.forEach((p, i) => {
             if (points.length <= 6 || i === 0 || i === points.length - 1 || i % Math.ceil(points.length / 5) === 0) {
-                const shortDate = p.date.slice(5); // MM-DD
+                const shortDate = p.date.slice(5);
                 xHtml += `<text x="${p.x}" y="${height - 12}" text-anchor="middle" fill="#94a3b8" font-size="10">${shortDate}</text>`;
             }
         });
@@ -646,7 +668,7 @@
         let dotsHtml = '';
         points.forEach((p) => {
             dotsHtml += `
-                <circle cx="${p.x}" cy="${p.y}" r="4" fill="${strokeColor}" stroke="#fff" stroke-width="2" class="cursor-pointer hover:r-6 transition-all"
+                <circle cx="${p.x}" cy="${p.y}" r="4" fill="${strokeColor}" stroke="#fff" stroke-width="2" class="cursor-pointer"
                     onmouseover="showChartTooltip(event, '${p.date}', '${chartMode === 'savings' ? p.val + '%' : formatMoney(p.val) + ' ' + unit}')"
                     onmouseout="hideChartTooltip()" />
             `;
@@ -660,22 +682,26 @@
             ${dotsHtml}
         `;
 
-        if(legend) legend.innerHTML = `
-            <div class="flex items-center gap-1.5">
-                <span class="inline-block w-3 h-3 rounded-full" style="background:${strokeColor};"></span>
-                <span class="font-medium text-slate-700">${valueLabel}</span>
-            </div>
-            <span class="text-slate-400">|</span>
-            <span class="text-[11px]">${LANG === 'en' ? 'Latest: ' : 'ล่าสุด: '} <strong>${chartMode === 'savings' ? values[values.length - 1] + '%' : formatMoney(values[values.length - 1]) + ' ' + unit}</strong></span>
-        `;
+        if(legend) {
+            legend.innerHTML = `
+                <div class="flex items-center gap-1.5">
+                    <span class="inline-block w-3 h-3 rounded-full" style="background:${strokeColor};"></span>
+                    <span class="font-medium" style="color:var(--ink)">${valueLabel}</span>
+                </div>
+                <span style="color:var(--ink-faint); margin-left:8px;">|</span>
+                <span style="font-size:11px; color:var(--ink-dim);">${LANG === 'en' ? 'Latest: ' : 'ล่าสุด: '} <strong>${chartMode === 'savings' ? values[values.length - 1] + '%' : formatMoney(values[values.length - 1]) + ' ' + unit}</strong></span>
+            `;
+        }
     }
 
     function showChartTooltip(e, date, valStr) {
         const tip = document.getElementById('chartTooltip');
+        const chartContainer = tip.parentElement;
+        const rect = chartContainer.getBoundingClientRect();
         tip.innerHTML = `<strong>${date}</strong><br>${valStr}`;
         tip.style.opacity = '1';
-        tip.style.left = `${e.offsetX + 10}px`;
-        tip.style.top = `${e.offsetY - 30}px`;
+        tip.style.left = `${e.clientX - rect.left + 10}px`;
+        tip.style.top = `${e.clientY - rect.top - 30}px`;
     }
 
     function hideChartTooltip() {
@@ -696,6 +722,12 @@
     renderDashboardKPIs();
     renderSnapshotsTable();
     renderChart();
+
+    function refreshDashboard() {
+        renderDashboardKPIs();
+        renderSnapshotsTable();
+        renderChart();
+    }
 </script>
 </body>
 </html>
