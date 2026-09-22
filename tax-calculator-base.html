@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="1.3.9">
+    <meta name="version" content="1.3.10">
     <meta name="description" content="คำนวณภาษีเงินได้บุคคลธรรมดา — ประมาณการภาษีเงินได้จากเงินเดือนและโบนัส พร้อมแสดงรายละเอียดตามขั้นบันได">
     <title>คำนวณภาษีเงินได้บุคคลธรรมดา</title>
     <link rel="stylesheet" href="css/tailwind-lite.css">
@@ -174,6 +174,20 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-bonus">โบนัส (บาท/ปี)</label>
                     <input type="number" id="bonus" placeholder="เช่น 100000" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
                 </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-pvdPercent">กองทุนสำรองเลี้ยงชีพ (%)</label>
+                    <input type="number" id="pvd" placeholder="เช่น 5" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-sso-ceiling">เพดานประกันสังคม</label>
+                    <select id="ssoCap" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" onchange="calculateTax()">
+                        <option value="0" id="opt-sso-0">0 บาท (ไม่ได้ส่ง / อาชีพอิสระ)</option>
+                        <option value="750" id="opt-sso-750">750 บาท (เพดานเดิม 15,000)</option>
+                        <option value="875" id="opt-sso-875" selected>875 บาท (เพดานใหม่ 17,500)</option>
+                        <option value="1000" id="opt-sso-1000">1,000 บาท (เพดานใหม่ 20,000)</option>
+                        <option value="1150" id="opt-sso-1150">1,150 บาท (เพดานใหม่ 23,000)</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Yearly / Variable Income Mode -->
@@ -216,21 +230,24 @@
                         </div>
                     </div>
                 </details>
-            </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-pvdPercent">กองทุนสำรองเลี้ยงชีพ (%)</label>
-                <input type="number" id="pvd" placeholder="เช่น 5" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-sso-ceiling">เพดานประกันสังคม</label>
-                <select id="ssoCap" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" onchange="calculateTax()">
-                    <option value="0" id="opt-sso-0">0 บาท (ไม่ได้ส่ง / อาชีพอิสระ)</option>
-                    <option value="750" id="opt-sso-750">750 บาท (เพดานเดิม 15,000)</option>
-                    <option value="875" id="opt-sso-875" selected>875 บาท (เพดานใหม่ 17,500)</option>
-                    <option value="1000" id="opt-sso-1000">1,000 บาท (เพดานใหม่ 20,000)</option>
-                    <option value="1150" id="opt-sso-1150">1,150 บาท (เพดานใหม่ 23,000)</option>
-                </select>
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-sm font-medium text-gray-700" id="lbl-yearly-pvd">กองทุนสำรองเลี้ยงชีพ (PVD) ทั้งปี (บาท/ปี)</label>
+                        <span class="text-[11px] text-gray-400" id="lbl-yearly-pvd-tag">ไม่เกิน 15% ของเงินได้</span>
+                    </div>
+                    <input type="number" id="yearlyPvd" placeholder="เช่น 30000 (หากไม่มีใส่ 0)" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
+                    <div id="warn-yearly-pvd" style="display:none; color:#d97706; font-size:11px; margin-top:3px; font-weight:500;"></div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-sm font-medium text-gray-700" id="lbl-yearly-sso">เงินสมทบประกันสังคมทั้งปี (บาท/ปี)</label>
+                        <span class="text-[11px] text-gray-400" id="lbl-yearly-sso-tag">สูงสุด 13,800 บาท</span>
+                    </div>
+                    <input type="number" id="yearlySso" placeholder="เช่น 9000 (ฟรีแลนซ์/ไม่ได้ส่งใส่ 0)" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
+                    <div id="warn-yearly-sso" style="display:none; color:#d97706; font-size:11px; margin-top:3px; font-weight:500;"></div>
+                </div>
             </div>
             <details class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm">
                 <summary class="font-medium text-gray-700 cursor-pointer select-none" id="lbl-more-deduct">+ ค่าลดหย่อนเพิ่มเติม (SSF, RMF, ThaiESG, ประกัน, ดอกเบี้ยบ้าน, Easy E-Receipt)</summary>
@@ -355,7 +372,7 @@
                     <span id="lbl-print-tax">🖨️ พิมพ์ / PDF</span>
                 </button>
             </div>
-            <p class="text-xs text-gray-400">v1.3.9</p>
+            <p class="text-xs text-gray-400">v1.3.10</p>
         </div>
     </div>
 
@@ -380,6 +397,10 @@
                 'lbl-months-helper': '➕ 12-Month Income Breakdown Calculator',
                 'lbl-months-subhint': 'Enter monthly earnings below; annual total will auto-calculate',
                 'lbl-months-total': '12-Month Total:',
+                'lbl-yearly-pvd': 'Provident Fund (PVD) Total (THB/year)',
+                'lbl-yearly-pvd-tag': 'Max 15% of income',
+                'lbl-yearly-sso': 'Social Security (SSO) Total (THB/year)',
+                'lbl-yearly-sso-tag': 'Max 13,800 THB',
                 'opt-sso-0': '0 THB (None / Freelance)',
                 'lbl-pvdPercent': 'Provident Fund (%)',
                 'lbl-sso-ceiling': 'Social Security (SSO) Cap',
@@ -426,7 +447,15 @@
             document.getElementById('pvdDeduct').textContent = '- 0 THB';
             document.getElementById('ssoDeduct').textContent = '- 0 THB';
             document.getElementById('netIncome').textContent = '0 THB';
-            const placeholders = { salary: 'e.g. 50000', bonus: 'e.g. 100000', pvd: 'e.g. 5', yearlyIncome: 'e.g. 600000', yearlyBonus: 'e.g. 50000' };
+            const placeholders = {
+                salary: 'e.g. 50000',
+                bonus: 'e.g. 100000',
+                pvd: 'e.g. 5',
+                yearlyIncome: 'e.g. 600000',
+                yearlyBonus: 'e.g. 50000',
+                yearlyPvd: 'e.g. 30000 (0 if none)',
+                yearlySso: 'e.g. 9000 (0 if freelance/uninsured)'
+            };
             Object.keys(placeholders).forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.placeholder = placeholders[id];
@@ -460,6 +489,23 @@
                 if (curBonus && !document.getElementById('yearlyBonus').value) {
                     document.getElementById('yearlyBonus').value = curBonus;
                 }
+
+                // If yearlyPvd is empty but pvd% and salary exist, prefill yearlyPvd
+                const curPvdPct = parseNum(document.getElementById('pvd').value);
+                if (curPvdPct > 0 && !document.getElementById('yearlyPvd').value && curSalary > 0) {
+                    document.getElementById('yearlyPvd').value = Math.round((curSalary * 12) * (curPvdPct / 100));
+                }
+
+                // If yearlySso is empty, prefill from ssoCap
+                const curSsoCap = parseNum(document.getElementById('ssoCap').value);
+                if (!document.getElementById('yearlySso').value) {
+                    if (document.getElementById('ssoCap').value === '0') {
+                        document.getElementById('yearlySso').value = '0';
+                    } else if (curSalary > 0) {
+                        const monthlySso = Math.min(curSalary * 0.05, curSsoCap || 875);
+                        document.getElementById('yearlySso').value = Math.round(monthlySso * 12);
+                    }
+                }
             } else {
                 tabMonthly.classList.add('active');
                 tabMonthly.setAttribute('aria-selected', 'true');
@@ -468,9 +514,26 @@
                 secMonthly.style.display = 'block';
                 secYearly.style.display = 'none';
 
+                const curYInc = parseNum(document.getElementById('yearlyIncome').value);
+                if (curYInc > 0 && !document.getElementById('salary').value) {
+                    document.getElementById('salary').value = Math.round(curYInc / 12);
+                }
+
                 const curYBonus = document.getElementById('yearlyBonus').value;
                 if (curYBonus && !document.getElementById('bonus').value) {
                     document.getElementById('bonus').value = curYBonus;
+                }
+
+                const curYPvd = parseNum(document.getElementById('yearlyPvd').value);
+                if (curYPvd > 0 && curYInc > 0 && !document.getElementById('pvd').value) {
+                    document.getElementById('pvd').value = Math.min(15, Math.round((curYPvd / curYInc) * 100));
+                }
+
+                const curYSso = parseNum(document.getElementById('yearlySso').value);
+                if (document.getElementById('yearlySso').value !== '') {
+                    if (curYSso === 0) {
+                        document.getElementById('ssoCap').value = '0';
+                    }
                 }
             }
             calculateTax();
@@ -503,6 +566,8 @@
                 bonus: document.getElementById('bonus').value,
                 yearlyIncome: document.getElementById('yearlyIncome') ? document.getElementById('yearlyIncome').value : '',
                 yearlyBonus: document.getElementById('yearlyBonus') ? document.getElementById('yearlyBonus').value : '',
+                yearlyPvd: document.getElementById('yearlyPvd') ? document.getElementById('yearlyPvd').value : '',
+                yearlySso: document.getElementById('yearlySso') ? document.getElementById('yearlySso').value : '',
                 pvd: document.getElementById('pvd').value,
                 ssoCap: document.getElementById('ssoCap').value,
                 fundDeduct: document.getElementById('fundDeduct').value,
@@ -521,12 +586,18 @@
                     const yInc = parseNum(data.yearlyIncome);
                     if (yInc) prof.salary = Math.round(yInc / 12);
                     if (data.yearlyBonus) prof.bonus = data.yearlyBonus;
+                    const yPvd = parseNum(data.yearlyPvd);
+                    if (yPvd > 0 && yInc > 0) prof.pvdPercent = Math.min(15, Math.round((yPvd / yInc) * 100));
+                    const ySso = parseNum(data.yearlySso);
+                    if (data.yearlySso === '0' || ySso === 0) {
+                        prof.ssoCap = 0;
+                    }
                 } else {
                     if (data.salary) prof.salary = data.salary;
                     if (data.bonus) prof.bonus = data.bonus;
+                    if (data.pvd) prof.pvdPercent = data.pvd;
+                    if (data.ssoCap) prof.ssoCap = data.ssoCap;
                 }
-                if (data.pvd) prof.pvdPercent = data.pvd;
-                if (data.ssoCap) prof.ssoCap = data.ssoCap;
                 prof.updatedAt = Date.now();
                 localStorage.setItem(PROFILE_KEY, JSON.stringify(prof));
                 try {
@@ -546,25 +617,74 @@
             saveState();
 
             let totalIncome = 0;
-            let pvdSalaryBase = 0;
-            let ssoSalaryBase = 0;
+            let pvdDeduction = 0;
+            let ssoDeduction = 0;
 
             if (incomeMode === 'yearly') {
                 const yearlyIncome = parseNum(document.getElementById('yearlyIncome').value);
                 const yearlyBonus = parseNum(document.getElementById('yearlyBonus').value);
                 totalIncome = yearlyIncome + yearlyBonus;
-                pvdSalaryBase = yearlyIncome;
-                ssoSalaryBase = yearlyIncome / 12;
+
+                // PVD in yearly mode: total amount input in THB (statutory cap at 15% of annual income)
+                const yearlyPvdInput = document.getElementById('yearlyPvd');
+                const yearlyPvdVal = yearlyPvdInput && yearlyPvdInput.value !== '' ? parseNum(yearlyPvdInput.value) : (parseNum(document.getElementById('pvd')?.value) > 0 ? yearlyIncome * (parseNum(document.getElementById('pvd')?.value) / 100) : 0);
+                const maxYearlyPvd = yearlyIncome > 0 ? yearlyIncome * 0.15 : Infinity;
+                pvdDeduction = Math.min(yearlyPvdVal, maxYearlyPvd);
+
+                const warnYearlyPvdEl = document.getElementById('warn-yearly-pvd');
+                if (warnYearlyPvdEl) {
+                    if (yearlyPvdVal > maxYearlyPvd && yearlyIncome > 0) {
+                        warnYearlyPvdEl.textContent = LANG === 'en'
+                            ? `⚠️ Capped at 15% of annual income (${formatMoney(maxYearlyPvd)} THB)`
+                            : `⚠️ ใช้สิทธิ์ได้ไม่เกิน 15% ของเงินได้ทั้งปี (${formatMoney(maxYearlyPvd)} บาท)`;
+                        warnYearlyPvdEl.style.display = 'block';
+                    } else {
+                        warnYearlyPvdEl.style.display = 'none';
+                    }
+                }
+
+                // SSO in yearly mode: total amount input in THB (statutory cap at 13,800 THB/year)
+                const yearlySsoInput = document.getElementById('yearlySso');
+                let yearlySsoVal = 0;
+                if (yearlySsoInput && yearlySsoInput.value !== '') {
+                    yearlySsoVal = parseNum(yearlySsoInput.value);
+                } else {
+                    const ssoCapVal = parseNum(document.getElementById('ssoCap')?.value);
+                    if (ssoCapVal > 0) {
+                        yearlySsoVal = Math.min((yearlyIncome / 12) * 0.05, ssoCapVal) * 12;
+                    } else {
+                        yearlySsoVal = 0;
+                    }
+                }
+                const maxYearlySso = 13800;
+                ssoDeduction = Math.min(yearlySsoVal, maxYearlySso);
+
+                const warnYearlySsoEl = document.getElementById('warn-yearly-sso');
+                if (warnYearlySsoEl) {
+                    if (yearlySsoVal > maxYearlySso) {
+                        warnYearlySsoEl.textContent = LANG === 'en'
+                            ? `⚠️ Capped at statutory maximum of ${formatMoney(maxYearlySso)} THB/year`
+                            : `⚠️ ใช้สิทธิ์ได้สูงสุดไม่เกินเพดานกฎหมาย ${formatMoney(maxYearlySso)} บาท/ปี`;
+                        warnYearlySsoEl.style.display = 'block';
+                    } else {
+                        warnYearlySsoEl.style.display = 'none';
+                    }
+                }
             } else {
                 const salary = parseNum(document.getElementById('salary').value);
                 const bonus = parseNum(document.getElementById('bonus').value);
                 totalIncome = (salary * 12) + bonus;
-                pvdSalaryBase = salary * 12;
-                ssoSalaryBase = salary;
-            }
 
-            const pvdPercent = parseNum(document.getElementById('pvd').value);
-            const ssoCapVal = parseNum(document.getElementById('ssoCap').value);
+                const pvdPercent = parseNum(document.getElementById('pvd').value);
+                pvdDeduction = (salary * 12) * (pvdPercent / 100);
+
+                const ssoCapVal = parseNum(document.getElementById('ssoCap').value);
+                if (ssoCapVal > 0) {
+                    let ssoMonthly = salary * 0.05;
+                    if (ssoMonthly > ssoCapVal) ssoMonthly = ssoCapVal;
+                    ssoDeduction = ssoMonthly * 12;
+                }
+            }
 
             const fundDeduct = parseNum(document.getElementById('fundDeduct').value);
             const thaiEsgDeduct = parseNum(document.getElementById('thaiEsgDeduct')?.value);
@@ -576,15 +696,6 @@
             // คำนวณค่าลดหย่อน
             const expenseDeduction = Math.min(totalIncome * 0.5, 100000);
             const personalDeduction = 60000;
-            const pvdDeduction = pvdSalaryBase * (pvdPercent / 100);
-
-            // ประกันสังคม
-            let ssoDeduction = 0;
-            if (ssoCapVal > 0) {
-                let ssoMonthly = ssoSalaryBase * 0.05;
-                if (ssoMonthly > ssoCapVal) ssoMonthly = ssoCapVal;
-                ssoDeduction = ssoMonthly * 12;
-            }
 
             // กฎหมายภาษี: ตรวจสอบและบังคับใช้เพดานลดหย่อนตามประมวลรัษฎากร
             // 1. ดอกเบี้ยกู้บ้าน: สูงสุด 100,000 บาท
@@ -980,6 +1091,8 @@
                 if (bonus !== '') document.getElementById('bonus').value = bonus;
                 if (data?.yearlyIncome && document.getElementById('yearlyIncome')) document.getElementById('yearlyIncome').value = data.yearlyIncome;
                 if (data?.yearlyBonus && document.getElementById('yearlyBonus')) document.getElementById('yearlyBonus').value = data.yearlyBonus;
+                if (data?.yearlyPvd && document.getElementById('yearlyPvd')) document.getElementById('yearlyPvd').value = data.yearlyPvd;
+                if (data?.yearlySso && document.getElementById('yearlySso')) document.getElementById('yearlySso').value = data.yearlySso;
                 if (pvd !== '') document.getElementById('pvd').value = pvd;
                 if (ssoCap !== '') document.getElementById('ssoCap').value = ssoCap;
 
