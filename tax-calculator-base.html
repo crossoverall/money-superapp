@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="1.3.7">
+    <meta name="version" content="1.3.8">
     <meta name="description" content="คำนวณภาษีเงินได้บุคคลธรรมดา — ประมาณการภาษีเงินได้จากเงินเดือนและโบนัส พร้อมแสดงรายละเอียดตามขั้นบันได">
     <title>คำนวณภาษีเงินได้บุคคลธรรมดา</title>
     <link rel="stylesheet" href="css/tailwind-lite.css">
@@ -47,16 +47,72 @@
     <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
         <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center" id="lbl-title">คำนวณภาษีเบื้องต้น 📊</h2>
 
+        <!-- Income Mode Switcher Tabs -->
+        <div class="flex mb-5 bg-gray-100 dark:bg-slate-800 p-1 rounded-xl border border-gray-200 dark:border-slate-700" role="tablist">
+            <button type="button" id="tab-mode-monthly" onclick="switchIncomeMode('monthly')" class="flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm" role="tab" aria-selected="true">
+                <span id="lbl-tab-monthly">📅 รายได้รายเดือน</span>
+            </button>
+            <button type="button" id="tab-mode-yearly" onclick="switchIncomeMode('yearly')" class="flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" role="tab" aria-selected="false">
+                <span id="lbl-tab-yearly">📆 รายได้รายปี (ไม่คงที่)</span>
+            </button>
+        </div>
+
         <!-- Input Section -->
         <div class="space-y-4 mb-6">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-salary">เงินเดือน (บาท/เดือน)</label>
-                <input type="number" id="salary" placeholder="เช่น 50000" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
+            <!-- Monthly Input Mode -->
+            <div id="section-monthly" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-salary">เงินเดือน (บาท/เดือน)</label>
+                    <input type="number" id="salary" placeholder="เช่น 50000" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-bonus">โบนัส (บาท/ปี)</label>
+                    <input type="number" id="bonus" placeholder="เช่น 100000" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
+                </div>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-bonus">โบนัส (บาท/ปี)</label>
-                <input type="number" id="bonus" placeholder="เช่น 100000" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
+
+            <!-- Yearly / Variable Income Mode -->
+            <div id="section-yearly" class="space-y-4" style="display:none;">
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-sm font-medium text-gray-700" id="lbl-yearly-income">รายได้รวมทั้งปี (บาท/ปี)</label>
+                        <span class="text-[11px] text-gray-400" id="lbl-yearly-income-tag">เงินได้ 40(1), 40(2)</span>
+                    </div>
+                    <input type="number" id="yearlyIncome" placeholder="เช่น 600000" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
+                    <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1" id="lbl-yearly-hint">สำหรับฟรีแลนซ์ ค้าขาย คอมมิชชั่น หรือรายได้แต่ละเดือนไม่แน่นอน</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-yearly-bonus">โบนัส / รายได้พิเศษอื่นๆ ทั้งปี (บาท/ปี)</label>
+                    <input type="number" id="yearlyBonus" placeholder="เช่น 50000" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
+                </div>
+
+                <!-- 12-Month Inconsistent Income Breakdown Helper -->
+                <details class="bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-lg p-3 text-xs">
+                    <summary class="font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none" id="lbl-months-helper">➕ ตัวช่วยรวมรายได้ 12 เดือน (หากรายได้แต่ละเดือนไม่เท่ากัน)</summary>
+                    <div class="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
+                        <p class="text-[11px] text-gray-500 dark:text-gray-400 mb-2" id="lbl-months-subhint">กรอกรายได้ในแต่ละเดือน ระบบจะคำนวณยอดรวมทั้งปีให้อัตโนมัติ</p>
+                        <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-1">ม.ค.</label><input type="number" id="m-income-1" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
+                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-2">ก.พ.</label><input type="number" id="m-income-2" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
+                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-3">มี.ค.</label><input type="number" id="m-income-3" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
+                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-4">เม.ย.</label><input type="number" id="m-income-4" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
+                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-5">พ.ค.</label><input type="number" id="m-income-5" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
+                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-6">มิ.ย.</label><input type="number" id="m-income-6" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
+                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-7">ก.ค.</label><input type="number" id="m-income-7" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
+                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-8">ส.ค.</label><input type="number" id="m-income-8" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
+                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-9">ก.ย.</label><input type="number" id="m-income-9" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
+                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-10">ต.ค.</label><input type="number" id="m-income-10" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
+                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-11">พ.ย.</label><input type="number" id="m-income-11" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
+                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-12">ธ.ค.</label><input type="number" id="m-income-12" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
+                        </div>
+                        <div class="flex justify-between items-center mt-2.5 pt-1.5 border-t border-gray-200 dark:border-slate-700">
+                            <span class="font-medium text-gray-600 dark:text-gray-300" id="lbl-months-total">รวม 12 เดือน:</span>
+                            <span class="font-bold text-blue-600 dark:text-blue-400" id="months-breakdown-total">0 บาท</span>
+                        </div>
+                    </div>
+                </details>
             </div>
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-pvdPercent">กองทุนสำรองเลี้ยงชีพ (%)</label>
                 <input type="number" id="pvd" placeholder="เช่น 5" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
@@ -64,6 +120,7 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-sso-ceiling">เพดานประกันสังคม</label>
                 <select id="ssoCap" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" onchange="calculateTax()">
+                    <option value="0" id="opt-sso-0">0 บาท (ไม่ได้ส่ง / อาชีพอิสระ)</option>
                     <option value="750" id="opt-sso-750">750 บาท (เพดานเดิม 15,000)</option>
                     <option value="875" id="opt-sso-875" selected>875 บาท (เพดานใหม่ 17,500)</option>
                     <option value="1000" id="opt-sso-1000">1,000 บาท (เพดานใหม่ 20,000)</option>
@@ -193,7 +250,7 @@
                     <span id="lbl-print-tax">🖨️ พิมพ์ / PDF</span>
                 </button>
             </div>
-            <p class="text-xs text-gray-400">v1.3.7</p>
+            <p class="text-xs text-gray-400">v1.3.8</p>
         </div>
     </div>
 
@@ -207,8 +264,18 @@
             document.title = 'Personal Income Tax Calculator';
             const EN = {
                 'lbl-title': 'Tax Estimate 📊',
+                'lbl-tab-monthly': '📅 Monthly Income',
+                'lbl-tab-yearly': '📆 Annual / Variable Income',
                 'lbl-salary': 'Salary (THB/month)',
                 'lbl-bonus': 'Bonus (THB/year)',
+                'lbl-yearly-income': 'Total Annual Income (THB/year)',
+                'lbl-yearly-income-tag': 'Section 40(1), 40(2)',
+                'lbl-yearly-hint': 'For freelancers, commissions, contract, or variable monthly earnings',
+                'lbl-yearly-bonus': 'Annual Bonus / Other Income (THB/year)',
+                'lbl-months-helper': '➕ 12-Month Income Breakdown Calculator',
+                'lbl-months-subhint': 'Enter monthly earnings below; annual total will auto-calculate',
+                'lbl-months-total': '12-Month Total:',
+                'opt-sso-0': '0 THB (None / Freelance)',
                 'lbl-pvdPercent': 'Provident Fund (%)',
                 'lbl-sso-ceiling': 'Social Security (SSO) Cap',
                 'opt-sso-750': '750 THB (15k wage cap)',
@@ -242,6 +309,11 @@
                 const el = document.getElementById(id);
                 if (el) el.textContent = EN[id];
             });
+            const enMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            for (let i = 1; i <= 12; i++) {
+                const mEl = document.getElementById('lbl-m-' + i);
+                if (mEl) mEl.textContent = enMonths[i - 1];
+            }
             document.getElementById('personalDeductVal').textContent = '- 60,000 THB';
             document.getElementById('unitLabel').textContent = ' THB';
             document.getElementById('totalIncome').textContent = '0 THB';
@@ -249,11 +321,67 @@
             document.getElementById('pvdDeduct').textContent = '- 0 THB';
             document.getElementById('ssoDeduct').textContent = '- 0 THB';
             document.getElementById('netIncome').textContent = '0 THB';
-            const placeholders = { salary: 'e.g. 50000', bonus: 'e.g. 100000', pvd: 'e.g. 5' };
+            const placeholders = { salary: 'e.g. 50000', bonus: 'e.g. 100000', pvd: 'e.g. 5', yearlyIncome: 'e.g. 600000', yearlyBonus: 'e.g. 50000' };
             Object.keys(placeholders).forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.placeholder = placeholders[id];
             });
+        }
+
+        let incomeMode = 'monthly';
+
+        function switchIncomeMode(mode) {
+            incomeMode = mode;
+            const tabMonthly = document.getElementById('tab-mode-monthly');
+            const tabYearly = document.getElementById('tab-mode-yearly');
+            const secMonthly = document.getElementById('section-monthly');
+            const secYearly = document.getElementById('section-yearly');
+
+            if (mode === 'yearly') {
+                tabYearly.className = "flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm";
+                tabYearly.setAttribute('aria-selected', 'true');
+                tabMonthly.className = "flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200";
+                tabMonthly.setAttribute('aria-selected', 'false');
+                secYearly.style.display = 'block';
+                secMonthly.style.display = 'none';
+
+                // If yearlyIncome is empty but salary exists, prefill yearly = salary * 12
+                const curSalary = parseNum(document.getElementById('salary').value);
+                const curYearly = document.getElementById('yearlyIncome').value;
+                if (curSalary > 0 && !curYearly) {
+                    document.getElementById('yearlyIncome').value = curSalary * 12;
+                }
+                const curBonus = document.getElementById('bonus').value;
+                if (curBonus && !document.getElementById('yearlyBonus').value) {
+                    document.getElementById('yearlyBonus').value = curBonus;
+                }
+            } else {
+                tabMonthly.className = "flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm";
+                tabMonthly.setAttribute('aria-selected', 'true');
+                tabYearly.className = "flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200";
+                tabYearly.setAttribute('aria-selected', 'false');
+                secMonthly.style.display = 'block';
+                secYearly.style.display = 'none';
+
+                const curYBonus = document.getElementById('yearlyBonus').value;
+                if (curYBonus && !document.getElementById('bonus').value) {
+                    document.getElementById('bonus').value = curYBonus;
+                }
+            }
+            calculateTax();
+        }
+
+        function calcMonthlyBreakdown() {
+            let sum = 0;
+            for (let i = 1; i <= 12; i++) {
+                const val = parseNum(document.getElementById('m-income-' + i).value);
+                sum += val;
+            }
+            document.getElementById('months-breakdown-total').textContent = formatMoney(sum) + ' ' + unit;
+            if (sum > 0) {
+                document.getElementById('yearlyIncome').value = sum;
+            }
+            calculateTax();
         }
 
         function formatMoney(amount) {
@@ -265,8 +393,11 @@
 
         function saveState() {
             const data = {
+                incomeMode: incomeMode,
                 salary: document.getElementById('salary').value,
                 bonus: document.getElementById('bonus').value,
+                yearlyIncome: document.getElementById('yearlyIncome') ? document.getElementById('yearlyIncome').value : '',
+                yearlyBonus: document.getElementById('yearlyBonus') ? document.getElementById('yearlyBonus').value : '',
                 pvd: document.getElementById('pvd').value,
                 ssoCap: document.getElementById('ssoCap').value,
                 fundDeduct: document.getElementById('fundDeduct').value,
@@ -274,15 +405,22 @@
                 easyReceiptDeduct: document.getElementById('easyReceiptDeduct') ? document.getElementById('easyReceiptDeduct').value : '',
                 insuranceDeduct: document.getElementById('insuranceDeduct').value,
                 mortgageDeduct: document.getElementById('mortgageDeduct').value,
-                otherDeduct: document.getElementById('otherDeduct').value
+                otherDeduct: document.getElementById('otherDeduct').value,
+                monthsBreakdown: Array.from({length: 12}, (_, i) => document.getElementById('m-income-' + (i + 1)) ? document.getElementById('m-income-' + (i + 1)).value : '')
             };
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
                 const profRaw = localStorage.getItem(PROFILE_KEY);
                 const prof = profRaw ? JSON.parse(profRaw) : {};
-                if (data.salary) prof.salary = data.salary;
+                if (incomeMode === 'yearly') {
+                    const yInc = parseNum(data.yearlyIncome);
+                    if (yInc) prof.salary = Math.round(yInc / 12);
+                    if (data.yearlyBonus) prof.bonus = data.yearlyBonus;
+                } else {
+                    if (data.salary) prof.salary = data.salary;
+                    if (data.bonus) prof.bonus = data.bonus;
+                }
                 if (data.pvd) prof.pvdPercent = data.pvd;
-                if (data.bonus) prof.bonus = data.bonus;
                 if (data.ssoCap) prof.ssoCap = data.ssoCap;
                 prof.updatedAt = Date.now();
                 localStorage.setItem(PROFILE_KEY, JSON.stringify(prof));
@@ -302,10 +440,26 @@
         function calculateTax() {
             saveState();
 
-            const salary = parseNum(document.getElementById('salary').value);
-            const bonus = parseNum(document.getElementById('bonus').value);
+            let totalIncome = 0;
+            let pvdSalaryBase = 0;
+            let ssoSalaryBase = 0;
+
+            if (incomeMode === 'yearly') {
+                const yearlyIncome = parseNum(document.getElementById('yearlyIncome').value);
+                const yearlyBonus = parseNum(document.getElementById('yearlyBonus').value);
+                totalIncome = yearlyIncome + yearlyBonus;
+                pvdSalaryBase = yearlyIncome;
+                ssoSalaryBase = yearlyIncome / 12;
+            } else {
+                const salary = parseNum(document.getElementById('salary').value);
+                const bonus = parseNum(document.getElementById('bonus').value);
+                totalIncome = (salary * 12) + bonus;
+                pvdSalaryBase = salary * 12;
+                ssoSalaryBase = salary;
+            }
+
             const pvdPercent = parseNum(document.getElementById('pvd').value);
-            const ssoCapVal = parseNum(document.getElementById('ssoCap').value) || 875;
+            const ssoCapVal = parseNum(document.getElementById('ssoCap').value);
 
             const fundDeduct = parseNum(document.getElementById('fundDeduct').value);
             const thaiEsgDeduct = parseNum(document.getElementById('thaiEsgDeduct')?.value);
@@ -314,18 +468,18 @@
             const mortgageDeduct = parseNum(document.getElementById('mortgageDeduct').value);
             const otherDeduct = parseNum(document.getElementById('otherDeduct').value);
 
-            // คำนวณรายได้
-            const totalIncome = (salary * 12) + bonus;
-
             // คำนวณค่าลดหย่อน
             const expenseDeduction = Math.min(totalIncome * 0.5, 100000);
             const personalDeduction = 60000;
-            const pvdDeduction = (salary * 12) * (pvdPercent / 100);
+            const pvdDeduction = pvdSalaryBase * (pvdPercent / 100);
 
             // ประกันสังคม
-            let ssoMonthly = salary * 0.05;
-            if (ssoMonthly > ssoCapVal) ssoMonthly = ssoCapVal;
-            const ssoDeduction = ssoMonthly * 12;
+            let ssoDeduction = 0;
+            if (ssoCapVal > 0) {
+                let ssoMonthly = ssoSalaryBase * 0.05;
+                if (ssoMonthly > ssoCapVal) ssoMonthly = ssoCapVal;
+                ssoDeduction = ssoMonthly * 12;
+            }
 
             // กฎหมายภาษี: ตรวจสอบและบังคับใช้เพดานลดหย่อนตามประมวลรัษฎากร
             // 1. ดอกเบี้ยกู้บ้าน: สูงสุด 100,000 บาท
@@ -715,12 +869,28 @@
                 const salary = (prof && prof.salary !== undefined && prof.salary !== '') ? prof.salary : (data?.salary || '');
                 const bonus = (prof && prof.bonus !== undefined && prof.bonus !== '') ? prof.bonus : (data?.bonus || '');
                 const pvd = (prof && prof.pvdPercent !== undefined && prof.pvdPercent !== '') ? prof.pvdPercent : (data?.pvd || '');
-                const ssoCap = (prof && prof.ssoCap !== undefined && prof.ssoCap !== '') ? prof.ssoCap : (data?.ssoCap || '875');
+                const ssoCap = (prof && prof.ssoCap !== undefined && prof.ssoCap !== '') ? prof.ssoCap : (data?.ssoCap !== undefined ? data.ssoCap : '875');
 
                 if (salary !== undefined && salary !== '') document.getElementById('salary').value = salary;
                 if (bonus !== '') document.getElementById('bonus').value = bonus;
+                if (data?.yearlyIncome && document.getElementById('yearlyIncome')) document.getElementById('yearlyIncome').value = data.yearlyIncome;
+                if (data?.yearlyBonus && document.getElementById('yearlyBonus')) document.getElementById('yearlyBonus').value = data.yearlyBonus;
                 if (pvd !== '') document.getElementById('pvd').value = pvd;
                 if (ssoCap !== '') document.getElementById('ssoCap').value = ssoCap;
+
+                if (Array.isArray(data?.monthsBreakdown)) {
+                    let sum = 0;
+                    data.monthsBreakdown.forEach((val, idx) => {
+                        const input = document.getElementById('m-income-' + (idx + 1));
+                        if (input && val !== undefined) {
+                            input.value = val;
+                            sum += parseNum(val);
+                        }
+                    });
+                    if (document.getElementById('months-breakdown-total')) {
+                        document.getElementById('months-breakdown-total').textContent = formatMoney(sum) + ' ' + unit;
+                    }
+                }
 
                 if (data?.fundDeduct) document.getElementById('fundDeduct').value = data.fundDeduct;
                 if (data?.thaiEsgDeduct && document.getElementById('thaiEsgDeduct')) document.getElementById('thaiEsgDeduct').value = data.thaiEsgDeduct;
@@ -729,7 +899,9 @@
                 if (data?.mortgageDeduct) document.getElementById('mortgageDeduct').value = data.mortgageDeduct;
                 if (data?.otherDeduct) document.getElementById('otherDeduct').value = data.otherDeduct;
 
-                if (parseFloat(document.getElementById('salary').value) > 0) {
+                if (data?.incomeMode && (data.incomeMode === 'yearly' || data.incomeMode === 'monthly')) {
+                    switchIncomeMode(data.incomeMode);
+                } else if (parseFloat(document.getElementById('salary').value) > 0) {
                     calculateTax();
                 }
             } catch(e){}
