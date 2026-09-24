@@ -1,4 +1,4 @@
-const CACHE_NAME = 'money-superapp-v1.3.11';
+const CACHE_NAME = 'money-superapp-v1.3.12';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -17,7 +17,14 @@ const ASSETS_TO_CACHE = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(ASSETS_TO_CACHE);
+      return Promise.all(
+        ASSETS_TO_CACHE.map(url => {
+          return fetch(url, { cache: 'reload' }).then(response => {
+            if (response.ok) return cache.put(url, response);
+            return Promise.reject(new Error(`Failed to cache ${url}: ${response.status}`));
+          });
+        })
+      );
     }).then(() => self.skipWaiting())
   );
 });
@@ -40,7 +47,7 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
   event.respondWith(
-    caches.match(event.request).then(cachedResponse => {
+    caches.match(event.request, { ignoreSearch: true }).then(cachedResponse => {
       if (cachedResponse) {
         // Fetch in background to keep cache fresh (stale-while-revalidate for local origin)
         fetch(event.request).then(networkResponse => {
