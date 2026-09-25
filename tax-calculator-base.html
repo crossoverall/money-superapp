@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="1.3.14">
+    <meta name="version" content="1.3.15">
     <meta name="description" content="คำนวณภาษีเงินได้บุคคลธรรมดา — ประมาณการภาษีเงินได้จากเงินเดือนและโบนัส พร้อมแสดงรายละเอียดตามขั้นบันได">
     <title>คำนวณภาษีเงินได้บุคคลธรรมดา</title>
     <link rel="stylesheet" href="css/tailwind-lite.css">
@@ -372,7 +372,7 @@
                     <span id="lbl-print-tax">🖨️ พิมพ์ / PDF</span>
                 </button>
             </div>
-            <p class="text-xs text-gray-400">v1.3.14</p>
+            <p class="text-xs text-gray-400">v1.3.15</p>
         </div>
     </div>
 
@@ -557,7 +557,6 @@
         }
 
         const STORAGE_KEY = 'moneySuperapp.taxBase';
-        const PROFILE_KEY = 'moneySuperapp.sharedProfile';
 
         function saveState() {
             const data = {
@@ -580,29 +579,6 @@
             };
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-                const profRaw = localStorage.getItem(PROFILE_KEY);
-                const prof = profRaw ? JSON.parse(profRaw) : {};
-                if (incomeMode === 'yearly') {
-                    const yInc = parseNum(data.yearlyIncome);
-                    if (yInc) prof.salary = Math.round(yInc / 12);
-                    if (data.yearlyBonus) prof.bonus = data.yearlyBonus;
-                    const yPvd = parseNum(data.yearlyPvd);
-                    if (yPvd > 0 && yInc > 0) prof.pvdPercent = Math.min(15, Math.round((yPvd / yInc) * 100));
-                    const ySso = parseNum(data.yearlySso);
-                    if (data.yearlySso === '0' || ySso === 0) {
-                        prof.ssoCap = 0;
-                    }
-                } else {
-                    if (data.salary) prof.salary = data.salary;
-                    if (data.bonus) prof.bonus = data.bonus;
-                    if (data.pvd) prof.pvdPercent = data.pvd;
-                    if (data.ssoCap) prof.ssoCap = data.ssoCap;
-                }
-                prof.updatedAt = Date.now();
-                localStorage.setItem(PROFILE_KEY, JSON.stringify(prof));
-                try {
-                    window.parent.postMessage({ action: 'sharedProfileUpdated', profile: prof }, '*');
-                } catch(e){}
             } catch(e){}
         }
 
@@ -1047,56 +1023,22 @@
             }).catch(() => {});
         }
 
-        function syncFromProfile() {
-            try {
-                const profRaw = localStorage.getItem(PROFILE_KEY);
-                if (!profRaw) return;
-                const prof = JSON.parse(profRaw);
-                let changed = false;
-                if (prof.salary !== undefined && prof.salary !== '' && document.getElementById('salary').value !== String(prof.salary)) {
-                    document.getElementById('salary').value = prof.salary;
-                    changed = true;
-                }
-                if (prof.bonus !== undefined && prof.bonus !== '' && document.getElementById('bonus').value !== String(prof.bonus)) {
-                    document.getElementById('bonus').value = prof.bonus;
-                    changed = true;
-                }
-                if (prof.pvdPercent !== undefined && prof.pvdPercent !== '' && document.getElementById('pvd').value !== String(prof.pvdPercent)) {
-                    document.getElementById('pvd').value = prof.pvdPercent;
-                    changed = true;
-                }
-                if (prof.ssoCap !== undefined && prof.ssoCap !== '' && document.getElementById('ssoCap').value !== String(prof.ssoCap)) {
-                    document.getElementById('ssoCap').value = prof.ssoCap;
-                    changed = true;
-                }
-                if (changed && parseFloat(document.getElementById('salary').value) > 0) {
-                    calculateTax();
-                }
-            } catch(e){}
-        }
-
         function loadState() {
             try {
                 const raw = localStorage.getItem(STORAGE_KEY);
-                const profRaw = localStorage.getItem(PROFILE_KEY);
-                const prof = profRaw ? JSON.parse(profRaw) : {};
                 const data = raw ? JSON.parse(raw) : null;
+                if (!data) return;
 
-                const salary = (prof && prof.salary !== undefined && prof.salary !== '') ? prof.salary : (data?.salary || '');
-                const bonus = (prof && prof.bonus !== undefined && prof.bonus !== '') ? prof.bonus : (data?.bonus || '');
-                const pvd = (prof && prof.pvdPercent !== undefined && prof.pvdPercent !== '') ? prof.pvdPercent : (data?.pvd || '');
-                const ssoCap = (prof && prof.ssoCap !== undefined && prof.ssoCap !== '') ? prof.ssoCap : (data?.ssoCap !== undefined ? data.ssoCap : '875');
+                if (data.salary !== undefined && data.salary !== '') document.getElementById('salary').value = data.salary;
+                if (data.bonus !== undefined && data.bonus !== '') document.getElementById('bonus').value = data.bonus;
+                if (data.yearlyIncome && document.getElementById('yearlyIncome')) document.getElementById('yearlyIncome').value = data.yearlyIncome;
+                if (data.yearlyBonus && document.getElementById('yearlyBonus')) document.getElementById('yearlyBonus').value = data.yearlyBonus;
+                if (data.yearlyPvd && document.getElementById('yearlyPvd')) document.getElementById('yearlyPvd').value = data.yearlyPvd;
+                if (data.yearlySso && document.getElementById('yearlySso')) document.getElementById('yearlySso').value = data.yearlySso;
+                if (data.pvd !== undefined && data.pvd !== '') document.getElementById('pvd').value = data.pvd;
+                if (data.ssoCap !== undefined && data.ssoCap !== '') document.getElementById('ssoCap').value = data.ssoCap;
 
-                if (salary !== undefined && salary !== '') document.getElementById('salary').value = salary;
-                if (bonus !== '') document.getElementById('bonus').value = bonus;
-                if (data?.yearlyIncome && document.getElementById('yearlyIncome')) document.getElementById('yearlyIncome').value = data.yearlyIncome;
-                if (data?.yearlyBonus && document.getElementById('yearlyBonus')) document.getElementById('yearlyBonus').value = data.yearlyBonus;
-                if (data?.yearlyPvd && document.getElementById('yearlyPvd')) document.getElementById('yearlyPvd').value = data.yearlyPvd;
-                if (data?.yearlySso && document.getElementById('yearlySso')) document.getElementById('yearlySso').value = data.yearlySso;
-                if (pvd !== '') document.getElementById('pvd').value = pvd;
-                if (ssoCap !== '') document.getElementById('ssoCap').value = ssoCap;
-
-                if (Array.isArray(data?.monthsBreakdown)) {
+                if (Array.isArray(data.monthsBreakdown)) {
                     let sum = 0;
                     data.monthsBreakdown.forEach((val, idx) => {
                         const input = document.getElementById('m-income-' + (idx + 1));
@@ -1110,31 +1052,20 @@
                     }
                 }
 
-                if (data?.fundDeduct) document.getElementById('fundDeduct').value = data.fundDeduct;
-                if (data?.thaiEsgDeduct && document.getElementById('thaiEsgDeduct')) document.getElementById('thaiEsgDeduct').value = data.thaiEsgDeduct;
-                if (data?.easyReceiptDeduct && document.getElementById('easyReceiptDeduct')) document.getElementById('easyReceiptDeduct').value = data.easyReceiptDeduct;
-                if (data?.insuranceDeduct) document.getElementById('insuranceDeduct').value = data.insuranceDeduct;
-                if (data?.mortgageDeduct) document.getElementById('mortgageDeduct').value = data.mortgageDeduct;
-                if (data?.otherDeduct) document.getElementById('otherDeduct').value = data.otherDeduct;
+                if (data.fundDeduct) document.getElementById('fundDeduct').value = data.fundDeduct;
+                if (data.thaiEsgDeduct && document.getElementById('thaiEsgDeduct')) document.getElementById('thaiEsgDeduct').value = data.thaiEsgDeduct;
+                if (data.easyReceiptDeduct && document.getElementById('easyReceiptDeduct')) document.getElementById('easyReceiptDeduct').value = data.easyReceiptDeduct;
+                if (data.insuranceDeduct) document.getElementById('insuranceDeduct').value = data.insuranceDeduct;
+                if (data.mortgageDeduct) document.getElementById('mortgageDeduct').value = data.mortgageDeduct;
+                if (data.otherDeduct) document.getElementById('otherDeduct').value = data.otherDeduct;
 
-                if (data?.incomeMode && (data.incomeMode === 'yearly' || data.incomeMode === 'monthly')) {
+                if (data.incomeMode && (data.incomeMode === 'yearly' || data.incomeMode === 'monthly')) {
                     switchIncomeMode(data.incomeMode);
                 } else if (parseFloat(document.getElementById('salary').value) > 0) {
                     calculateTax();
                 }
             } catch(e){}
         }
-
-        window.addEventListener('storage', (e) => {
-            if (e.key === PROFILE_KEY) {
-                syncFromProfile();
-            }
-        });
-        window.addEventListener('message', (e) => {
-            if (e.data && e.data.action === 'sharedProfileUpdated') {
-                syncFromProfile();
-            }
-        });
 
         // Forward global Alt+1..5 shortcuts to parent
         window.addEventListener('keydown', (e) => {

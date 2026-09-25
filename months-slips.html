@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="1.3.14">
+    <meta name="version" content="1.3.15">
     <meta name="description" content="จำลองสลิปเงินเดือนรวมโบนัส — คำนวณรายได้ ภาษี เงินสมทบประกันสังคม และกองทุนสำรองเลี้ยงชีพ per เดือน">
     <title>จำลองสลิปเงินเดือน (รวมโบนัส)</title>
     <link rel="stylesheet" href="css/tailwind-lite.css">
@@ -214,7 +214,7 @@
                         <button onclick="window.print()" id="btn-print-slip" class="py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all flex items-center gap-1.5">
                             <span id="lbl-print-slip">🖨️ พิมพ์ / บันทึก PDF</span>
                         </button>
-                        <p class="text-xs text-gray-400 ml-auto">v1.3.14</p>
+                        <p class="text-xs text-gray-400 ml-auto">v1.3.15</p>
                     </div>
                 </div>
             </div>
@@ -310,7 +310,6 @@
         }
 
         const STORAGE_KEY = 'moneySuperapp.monthsSlips';
-        const PROFILE_KEY = 'moneySuperapp.sharedProfile';
 
         function saveState() {
             const data = {
@@ -322,17 +321,6 @@
             };
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-                const profRaw = localStorage.getItem(PROFILE_KEY);
-                const prof = profRaw ? JSON.parse(profRaw) : {};
-                if (data.salary) prof.salary = data.salary;
-                if (data.pvd) prof.pvdPercent = data.pvd;
-                if (data.bonus) prof.bonus = data.bonus;
-                if (data.ssoCap) prof.ssoCap = data.ssoCap;
-                prof.updatedAt = Date.now();
-                localStorage.setItem(PROFILE_KEY, JSON.stringify(prof));
-                try {
-                    window.parent.postMessage({ action: 'sharedProfileUpdated', profile: prof }, '*');
-                } catch(e){}
             } catch(e){}
         }
 
@@ -473,48 +461,18 @@
             }
         }
 
-        function syncFromProfile() {
-            try {
-                const profRaw = localStorage.getItem(PROFILE_KEY);
-                if (!profRaw) return;
-                const prof = JSON.parse(profRaw);
-                let changed = false;
-                if (prof.salary !== undefined && prof.salary !== '' && document.getElementById('salary').value !== String(prof.salary)) {
-                    document.getElementById('salary').value = prof.salary;
-                    changed = true;
-                }
-                if (prof.bonus !== undefined && prof.bonus !== '' && document.getElementById('bonus').value !== String(prof.bonus)) {
-                    document.getElementById('bonus').value = prof.bonus;
-                    changed = true;
-                }
-                if (prof.pvdPercent !== undefined && prof.pvdPercent !== '' && document.getElementById('pvd').value !== String(prof.pvdPercent)) {
-                    document.getElementById('pvd').value = prof.pvdPercent;
-                    changed = true;
-                }
-                if (prof.ssoCap !== undefined && prof.ssoCap !== '' && document.getElementById('ssoCap').value !== String(prof.ssoCap)) {
-                    document.getElementById('ssoCap').value = prof.ssoCap;
-                    changed = true;
-                }
-                if (changed && parseFloat(document.getElementById('salary').value) > 0) {
-                    calculateSlip();
-                }
-            } catch(e){}
-        }
-
         function loadState() {
             try {
                 const raw = localStorage.getItem(STORAGE_KEY);
-                const profRaw = localStorage.getItem(PROFILE_KEY);
-                const prof = profRaw ? JSON.parse(profRaw) : {};
                 const data = raw ? JSON.parse(raw) : null;
                 
-                const salary = (prof && prof.salary !== undefined && prof.salary !== '') ? prof.salary : (data?.salary || '');
+                const salary = data?.salary || '';
                 const allowance = data?.allowance || '';
-                const bonus = (prof && prof.bonus !== undefined && prof.bonus !== '') ? prof.bonus : (data?.bonus || '');
-                const pvd = (prof && prof.pvdPercent !== undefined && prof.pvdPercent !== '') ? prof.pvdPercent : (data?.pvd || '');
-                const ssoCap = (prof && prof.ssoCap !== undefined && prof.ssoCap !== '') ? prof.ssoCap : (data?.ssoCap || '875');
+                const bonus = data?.bonus || '';
+                const pvd = data?.pvd || '';
+                const ssoCap = data?.ssoCap || '875';
 
-                if (salary !== undefined && salary !== '') document.getElementById('salary').value = salary;
+                if (salary !== '') document.getElementById('salary').value = salary;
                 if (allowance !== '') document.getElementById('allowance').value = allowance;
                 if (bonus !== '') document.getElementById('bonus').value = bonus;
                 if (pvd !== '') document.getElementById('pvd').value = pvd;
@@ -525,17 +483,6 @@
                 }
             } catch(e){}
         }
-
-        window.addEventListener('storage', (e) => {
-            if (e.key === PROFILE_KEY) {
-                syncFromProfile();
-            }
-        });
-        window.addEventListener('message', (e) => {
-            if (e.data && e.data.action === 'sharedProfileUpdated') {
-                syncFromProfile();
-            }
-        });
 
         // Forward global Alt+1..5 shortcuts to parent
         window.addEventListener('keydown', (e) => {

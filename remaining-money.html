@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="1.3.14">
+  <meta name="version" content="1.3.15">
   <title>คำนวณเงินคงเหลือ</title>
   <style>
     :root{
@@ -330,7 +330,7 @@
     <span id="saveStatus">&nbsp;</span>
     <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
   </div>
-  <p class="version-tag">v1.3.14</p>
+  <p class="version-tag">v1.3.15</p>
 
 <script>
 // ── Language ──────────────────────────────────────────────────────────────
@@ -687,15 +687,7 @@ function enableDeltaInput(inputEl, getBase, onChange){
 
 // ── Tax & SSO calculation (annualized method, same as months-slips.html) ──
 function calculateSSO(salary){
-  let cap = 875;
-  try {
-    const profRaw = localStorage.getItem('moneySuperapp.sharedProfile');
-    if(profRaw){
-      const prof = JSON.parse(profRaw);
-      if(prof.ssoCap) cap = parseFloat(prof.ssoCap) || 875;
-    }
-  } catch(e){}
-  return Math.min(salary * 0.05, cap);
+  return Math.min(salary * 0.05, 875);
 }
 
 function calculatePVD(salary, percent){
@@ -809,20 +801,9 @@ function updateAutoExpenses(pvdPct){
   }
 }
 
-const PROFILE_KEY = 'moneySuperapp.sharedProfile';
 function saveState(){
   try{
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    const profRaw = localStorage.getItem(PROFILE_KEY);
-    const prof = profRaw ? JSON.parse(profRaw) : {};
-    const sal = getSalaryValue();
-    if(sal > 0) prof.salary = sal;
-    if(pvdPercent !== undefined) prof.pvdPercent = pvdPercent;
-    prof.updatedAt = Date.now();
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(prof));
-    try {
-      window.parent.postMessage({ action: 'sharedProfileUpdated', profile: prof }, '*');
-    } catch(e){}
 
     if(saveStatusEl){
       const now = new Date();
@@ -831,39 +812,6 @@ function saveState(){
       saveStatusEl.textContent = t('lastSaved', `${hh}:${mm}`);
     }
   } catch(e){ /* localStorage unavailable — silently skip */ }
-}
-
-function syncFromProfile(){
-  try{
-    const profRaw = localStorage.getItem(PROFILE_KEY);
-    if(!profRaw) return;
-    const prof = JSON.parse(profRaw);
-    let changed = false;
-    if(prof.salary !== undefined && prof.salary !== ''){
-      const salNum = parseFloat(prof.salary);
-      if(!isNaN(salNum) && salNum > 0 && state.incomes.length > 0 && isSalaryRow(state.incomes[0])){
-        if(state.incomes[0].value !== salNum){
-          state.incomes[0].value = salNum;
-          changed = true;
-        }
-      }
-    }
-    if(prof.pvdPercent !== undefined && prof.pvdPercent !== ''){
-      const pvdNum = parseFloat(prof.pvdPercent);
-      if(!isNaN(pvdNum) && pvdPercent !== pvdNum){
-        pvdPercent = pvdNum;
-        try{ localStorage.setItem(PVD_PERCENT_KEY, String(pvdNum)); } catch(e){}
-        const pvdInput = document.getElementById('pvdPctInput');
-        if(pvdInput) pvdInput.value = pvdNum;
-        changed = true;
-      }
-    }
-    if(changed){
-      renderRows();
-      renderPvdRow();
-      compute();
-    }
-  } catch(e){}
 }
 
 function showBridgeNotification(msg){
@@ -1488,7 +1436,6 @@ function sendToRebalance(){
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────
-syncFromProfile();
 checkPendingLumpSum();
 checkPendingSlipImport();
 updateAutoExpenses(pvdPercent);
@@ -1505,9 +1452,6 @@ if (txtCurrentReserve && state.currentEmergencyReserve > 0) txtCurrentReserve.va
 compute();
 
 window.addEventListener('storage', (e) => {
-  if (e.key === PROFILE_KEY) {
-    syncFromProfile();
-  }
   if (e.key === 'moneySuperapp.pendingLumpSum') {
     checkPendingLumpSum();
   }
@@ -1516,9 +1460,6 @@ window.addEventListener('storage', (e) => {
   }
 });
 window.addEventListener('message', (e) => {
-  if (e.data && e.data.action === 'sharedProfileUpdated') {
-    syncFromProfile();
-  }
   if (e.data && e.data.action === 'importPendingData') {
     checkPendingLumpSum();
     checkPendingSlipImport();
