@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="1.3.13">
+  <meta name="version" content="1.3.14">
   <title>คำนวณเงินคงเหลือ</title>
   <style>
     :root{
@@ -82,8 +82,9 @@
       width: 110px; background: var(--bg); border: 1px solid var(--line);
       border-radius: 8px; color: var(--ink); font-size: 15px; font-weight:700;
       padding: 6px 10px; text-align:right; font-variant-numeric: tabular-nums; outline:none;
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
-    .entry-row .value-input:focus{ border-color: var(--ink-dim); }
+    .entry-row .value-input:focus{ border-color: var(--core); box-shadow: 0 0 0 2px var(--core-dim); }
     .entry-row .unit{
       font-size: 12px; color: var(--ink-faint); font-weight:600; white-space:nowrap;
     }
@@ -104,6 +105,12 @@
       background: var(--panel); border:1px solid var(--line);
       border-radius: 99px; padding: 1px 5px; text-transform:uppercase;
       letter-spacing:.04em; margin-left:4px; white-space:nowrap;
+      cursor: pointer; user-select: none; transition: all 0.15s ease;
+    }
+    .auto-badge:hover{
+      color: var(--core);
+      border-color: var(--core);
+      background: var(--core-dim);
     }
     .pvd-badge{
       font-size: 9px; font-weight:700; color: var(--core);
@@ -323,7 +330,7 @@
     <span id="saveStatus">&nbsp;</span>
     <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
   </div>
-  <p class="version-tag">v1.3.13</p>
+  <p class="version-tag">v1.3.14</p>
 
 <script>
 // ── Language ──────────────────────────────────────────────────────────────
@@ -497,9 +504,11 @@ function getDisplayName(name){
   return name;
 }
 
-function isSalaryRow(item){
+function isSalaryRow(item, index){
   if (!item) return false;
-  return item.name === 'เงินเดือน' || item.name === 'Salary';
+  if (item.isSalary === true) return true;
+  if (index === 0) return true;
+  return item.name === 'เงินเดือน' || item.name === 'Salary' || (typeof item.name === 'string' && item.name.includes('เงินเดือน'));
 }
 
 // ── Auto-row canonical names (Thai, always used as state name) ────────────
@@ -507,18 +516,27 @@ const AUTO_TAX_NAME_TH = 'ภาษีเงินได้ (ประมาณ�
       AUTO_SSO_NAME_TH  = 'ประกันสังคม (SSO)',
       AUTO_PVD_NAME_TH  = 'กองทุนสำรองเลี้ยงชีพ (PVD)';
 
+function getAutoType(item){
+  if (!item) return null;
+  if (item.autoType) return item.autoType;
+  if (item.name === AUTO_TAX_NAME_TH || item.name === 'Estimated Income Tax' || item.name === 'Estimated income tax (monthly)') return 'tax';
+  if (item.name === AUTO_SSO_NAME_TH || item.name === 'Social Security (SSO)') return 'sso';
+  if (item.name === AUTO_PVD_NAME_TH || item.name === 'Provident Fund (PVD)') return 'pvd';
+  return null;
+}
+
 // ── State ─────────────────────────────────────────────────────────────────
 const STORAGE_KEY = 'remainingMoneyCalculator.state.v1';
 
 const defaultState = {
   incomes: [
-    { name: 'เงินเดือน', value: 10000 },
+    { name: 'เงินเดือน', value: 10000, isSalary: true },
     { name: 'เงิน allowances / อื่นๆ', value: 1000 },
   ],
   expenses: [
-    { name: AUTO_TAX_NAME_TH, value: 0, auto: true },
-    { name: AUTO_SSO_NAME_TH,  value: 0, auto: true },
-    { name: AUTO_PVD_NAME_TH,  value: 0, auto: true },
+    { name: AUTO_TAX_NAME_TH, value: 0, auto: true, autoType: 'tax' },
+    { name: AUTO_SSO_NAME_TH,  value: 0, auto: true, autoType: 'sso' },
+    { name: AUTO_PVD_NAME_TH,  value: 0, auto: true, autoType: 'pvd' },
     { name: 'ค่าเช่า / ค่า condo', value: 3000 },
     { name: 'ค่าไฟฟ้า', value: 500 },
     { name: 'ค่าน้ำ', value: 200 },
@@ -526,6 +544,11 @@ const defaultState = {
   savings: [
     { name: 'เงินออมฉุกเฉิน / เงินสำรอง', value: 1000 },
   ],
+  manualOverrides: {
+    tax: false,
+    sso: false,
+    pvd: false,
+  },
   showEmergencyRunway: false,
   currentEmergencyReserve: 0,
 };
@@ -536,34 +559,41 @@ const state = (function(){
     if(!raw) return JSON.parse(JSON.stringify(defaultState));
     const saved = JSON.parse(raw);
     if(saved && Array.isArray(saved.incomes) && Array.isArray(saved.expenses)){
-      // Ensure auto rows exist in loaded state (and update existing ones to have auto: true)
+      // Ensure auto rows exist in loaded state (and update existing ones to have auto: true and autoType)
       const expenses = Array.isArray(saved.expenses) ? saved.expenses : defaultState.expenses.slice();
-      if(!expenses.find(e => e.name === AUTO_TAX_NAME_TH)){
-        expenses.unshift({ name: AUTO_TAX_NAME_TH, value: 0, auto: true });
+      if(!expenses.find(e => getAutoType(e) === 'tax')){
+        expenses.unshift({ name: AUTO_TAX_NAME_TH, value: 0, auto: true, autoType: 'tax' });
       }
-      if(!expenses.find(e => e.name === AUTO_SSO_NAME_TH)){
-        expenses.unshift({ name: AUTO_SSO_NAME_TH, value: 0, auto: true });
+      if(!expenses.find(e => getAutoType(e) === 'sso')){
+        expenses.unshift({ name: AUTO_SSO_NAME_TH, value: 0, auto: true, autoType: 'sso' });
       }
-      if(!expenses.find(e => e.name === AUTO_PVD_NAME_TH)){
-        expenses.unshift({ name: AUTO_PVD_NAME_TH, value: 0, auto: true });
+      if(!expenses.find(e => getAutoType(e) === 'pvd')){
+        expenses.unshift({ name: AUTO_PVD_NAME_TH, value: 0, auto: true, autoType: 'pvd' });
       }
-      // Ensure all auto items (including any loaded from old saved state) have auto: true
+      // Ensure all auto items have auto: true and correct autoType
       expenses.forEach(e => {
-        if(e.name === AUTO_TAX_NAME_TH || e.name === AUTO_SSO_NAME_TH || e.name === AUTO_PVD_NAME_TH){
+        const aType = getAutoType(e);
+        if(aType){
           e.auto = true;
+          e.autoType = aType;
         }
       });
       // Ensure income names are correct (safeguard against stale saved income names)
-      if(saved.incomes.length > 0 && !isSalaryRow(saved.incomes[0])){
+      if(saved.incomes.length > 0 && !isSalaryRow(saved.incomes[0], 0)){
         saved.incomes[0].name = 'เงินเดือน';
+        saved.incomes[0].isSalary = true;
       }
       const savings = Array.isArray(saved.savings) ? saved.savings : (defaultState.savings ? defaultState.savings.map(s => ({...s})) : []);
+      const manualOverrides = (saved.manualOverrides && typeof saved.manualOverrides === 'object')
+        ? { tax: !!saved.manualOverrides.tax, sso: !!saved.manualOverrides.sso, pvd: !!saved.manualOverrides.pvd }
+        : { tax: false, sso: false, pvd: false };
       const showEmergencyRunway = typeof saved.showEmergencyRunway === 'boolean' ? saved.showEmergencyRunway : false;
       const currentEmergencyReserve = Number(saved.currentEmergencyReserve) >= 0 ? Number(saved.currentEmergencyReserve) : 0;
       return {
         incomes: Array.isArray(saved.incomes) ? saved.incomes : defaultState.incomes,
         expenses,
         savings,
+        manualOverrides,
         showEmergencyRunway,
         currentEmergencyReserve,
       };
@@ -571,6 +601,8 @@ const state = (function(){
   } catch(e){ /* corrupted — fall back to defaults */ }
   return JSON.parse(JSON.stringify(defaultState));
 })();
+
+const manualOverrides = state.manualOverrides;
 
 // ── DOM refs ───────────────────────────────────────────────────────────────
 const incomeContainer  = document.getElementById('incomeContainer');
@@ -717,8 +749,8 @@ let pvdPercent = (function(){
 })();
 
 function getSalaryValue(){
-  const first = state.incomes[0];
-  return (first && isSalaryRow(first)) ? (first.value || 0) : 0;
+  const sal = state.incomes.find((item, idx) => isSalaryRow(item, idx));
+  return sal ? (Number(sal.value) || 0) : 0;
 }
 
 function updateAutoExpenses(pvdPct){
@@ -728,37 +760,52 @@ function updateAutoExpenses(pvdPct){
   const sso = salary > 0 ? calculateSSO(salary) : 0;
   const pvd = salary > 0 ? calculatePVD(salary, pvdPct) : 0;
 
-  let taxItem = state.expenses.find(e => e.name === AUTO_TAX_NAME_TH);
+  let taxItem = state.expenses.find(e => getAutoType(e) === 'tax');
   if(!taxItem){
-    taxItem = { name: AUTO_TAX_NAME_TH, value: 0, auto: true };
+    taxItem = { name: AUTO_TAX_NAME_TH, value: 0, auto: true, autoType: 'tax' };
     state.expenses.unshift(taxItem);
   }
-  taxItem.value = tax;
+  if(!manualOverrides.tax){
+    taxItem.value = tax;
+  }
 
-  let ssoItem = state.expenses.find(e => e.name === AUTO_SSO_NAME_TH);
+  let ssoItem = state.expenses.find(e => getAutoType(e) === 'sso');
   if(!ssoItem){
-    ssoItem = { name: AUTO_SSO_NAME_TH, value: 0, auto: true };
+    ssoItem = { name: AUTO_SSO_NAME_TH, value: 0, auto: true, autoType: 'sso' };
     const taxIdx = state.expenses.indexOf(taxItem);
     state.expenses.splice(taxIdx + 1, 0, ssoItem);
   }
-  ssoItem.value = sso;
+  if(!manualOverrides.sso){
+    ssoItem.value = sso;
+  }
 
-  let pvdItem = state.expenses.find(e => e.name === AUTO_PVD_NAME_TH);
+  let pvdItem = state.expenses.find(e => getAutoType(e) === 'pvd');
   if(!pvdItem){
-    pvdItem = { name: AUTO_PVD_NAME_TH, value: 0, auto: true };
+    pvdItem = { name: AUTO_PVD_NAME_TH, value: 0, auto: true, autoType: 'pvd' };
     const ssoIdx = state.expenses.indexOf(ssoItem);
     state.expenses.splice(ssoIdx + 1, 0, pvdItem);
   }
-  pvdItem.value = pvd;
+  if(!manualOverrides.pvd){
+    pvdItem.value = pvd;
+  }
 
-  // Sync DOM inputs for auto rows
+  // Sync DOM inputs for auto rows using data-auto attributes
   if(expenseContainer){
-    const taxRow = expenseContainer.querySelector(`.entry-row .name-input[value="${AUTO_TAX_NAME_TH.replace(/"/g, '&quot;')}"]`);
-    const ssoRow = expenseContainer.querySelector(`.entry-row .name-input[value="${AUTO_SSO_NAME_TH.replace(/"/g, '&quot;')}"]`);
-    const pvdRow = expenseContainer.querySelector(`.entry-row .name-input[value="${AUTO_PVD_NAME_TH.replace(/"/g, '&quot;')}"]`);
-    if(taxRow) taxRow.parentElement.querySelector('.value-input').value = fmtPlain(tax);
-    if(ssoRow) ssoRow.parentElement.querySelector('.value-input').value = fmtPlain(sso);
-    if(pvdRow) pvdRow.parentElement.querySelector('.value-input').value = fmtPlain(pvd);
+    const taxInp = expenseContainer.querySelector('.value-input[data-auto="tax"]');
+    const ssoInp = expenseContainer.querySelector('.value-input[data-auto="sso"]');
+    const pvdInp = expenseContainer.querySelector('.value-input[data-auto="pvd"]');
+    if(taxInp && document.activeElement !== taxInp && !manualOverrides.tax){
+      taxInp.value = fmtPlain(taxItem.value);
+      inputBaseValues.set(taxInp, taxItem.value);
+    }
+    if(ssoInp && document.activeElement !== ssoInp && !manualOverrides.sso){
+      ssoInp.value = fmtPlain(ssoItem.value);
+      inputBaseValues.set(ssoInp, ssoItem.value);
+    }
+    if(pvdInp && document.activeElement !== pvdInp && !manualOverrides.pvd){
+      pvdInp.value = fmtPlain(pvdItem.value);
+      inputBaseValues.set(pvdInp, pvdItem.value);
+    }
   }
 }
 
@@ -878,6 +925,10 @@ function checkPendingSlipImport(){
         if(pvdInput) pvdInput.value = slip.pvd;
       }
       localStorage.removeItem('moneySuperapp.pendingSlipImport');
+      manualOverrides.tax = false;
+      manualOverrides.sso = false;
+      manualOverrides.pvd = false;
+      updateAutoExpenses(pvdPercent);
       renderRows();
       renderPvdRow();
       compute();
@@ -903,10 +954,11 @@ function createRowContainer(items, type, container){
   items.forEach((item, i) => {
     const row = document.createElement('div');
     row.className = 'entry-row';
-    const isAuto = item.auto === true;
-    const isTax = item.name === AUTO_TAX_NAME_TH || item.name === 'Estimated Income Tax' || item.name === 'Estimated income tax (monthly)';
-    const isSso = item.name === AUTO_SSO_NAME_TH || item.name === 'Social Security (SSO)';
-    const isPvd = item.name === AUTO_PVD_NAME_TH || item.name === 'Provident Fund (PVD)';
+    const autoType = getAutoType(item);
+    const isAuto = autoType !== null;
+    const isTax = autoType === 'tax';
+    const isSso = autoType === 'sso';
+    const isPvd = autoType === 'pvd';
 
     const autoBadgeLabel = isTax ? t('autoTaxLabel')
       : isSso ? t('autoSSOLabel')
@@ -918,9 +970,10 @@ function createRowContainer(items, type, container){
     const typeLabel = type === 'income' ? (LANG === 'en' ? 'Income' : 'รายได้') : (LANG === 'en' ? 'Expense' : 'รายจ่าย');
     const placeholder = type === 'income' ? (LANG === 'en' ? `Income ${i+1}` : `รายได้ ${i+1}`) : (LANG === 'en' ? `Expense ${i+1}` : `ค่าใช้จ่าย ${i+1}`);
     const unitText = t('unit');
-    const isSalary = type === 'income' && isSalaryRow(item);
+    const isSalary = type === 'income' && isSalaryRow(item, i);
     const cannotDelete = isAuto || isSalary;
     const deleteTitle = isAuto ? t('autoCalculated') : isSalary ? t('cannotDeleteSalary') : t('remove');
+    const badgeTooltip = isAuto ? (LANG === 'en' ? 'Click to recalculate from salary' : 'คลิกเพื่อคำนวณใหม่อัตโนมัติจากเงินเดือน') : '';
 
     row.innerHTML = `
       <input class="name-input" data-type="${type}" data-idx="${i}" data-field="name"
@@ -928,9 +981,10 @@ function createRowContainer(items, type, container){
              aria-label="${typeLabel} ${i+1} name"
              ${isAuto ? 'readonly' : ''} placeholder="${placeholder}">
       <input class="value-input" type="text" inputmode="decimal" data-type="${type}" data-idx="${i}" data-field="value"
-             value="${item.value}" aria-label="${safeDisplayVal || typeLabel} amount" ${isAuto ? 'readonly' : ''}>
+             ${isAuto ? `data-auto="${autoType}"` : ''}
+             value="${item.value}" aria-label="${safeDisplayVal || typeLabel} amount">
       <span class="unit">${unitText}</span>
-      ${isAuto ? `<span class="auto-badge">${autoBadgeLabel}</span>` : ''}
+      ${isAuto ? `<span class="auto-badge" data-auto="${autoType}" title="${badgeTooltip}">${autoBadgeLabel}</span>` : ''}
       <button class="remove-btn ${cannotDelete ? 'disabled' : ''}"
               data-type="${type}" data-idx="${i}"
               aria-label="${t('remove')} ${safeDisplayVal}"
@@ -966,6 +1020,7 @@ function renderPvdRow(){
     if(!isNaN(val) && val >= 0 && val <= 100){
       pvdPercent = val;
       try{ localStorage.setItem(PVD_PERCENT_KEY, String(val)); } catch(e){}
+      manualOverrides.pvd = false;
       updateAutoExpenses(pvdPercent);
       compute();
     }
@@ -978,6 +1033,7 @@ function renderPvdRow(){
     pvdPercent = val;
     pvdInput.value = val;
     try{ localStorage.setItem(PVD_PERCENT_KEY, String(val)); } catch(e){}
+    manualOverrides.pvd = false;
     updateAutoExpenses(pvdPercent);
     compute();
   });
@@ -1004,24 +1060,93 @@ function bindRows(container, type){
     });
   });
 
-  // Value input — with delta support (only editable for non-auto rows)
-  container.querySelectorAll('input.value-input:not([readonly])').forEach(inp => {
+  // Value input — with delta support (enabled for all rows, including editable auto rows)
+  container.querySelectorAll('input.value-input').forEach(inp => {
     const idx = parseInt(inp.dataset.idx);
     enableDeltaInput(
       inp,
       () => items[idx] ? items[idx].value : 0,
       (val) => {
         if(items[idx]) items[idx].value = val;
-        // If salary changed, update auto expenses
+        // If salary changed, reset manual overrides and update auto expenses
         if(type === 'income'){
           const item = items[idx];
-          if(item && isSalaryRow(item)){
+          if(item && isSalaryRow(item, idx)){
+            manualOverrides.tax = false;
+            manualOverrides.sso = false;
+            manualOverrides.pvd = false;
             updateAutoExpenses(pvdPercent);
+          }
+        }
+        // If user directly edits an auto-expense row
+        if(type === 'expense' && inp.dataset.auto){
+          const autoType = inp.dataset.auto;
+          manualOverrides[autoType] = true;
+          if(autoType === 'pvd'){
+            const salary = getSalaryValue();
+            if(salary > 0){
+              const newPct = Math.round((val / salary) * 1000) / 10;
+              if(newPct >= 0 && newPct <= 100){
+                pvdPercent = newPct;
+                try{ localStorage.setItem(PVD_PERCENT_KEY, String(newPct)); } catch(e){}
+                const pvdInpEl = document.getElementById('pvdPctInput');
+                if(pvdInpEl) pvdInpEl.value = newPct;
+                // If tax hasn't been manually overridden, update tax with the new PVD deduction
+                if(!manualOverrides.tax){
+                  const taxItem = state.expenses.find(e => getAutoType(e) === 'tax');
+                  if(taxItem){
+                    const newTax = calculateMonthlyTax(salary, pvdPercent);
+                    taxItem.value = newTax;
+                    const taxInp = expenseContainer.querySelector('.value-input[data-auto="tax"]');
+                    if(taxInp && document.activeElement !== taxInp){
+                      taxInp.value = fmtPlain(newTax);
+                      inputBaseValues.set(taxInp, newTax);
+                    }
+                  }
+                }
+              }
+            }
           }
         }
         compute();
       }
     );
+  });
+
+  // Auto badge click: recalculate that auto-field from salary on demand
+  container.querySelectorAll('.auto-badge[data-auto]').forEach(badge => {
+    badge.addEventListener('click', () => {
+      const autoType = badge.dataset.auto;
+      manualOverrides[autoType] = false;
+      const salary = getSalaryValue();
+      if(autoType === 'tax'){
+        const tax = salary > 0 ? calculateMonthlyTax(salary, pvdPercent) : 0;
+        const taxItem = state.expenses.find(e => getAutoType(e) === 'tax');
+        if(taxItem) taxItem.value = tax;
+        const taxInp = expenseContainer.querySelector('.value-input[data-auto="tax"]');
+        if(taxInp){ taxInp.value = fmtPlain(tax); inputBaseValues.set(taxInp, tax); }
+      } else if(autoType === 'sso'){
+        const sso = salary > 0 ? calculateSSO(salary) : 0;
+        const ssoItem = state.expenses.find(e => getAutoType(e) === 'sso');
+        if(ssoItem) ssoItem.value = sso;
+        const ssoInp = expenseContainer.querySelector('.value-input[data-auto="sso"]');
+        if(ssoInp){ ssoInp.value = fmtPlain(sso); inputBaseValues.set(ssoInp, sso); }
+      } else if(autoType === 'pvd'){
+        const pvd = salary > 0 ? calculatePVD(salary, pvdPercent) : 0;
+        const pvdItem = state.expenses.find(e => getAutoType(e) === 'pvd');
+        if(pvdItem) pvdItem.value = pvd;
+        const pvdInp = expenseContainer.querySelector('.value-input[data-auto="pvd"]');
+        if(pvdInp){ pvdInp.value = fmtPlain(pvd); inputBaseValues.set(pvdInp, pvd); }
+        if(!manualOverrides.tax){
+          const tax = salary > 0 ? calculateMonthlyTax(salary, pvdPercent) : 0;
+          const taxItem = state.expenses.find(e => getAutoType(e) === 'tax');
+          if(taxItem) taxItem.value = tax;
+          const taxInp = expenseContainer.querySelector('.value-input[data-auto="tax"]');
+          if(taxInp){ taxInp.value = fmtPlain(tax); inputBaseValues.set(taxInp, tax); }
+        }
+      }
+      compute();
+    });
   });
 
   // Remove button (only for non-auto rows and non-protected rows)
@@ -1031,8 +1156,8 @@ function bindRows(container, type){
       if(type === 'income'){
         state.incomes.splice(idx, 1);
         // Safeguard: ensure salary row always exists
-        if(!state.incomes.find(item => isSalaryRow(item))){
-          state.incomes.unshift({ name: 'เงินเดือน', value: 0 });
+        if(!state.incomes.find((item, i) => isSalaryRow(item, i))){
+          state.incomes.unshift({ name: 'เงินเดือน', value: 0, isSalary: true });
         }
       } else if(type === 'expense'){
         state.expenses.splice(idx, 1);
@@ -1041,7 +1166,6 @@ function bindRows(container, type){
       }
       const targetContainer = type === 'income' ? incomeContainer : type === 'expense' ? expenseContainer : savingContainer;
       createRowContainer(items, type, targetContainer);
-      // Re-add PVD % row after container rebuild (createRowContainer wipes it)
       if(type === 'income') renderPvdRow();
       bindRows(targetContainer, type);
       compute();
@@ -1053,7 +1177,7 @@ function bindRows(container, type){
     inp.addEventListener('blur', () => {
       const idx = parseInt(inp.dataset.idx);
       const item = items[idx];
-      if(item && isSalaryRow(item)){
+      if(item && isSalaryRow(item, idx)){
         updateAutoExpenses(pvdPercent);
         compute();
       }
@@ -1097,9 +1221,6 @@ if (savingAddBtn) savingAddBtn.addEventListener('click', () => addRow('saving'))
 
 // ── Compute & display ──────────────────────────────────────────────────────
 function compute(){
-  // Refresh auto expenses (tax, SSO, PVD) before computing totals
-  updateAutoExpenses(pvdPercent);
-
   const totalIncome  = state.incomes.reduce((s, item) => s + (item.value || 0), 0);
   const totalExpense = state.expenses.reduce((s, item) => s + (item.value || 0), 0);
   const totalSavings = (state.savings || []).reduce((s, item) => s + (item.value || 0), 0);
@@ -1144,10 +1265,11 @@ function compute(){
     state.expenses.forEach(item => {
       const row = document.createElement('div');
       row.className = 'result-row';
-      const isAuto = item.auto === true;
-      const isTax = item.name === AUTO_TAX_NAME_TH || item.name === 'Estimated Income Tax' || item.name === 'Estimated income tax (monthly)';
-      const isSso = item.name === AUTO_SSO_NAME_TH || item.name === 'Social Security (SSO)';
-      const isPvd = item.name === AUTO_PVD_NAME_TH || item.name === 'Provident Fund (PVD)';
+      const autoType = getAutoType(item);
+      const isAuto = autoType !== null;
+      const isTax = autoType === 'tax';
+      const isSso = autoType === 'sso';
+      const isPvd = autoType === 'pvd';
       const signColor = isAuto ? 'var(--danger)' : 'var(--warn)';
       row.innerHTML = `
         <div class="result-left">
@@ -1369,6 +1491,7 @@ function sendToRebalance(){
 syncFromProfile();
 checkPendingLumpSum();
 checkPendingSlipImport();
+updateAutoExpenses(pvdPercent);
 renderRows();
 renderPvdRow();
 
