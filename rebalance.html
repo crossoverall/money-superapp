@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="1.3.26">
+<meta name="version" content="1.3.27">
 <title>คำนวณการเติมเงินรายเดือน</title>
 <link rel="stylesheet" href="css/theme.css">
 <style>
@@ -339,7 +339,7 @@
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v1.3.26</p>
+  <p class="version-tag">v1.3.27</p>
 
 <script>
 // Language: read once from localStorage (shared origin with the shell nav's toggle).
@@ -692,12 +692,12 @@ function renderBuckets(){
     panel.className = `bucket-panel ${bucket.id}`;
     panel.innerHTML = `
       <div class="bucket-head">
-        <div class="name">${bucket.label}</div>
+        <div class="name">${escapeAttr(bucket.label)}</div>
         <div class="amount" id="amt-${bucket.id}">—</div>
       </div>
       <div class="bucket-body">
         <div class="rows" id="rows-${bucket.id}"></div>
-        <button class="add-btn" data-bucket="${bucket.id}">${t('addAsset', bucket.label)}</button>
+        <button class="add-btn" data-bucket="${bucket.id}">${t('addAsset', escapeAttr(bucket.label))}</button>
         <div class="weight-status" id="status-${bucket.id}"></div>
         <div class="results" id="results-${bucket.id}"></div>
         <div class="capped-note" id="capped-${bucket.id}" style="display:none;"></div>
@@ -763,6 +763,9 @@ function isThaiAssetSymbol(sym) {
   const s = sym.toUpperCase().trim();
   return isThaiGoldSymbol(s) || isThaiFundSymbol(s) || isSetStockSymbol(s) || s.endsWith('.BK') || s.endsWith('-THB');
 }
+
+// Known US equity / ETF tickers — used to prevent these from hitting Coinbase fallback
+const KNOWN_US_EQUITIES = /^(MSFT|AMZN|GOOGL|GOOG|AAPL|NVDA|TSLA|META|AMD|INTC|NFLX|SPY|QQQ|VTI|VGT|SGOV|IVV|VOO|AGG|BND|GLD|SLV|IAU|TLT|HYG|LQD|XLK|XLF|XLE|XLV|XLY|XLI|VNQ|ARKK|SCHB|SCHA|SCHD|SCHX|VUG|VTV|VB|VO|VV|VXF)$/;
 
 function isCryptoSymbol(sym) {
   if (!sym) return false;
@@ -1042,7 +1045,7 @@ function compute(){
       row.innerHTML = `
         <div class="result-left">
           <div class="rname" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-            <span>${a.name}</span>
+            <span>${escapeAttr(a.name)}</span>
             <span class="drift-badge ${driftClass}" title="${LANG === 'en' ? 'Drift from target' : 'ส่วนต่างจากเป้าหมาย'}">${driftText}</span>
           </div>
           <div class="rmeta">${t('rmeta', fmt(a.value), a.weight)} (${LANG === 'en' ? 'Current' : 'ปัจจุบัน'}: ${currPct.toFixed(1)}%)</div>
@@ -1174,9 +1177,18 @@ function exportCSV(){
 
 // --- Live Asset Price Fetching & API Integration ---
 
+// Wraps fetch() with an AbortController timeout to prevent requests hanging indefinitely.
+// Default: 10 seconds. Throws DOMException on abort.
+function fetchWithTimeout(url, timeoutMs = 10000, options = {}) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal })
+    .finally(() => clearTimeout(id));
+}
+
 async function fetchThaiGoldPrice() {
   try {
-    const res = await fetch('https://api.chnwt.dev/thai-gold-api/latest');
+    const res = await fetchWithTimeout('https://api.chnwt.dev/thai-gold-api/latest');
     if (!res.ok) throw new Error('Thai Gold HTTP ' + res.status);
     const data = await res.json();
     const rawPrice = data?.response?.price?.gold_bar?.sell || data?.response?.price?.gold?.sell;
@@ -1208,7 +1220,7 @@ function saveApiSettingsToStorage(settings) {
 
 async function fetchUsdThbRate() {
   try {
-    const res = await fetch('https://open.er-api.com/v6/latest/USD');
+    const res = await fetchWithTimeout('https://open.er-api.com/v6/latest/USD');
     if (!res.ok) throw new Error('FX HTTP ' + res.status);
     const data = await res.json();
     if (data && data.rates && typeof data.rates.THB === 'number') {
@@ -1234,7 +1246,7 @@ async function fetchAssetPrice(rawSymbol, apiSettings) {
   if (isCryptoSymbol(sym)) {
     const cleanSym = sym.replace(/-USD$|-THB$|USDT$/, '');
     try {
-      const res = await fetch(`https://api.coinbase.com/v2/prices/${encodeURIComponent(cleanSym)}-USD/spot`);
+      const res = await fetchWithTimeout(`https://api.coinbase.com/v2/prices/${encodeURIComponent(cleanSym)}-USD/spot`);
       if (res.ok) {
         const data = await res.json();
         const amt = parseFloat(data?.data?.amount);
@@ -1257,7 +1269,7 @@ async function fetchAssetPrice(rawSymbol, apiSettings) {
     const isThai = isSetStockSymbol(sym);
     const querySym = (isThai && !sym.includes('.')) ? `${sym}.BK` : sym;
     try {
-      const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(querySym)}&token=${encodeURIComponent(apiSettings.finnhubKey)}`);
+      const res = await fetchWithTimeout(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(querySym)}&token=${encodeURIComponent(apiSettings.finnhubKey)}`);
       if (res.ok) {
         const data = await res.json();
         if (data && typeof data.c === 'number' && data.c > 0) {
@@ -1278,7 +1290,7 @@ async function fetchAssetPrice(rawSymbol, apiSettings) {
       : [sym];
     for (const qSym of querySymbols) {
       try {
-        const res = await fetch(`https://api.twelvedata.com/price?symbol=${encodeURIComponent(qSym)}&apikey=${encodeURIComponent(apiSettings.twelveDataKey)}`);
+        const res = await fetchWithTimeout(`https://api.twelvedata.com/price?symbol=${encodeURIComponent(qSym)}&apikey=${encodeURIComponent(apiSettings.twelveDataKey)}`);
         if (res.ok) {
           const data = await res.json();
           const p = parseFloat(data?.price);
@@ -1293,7 +1305,6 @@ async function fetchAssetPrice(rawSymbol, apiSettings) {
 
   // 5. Coinbase fallback — only for short unknown tickers that might be crypto.
   //    Explicitly skip US equities/ETFs so they don't hit Coinbase and return 404.
-  const KNOWN_US_EQUITIES = /^(MSFT|AMZN|GOOGL|GOOG|AAPL|NVDA|TSLA|META|AMD|INTC|NFLX|SPY|QQQ|VTI|VGT|SGOV|IVV|VOO|AGG|BND|GLD|SLV|IAU|TLT|HYG|LQD|XLK|XLF|XLE|XLV|XLY|XLI|VNQ|ARKK|SCHB|SCHA|SCHD|SCHX|VUG|VTV|VB|VO|VV|VXF)$/;
   const looksLikeCrypto = !isThaiAssetSymbol(sym)
     && !sym.includes('.')
     && !sym.includes(':')
@@ -1301,7 +1312,7 @@ async function fetchAssetPrice(rawSymbol, apiSettings) {
     && !KNOWN_US_EQUITIES.test(sym);
   if (looksLikeCrypto) {
     try {
-      const res = await fetch(`https://api.coinbase.com/v2/prices/${encodeURIComponent(sym)}-USD/spot`);
+      const res = await fetchWithTimeout(`https://api.coinbase.com/v2/prices/${encodeURIComponent(sym)}-USD/spot`);
       if (res.ok) {
         const data = await res.json();
         const amt = parseFloat(data?.data?.amount);
@@ -1350,6 +1361,12 @@ async function fetchAllPrices() {
         }
       });
     });
+
+    // 3. Cap to prevent indefinitely-long refresh runs (50 assets × 2s = 100s max)
+    const MAX_FETCH = 50;
+    if (fetchTargets.length > MAX_FETCH) {
+      fetchTargets.length = MAX_FETCH;
+    }
 
     // 3. Clear old fetched prices before starting so the UI shows "—" while loading,
     //    giving the user clear visual feedback that a refresh is in progress.
@@ -1402,6 +1419,8 @@ async function fetchAllPrices() {
     }
 
     state.lastPriceFetch = Date.now();
+    // Cleanup: ensure no stash properties persist across sessions
+    fetchTargets.forEach(a => { delete a._prevPrice; });
     saveState();
     renderBuckets();
     compute();
