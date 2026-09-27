@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="1.3.22">
+<meta name="version" content="1.3.23">
 <title>คำนวณการเติมเงินรายเดือน</title>
 <link rel="stylesheet" href="css/theme.css">
 <style>
@@ -339,7 +339,7 @@
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v1.3.22</p>
+  <p class="version-tag">v1.3.23</p>
 
 <script>
 // Language: read once from localStorage (shared origin with the shell nav's toggle).
@@ -361,7 +361,7 @@ const EN = {
   lblAutoRefresh: 'Every 10 min',
   lblSettingsBtn: 'API Settings',
   lblModalTitle: 'Live Stock & ETF Price API Settings',
-  lblModalDesc: '• <b>Crypto (BTC, ETH, etc.):</b> Live quotes via Coinbase API free (USD)<br>• <b>Thai Gold (YLG-GOLD, Gold Bar):</b> Live quotes via Thai Gold Association API free (THB)<br>• <b>USD/THB FX:</b> Live exchange rate fetched via Open Exchange Rates<br>• <b>US Stocks & ETFs (NVDA, SGOV, etc.):</b> Enter free API key from Finnhub or Twelve Data<br>• <b>Thai Mutual Funds (K-WORLDX, SCBCE, etc.):</b> Enter NAV in THB (฿) and units to auto-calculate total value.',
+  lblModalDesc: '• <b>Crypto (BTC, ETH, etc.):</b> Live quotes via Coinbase API free (USD $)<br>• <b>Thai Gold (YLG-GOLD, Gold Bar):</b> Live quotes via Thai Gold Association API free (THB ฿)<br>• <b>USD/THB FX:</b> Live exchange rate fetched via Open Exchange Rates<br>• <b>US Stocks (NVDA, SGOV) & Thai Stocks (GULF, PTT):</b> Enter free API key from Twelve Data or Finnhub<br>• <b>Thai Mutual Funds (K-WORLDX, SCBCE, etc.):</b> Unlisted funds have no open browser CORS API — enter daily NAV in THB (฿) and units directly. The calculator saves it and computes allocations automatically.',
   lblFinnhubKey: 'Finnhub API Key (Recommended):',
   lblTwelveDataKey: 'Twelve Data API Key (Alternative):',
   linkFinnhubFree: 'Get free key (Finnhub.io)',
@@ -461,23 +461,23 @@ const state = {
     {
       id: 'core', label: 'Core', weight: 45,
       assets: [
-        { name: 'K Global Equity (K-WORLDX)', ticker: 'K-WORLDX', units: 0, lastPrice: 0, currency: 'THB', value: 0, weight: 50 },
-        { name: 'Short Treasury (SGOV)', ticker: 'SGOV', units: 0, lastPrice: 0, currency: 'USD', value: 0, weight: 50 },
+        { name: 'K Global Equity (K-WORLDX)', ticker: 'K-WORLDX', units: 1000, lastPrice: 12.50, currency: 'THB', value: 12500, weight: 50 },
+        { name: 'Short Treasury (SGOV)', ticker: 'SGOV', units: 10, lastPrice: 100.50, currency: 'USD', value: 33557, weight: 50 },
       ]
     },
     {
       id: 'ballast', label: 'Ballast', weight: 15,
       assets: [
-        { name: 'YLG Thai Gold Bar (YLG-GOLD)', ticker: 'YLG-GOLD', units: 0, lastPrice: 0, currency: 'THB', value: 0, weight: 70 },
-        { name: 'Fixed Deposit / Cash', ticker: '', units: 0, lastPrice: 0, currency: 'THB', value: 0, weight: 30 },
+        { name: 'YLG Thai Gold Bar (YLG-GOLD)', ticker: 'YLG-GOLD', units: 1, lastPrice: 67850, currency: 'THB', value: 67850, weight: 70 },
+        { name: 'Fixed Deposit / Cash', ticker: '', units: 0, lastPrice: 0, currency: 'THB', value: 30000, weight: 30 },
       ]
     },
     {
       id: 'satellite', label: 'Satellite', weight: 40,
       assets: [
-        { name: 'Bitcoin (BTC)', ticker: 'BTC', units: 0, lastPrice: 0, currency: 'USD', value: 0, weight: 34 },
-        { name: 'NVIDIA (NVDA)', ticker: 'NVDA', units: 0, lastPrice: 0, currency: 'USD', value: 0, weight: 33 },
-        { name: 'SCB China Equity (SCBCE)', ticker: 'SCBCE', units: 0, lastPrice: 0, currency: 'THB', value: 0, weight: 33 },
+        { name: 'Bitcoin (BTC)', ticker: 'BTC', units: 0.01, lastPrice: 65000, currency: 'USD', value: 21704, weight: 34 },
+        { name: 'NVIDIA (NVDA)', ticker: 'NVDA', units: 5, lastPrice: 120, currency: 'USD', value: 20034, weight: 33 },
+        { name: 'SCB China Equity (SCBCE)', ticker: 'SCBCE', units: 2500, lastPrice: 7.85, currency: 'THB', value: 19625, weight: 33 },
       ]
     },
   ]
@@ -737,6 +737,18 @@ function isThaiGoldSymbol(sym) {
   return THAI_GOLD_SET.has(s) || s.startsWith('YLG') || s.startsWith('GOLD-TH') || s === 'THAI-GOLD';
 }
 
+const SET_STOCK_SET = new Set([
+  'GULF', 'PTT', 'CPALL', 'ADVANC', 'AOT', 'DELTA', 'SCB', 'KBANK', 'BBL', 'KTB',
+  'BDMS', 'BEM', 'BTS', 'TRUE', 'INTUCH', 'MINT', 'EA', 'CPF', 'TOP', 'IVL',
+  'OR', 'TISCO', 'CRC', 'HMPRO', 'GPSC', 'BGRIM', 'SAWAD', 'MTC', 'KTC', 'LH'
+]);
+
+function isSetStockSymbol(sym) {
+  if (!sym) return false;
+  const s = sym.toUpperCase().trim();
+  return SET_STOCK_SET.has(s) || s.endsWith('.BK') || s.endsWith(':SET') || s.endsWith(':XBKK');
+}
+
 function isThaiFundSymbol(sym) {
   if (!sym) return false;
   const s = sym.toUpperCase().trim();
@@ -746,7 +758,7 @@ function isThaiFundSymbol(sym) {
 function isThaiAssetSymbol(sym) {
   if (!sym) return false;
   const s = sym.toUpperCase().trim();
-  return isThaiGoldSymbol(s) || isThaiFundSymbol(s) || s.endsWith('.BK') || s.endsWith('-THB');
+  return isThaiGoldSymbol(s) || isThaiFundSymbol(s) || isSetStockSymbol(s) || s.endsWith('.BK') || s.endsWith('-THB');
 }
 
 function isCryptoSymbol(sym) {
@@ -768,6 +780,23 @@ function renderAssetRows(bucket){
     const safeUnits = a.units != null && a.units !== 0 ? a.units : '';
     const safePrice = a.lastPrice != null && a.lastPrice !== 0 ? a.lastPrice : '';
     const approxTHB = (a.lastPrice > 0 && a.units > 0) ? `~${fmt(a.value)} ฿` : '';
+
+    let badgeHint = '';
+    if (a.ticker) {
+      const sym = a.ticker.toUpperCase().trim();
+      if (isThaiFundSymbol(sym)) {
+        badgeHint = `<span title="${LANG === 'en' ? 'Mutual fund: enter NAV manually (no open-CORS public API)' : 'กองทุนรวม: ระบุราคา NAV เอง (ไม่มี API สดสาธารณะ)'}" style="color:var(--ink-dim); font-size:9px; background:var(--panel-2); padding:1px 4px; border-radius:4px; border:1px solid var(--line); font-weight:600;">${LANG === 'en' ? 'NAV' : 'ระบุ NAV'}</span>`;
+      } else if (isThaiGoldSymbol(sym)) {
+        badgeHint = `<span title="${LANG === 'en' ? 'Live price from Thai Gold Association' : 'ราคาขายออกสดจากสมาคมค้าทองคำ'}" style="color:var(--core); font-size:9px; background:rgba(47,139,118,0.12); padding:1px 4px; border-radius:4px; font-weight:700;">${LANG === 'en' ? 'Live Gold ฿' : 'สดทอง ฿'}</span>`;
+      } else if (isCryptoSymbol(sym)) {
+        badgeHint = `<span title="${LANG === 'en' ? 'Live price from Coinbase' : 'ราคาตลาดสดจาก Coinbase'}" style="color:var(--core); font-size:9px; background:rgba(47,139,118,0.12); padding:1px 4px; border-radius:4px; font-weight:700;">${LANG === 'en' ? 'Live $' : 'สด $'}</span>`;
+      } else if (isSetStockSymbol(sym)) {
+        const hasKey = !!getApiSettings().twelveDataKey;
+        badgeHint = hasKey
+          ? `<span title="${LANG === 'en' ? 'Twelve Data SET live price' : 'ดึงราคาหุ้นไทยผ่าน Twelve Data'}" style="color:var(--core); font-size:9px; background:rgba(47,139,118,0.12); padding:1px 4px; border-radius:4px; font-weight:700;">SET ฿</span>`
+          : `<span title="${LANG === 'en' ? 'SET stock: add Twelve Data API key or enter price manually' : 'หุ้นไทย: ใส่คีย์ Twelve Data ในตั้งค่า หรือระบุราคาเอง'}" style="color:var(--ink-dim); font-size:9px; background:var(--panel-2); padding:1px 4px; border-radius:4px; border:1px solid var(--line); font-weight:600;">${LANG === 'en' ? 'SET (Key req)' : 'หุ้นไทย'}</span>`;
+      }
+    }
 
     row.innerHTML = `
       <div class="asset-row-top">
@@ -801,8 +830,9 @@ function renderAssetRows(bucket){
             <option value="THB"${(a.currency === 'THB' || isThaiAssetSymbol(a.ticker)) ? ' selected' : ''}>฿</option>
           </select>
         </div>
-        <div id="price-status-${bucket.id}-${i}" style="color:var(--ink-dim); font-size:10px; font-weight:600;">
-          ${approxTHB}
+        <div id="price-status-${bucket.id}-${i}" style="display:flex; align-items:center; gap:4px; color:var(--ink-dim); font-size:10px; font-weight:600;">
+          <span>${approxTHB}</span>
+          ${badgeHint}
         </div>
       </div>
     `;
@@ -1214,31 +1244,39 @@ async function fetchAssetPrice(rawSymbol, apiSettings) {
 
   // 3. Try Finnhub for US Stocks & ETFs (or .BK SET stocks)
   if (apiSettings.finnhubKey) {
+    const isThai = isSetStockSymbol(sym);
+    const querySym = (isThai && !sym.includes('.')) ? `${sym}.BK` : sym;
     try {
-      const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(sym)}&token=${encodeURIComponent(apiSettings.finnhubKey)}`);
+      const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(querySym)}&token=${encodeURIComponent(apiSettings.finnhubKey)}`);
       if (res.ok) {
         const data = await res.json();
         if (data && typeof data.c === 'number' && data.c > 0) {
-          const isTHB = sym.endsWith('.BK');
+          const isTHB = isThai || querySym.endsWith('.BK');
           return { price: data.c, currency: isTHB ? 'THB' : 'USD' };
         }
       }
     } catch(e) {}
   }
 
-  // 4. Try Twelve Data for US Stocks & ETFs
+  // 4. Try Twelve Data for US Stocks & ETFs and Thai SET Stocks
   if (apiSettings.twelveDataKey) {
-    try {
-      const res = await fetch(`https://api.twelvedata.com/price?symbol=${encodeURIComponent(sym)}&apikey=${encodeURIComponent(apiSettings.twelveDataKey)}`);
-      if (res.ok) {
-        const data = await res.json();
-        const p = parseFloat(data?.price);
-        if (!isNaN(p) && p > 0) {
-          const isTHB = sym.endsWith('.BK');
-          return { price: p, currency: isTHB ? 'THB' : 'USD' };
+    const isThai = isSetStockSymbol(sym);
+    const querySymbols = isThai
+      ? [sym, `${sym.replace(/\.BK$/, '')}:SET`, `${sym.replace(/:SET$/, '')}.BK`, sym.replace(/\.BK$/, '')]
+      : [sym];
+    for (const qSym of querySymbols) {
+      try {
+        const res = await fetch(`https://api.twelvedata.com/price?symbol=${encodeURIComponent(qSym)}&apikey=${encodeURIComponent(apiSettings.twelveDataKey)}`);
+        if (res.ok) {
+          const data = await res.json();
+          const p = parseFloat(data?.price);
+          if (!isNaN(p) && p > 0) {
+            const isTHB = isThai || qSym.includes(':SET') || qSym.endsWith('.BK');
+            return { price: p, currency: isTHB ? 'THB' : 'USD' };
+          }
         }
-      }
-    } catch(e) {}
+      } catch(e) {}
+    }
   }
 
   // 5. Coinbase fallback for other crypto tickers (skip if known Thai asset)
@@ -1507,11 +1545,11 @@ initAutoRefresh();
       </div>
       
       <div style="font-size:12px; color:var(--ink-dim); line-height:1.5; margin-bottom:14px;" id="lblModalDesc">
-        • <b>Crypto (BTC, ETH ฯลฯ):</b> ไม่ต้องใช้ API key — ดึงผ่าน Coinbase API ฟรีทันที (USD)<br>
+        • <b>Crypto (BTC, ETH ฯลฯ):</b> ไม่ต้องใช้ API key — ดึงผ่าน Coinbase API ฟรีทันที (USD $)<br>
         • <b>ทองคำแท่งไทย (YLG-GOLD, ราคาทอง):</b> ดึงราคาขายออกสมาคมค้าทองคำสดฟรีอัตโนมัติ (THB ฿)<br>
         • <b>อัตราแลกเปลี่ยน USD/THB:</b> ดึงสดจาก Open Exchange Rates อัตโนมัติ<br>
-        • <b>หุ้นและ ETF สหรัฐฯ (NVDA, SGOV ฯลฯ):</b> ใส่ API Key ฟรีจาก Finnhub หรือ Twelve Data เพื่อดึงราคาอัตโนมัติ<br>
-        • <b>กองทุนรวมไทย (K-WORLDX, SCBCE ฯลฯ):</b> ใส่ราคา NAV ต่อหน่วย (฿) และจำนวนหน่วย ระบบจะคำนวณมูลค่าให้อัตโนมัติ
+        • <b>หุ้นและ ETF สหรัฐฯ (NVDA, SGOV) และหุ้นไทย SET (GULF, PTT):</b> ใส่ API Key ฟรีจาก Twelve Data หรือ Finnhub เพื่อดึงราคาอัตโนมัติ<br>
+        • <b>กองทุนรวมไทย (K-WORLDX, SCBCE ฯลฯ):</b> กองทุนเปิดของ บลจ. ไม่มี API สดสาธารณะบนเบราว์เซอร์ ผู้ใช้สามารถระบุราคา NAV ต่อหน่วย (฿) และจำนวนหน่วยได้โดยตรง ระบบจะจำราคาไว้และคำนวณสัดส่วน DCA ให้อัตโนมัติ
       </div>
 
       <div style="display:flex; flex-direction:column; gap:12px; font-size:12px;">
