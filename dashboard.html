@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="1.3.15">
+  <meta name="version" content="1.3.17">
   <title>ภาพรวมการเงิน</title>
+  <link rel="stylesheet" href="css/theme.css">
   <style>
     :root{
       --bg: #F5F7F6;
@@ -144,7 +145,7 @@
   <div class="panel">
     <div class="panel-title" id="lbl-chart-title">
       <span id="lbl-chart-title-txt">แนวโน้มการเติบโต (Trends)</span>
-      <button onclick="saveSnapshot()" class="action-btn" style="padding:4px 8px; font-size:10px;"><span id="lbl-btn-snapshot">+ บันทึกเดือนนี้</span></button>
+      <button onclick="takeSnapshot()" class="action-btn" style="padding:4px 8px; font-size:10px;"><span id="lbl-btn-snapshot">+ บันทึกเดือนนี้</span></button>
     </div>
     <div style="display:flex; gap:12px; font-size:11px; font-weight:600;">
       <span id="btn-chart-nw" style="color:var(--blue);">— Net Worth</span>
@@ -165,7 +166,7 @@
   <div class="panel-title" id="lbl-history-title">ประวัติที่บันทึกไว้ (History)</div>
   <div id="lbl-snapshot-count" style="margin-bottom:12px; font-size:12px; color:var(--ink-dim);"></div>
   <div id="historyListContainer" style="margin-bottom:12px;"></div>
-  <button onclick="clearHistory()" class="reset-btn" style="width:100%; text-align:center;"><span id="btn-clear-history">ลบประวัติทั้งหมด</span></button>
+  <button onclick="clearAllSnapshots()" class="reset-btn" style="width:100%; text-align:center;"><span id="btn-clear-history">ลบประวัติทั้งหมด</span></button>
   </div>
 
   <div class="panel">
@@ -178,7 +179,7 @@
     <div onclick="window.parent.postMessage({action:'switchToTab', target:'debt-calculator'},'*')" class="quick-link"><span id="qc-debt-title">📉 วางแผนปลดหนี้ (Debt)</span> <span>Alt+7</span><span id="qc-debt-sub" style="display:none;"></span></div>
   </div>
 
-  <p class="version-tag">Money Superapp v1.3.15</p>
+  <p class="version-tag">Money Superapp v1.3.17</p>
 
 <script>
     const LANG = (function(){ try { return localStorage.getItem('moneySuperapp.lang') || 'th'; } catch(e){ return 'th'; } })();
@@ -564,7 +565,7 @@
             const tr = document.createElement('div');
             tr.className = 'history-row';
             tr.innerHTML = `
-                <div class="date-badge">${s.date}</div>
+                <div class="date-badge"></div>
                 <div class="h-stats">
                     <span style="color:var(--ok);">NW: ${formatMoney(s.netWorth)}</span>
                     <span style="color:var(--blue);">Port: ${formatMoney(s.portfolioVal)}</span>
@@ -574,12 +575,25 @@
                 <div class="h-side">
                     <span style="font-size:14px; font-weight:700; color:var(--ink);">${s.savingsRate}%</span>
                     <span style="font-size:10px; color:var(--ink-dim); font-weight:400;">${formatMoney(s.savings || 0)}/m</span>
-                    <button onclick="deleteSnapshot(${s.id})" class="h-del" title="ลบ">&times;</button>
+                    <button class="h-del" title="ลบ">&times;</button>
                 </div>
             `;
+            const dateBadge = tr.querySelector('.date-badge');
+            if (dateBadge) dateBadge.textContent = String(s.date || '');
+            const delBtn = tr.querySelector('.h-del');
+            if (delBtn) {
+                const sId = Number(s.id);
+                delBtn.addEventListener('click', () => deleteSnapshot(sId));
+            }
             tbody.appendChild(tr);
         });
     }
+
+    // Expose aliases to avoid runtime reference errors
+    window.takeSnapshot = takeSnapshot;
+    window.saveSnapshot = takeSnapshot;
+    window.clearAllSnapshots = clearAllSnapshots;
+    window.clearHistory = clearAllSnapshots;
 
     /**
      * Render SVG chart offline without any external library

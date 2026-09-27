@@ -3,82 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="1.3.15">
+    <meta name="version" content="1.3.17">
     <meta name="description" content="จำลองสลิปเงินเดือนรวมโบนัส — คำนวณรายได้ ภาษี เงินสมทบประกันสังคม และกองทุนสำรองเลี้ยงชีพ per เดือน">
     <title>จำลองสลิปเงินเดือน (รวมโบนัส)</title>
     <link rel="stylesheet" href="css/tailwind-lite.css">
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/theme.css">
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Prompt", sans-serif; background-color: #f3f4f6; color: #1e293b; }
-        .slip-bg { background-image: repeating-linear-gradient(0deg, transparent, transparent 19px, #f9fafb 19px, #f9fafb 20px); }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Prompt", sans-serif; background-color: var(--bg); color: var(--ink); }
+        .slip-bg { background-image: repeating-linear-gradient(0deg, transparent, transparent 19px, var(--panel-2) 19px, var(--panel-2) 20px); }
+
+        .bg-white { background-color: var(--panel) !important; border-color: var(--line) !important; }
+        .bg-gray-50 { background-color: var(--panel-2) !important; }
+        .bg-gray-100 { background-color: var(--bg) !important; }
+        .bg-gray-200 { background-color: var(--line) !important; }
+        .bg-gray-800 { background-color: #0E1512 !important; }
+        .bg-blue-50 { background-color: var(--panel-2) !important; }
+        .bg-green-50 { background-color: var(--ok-dim) !important; }
+        .border-gray-200, .border-gray-300 { border-color: var(--line) !important; }
+        .border-blue-500 { border-color: var(--core) !important; }
+        .border-green-200 { border-color: var(--ok) !important; }
+        .text-gray-800, .text-gray-900 { color: var(--ink) !important; }
+        .text-gray-700, .text-gray-600, .text-gray-500 { color: var(--ink-dim) !important; }
+        .text-blue-800 { color: var(--core) !important; }
+        .text-green-800, .text-green-600 { color: var(--ok) !important; }
+        .text-red-500, .text-red-600 { color: var(--danger) !important; }
+        .bg-blue-600 { background-color: var(--core) !important; }
+        .hover\:bg-blue-700:hover { background-color: var(--ok) !important; filter: brightness(0.95); }
 
         input, select {
-            color: #0f172a;
+            color: var(--ink);
+            background-color: var(--input-bg);
+            border-color: var(--line);
         }
         input::placeholder {
-            color: #94a3b8;
+            color: var(--ink-faint);
+        }
+        input:focus, select:focus {
+            border-color: var(--core) !important;
+            box-shadow: 0 0 0 2px var(--core-dim) !important;
         }
 
-        [data-theme="dark"] body { background-color: #0f172a; color: #e2e8f0; }
-        [data-theme="dark"] .bg-white { background-color: #1e293b !important; }
-        [data-theme="dark"] .bg-gray-50 { background-color: #0f172a !important; }
-        [data-theme="dark"] .bg-gray-100 { background-color: #1e293b !important; }
-        [data-theme="dark"] .bg-gray-200 { background-color: #334155 !important; }
-        [data-theme="dark"] .bg-gray-800 { background-color: #020617 !important; }
-        [data-theme="dark"] .bg-blue-50 { background-color: #17304d !important; }
-        [data-theme="dark"] .bg-green-50 { background-color: #052e1f !important; }
+        [data-theme="dark"] body { background-color: var(--bg); color: var(--ink); }
+        [data-theme="dark"] .bg-white { background-color: var(--panel) !important; }
+        [data-theme="dark"] .bg-gray-50 { background-color: var(--panel-2) !important; }
+        [data-theme="dark"] .bg-gray-100 { background-color: var(--panel-2) !important; }
+        [data-theme="dark"] .bg-gray-200 { background-color: var(--line) !important; }
+        [data-theme="dark"] .bg-gray-800 { background-color: #0E1512 !important; }
+        [data-theme="dark"] .bg-blue-50 { background-color: var(--panel-2) !important; }
+        [data-theme="dark"] .bg-green-50 { background-color: var(--ok-dim) !important; }
         [data-theme="dark"] .border-gray-200,
-        [data-theme="dark"] .border-gray-300 { border-color: #334155 !important; }
-        [data-theme="dark"] .border-blue-500 { border-color: #3b82f6 !important; }
-        [data-theme="dark"] .border-green-200 { border-color: #14532d !important; }
+        [data-theme="dark"] .border-gray-300 { border-color: var(--line) !important; }
+        [data-theme="dark"] .border-blue-500 { border-color: var(--core) !important; }
+        [data-theme="dark"] .border-green-200 { border-color: var(--ok) !important; }
         [data-theme="dark"] .text-gray-800,
-        [data-theme="dark"] .text-gray-900 { color: #e2e8f0 !important; }
+        [data-theme="dark"] .text-gray-900 { color: var(--ink) !important; }
         [data-theme="dark"] .text-gray-700,
         [data-theme="dark"] .text-gray-600,
-        [data-theme="dark"] .text-gray-500 { color: #94a3b8 !important; }
-        [data-theme="dark"] .text-blue-800 { color: #93c5fd !important; }
-        [data-theme="dark"] .text-green-800 { color: #86efac !important; }
-        [data-theme="dark"] .text-green-600 { color: #4ade80 !important; }
+        [data-theme="dark"] .text-gray-500 { color: var(--ink-dim) !important; }
+        [data-theme="dark"] .text-blue-800 { color: var(--core) !important; }
+        [data-theme="dark"] .text-green-800 { color: var(--ok) !important; }
+        [data-theme="dark"] .text-green-600 { color: var(--ok) !important; }
         [data-theme="dark"] .text-red-500,
-        [data-theme="dark"] .text-red-600 { color: #f87171 !important; }
-        [data-theme="dark"] .slip-bg { background-image: repeating-linear-gradient(0deg, transparent, transparent 19px, #1e293b 19px, #1e293b 20px); }
+        [data-theme="dark"] .text-red-600 { color: var(--danger) !important; }
+        [data-theme="dark"] .slip-bg { background-image: repeating-linear-gradient(0deg, transparent, transparent 19px, var(--panel-2) 19px, var(--panel-2) 20px); }
 
-        /* Dark Theme Inputs & Selects: crisp, easily readable text */
+        /* Dark Theme Inputs & Selects */
         [data-theme="dark"] input,
         [data-theme="dark"] select {
-            background-color: #0f172a !important;
-            color: #f8fafc !important;
-            border-color: #334155 !important;
+            background-color: var(--input-bg) !important;
+            color: var(--ink) !important;
+            border-color: var(--line) !important;
         }
         [data-theme="dark"] input:focus,
         [data-theme="dark"] select:focus {
-            border-color: #3b82f6 !important;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4) !important;
+            border-color: var(--core) !important;
+            box-shadow: 0 0 0 2px var(--core-dim) !important;
         }
         [data-theme="dark"] input#bonus {
-            background-color: #052e1f !important;
-            border-color: #14532d !important;
-            color: #f8fafc !important;
+            background-color: var(--ok-dim) !important;
+            border-color: var(--ok) !important;
+            color: var(--ink) !important;
         }
         [data-theme="dark"] input#bonus:focus {
-            border-color: #22c55e !important;
-            box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.4) !important;
+            border-color: var(--core) !important;
+            box-shadow: 0 0 0 2px var(--core-dim) !important;
         }
         [data-theme="dark"] input::placeholder {
-            color: #64748b !important;
+            color: var(--ink-faint) !important;
         }
         [data-theme="dark"] select option {
-            background-color: #0f172a;
-            color: #f8fafc;
+            background-color: var(--panel);
+            color: var(--ink);
         }
         [data-theme="dark"] #comparePanel {
-            background-color: #1e293b !important;
-            border-color: #334155 !important;
+            background-color: var(--panel) !important;
+            border-color: var(--line) !important;
         }
         [data-theme="dark"] #compareResult {
-            background-color: #0f172a !important;
-            border-color: #334155 !important;
-            color: #e2e8f0 !important;
+            background-color: var(--panel-2) !important;
+            border-color: var(--line) !important;
+            color: var(--ink) !important;
         }
         @media print {
             body { background: #fff !important; color: #000 !important; padding: 0 !important; }
@@ -214,7 +238,7 @@
                         <button onclick="window.print()" id="btn-print-slip" class="py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all flex items-center gap-1.5">
                             <span id="lbl-print-slip">🖨️ พิมพ์ / บันทึก PDF</span>
                         </button>
-                        <p class="text-xs text-gray-400 ml-auto">v1.3.15</p>
+                        <p class="text-xs text-gray-400 ml-auto">v1.3.17</p>
                     </div>
                 </div>
             </div>
@@ -484,9 +508,9 @@
             } catch(e){}
         }
 
-        // Forward global Alt+1..5 shortcuts to parent
+        // Forward global Alt+1..7 shortcuts to parent
         window.addEventListener('keydown', (e) => {
-            if (e.altKey && e.key >= '1' && e.key <= '5') {
+            if (e.altKey && e.key >= '1' && e.key <= '7') {
                 try { window.parent.postMessage({ action: 'shortcutKey', key: e.key }, '*'); } catch(err){}
             }
         });

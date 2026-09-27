@@ -1,0 +1,75 @@
+version: 1
+
+agents:
+  orchestrator:
+    role: "Lead Architect & Triage Orchestrator"
+    prompt: "agents/orchestrator.md"
+    capabilities:
+      - triage
+      - routing
+      - state_management
+    default_tier: "standard"
+    allowed_tiers:
+      - fast
+      - standard
+      - frontier
+
+  planner:
+    role: "Spec & Planning Agent"
+    prompt: "agents/planner.md"
+    capabilities:
+      - specification
+      - task_decomposition
+      - risk_analysis
+    default_tier: "standard"
+    allowed_tiers:
+      - standard
+      - frontier
+
+  coder:
+    role: "Implementation Coder"
+    prompt: "agents/coder.md"
+    capabilities:
+      - code_generation
+      - code_editing
+      - convention_adherence
+    default_tier: "standard"
+    allowed_tiers:
+      - fast
+      - standard
+
+  debugger:
+    role: "QA & Debugger Agent"
+    prompt: "agents/debugger.md"
+    capabilities:
+      - test_execution
+      - build_verification
+      - failure_diagnosis
+    default_tier: "fast"
+    allowed_tiers:
+      - fast
+      - standard
+
+  reviewer:
+    role: "Code & Security Reviewer"
+    prompt: "agents/reviewer.md"
+    capabilities:
+      - code_audit
+      - security_verification
+      - adr_compliance
+    default_tier: "standard"
+    allowed_tiers:
+      - standard
+      - frontier
+
+  release:
+    role: "Release & Docs Agent"
+    prompt: "agents/release.md"
+    capabilities:
+      - versioning
+      - memory_consolidation
+      - documentation_update
+    default_tier: "fast"
+    allowed_tiers:
+      - fast
+      - standard
