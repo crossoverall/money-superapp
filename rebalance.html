@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="1.3.19">
+<meta name="version" content="1.3.20">
 <title>คำนวณการเติมเงินรายเดือน</title>
 <link rel="stylesheet" href="css/theme.css">
 <style>
@@ -198,11 +198,41 @@
     background: var(--warn-dim); padding: 1px 5px; border-radius: 4px; display: inline-block; margin-top: 2px;
   }
 
+  .price-bar-panel {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 14px; padding: 10px 14px; margin-bottom: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px;
+  }
+  .refresh-price-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--core); color: #fff; border: none;
+    padding: 6px 12px; border-radius: 8px; font-size: 12px;
+    font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: opacity 0.2s;
+  }
+  .refresh-price-btn:hover { opacity: 0.9; }
+  .refresh-price-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .refresh-price-btn.loading .refresh-icon {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+  }
+  .settings-btn {
+    background: var(--panel-2); border: 1px solid var(--line);
+    color: var(--ink); padding: 5px 9px; border-radius: 8px;
+    font-size: 12px; cursor: pointer; font-family: inherit;
+  }
+  .settings-btn:hover { background: var(--panel); }
+
   @media print {
     body { background: #fff !important; color: #000 !important; padding: 10px; }
     .panel { box-shadow: none !important; border: 1px solid #ddd; break-inside: avoid; }
     button, .reset-btn, .version-tag, .save-status, .eyebrow, .sub,
-    #splitForm, #bucketForm, #addBucketBtn, #printRebalanceBtn { display: none !important; }
+    #splitForm, #bucketForm, #addBucketBtn, #printRebalanceBtn, #priceBarPanel, #apiSettingsModal { display: none !important; }
     #resultsPanel { display: block !important; }
   }
 </style>
@@ -212,6 +242,29 @@
   <div class="eyebrow" id="eyebrow">เครื่องมือ DCA</div>
   <h1 id="pageTitle">คำนวณการเติมเงินรายเดือน</h1>
   <div class="sub" id="subtitle">แบ่งงบเดือนนี้ตาม Core / Ballast / Satellite แล้วคำนวณว่าแต่ละสินทรัพย์ในแต่ละกลุ่มควรเติมเท่าไหร่ ให้สัดส่วนเข้าใกล้เป้าหมายที่สุด โดยไม่ต้องขายอะไรเลย</div>
+
+  <!-- Live Price Control Bar -->
+  <div class="price-bar-panel" id="priceBarPanel">
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+      <button id="btnRefreshPrices" onclick="fetchAllPrices()" class="refresh-price-btn" title="ดึงราคาล่าสุดสำหรับทุกสินทรัพย์ที่มี Ticker">
+        <span class="refresh-icon">🔄</span>
+        <span id="lblRefreshPrices">ดึงราคาล่าสุด</span>
+      </button>
+      <div style="display:flex; flex-direction:column; gap:2px;">
+        <span id="priceFetchTimestamp" style="font-size:11px; font-weight:600; color:var(--ink-dim);">ยังไม่ได้ดึงราคาล่าสุด</span>
+        <span id="fxRateBadge" style="font-size:11px; color:var(--ink-faint);">USD/THB: —</span>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+      <label style="display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--ink-dim); cursor:pointer;">
+        <input type="checkbox" id="chkAutoRefresh" onchange="toggleAutoRefresh(this.checked)" checked style="accent-color:var(--core);">
+        <span id="lblAutoRefresh">อัปเดตทุก 10 นาที</span>
+      </label>
+      <button onclick="openApiSettingsModal()" class="settings-btn" title="ตั้งค่า API ราคาหุ้น" id="btnSettingsOpen">
+        ⚙️ <span id="lblSettingsBtn">ตั้งค่า API</span>
+      </button>
+    </div>
+  </div>
 
   <div class="panel">
     <div id="pendingBudgetAlert" style="display:none;background:var(--core-dim);border:1px solid var(--core);color:var(--core);padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:14px;align-items:center;justify-content:space-between;">
@@ -286,7 +339,7 @@
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v1.3.19</p>
+  <p class="version-tag">v1.3.20</p>
 
 <script>
 // Language: read once from localStorage (shared origin with the shell nav's toggle).
@@ -304,13 +357,28 @@ const EN = {
   lblMinTrade: 'Min Trade Threshold:',
   lblMinTradeDesc: 'THB (warn if calculated trade is below this)',
   howto: '<b>How it works</b> — The total budget is split by Core/Ballast/Satellite weights first. Within each group, the system tops up whichever asset lags its target weight the most. Anything already over target gets nothing this month (= 0), and its share goes to the laggards instead — nothing is ever sold.<br><br><b>Monthly routine</b> — Before buying each month, update every "Current value" with the real price, then check the new results.<br><br><b>Tip</b> — In "Current value" or the total budget, type <code>+10000</code> or <code>-5000</code> then press Enter/click away to add/subtract from the existing value without doing the math yourself.',
+  lblRefreshPrices: 'Refresh Prices',
+  lblAutoRefresh: 'Every 10 min',
+  lblSettingsBtn: 'API Settings',
+  lblModalTitle: 'Live Stock & ETF Price API Settings',
+  lblModalDesc: '• <b>Crypto (BTC, ETH, etc.):</b> No API key needed — fetched via Coinbase API directly.<br>• <b>USD/THB FX:</b> Live exchange rate fetched via Open Exchange Rates.<br>• <b>US Stocks & ETFs (NVDA, SGOV, etc.):</b> Enter free API key from Finnhub or Twelve Data to fetch live quotes.',
+  lblFinnhubKey: 'Finnhub API Key (Recommended):',
+  lblTwelveDataKey: 'Twelve Data API Key (Alternative):',
+  linkFinnhubFree: 'Get free key (Finnhub.io)',
+  linkTwelveDataFree: 'Get free key (TwelveData)',
+  btnTestApi: '🧪 Test Connection',
+  btnCancelModal: 'Cancel',
+  btnSaveModal: 'Save',
 };
 if(LANG === 'en'){
   document.title = 'Monthly Top-up Calculator';
-  ['eyebrow','pageTitle','subtitle','budgetPanelTitle','budgetUnit','lblDonutTitle','lblMinTrade','lblMinTradeDesc'].forEach(id => {
+  ['eyebrow','pageTitle','subtitle','budgetPanelTitle','budgetUnit','lblDonutTitle','lblMinTrade','lblMinTradeDesc',
+   'lblRefreshPrices','lblAutoRefresh','lblSettingsBtn','lblModalTitle','lblFinnhubKey','lblTwelveDataKey',
+   'linkFinnhubFree','linkTwelveDataFree','btnTestApi','btnCancelModal','btnSaveModal'].forEach(id => {
     const el = document.getElementById(id);
     if(el && EN[id]) el.textContent = EN[id];
   });
+  if (document.getElementById('lblModalDesc')) document.getElementById('lblModalDesc').innerHTML = EN.lblModalDesc;
   document.getElementById('howto').innerHTML = EN.howto;
   document.getElementById('resetBtn').textContent = 'Clear saved data';
   const copyBtnLbl = document.getElementById('lblCopyPortfolio');
@@ -332,6 +400,15 @@ const T = {
     remove: 'ลบ',
     fieldValue: 'มูลค่าปัจจุบัน (บาท)',
     fieldWeight: 'สัดส่วนเป้าหมาย (%)',
+    fieldUnits: 'จำนวนหน่วย',
+    fieldPrice: 'ราคา ($)',
+    priceFetching: 'กำลังดึงราคา...',
+    priceFetchDone: (time, rate) => `อัปเดตราคาล่าสุด: ${time} • USD/THB: ${rate}`,
+    priceFetchError: 'ดึงราคาไม่สำเร็จ (ใช้ราคาที่บันทึกไว้)',
+    testSuccess: (prov, price) => `✓ เชื่อมต่อสำเร็จ! ราคา ${prov}: $${price}`,
+    testFailed: '❌ เชื่อมต่อไม่สำเร็จ กรุณาตรวจสอบ API key',
+    testCryptoOnly: '✓ Crypto และ FX พร้อมใช้งาน (ยังไม่ได้ระบุ Stock API key)',
+    testTesting: 'กำลังทดสอบการเชื่อมต่อ...',
     bucketStatus: pct => `รวมสัดส่วนในกลุ่มนี้ ${pct}% (ระบบจะปรับให้เป็น 100% อัตโนมัติ)`,
     amount: n => `${n} บาท`,
     rmeta: (cur, target) => `ปัจจุบัน ${cur} → เป้า ${target}%`,
@@ -348,6 +425,15 @@ const T = {
     remove: 'Remove',
     fieldValue: 'Current value (THB)',
     fieldWeight: 'Target weight (%)',
+    fieldUnits: 'Units',
+    fieldPrice: 'Price ($)',
+    priceFetching: 'Fetching prices...',
+    priceFetchDone: (time, rate) => `Prices updated: ${time} • USD/THB: ${rate}`,
+    priceFetchError: 'Fetch failed (using cached prices)',
+    testSuccess: (prov, price) => `✓ Connected! ${prov} price: $${price}`,
+    testFailed: '❌ Connection failed. Please check your API key.',
+    testCryptoOnly: '✓ Crypto & FX ready (No stock API key set)',
+    testTesting: 'Testing connection...',
     bucketStatus: pct => `This group's weights total ${pct}% (auto-normalized to 100%)`,
     amount: n => `${n} THB`,
     rmeta: (cur, target) => `Current ${cur} → target ${target}%`,
@@ -366,27 +452,30 @@ function t(key, ...args){
 
 const state = {
   totalBudget: 200000,
+  usdThbRate: 33.39,
+  lastPriceFetch: 0,
+  autoRefreshEnabled: true,
   buckets: [
     {
       id: 'core', label: 'Core', weight: 45,
       assets: [
-        { name: 'Asset 1', value: 0, weight: 50 },
-        { name: 'Asset 2', value: 0, weight: 50 },
+        { name: 'Short Treasury (SGOV)', ticker: 'SGOV', units: 0, lastPrice: 0, currency: 'USD', value: 0, weight: 50 },
+        { name: 'Global Equities (VOO)', ticker: 'VOO', units: 0, lastPrice: 0, currency: 'USD', value: 0, weight: 50 },
       ]
     },
     {
       id: 'ballast', label: 'Ballast', weight: 15,
       assets: [
-        { name: 'Asset 3', value: 0, weight: 70 },
-        { name: 'Asset 4', value: 0, weight: 30 },
+        { name: 'Gold / Cash', ticker: '', units: 0, lastPrice: 0, currency: 'THB', value: 0, weight: 70 },
+        { name: 'Fixed Deposit', ticker: '', units: 0, lastPrice: 0, currency: 'THB', value: 0, weight: 30 },
       ]
     },
     {
       id: 'satellite', label: 'Satellite', weight: 40,
       assets: [
-        { name: 'Asset 5', value: 0, weight: 33 },
-        { name: 'Asset 6', value: 0, weight: 33 },
-        { name: 'Asset 7', value: 0, weight: 34 },
+        { name: 'Bitcoin (BTC)', ticker: 'BTC', units: 0, lastPrice: 0, currency: 'USD', value: 0, weight: 34 },
+        { name: 'NVIDIA (NVDA)', ticker: 'NVDA', units: 0, lastPrice: 0, currency: 'USD', value: 0, weight: 33 },
+        { name: 'Tech ETF (QQQ)', ticker: 'QQQ', units: 0, lastPrice: 0, currency: 'USD', value: 0, weight: 33 },
       ]
     },
   ]
@@ -486,6 +575,9 @@ function saveState(){
       totalBudget: state.totalBudget,
       buckets: state.buckets,
       minTradeThreshold: minTrade,
+      usdThbRate: state.usdThbRate || 33.39,
+      lastPriceFetch: state.lastPriceFetch || 0,
+      autoRefreshEnabled: state.autoRefreshEnabled !== false,
     }));
     if(saveStatusEl){
       const now = new Date();
@@ -515,6 +607,9 @@ if(savedState){
   if(savedState.minTradeThreshold !== undefined && document.getElementById('minTradeThreshold')){
     document.getElementById('minTradeThreshold').value = savedState.minTradeThreshold;
   }
+  if(typeof savedState.usdThbRate === 'number') state.usdThbRate = savedState.usdThbRate;
+  if(typeof savedState.lastPriceFetch === 'number') state.lastPriceFetch = savedState.lastPriceFetch;
+  if(typeof savedState.autoRefreshEnabled === 'boolean') state.autoRefreshEnabled = savedState.autoRefreshEnabled;
   totalBudgetEl.value = state.totalBudget;
 }
 
@@ -613,7 +708,7 @@ function renderBuckets(){
 
     panel.querySelector('.add-btn').addEventListener('click', () => {
       const newIdx = bucket.assets.length;
-      bucket.assets.push({ name: t('assetDefaultName', newIdx+1), value: 0, weight: 0 });
+      bucket.assets.push({ name: t('assetDefaultName', newIdx+1), ticker: '', units: 0, lastPrice: 0, currency: 'USD', value: 0, weight: 0 });
       renderAssetRows(bucket);
       compute();
       const rowsEl = document.getElementById(`rows-${bucket.id}`);
@@ -632,6 +727,11 @@ function renderAssetRows(bucket){
     const safeName = escapeAttr(a.name);
     const safeBucket = escapeAttr(bucket.label);
     const defName = escapeAttr(t('assetDefaultName', i+1));
+    const safeTicker = escapeAttr(a.ticker || '');
+    const safeUnits = a.units != null && a.units !== 0 ? a.units : '';
+    const safePrice = a.lastPrice != null && a.lastPrice !== 0 ? a.lastPrice : '';
+    const approxTHB = (a.lastPrice > 0 && a.units > 0) ? `~${fmt(a.value)} ฿` : '';
+
     row.innerHTML = `
       <div class="asset-row-top">
         <input class="name" data-bucket="${bucket.id}" data-idx="${i}" data-field="name" value="${safeName}" aria-label="${defName} - ${safeBucket}">
@@ -647,20 +747,60 @@ function renderAssetRows(bucket){
           <input type="number" data-bucket="${bucket.id}" data-idx="${i}" data-field="weight" value="${a.weight}" min="0" max="100" step="1" aria-label="${t('fieldWeight')} - ${safeName || defName}">
         </div>
       </div>
+      <div class="live-fields-row" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-top:8px; padding-top:6px; border-top:1px dashed var(--line); font-size:11px;">
+        <div style="display:flex; align-items:center; gap:4px;">
+          <label style="color:var(--ink-faint); font-weight:600;" title="Ticker / Symbol">Ticker:</label>
+          <input type="text" class="ticker-input" data-bucket="${bucket.id}" data-idx="${i}" data-field="ticker" value="${safeTicker}" placeholder="BTC / NVDA" style="width:78px; text-transform:uppercase; padding:3px 6px; border:1px solid var(--line); border-radius:5px; background:var(--panel-2); color:var(--ink); font-size:11px; font-family:monospace; font-weight:600;">
+        </div>
+        <div style="display:flex; align-items:center; gap:4px;">
+          <label style="color:var(--ink-faint); font-weight:600;">${t('fieldUnits')}:</label>
+          <input type="number" step="any" min="0" class="units-input" data-bucket="${bucket.id}" data-idx="${i}" data-field="units" value="${safeUnits}" placeholder="0" style="width:68px; padding:3px 6px; border:1px solid var(--line); border-radius:5px; background:var(--panel-2); color:var(--ink); font-size:11px;">
+        </div>
+        <div style="display:flex; align-items:center; gap:4px;">
+          <label style="color:var(--ink-faint); font-weight:600;">${t('fieldPrice')}:</label>
+          <input type="number" step="any" min="0" class="price-input" data-bucket="${bucket.id}" data-idx="${i}" data-field="lastPrice" value="${safePrice}" placeholder="$0.00" style="width:78px; padding:3px 6px; border:1px solid var(--line); border-radius:5px; background:var(--panel-2); color:var(--ink); font-size:11px;">
+        </div>
+        <div id="price-status-${bucket.id}-${i}" style="color:var(--ink-dim); font-size:10px; font-weight:600;">
+          ${approxTHB}
+        </div>
+      </div>
     `;
     rowsEl.appendChild(row);
   });
 
-  rowsEl.querySelectorAll('input[data-field="name"], input[data-field="weight"]').forEach(inp => {
+  rowsEl.querySelectorAll('input[data-field="name"], input[data-field="weight"], input[data-field="ticker"]').forEach(inp => {
     inp.addEventListener('input', e => {
       const b = state.buckets.find(bk => bk.id === e.target.dataset.bucket);
       const idx = parseInt(e.target.dataset.idx);
       const field = e.target.dataset.field;
       if(field === 'name'){ b.assets[idx].name = e.target.value || t('assetDefaultName', idx+1); }
+      else if(field === 'ticker'){ b.assets[idx].ticker = e.target.value.toUpperCase().trim(); }
       else{ b.assets[idx][field] = parseFloat(e.target.value) || 0; }
       compute();
     });
   });
+
+  rowsEl.querySelectorAll('input[data-field="units"], input[data-field="lastPrice"]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const b = state.buckets.find(bk => bk.id === e.target.dataset.bucket);
+      const idx = parseInt(e.target.dataset.idx);
+      const field = e.target.dataset.field;
+      const val = parseFloat(e.target.value);
+      b.assets[idx][field] = isNaN(val) ? 0 : val;
+
+      const a = b.assets[idx];
+      if (a.units > 0 && a.lastPrice > 0) {
+        const rate = (a.currency === 'USD' || !a.currency) ? (state.usdThbRate || 33.39) : 1;
+        a.value = Math.round(a.units * a.lastPrice * rate);
+        const valInput = rowsEl.querySelector(`input[data-field="value"][data-idx="${idx}"]`);
+        if (valInput) valInput.value = fmtPlain(a.value);
+        const statusEl = document.getElementById(`price-status-${b.id}-${idx}`);
+        if (statusEl) statusEl.textContent = `~${fmt(a.value)} ฿`;
+      }
+      compute();
+    });
+  });
+
   rowsEl.querySelectorAll('input[data-field="value"]').forEach(inp => {
     const bucketId = inp.dataset.bucket;
     const idx = parseInt(inp.dataset.idx);
@@ -907,13 +1047,13 @@ function copyTradeOrders(){
 function exportCSV(){
   const totalBudget = state.totalBudget || 0;
   const totalBucketW = state.buckets.reduce((s,b) => s + b.weight, 0) || 1;
-  let rows = ['Group,Asset,Target %,Current Value (THB),Buy Amount (THB)'];
+  let rows = ['Group,Asset,Ticker,Units,Price (USD),Target %,Current Value (THB),Buy Amount (THB)'];
   state.buckets.forEach(bucket => {
     const bucketBudget = (bucket.weight / totalBucketW) * totalBudget;
     const x = allocate(bucket.assets, bucketBudget);
     bucket.assets.forEach((a, i) => {
       const add = Math.round(x[i]);
-      rows.push(`"${bucket.label}","${a.name}",${a.weight},${a.value},${add}`);
+      rows.push(`"${bucket.label}","${a.name}","${a.ticker || ''}",${a.units || 0},${a.lastPrice || 0},${a.weight},${a.value},${add}`);
     });
   });
   const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
@@ -923,6 +1063,318 @@ function exportCSV(){
   link.download = `rebalance_${new Date().toISOString().slice(0,10)}.csv`;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+// --- Live Asset Price Fetching & API Integration ---
+
+const CRYPTO_SET = new Set([
+  'BTC', 'BITCOIN', 'ETH', 'ETHEREUM', 'SOL', 'SOLANA', 'BNB', 'XRP', 'ADA',
+  'DOGE', 'AVAX', 'DOT', 'LINK', 'MATIC', 'LTC', 'BCH', 'NEAR', 'SUI',
+  'ATOM', 'XLM', 'ALGO', 'UNI', 'SHIB', 'PEPE', 'USDT', 'USDC'
+]);
+
+function isCryptoSymbol(sym) {
+  if (!sym) return false;
+  const s = sym.toUpperCase().trim();
+  return CRYPTO_SET.has(s) || s.endsWith('-USD') || s.endsWith('-THB') || s.endsWith('USDT');
+}
+
+function getApiSettings() {
+  try {
+    return JSON.parse(localStorage.getItem('moneySuperapp.apiSettings') || '{}');
+  } catch(e) {
+    return {};
+  }
+}
+
+function saveApiSettingsToStorage(settings) {
+  try {
+    localStorage.setItem('moneySuperapp.apiSettings', JSON.stringify(settings));
+  } catch(e) {}
+}
+
+async function fetchUsdThbRate() {
+  try {
+    const res = await fetch('https://open.er-api.com/v6/latest/USD');
+    if (!res.ok) throw new Error('FX HTTP ' + res.status);
+    const data = await res.json();
+    if (data && data.rates && typeof data.rates.THB === 'number') {
+      return data.rates.THB;
+    }
+  } catch (err) {
+    console.warn('FX fetch failed:', err);
+  }
+  return null;
+}
+
+async function fetchAssetPrice(rawSymbol, apiSettings) {
+  if (!rawSymbol) return null;
+  const sym = rawSymbol.toUpperCase().trim();
+
+  // 1. Try Coinbase for Crypto
+  if (isCryptoSymbol(sym)) {
+    const cleanSym = sym.replace(/-USD$|-THB$|USDT$/, '');
+    try {
+      const res = await fetch(`https://api.coinbase.com/v2/prices/${encodeURIComponent(cleanSym)}-USD/spot`);
+      if (res.ok) {
+        const data = await res.json();
+        const amt = parseFloat(data?.data?.amount);
+        if (!isNaN(amt) && amt > 0) {
+          return { price: amt, currency: 'USD' };
+        }
+      }
+    } catch(e) {}
+  }
+
+  // 2. Try Finnhub for US Stocks & ETFs
+  if (apiSettings.finnhubKey) {
+    try {
+      const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(sym)}&token=${encodeURIComponent(apiSettings.finnhubKey)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && typeof data.c === 'number' && data.c > 0) {
+          return { price: data.c, currency: 'USD' };
+        }
+      }
+    } catch(e) {}
+  }
+
+  // 3. Try Twelve Data for US Stocks & ETFs
+  if (apiSettings.twelveDataKey) {
+    try {
+      const res = await fetch(`https://api.twelvedata.com/price?symbol=${encodeURIComponent(sym)}&apikey=${encodeURIComponent(apiSettings.twelveDataKey)}`);
+      if (res.ok) {
+        const data = await res.json();
+        const p = parseFloat(data?.price);
+        if (!isNaN(p) && p > 0) {
+          return { price: p, currency: 'USD' };
+        }
+      }
+    } catch(e) {}
+  }
+
+  // 4. Coinbase fallback for other crypto tickers
+  if (!isCryptoSymbol(sym)) {
+    try {
+      const res = await fetch(`https://api.coinbase.com/v2/prices/${encodeURIComponent(sym)}-USD/spot`);
+      if (res.ok) {
+        const data = await res.json();
+        const amt = parseFloat(data?.data?.amount);
+        if (!isNaN(amt) && amt > 0) {
+          return { price: amt, currency: 'USD' };
+        }
+      }
+    } catch(e) {}
+  }
+
+  return null;
+}
+
+let isFetchingPrices = false;
+
+async function fetchAllPrices() {
+  if (isFetchingPrices) return;
+  isFetchingPrices = true;
+
+  const btn = document.getElementById('btnRefreshPrices');
+  const tsEl = document.getElementById('priceFetchTimestamp');
+  if (btn) {
+    btn.classList.add('loading');
+    btn.disabled = true;
+  }
+  if (tsEl) tsEl.textContent = t('priceFetching');
+
+  const apiSettings = getApiSettings();
+
+  try {
+    // 1. Fetch USD/THB rate
+    const fxRate = await fetchUsdThbRate();
+    if (fxRate && fxRate > 0) {
+      state.usdThbRate = fxRate;
+    }
+
+    // 2. Fetch prices for all assets with ticker
+    const fetchPromises = [];
+    state.buckets.forEach(bucket => {
+      bucket.assets.forEach(a => {
+        if (a.ticker && a.ticker.trim()) {
+          fetchPromises.push((async () => {
+            const res = await fetchAssetPrice(a.ticker, apiSettings);
+            if (res && res.price > 0) {
+              a.lastPrice = res.price;
+              a.currency = res.currency || 'USD';
+              a.lastFetched = Date.now();
+              if (a.units != null && a.units > 0) {
+                const effectiveRate = a.currency === 'USD' ? (state.usdThbRate || 33.39) : 1;
+                a.value = Math.round(a.units * a.lastPrice * effectiveRate);
+              }
+            }
+          })());
+        }
+      });
+    });
+
+    await Promise.all(fetchPromises);
+
+    state.lastPriceFetch = Date.now();
+    saveState();
+    renderBuckets();
+    compute();
+    updatePriceTimestampUI();
+  } catch (err) {
+    console.error('Price refresh error:', err);
+    if (tsEl) tsEl.textContent = t('priceFetchError');
+  } finally {
+    isFetchingPrices = false;
+    if (btn) {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  }
+}
+
+function updatePriceTimestampUI() {
+  const tsEl = document.getElementById('priceFetchTimestamp');
+  const fxEl = document.getElementById('fxRateBadge');
+  if (fxEl) {
+    fxEl.textContent = `USD/THB: ${state.usdThbRate ? state.usdThbRate.toFixed(2) : '33.39'}`;
+  }
+  if (!tsEl) return;
+  if (!state.lastPriceFetch) {
+    tsEl.textContent = LANG === 'en' ? 'Prices not fetched yet' : 'ยังไม่ได้ดึงราคาล่าสุด';
+    return;
+  }
+  const d = new Date(state.lastPriceFetch);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  const timeStr = `${hh}:${mm}:${ss}`;
+  const rateStr = state.usdThbRate ? state.usdThbRate.toFixed(2) : '33.39';
+  tsEl.textContent = t('priceFetchDone', timeStr, rateStr);
+}
+
+let autoRefreshTimer = null;
+
+function initAutoRefresh() {
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+  const chk = document.getElementById('chkAutoRefresh');
+  if (chk) chk.checked = state.autoRefreshEnabled !== false;
+
+  // 10-minute recurring auto-refresh (600,000 ms)
+  autoRefreshTimer = setInterval(() => {
+    if (state.autoRefreshEnabled !== false && document.visibilityState === 'visible') {
+      const hasTickers = state.buckets.some(b => b.assets.some(a => a.ticker && a.ticker.trim()));
+      if (hasTickers) {
+        fetchAllPrices();
+      }
+    }
+  }, 10 * 60 * 1000);
+}
+
+function toggleAutoRefresh(enabled) {
+  state.autoRefreshEnabled = enabled;
+  saveState();
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && state.autoRefreshEnabled !== false) {
+    const elapsed = Date.now() - (state.lastPriceFetch || 0);
+    if (elapsed >= 10 * 60 * 1000) {
+      const hasTickers = state.buckets.some(b => b.assets.some(a => a.ticker && a.ticker.trim()));
+      if (hasTickers) {
+        fetchAllPrices();
+      }
+    }
+  }
+});
+
+// Modal Management
+function openApiSettingsModal() {
+  const modal = document.getElementById('apiSettingsModal');
+  const finnhubInput = document.getElementById('inputFinnhubKey');
+  const twelveDataInput = document.getElementById('inputTwelveDataKey');
+  const statusEl = document.getElementById('apiTestStatus');
+
+  const settings = getApiSettings();
+  if (finnhubInput) finnhubInput.value = settings.finnhubKey || '';
+  if (twelveDataInput) twelveDataInput.value = settings.twelveDataKey || '';
+  if (statusEl) statusEl.style.display = 'none';
+
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeApiSettingsModal() {
+  const modal = document.getElementById('apiSettingsModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function saveApiSettings() {
+  const finnhubKey = document.getElementById('inputFinnhubKey').value.trim();
+  const twelveDataKey = document.getElementById('inputTwelveDataKey').value.trim();
+
+  saveApiSettingsToStorage({ finnhubKey, twelveDataKey });
+  closeApiSettingsModal();
+  fetchAllPrices();
+}
+
+async function testApiKeys() {
+  const statusEl = document.getElementById('apiTestStatus');
+  if (!statusEl) return;
+  statusEl.style.display = 'block';
+  statusEl.style.background = 'var(--panel-2)';
+  statusEl.style.color = 'var(--ink)';
+  statusEl.textContent = t('testTesting');
+
+  const finnhubKey = document.getElementById('inputFinnhubKey').value.trim();
+  const twelveDataKey = document.getElementById('inputTwelveDataKey').value.trim();
+
+  let cryptoOk = false;
+  try {
+    const cb = await fetch('https://api.coinbase.com/v2/prices/BTC-USD/spot');
+    cryptoOk = cb.ok;
+  } catch(e){}
+
+  if (finnhubKey) {
+    try {
+      const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=NVDA&token=${encodeURIComponent(finnhubKey)}`);
+      const data = await res.json();
+      if (data && typeof data.c === 'number' && data.c > 0) {
+        statusEl.style.background = 'rgba(47, 139, 118, 0.15)';
+        statusEl.style.color = 'var(--core)';
+        statusEl.textContent = t('testSuccess', 'NVDA (Finnhub)', data.c.toFixed(2));
+        return;
+      }
+    } catch(e){}
+  }
+
+  if (twelveDataKey) {
+    try {
+      const res = await fetch(`https://api.twelvedata.com/price?symbol=NVDA&apikey=${encodeURIComponent(twelveDataKey)}`);
+      const data = await res.json();
+      if (data && data.price) {
+        statusEl.style.background = 'rgba(47, 139, 118, 0.15)';
+        statusEl.style.color = 'var(--core)';
+        statusEl.textContent = t('testSuccess', 'NVDA (Twelve Data)', parseFloat(data.price).toFixed(2));
+        return;
+      }
+    } catch(e){}
+  }
+
+  if (!finnhubKey && !twelveDataKey) {
+    if (cryptoOk) {
+      statusEl.style.background = 'rgba(47, 139, 118, 0.15)';
+      statusEl.style.color = 'var(--core)';
+      statusEl.textContent = t('testCryptoOnly');
+    } else {
+      statusEl.style.background = 'rgba(239, 68, 68, 0.15)';
+      statusEl.style.color = 'var(--danger)';
+      statusEl.textContent = t('testFailed');
+    }
+  } else {
+    statusEl.style.background = 'rgba(239, 68, 68, 0.15)';
+    statusEl.style.color = 'var(--danger)';
+    statusEl.textContent = t('testFailed');
+  }
 }
 
 window.addEventListener('focus', () => {
@@ -941,7 +1393,59 @@ renderSplit();
 renderBuckets();
 checkPendingBudget();
 compute();
+updatePriceTimestampUI();
+initAutoRefresh();
 </script>
+
+  <!-- API Settings Modal -->
+  <div id="apiSettingsModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; align-items:center; justify-content:center; backdrop-filter:blur(2px);">
+    <div style="background:var(--panel); border:1px solid var(--line); border-radius:16px; width:92%; max-width:480px; padding:20px; box-shadow:0 12px 30px rgba(0,0,0,0.3); color:var(--ink); font-family:inherit;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+        <h3 style="margin:0; font-size:16px; font-weight:700;" id="lblModalTitle">ตั้งค่า API ดึงราคาหุ้น / ETF</h3>
+        <button onclick="closeApiSettingsModal()" style="background:none; border:none; color:var(--ink-dim); font-size:20px; cursor:pointer; padding:0 4px;" aria-label="Close">&times;</button>
+      </div>
+      
+      <div style="font-size:12px; color:var(--ink-dim); line-height:1.5; margin-bottom:14px;" id="lblModalDesc">
+        • <b>Crypto (BTC, ETH, etc.):</b> ไม่ต้องใช้ API key — ดึงผ่าน Coinbase API ฟรีทันที<br>
+        • <b>USD/THB:</b> อัตราแลกเปลี่ยนดึงสดจาก Open Exchange Rates อัตโนมัติ<br>
+        • <b>US Stocks & ETFs (NVDA, SGOV, etc.):</b> ใส่ API Key ฟรีจาก Finnhub หรือ Twelve Data เพื่อดึงราคาอัตโนมัติ
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:12px; font-size:12px;">
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label style="font-weight:600;" id="lblFinnhubKey">Finnhub API Key (แนะนำ):</label>
+            <a href="https://finnhub.io/register" target="_blank" rel="noopener noreferrer" style="color:var(--core); font-size:11px; text-decoration:underline;" id="linkFinnhubFree">รับคีย์ฟรี (Finnhub.io)</a>
+          </div>
+          <input type="password" id="inputFinnhubKey" placeholder="เช่น c1234abcd5678" style="width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--panel-2); color:var(--ink); font-size:12px; box-sizing:border-box;">
+        </div>
+
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label style="font-weight:600;" id="lblTwelveDataKey">Twelve Data API Key (ทางเลือก):</label>
+            <a href="https://twelvedata.com/pricing" target="_blank" rel="noopener noreferrer" style="color:var(--core); font-size:11px; text-decoration:underline;" id="linkTwelveDataFree">รับคีย์ฟรี (TwelveData)</a>
+          </div>
+          <input type="password" id="inputTwelveDataKey" placeholder="เช่น 1234567890abcdef" style="width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--panel-2); color:var(--ink); font-size:12px; box-sizing:border-box;">
+        </div>
+
+        <div id="apiTestStatus" style="display:none; padding:8px 10px; border-radius:8px; font-size:11px; font-weight:600;"></div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+          <button onclick="testApiKeys()" style="background:var(--panel-2); border:1px solid var(--line); color:var(--ink); padding:6px 12px; border-radius:8px; font-size:12px; cursor:pointer; font-weight:600;" id="btnTestApi">
+            🧪 ทดสอบการเชื่อมต่อ
+          </button>
+          <div style="display:flex; gap:8px;">
+            <button onclick="closeApiSettingsModal()" style="background:none; border:1px solid var(--line); color:var(--ink-dim); padding:6px 12px; border-radius:8px; font-size:12px; cursor:pointer;" id="btnCancelModal">
+              ยกเลิก
+            </button>
+            <button onclick="saveApiSettings()" style="background:var(--core); border:none; color:#fff; padding:6px 14px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer;" id="btnSaveModal">
+              บันทึก
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
 </body>
 </html>
