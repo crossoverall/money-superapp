@@ -66,3 +66,17 @@ When adding a lesson, include:
   2. For Forex (USD/THB), use free open CORS endpoints (Open Exchange Rates / ER-API) without API keys.
   3. For US Stocks/ETFs (NVDA, SGOV), support CORS-friendly providers (Finnhub, Twelve Data) by allowing users to store their own free API key in client `localStorage`, while providing manual price fallback.
   4. Always gate recurring auto-refreshers with `document.visibilityState === 'visible'` and attach a `visibilitychange` listener to catch up only when the tab regains focus if the refresh interval has elapsed.
+
+### 2026-09-27: Multi-Currency Portfolio Normalization & Local Thai Asset Valuation
+
+- **Date & Context:** 2026-09-27, during implementation of Thai assets support (`v1.3.21`) including `K-WORLDX`, `SCBCE`, and `YLG-GOLD`.
+- **Problem:**
+  1. Prior implementation assumed all assets with price and units were denominated in USD and multiplied by `usdThbRate`. Domestic Thai assets (`K-WORLDX`, `SCBCE`, `YLG-GOLD`) are denominated natively in Thai Baht (THB). Applying the FX rate inflated their portfolio value by ~33.4x.
+  2. Thai mutual funds are unlisted OTC funds without open browser CORS APIs, requiring smooth manual NAV entry that integrates seamlessly with DCA allocation.
+  3. Thai Gold (`YLG-GOLD`) trades in "Baht of Gold" (บาททองคำ), requiring live integration with Thai Gold Association quotes.
+- **Root Cause:** Uniform single-currency assumption in asset modeling and lack of per-asset currency selector and ticker-prefix classification.
+- **Solution & Rule:**
+  1. Introduce an asset-level currency toggle (`$` USD vs `฿` THB) with smart regex auto-detection (`/^(K-|SCB|B-|KT-|TMB|TTB|KF-|ONE-|PRINCIPAL|LH|UOB|ASP|DAOL|KKP|TISCO)/i` for Thai funds, `YLG-` or `GOLD` for Thai gold).
+  2. Valuation is computed as $\text{Value} = \text{Units} \times \text{Price}$ for THB assets and $\text{Units} \times \text{Price} \times \text{Rate}$ for USD assets.
+  3. Wire live Thai Gold prices from `https://api.chnwt.dev/thai-gold-api/latest` (open CORS), and preserve user-entered NAV for mutual funds during automatic background price refreshes.
+
