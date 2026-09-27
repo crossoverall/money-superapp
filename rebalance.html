@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="1.3.21">
+<meta name="version" content="1.3.22">
 <title>คำนวณการเติมเงินรายเดือน</title>
 <link rel="stylesheet" href="css/theme.css">
 <style>
@@ -339,7 +339,7 @@
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v1.3.21</p>
+  <p class="version-tag">v1.3.22</p>
 
 <script>
 // Language: read once from localStorage (shared origin with the shell nav's toggle).
@@ -718,6 +718,8 @@ function renderBuckets(){
       if(nameInput){ nameInput.focus(); nameInput.select(); }
     });
   });
+}
+
 // --- Symbol & Currency Classification Helpers ---
 const CRYPTO_SET = new Set([
   'BTC', 'BITCOIN', 'ETH', 'ETHEREUM', 'SOL', 'SOLANA', 'BNB', 'XRP', 'ADA',

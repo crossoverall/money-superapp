@@ -76,7 +76,13 @@ When adding a lesson, include:
   3. Thai Gold (`YLG-GOLD`) trades in "Baht of Gold" (บาททองคำ), requiring live integration with Thai Gold Association quotes.
 - **Root Cause:** Uniform single-currency assumption in asset modeling and lack of per-asset currency selector and ticker-prefix classification.
 - **Solution & Rule:**
-  1. Introduce an asset-level currency toggle (`$` USD vs `฿` THB) with smart regex auto-detection (`/^(K-|SCB|B-|KT-|TMB|TTB|KF-|ONE-|PRINCIPAL|LH|UOB|ASP|DAOL|KKP|TISCO)/i` for Thai funds, `YLG-` or `GOLD` for Thai gold).
-  2. Valuation is computed as $\text{Value} = \text{Units} \times \text{Price}$ for THB assets and $\text{Units} \times \text{Price} \times \text{Rate}$ for USD assets.
-  3. Wire live Thai Gold prices from `https://api.chnwt.dev/thai-gold-api/latest` (open CORS), and preserve user-entered NAV for mutual funds during automatic background price refreshes.
+### 2026-09-27: Automated Full-Script Syntax Validation in Single-File Tools
+
+- **Date & Context:** 2026-09-27, during syntax crash resolution in `rebalance.html` (`v1.3.22`).
+- **Problem:** When editing inline `<script>` tags, an accidental omission of a closing brace `}` inside `renderBuckets()` caused an `Unexpected end of input` syntax error, completely halting page hydration in the browser.
+- **Root Cause:** QA unit tests inspected extracted helper functions in isolation rather than parsing the complete verbatim `<script>` block from the HTML file.
+- **Solution & Rule:**
+  1. For single-file HTML tools with inline scripts, QA must always extract and compile the entire `<script>` block using `new vm.Script(scriptContent)` to guarantee zero syntax or parser errors.
+  2. Perform a headless Chrome smoke check (`google-chrome --headless=new --remote-debugging-port`) to verify that the live browser environment boots with zero uncaught runtime exceptions and hydrates the DOM completely before signing off.
+
 
