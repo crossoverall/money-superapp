@@ -86,3 +86,25 @@ When adding a lesson, include:
   2. Perform a headless Chrome smoke check (`google-chrome --headless=new --remote-debugging-port`) to verify that the live browser environment boots with zero uncaught runtime exceptions and hydrates the DOM completely before signing off.
 
 
+
+---
+
+## Lesson: Always run the full SDLC loop — QA alone is not enough (2026-09-27)
+
+**Context:** Three consecutive bug-fix commits (v1.3.24–v1.3.26) were shipped with only syntax-check + test suite (QA) but without the Security Review or Release stages.
+
+**What the Security Reviewer found:**
+1. **Stored XSS (CRITICAL):** `a.name` was rendered unescaped inside a results `innerHTML` template (`${a.name}` in compute results panel). The same `escapeAttr()` helper used in `renderAssetRows()` was missing in the results row. A user could store `<img src=x onerror=alert(1)>` as an asset name in localStorage and trigger arbitrary JS execution.
+2. **`bucket.label` unescaped** in two innerHTML spots (also via localStorage input).
+3. **`_prevPrice` crash persistence:** Stash could survive to localStorage if the browser crashed mid-fetch.
+4. **DoS / lock starvation:** No max asset cap or per-request timeout meant 100-asset portfolios could hold the `isFetchingPrices` lock for 3+ minutes.
+5. **`KNOWN_US_EQUITIES` regex compiled per-call** instead of at module scope.
+
+**Fixes applied:**
+- `escapeAttr()` applied to `a.name` and `bucket.label` everywhere in innerHTML templates.
+- `fetchWithTimeout(10s)` wrapper using `AbortController` added for all price fetch calls.
+- `MAX_FETCH = 50` cap prevents unbounded sequential loops.
+- `delete a._prevPrice` cleanup added before `saveState()`.
+- `KNOWN_US_EQUITIES` moved to module-level constant.
+
+**Rule reinforced:** The AGENTS.md rule "Mandatory Full SDLC for All Fixes" exists precisely because QA verifies correctness but not security. The Security Reviewer catches XSS, key exposure, and DoS patterns that tests can't see. Never skip it.
