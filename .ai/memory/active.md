@@ -1,5 +1,5 @@
 ---
-task_id: "theme-unification-v1"
+task_id: "feat-rebalance-live-prices"
 complexity: "level_2"
 current_stage: "release"
 assigned_agent: "release"
@@ -7,17 +7,17 @@ iteration_count: 1
 max_iterations: 2
 status: "completed"
 target_files:
-  - "css/theme.css"
+  - "rebalance.html"
   - "sw.js"
   - "index.html"
   - "dashboard.html"
-  - "rebalance.html"
   - "months-slips.html"
   - "tax-calculator-base.html"
   - "tax-calculator.html"
   - "remaining-money.html"
   - "debt-calculator.html"
   - "README.md"
+  - ".ai/memory/lessons.md"
 ---
 
 # Active Task State Bus
@@ -25,55 +25,45 @@ target_files:
 > This file is the centralized state machine and working scratchpad for the Multi-Agent SDLC pipeline.
 
 ## 1. Task Objective & Context
-- **Description:** Unify the visual design, color palette, and theming system across all pages of Money Superapp.
-- **Problem Diagnosis:**
-  - `dashboard.html`, `rebalance.html`, `remaining-money.html`, and `debt-calculator.html` used a modern minimalist Sage/Emerald palette (`#F5F7F6` / `#0E1512` with accents `#2F8B76` / `#4FA894`).
-  - `tax-calculator.html` used a cool slate/indigo palette (`#f0f4f8` / `#6366f1`).
-  - `tax-calculator-base.html` and `months-slips.html` used raw Tailwind classes with disparate blues, gray backgrounds, external Google Fonts, and ad-hoc dark mode overrides.
-  - `index.html` shell used dark slate-800 (`#1f2937`) rather than the core brand tone.
-- **Complexity Assessment:** Level 2 (Standard Feature / Multi-file UI Refactor).
+- **Description:** Implement real-time asset price fetching, 10-minute auto-refresh, manual refresh button, and timestamp tracking in the Rebalance page (`rebalance.html`).
+- **Feature Scope:**
+  1. **Crypto Price Engine (e.g. Bitcoin / BTC):** Direct browser fetch via Coinbase API (`https://api.coinbase.com/v2/prices/{SYMBOL}-USD/spot`) with open CORS, zero API key required.
+  2. **Forex Currency Engine (USD to THB):** Direct browser fetch via Open Exchange Rates API (`https://open.er-api.com/v6/latest/USD`) with open CORS, zero API key required, to convert USD asset prices to THB.
+  3. **US Stock & ETF Engine (e.g. NVDA, SGOV):** Configurable Finnhub / Twelve Data client-side API integration (CORS-enabled with free user API key stored in `localStorage`), with graceful fallback to manual price entry.
+  4. **Asset Data Model Enhancement:** Support optional `ticker`, `units` (quantity), `price` (unit price), and `currency` (USD/THB) alongside existing `value` (THB) and `weight` (%). Auto-calculate `value = units * price * fxRate`. Ensure 100% backward compatibility with existing saved states.
+  5. **Live Refresh Controls & Timestamp:**
+     - Manual refresh button (🔄) with loading spinner and disabled state while fetching.
+     - Visible timestamp showing last update time (`HH:MM:SS`) and effective USD/THB rate.
+     - 10-minute auto-refresh timer (`setInterval(600000)`), with auto-pause when tab is hidden or blurred (`document.visibilityState === 'hidden'`).
+  6. **API Settings Modal:** Clean modal in the toolbar to configure optional Finnhub / Twelve Data API keys, test connection, and toggle auto-refresh.
+  7. **Offline-First & Security Guardrails:** Strict XSS prevention (DOM textContent & escapeAttr), graceful offline fallback using cached prices, zero telemetry.
+  8. **Localization:** Full Thai and English translations for all new elements.
 
 ## 2. Working Plan & Acceptance Criteria
 
-### Phase 1: Shared Theme Architecture (`css/theme.css`)
-- [x] Create `css/theme.css` with CSS custom properties (`--bg`, `--panel`, `--panel-2`, `--line`, `--ink`, `--ink-dim`, `--ink-faint`, `--core`, `--ok`, `--warn`, `--danger`, `--blue`, `--purple`), dark mode overrides on `[data-theme="dark"]`, and common component classes.
-- [x] Precache `css/theme.css` in `sw.js`.
+### Phase 1: Planning & Architectural Design
+- [x] Analyze CORS and public APIs (Coinbase, Open Exchange Rates, Finnhub, Twelve Data).
+- [x] Design backward-compatible asset schema and price calculation formulas.
+- [x] Obtain user approval (HITL Gate).
 
-### Phase 2: Page Harmonization
-- [x] **Slice A (Shell & PVD Tax):**
-  - Updated `index.html` topbar/nav colors to `#0E1512` / `#2F8B76`.
-  - Linked `css/theme.css` in `tax-calculator.html` and remapped tokens.
-- [x] **Slice B (Income Tax & Payslip):**
-  - Linked `css/theme.css` in `tax-calculator-base.html`, removed external Google Fonts, harmonized controls.
-  - Linked `css/theme.css` in `months-slips.html`, removed external Google Fonts, unified inputs and comparison cards.
-- [x] **Slice C (Remaining Tools):**
-  - Linked `css/theme.css` in `dashboard.html`, `rebalance.html`, `remaining-money.html`, `debt-calculator.html`.
+### Phase 2: Implementation (`rebalance.html`)
+- [x] Add live price bar UI (Refresh button, timestamp, USD/THB badge, API key config button).
+- [x] Add API settings modal (Finnhub API key, Twelve Data API key, Auto-refresh toggle).
+- [x] Update asset row rendering to support Ticker (`BTC`, `NVDA`, etc.), Units, Price, and auto-computed Value.
+- [x] Implement `fetchCryptoPrice(symbol)` (Coinbase API).
+- [x] Implement `fetchUsdThbRate()` (Open Exchange Rates API).
+- [x] Implement `fetchStockPrice(symbol)` (Finnhub / Twelve Data API with user key).
+- [x] Implement `fetchAllPrices()` coordinator with loading indicators and error resilience.
+- [x] Implement 10-minute interval auto-refresh with `document.visibilityState` lifecycle handling.
+- [x] Add TH/EN translations in `T.th` and `T.en`.
 
-### Phase 3: QA Verification & Adversarial Review
-- [x] Automated QA verification suite executed via `qa_debugger` agent (121 tests passed, 0 failed).
-- [x] Adversarial security and code audit executed via `security_reviewer` agent.
-- [x] Remediated all 5 blockers identified in Reviewer Iteration 1:
-  1. Fixed button onclick function names and declared window aliases (`takeSnapshot`, `clearAllSnapshots`, `saveSnapshot`, `clearHistory`) in `dashboard.html`.
-  2. Neutralized stored XSS in `dashboard.html#renderSnapshotsTable` via `textContent` and `addEventListener`.
-  3. Ensured `document.documentElement.dataset.theme = theme` in `index.html#applyTheme` to activate `:root[data-theme="dark"]`. Added backup key whitelist filtering to prevent localStorage pollution.
-  4. Expanded global shortcut forwarding to `Alt+1..7` across all 5 child tools (`tax-calculator.html`, `tax-calculator-base.html`, `months-slips.html`, `rebalance.html`, `remaining-money.html`).
-  5. Standardized contrast tokens (`var(--ok)`, `var(--core)`, `var(--panel-2)`) in `tax-calculator.html` and `tax-calculator-base.html`.
-- [x] Bumped semantic version to `v1.3.17` (`money-superapp-v1.3.17`).
-- [x] Second review round: Reviewer issued **APPROVE**.
+### Phase 3: QA & Build Verification (`qa_debugger`)
+- [x] Validate syntax, DOM elements, localization keys, and formula accuracy.
+- [x] Execute automated test suite across mock data, network failure simulations, and edge cases (49 tests passed, 0 failed).
 
-## 3. Execution Scratchpad & Diffs
-- Created `css/theme.css`.
-- Updated `sw.js`: Added `'./css/theme.css'` and bumped cache to `money-superapp-v1.3.17`.
-- Updated `index.html`: Shell theme tokens, `data-theme` binding on `<html>`, and backup key whitelist.
-- Updated `dashboard.html`: Safe DOM snapshot rendering, button function name fixes, window aliases.
-- Updated `tax-calculator.html`: Tokenized palette, high-contrast values, `Alt+1..7` shortcuts.
-- Updated `tax-calculator-base.html`: Removed external fonts, tokenized buttons, `Alt+1..7` shortcuts.
-- Updated `months-slips.html`: Removed external fonts, unified styles, `Alt+1..7` shortcuts.
-- Updated `rebalance.html`: `Alt+1..7` shortcuts, theme link.
-- Updated `remaining-money.html`: `Alt+1..7` shortcuts, theme link.
-- Updated `debt-calculator.html`: Theme link.
-- Updated `README.md`: Version badge sync to `v1.3.17`.
+### Phase 4: Adversarial Security & Code Review (`security_reviewer`)
+- [x] Audit for DOM XSS, API key leakage, error boundary integrity, and schema migration safety (16 security checks passed, 0 failed, verdict: APPROVE).
 
-## 4. Quality & Audit Logs
-- **QA / Build Verification (Iteration 2):** ✅ PASS (121 tests passed, 0 failed). Zero external CDN calls, clean JavaScript syntax across all scripts, valid CSS, clean offline PWA manifest, and 100% version alignment.
-- **Reviewer Audit Scorecard (Iteration 2):** ✅ Verdict: **APPROVE**. All security, correctness, architecture, and convention requirements fully satisfied.
+### Phase 5: Release & Version Bump (`release`)
+- [x] Bump version to `v1.3.20`, update `sw.js` cache, update `README.md` and `.ai/memory/lessons.md`.
+- [x] Commit, push branch, open PR, and merge into master upon passing all checks.
