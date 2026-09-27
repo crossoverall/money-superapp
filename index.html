@@ -3,14 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="1.3.15">
-<meta name="theme-color" content="#0d9488">
+<meta name="version" content="1.3.17">
+<meta name="theme-color" content="#2F8B76">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Money Superapp">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="css/theme.css">
 <meta name="description" content="Money Superapp — financial tools (dashboard, rebalance, payslip simulator, income tax, PVD tax, remaining money, debt payoff) in Thai and English with light/dark theme.">
 <title>Money Superapp</title>
 <style>
@@ -20,15 +21,14 @@
     height: 100vh;
     height: 100dvh;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Prompt", Helvetica, Arial, sans-serif;
-    background: #f4f5f7;
+    background: var(--bg);
     display: flex;
     flex-direction: column;
     overflow: hidden;
   }
 
-  /* Full-bleed dark background bar; its content is capped and centered so tabs
-     don't stretch into huge gaps on ultra-wide monitors. */
-  .topbar { flex: 0 0 auto; background: #1f2937; }
+  /* Full-bleed dark background bar; capped and centered so tabs don't stretch */
+  .topbar { flex: 0 0 auto; background: #131E19; border-bottom: 1px solid #24352C; }
   .topbar-inner {
     max-width: 1280px; margin: 0 auto; display: flex; align-items: stretch; justify-content: space-between;
   }
@@ -39,7 +39,7 @@
     align-items: center;
     gap: 6px;
     padding: 10px 12px;
-    color: #f8fafc;
+    color: #EAF2EE;
     font-size: 14px;
     font-weight: 700;
     white-space: nowrap;
@@ -66,7 +66,7 @@
     padding: 14px 6px;
     border: none;
     background: none;
-    color: #cbd5e1;
+    color: #8FA69C;
     font-size: 13px;
     cursor: pointer;
     border-bottom: 3px solid transparent;
@@ -74,8 +74,8 @@
     transition: background 0.15s, color 0.15s;
     text-align: center;
   }
-  .top-nav button:hover { background: #374151; }
-  .top-nav button.active { color: #fff; border-bottom-color: #38bdf8; background: #111827; font-weight: 600; }
+  .top-nav button:hover { background: #16221C; color: #EAF2EE; }
+  .top-nav button.active { color: #FFFFFF; border-bottom-color: #4FA894; background: #0E1512; font-weight: 600; }
 
   /* Topbar Actions: ALWAYS compact across all viewports */
   .topbar-actions {
@@ -94,7 +94,7 @@
     flex: 0 0 auto;
   }
   .theme-toggle {
-    border-left: 1px solid #374151;
+    border-left: 1px solid #24352C;
     padding-left: 6px;
   }
   .version-badge {
@@ -102,14 +102,14 @@
     padding: 0 6px;
     font-size: 11px;
     font-weight: 600;
-    color: #94a3b8;
+    color: #5B7168;
     letter-spacing: 0.04em;
     align-self: center;
   }
   .lang-toggle button, .theme-toggle button {
-    border: 1px solid #4b5563;
+    border: 1px solid #24352C;
     background: none;
-    color: #cbd5e1;
+    color: #8FA69C;
     white-space: nowrap;
     font-size: 11.5px;
     font-weight: 700;
@@ -123,8 +123,8 @@
     line-height: 1;
     transition: background 0.15s, color 0.15s, border-color 0.15s;
   }
-  .lang-toggle button:hover, .theme-toggle button:hover { background: #374151; }
-  .lang-toggle button.active, .theme-toggle button.active { background: #38bdf8; color: #0f172a; border-color: #38bdf8; }
+  .lang-toggle button:hover, .theme-toggle button:hover { background: #16221C; color: #EAF2EE; }
+  .lang-toggle button.active, .theme-toggle button.active { background: #2F8B76; color: #FFFFFF; border-color: #2F8B76; }
 
   .theme-toggle button {
     font-size: 13px;
@@ -133,8 +133,8 @@
 
   #btn-settings-modal {
     background: none;
-    border: 1px solid #4b5563;
-    color: #cbd5e1;
+    border: 1px solid #24352C;
+    color: #8FA69C;
     padding: 5px 8px;
     border-radius: 999px;
     cursor: pointer;
@@ -146,24 +146,24 @@
     justify-content: center;
     font-family: inherit;
     line-height: 1;
-    transition: background 0.15s;
+    transition: background 0.15s, color 0.15s;
   }
-  #btn-settings-modal:hover { background: #374151; }
+  #btn-settings-modal:hover { background: #16221C; color: #EAF2EE; }
 
-  iframe { display: block; width: 100%; flex: 1 1 auto; border: none; background: #fff; }
+  iframe { display: block; width: 100%; flex: 1 1 auto; border: none; background: var(--bg); }
 
   /* Privacy Footer Notice */
   .privacy-bar {
-    flex: 0 0 auto; background: #111827; color: #94a3b8; font-size: 11px;
+    flex: 0 0 auto; background: #0E1512; color: #5B7168; font-size: 11px;
     padding: 6px 16px; display: flex; justify-content: space-between; align-items: center;
-    border-top: 1px solid #374151;
+    border-top: 1px solid #24352C;
   }
 
   /* Mobile Bottom Navigation Bar (hidden on desktop) */
   .bottom-nav {
     display: none;
-    background: #1f2937;
-    border-top: 1px solid #374151;
+    background: #131E19;
+    border-top: 1px solid #24352C;
     flex: 0 0 auto;
     z-index: 100;
     user-select: none;
@@ -259,9 +259,9 @@
       background: rgba(255, 255, 255, 0.05);
     }
     .bottom-nav button.active {
-      color: #38bdf8;
-      border-top-color: #38bdf8;
-      background: #111827;
+      color: #4FA894;
+      border-top-color: #4FA894;
+      background: #0E1512;
     }
     .bottom-nav button .b-icon {
       font-size: 16px;
@@ -306,7 +306,7 @@
       <button data-theme-btn="light" id="btn-theme-light" title="☀ Light Theme"><span class="theme-icon">☀</span></button>
       <button data-theme-btn="dark" id="btn-theme-dark" title="☾ Dark Theme"><span class="theme-icon">☾</span></button>
     </div>
-    <span class="version-badge">v1.3.15</span>
+    <span class="version-badge">v1.3.17</span>
     <button id="btn-settings-modal" onclick="openSettingsModal()" title="Data & Backup Management">
       <span class="settings-icon">⚙️</span>
     </button>
@@ -318,7 +318,7 @@
 <!-- Privacy Footer Notice -->
 <div class="privacy-bar">
   <span id="lbl-privacy-footer">🔒 100% Client-Side Privacy — ทุกการคำนวณและข้อมูลถูกเก็บไว้ในอุปกรณ์ของคุณเท่านั้น ไม่มีการส่งข้อมูลสู่เซิร์ฟเวอร์</span>
-  <span style="color: #64748b; font-size: 10px;">Money Superapp v1.3.15</span>
+  <span style="color: #64748b; font-size: 10px;">Money Superapp v1.3.17</span>
 </div>
 
 <!-- Mobile Bottom Navigation Bar (Visible on Mobile <= 768px) -->
@@ -355,51 +355,51 @@
 
 <!-- Settings & Data Management Modal -->
 <div id="settingsModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.65); z-index: 9999; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(2px);">
-  <div style="background: #1f2937; color: #f8fafc; border: 1px solid #374151; border-radius: 16px; max-width: 500px; width: 100%; padding: 22px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #374151; padding-bottom: 10px;">
+  <div style="background: #131E19; color: #EAF2EE; border: 1px solid #24352C; border-radius: 16px; max-width: 500px; width: 100%; padding: 22px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #24352C; padding-bottom: 10px;">
       <h3 style="margin: 0; font-size: 16px; font-weight: 700;" id="lbl-modal-title">จัดการข้อมูล & ความเป็นส่วนตัว</h3>
-      <button onclick="closeSettingsModal()" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; padding: 0 4px;">&times;</button>
+      <button onclick="closeSettingsModal()" style="background: none; border: none; color: #8FA69C; font-size: 20px; cursor: pointer; padding: 0 4px;">&times;</button>
     </div>
 
     <!-- Privacy Banner -->
-    <div style="background: rgba(16,185,129,0.1); border: 1px solid #10b981; border-radius: 10px; padding: 10px 12px; margin-bottom: 16px; color: #6ee7b7; font-size: 11.5px; line-height: 1.45;">
+    <div style="background: rgba(47, 139, 118, 0.12); border: 1px solid #2F8B76; border-radius: 10px; padding: 10px 12px; margin-bottom: 16px; color: #4FA894; font-size: 11.5px; line-height: 1.45;">
       <div style="font-weight: 700; margin-bottom: 2px;" id="lbl-modal-privacy-title">🔒 ความเป็นส่วนตัว 100% ปลอดภัยบนเครื่องของคุณ</div>
       <div id="lbl-modal-privacy-desc">ข้อมูลการเงินและผลการคำนวณทั้งหมดได้รับการบันทึกและประมวลผลภายในเบราว์เซอร์ของคุณเท่านั้น (Client-Side Storage) ไม่มีการส่งข้อมูลใดๆ ไปยังเซิร์ฟเวอร์ภายนอก</div>
     </div>
 
     <div style="display: flex; flex-direction: column; gap: 10px;">
       <!-- Export -->
-      <div style="display: flex; justify-content: space-between; align-items: center; background: #111827; padding: 12px 14px; border-radius: 10px; border: 1px solid #374151;">
+      <div style="display: flex; justify-content: space-between; align-items: center; background: #0E1512; padding: 12px 14px; border-radius: 10px; border: 1px solid #24352C;">
         <div>
           <div style="font-weight: 600; font-size: 13px;" id="lbl-export-title">สำรองข้อมูลทั้งหมด (JSON)</div>
-          <div style="font-size: 11px; color: #94a3b8;" id="lbl-export-desc">ดาวน์โหลดไฟล์สำรองข้อมูลทุกเครื่องมือคำนวณ</div>
+          <div style="font-size: 11px; color: #8FA69C;" id="lbl-export-desc">ดาวน์โหลดไฟล์สำรองข้อมูลทุกเครื่องมือคำนวณ</div>
         </div>
-        <button onclick="exportBackupData()" id="btn-export-backup" style="background: #0284c7; color: #fff; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+        <button onclick="exportBackupData()" id="btn-export-backup" style="background: #2F8B76; color: #fff; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
           <span id="lbl-btn-export">📤 ส่งออก</span>
         </button>
       </div>
 
       <!-- Import -->
-      <div style="display: flex; justify-content: space-between; align-items: center; background: #111827; padding: 12px 14px; border-radius: 10px; border: 1px solid #374151;">
+      <div style="display: flex; justify-content: space-between; align-items: center; background: #0E1512; padding: 12px 14px; border-radius: 10px; border: 1px solid #24352C;">
         <div>
           <div style="font-weight: 600; font-size: 13px;" id="lbl-import-title">กู้คืนข้อมูลจากไฟล์สำรอง</div>
-          <div style="font-size: 11px; color: #94a3b8;" id="lbl-import-desc">นำเข้าไฟล์ JSON เพื่อกู้คืนข้อมูลที่เคยสำรองไว้</div>
+          <div style="font-size: 11px; color: #8FA69C;" id="lbl-import-desc">นำเข้าไฟล์ JSON เพื่อกู้คืนข้อมูลที่เคยสำรองไว้</div>
         </div>
         <div>
           <input type="file" id="backupFileInput" accept=".json" style="display: none;" onchange="handleImportFile(this)">
-          <button onclick="document.getElementById('backupFileInput').click()" id="btn-import-backup" style="background: #059669; color: #fff; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+          <button onclick="document.getElementById('backupFileInput').click()" id="btn-import-backup" style="background: #2563eb; color: #fff; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
             <span id="lbl-btn-import">📥 นำเข้า</span>
           </button>
         </div>
       </div>
 
       <!-- Reset -->
-      <div style="display: flex; justify-content: space-between; align-items: center; background: #111827; padding: 12px 14px; border-radius: 10px; border: 1px dashed #ef4444;">
+      <div style="display: flex; justify-content: space-between; align-items: center; background: #0E1512; padding: 12px 14px; border-radius: 10px; border: 1px dashed #C97D5A;">
         <div>
-          <div style="font-weight: 600; font-size: 13px; color: #f87171;" id="lbl-reset-title">ล้างข้อมูลทั้งหมด (Master Reset)</div>
-          <div style="font-size: 11px; color: #94a3b8;" id="lbl-reset-desc">ลบข้อมูลในเครื่องมือทั้งหมดและคืนค่าเริ่มต้น</div>
+          <div style="font-weight: 600; font-size: 13px; color: #C97D5A;" id="lbl-reset-title">ล้างข้อมูลทั้งหมด (Master Reset)</div>
+          <div style="font-size: 11px; color: #8FA69C;" id="lbl-reset-desc">ลบข้อมูลในเครื่องมือทั้งหมดและคืนค่าเริ่มต้น</div>
         </div>
-        <button onclick="resetAllData()" id="btn-master-reset" style="background: #dc2626; color: #fff; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+        <button onclick="resetAllData()" id="btn-master-reset" style="background: #C97D5A; color: #fff; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
           <span id="lbl-btn-reset">🗑️ ล้างทั้งหมด</span>
         </button>
       </div>
@@ -533,8 +533,11 @@
           alert(getLang() === 'en' ? 'Invalid backup file format' : 'รูปแบบไฟล์สำรองข้อมูลไม่ถูกต้อง');
           return;
         }
+        const allowedPrefixes = ['moneySuperapp.', 'remainingMoneyCalculator.', 'rebalanceCalculator.'];
         Object.keys(backup.data).forEach(key => {
-          localStorage.setItem(key, backup.data[key]);
+          if (allowedPrefixes.some(p => key.startsWith(p)) && typeof backup.data[key] === 'string') {
+            localStorage.setItem(key, backup.data[key]);
+          }
         });
         alert(getLang() === 'en' ? '✓ Backup restored successfully!' : '✓ นำเข้าข้อมูลสำรองเรียบร้อยแล้ว!');
         reloadFrame();
@@ -565,6 +568,7 @@
     closeSettingsModal();
   }
   function applyTheme(theme){
+    document.documentElement.dataset.theme = theme;
     themeButtons.forEach(b => b.classList.toggle('active', b.dataset.themeBtn === theme));
   }
   function reloadFrame(){
