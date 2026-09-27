@@ -26,9 +26,13 @@ Before initiating any task:
 ## 3. Workload Complexity Triage & Task Slicing
 
 ### Complexity Classification
-- **Level 1 (Minor / Mechanical):** Typo fixes, CSS tweaks, minor string edits, formatting, single-line bug fixes, documentation updates (< 20 lines affected). $\to$ **Fast Path**
+- **Level 1 (Minor / Mechanical):** Typo fixes, documentation updates (< 20 lines affected, non-code). $\to$ **Fast Path**
 - **Level 2 (Standard Feature / Bug):** New UI component, new API endpoint, refactoring single module, calculation fixes, writing unit tests. $\to$ **Standard SDLC**
 - **Level 3 (Architectural / Critical):** Cross-cutting refactors, auth/security redesigns, concurrency/state machine modifications, schema migrations, core algorithms. $\to$ **Rigorous SDLC**
+
+### Mandatory Rule: Full SDLC for All Fixes
+- Whenever the user asks to **fix anything on the project** (bug fixes, calculation issues, UI/theme defects, localization mismatches, etc.), the Orchestrator **MUST ALWAYS** run the full SDLC pipeline.
+- Both **QA & Debugger** (`debugger.md`) and **Code & Security Reviewer** (`reviewer.md`) are mandatory and must never be bypassed.
 
 ### Vertical Task Slicing Rule (Guardrail)
 - **Scope Limit:** No single task slice may modify more than **5 files** or **~200 lines**.
@@ -61,8 +65,9 @@ Use the YAML frontmatter in `.ai/memory/active.md` as the centralized state mach
   - **Circuit Breaker:** If `iteration_count >= 2`, **ABORT THE LOOP**. Safely revert application files (`git checkout -- <changed_files>`) without touching `.ai/`, and escalate the specific blocker to the human.
   - If `iteration_count < 2`: return to Coder with actionable failure logs.
 
-### Gate 6: Adversarial Audit (Level 2 & 3)
+### Gate 6: Adversarial Audit (Level 2, Level 3, & All Fixes)
 - Dispatch **Code & Security Reviewer** (`.ai/agents/reviewer.md`).
+- Mandatory for all Level 2, Level 3, and all user fix requests without exception.
 - If changes requested: increment `iteration_count` (subject to Circuit Breaker).
 
 ### Gate 7: Release & Memory Consolidation

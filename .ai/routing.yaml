@@ -52,6 +52,10 @@ guardrails:
     protect_ai_context: true    # Ensure .ai/ directory is never wiped during rollback
     rollback_command: "git checkout -- <changed_source_files>" # Target only application files
 
+  mandatory_full_sdlc_for_fixes:
+    enforced: true
+    description: "Whenever the user asks to fix anything on the project, the agent MUST execute the full SDLC pipeline: Intake -> Plan -> HITL Approval -> Code -> QA Verification -> Security Review -> Release. Never bypass QA or Security Review."
+
 # ==============================================================================
 # Workload Complexity Taxonomy & Routing Rules
 # ==============================================================================
@@ -96,6 +100,11 @@ complexity_levels:
 # Triage Classification Rules (Heuristics)
 # ==============================================================================
 heuristics:
+  force_full_sdlc_on_fixes:
+    description: "Mandatory rule: Any request from user to fix code, bugs, UI, calculations, localization, or defects in the project must execute full SDLC and never bypass QA or Security Review"
+    keywords: ["fix", "bug", "issue", "error", "patch", "broken", "incorrect", "problem", "solve", "repair", "defect", "fail", "localization", "crash", "wrong"]
+    target_pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "reviewer", "release"]
+    minimum_level: "level_2"
   force_level_3:
     - path_matches: ["*auth*", "*security*", "*crypto*", "*migrations*", "*core*"]
     - keywords: ["security", "vulnerability", "concurrency", "deadlock", "architectural change", "database migration"]

@@ -100,10 +100,11 @@ When executing tasks with multiple subagents or specialized roles, follow the te
 Agents use `.ai/memory/active.md` as the centralized hand-off state bus:
 `[Intake] -> [Plan] -> [Human Approval (L2/L3)] -> [Code] -> [QA] -> [Review] -> [Release]`
 
-1. **Human-in-the-Loop Gate:** For Level 2 and Level 3 tasks, the Orchestrator pauses after planning to receive human approval before coding starts.
-2. **Circuit Breaker:** Max 2 feedback loops between Coder, QA, and Reviewer. If unresolved, halt and escalate to human.
-3. **Vertical Task Slicing:** Max 5 files or ~200 lines per task slice.
-4. **Pre-flight Check:** Verify clean git working tree and passing baseline builds before editing.
+1. **Mandatory Full SDLC for All Fixes:** Whenever the user asks to fix something, resolve an issue, or modify code in the project, the agent **MUST ALWAYS** run the complete SDLC pipeline. Never bypass or skip the **QA & Debugger** or the **Code & Security Reviewer** stages, even for seemingly simple or minor fixes.
+2. **Human-in-the-Loop Gate:** For Level 2 and Level 3 tasks, the Orchestrator pauses after planning to receive human approval before coding starts.
+3. **Circuit Breaker:** Max 2 feedback loops between Coder, QA, and Reviewer. If unresolved, halt and escalate to human.
+4. **Vertical Task Slicing:** Max 5 files or ~200 lines per task slice.
+5. **Pre-flight Check:** Verify clean git working tree and passing baseline builds before editing.
 
 ---
 
@@ -136,5 +137,7 @@ Before modifying code:
 1. **Understand:** Check the relevant architecture and inspect existing implementations.
 2. **Conform:** Adhere to established project patterns and idioms documented in `.ai/context/conventions.md`.
 3. **Scope:** Make the smallest appropriate change. Never rewrite unrelated code.
-4. **Validate:** Run relevant tests, builds, or linting commands before finishing.
-5. **Document:** If you discover a reusable lesson, append it to `.ai/memory/lessons.md`. If your change deliberately alters architecture or conventions, update the corresponding `.ai/context/` file.
+4. **Mandatory Full SDLC for Fixes:** If the user asks to fix anything on the project, **always run the full SDLC pipeline** (`Plan -> Code -> QA Verification -> Security Review -> Release`). QA verification and Security Review must NEVER be skipped or bypassed.
+5. **Validate:** Run relevant tests, builds, or linting commands before finishing.
+6. **Document:** If you discover a reusable lesson, append it to `.ai/memory/lessons.md`. If your change deliberately alters architecture or conventions, update the corresponding `.ai/context/` file.
+
