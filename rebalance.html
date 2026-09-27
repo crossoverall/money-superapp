@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="1.3.24">
+<meta name="version" content="1.3.25">
 <title>คำนวณการเติมเงินรายเดือน</title>
 <link rel="stylesheet" href="css/theme.css">
 <style>
@@ -339,7 +339,7 @@
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v1.3.24</p>
+  <p class="version-tag">v1.3.25</p>
 
 <script>
 // Language: read once from localStorage (shared origin with the shell nav's toggle).
@@ -361,7 +361,7 @@ const EN = {
   lblAutoRefresh: 'Every 10 min',
   lblSettingsBtn: 'API Settings',
   lblModalTitle: 'Live Stock & ETF Price API Settings',
-  lblModalDesc: '• <b>Crypto (BTC, ETH, etc.):</b> Live quotes via Coinbase API free (USD $)<br>• <b>Thai Gold (YLG-GOLD, Gold Bar):</b> Live quotes via Thai Gold Association API free (THB ฿)<br>• <b>USD/THB FX:</b> Live exchange rate fetched via Open Exchange Rates<br>• <b>US Stocks (NVDA, SGOV) & Thai Stocks (GULF, PTT):</b> Enter free API key from Twelve Data or Finnhub<br>• <b>Thai Mutual Funds (K-WORLDX, SCBCE, etc.):</b> Unlisted funds have no open browser CORS API — enter daily NAV in THB (฿) and units directly. The calculator saves it and computes allocations automatically.',
+  lblModalDesc: '• <b>Crypto (BTC, ETH, etc.):</b> Live quotes via Coinbase API free (USD $)<br>• <b>Thai Gold Bar (GOLD, GOLDBAR):</b> Live quotes via Thai Gold Association API free (THB ฿)<br>• <b>YLG-GOLD (YLG Gold Fund):</b> Enter NAV per unit (฿) manually — fund NAV ≠ gold bar spot price<br>• <b>USD/THB FX:</b> Live exchange rate fetched via Open Exchange Rates<br>• <b>US Stocks (NVDA, SGOV) & Thai Stocks (GULF, PTT):</b> Enter free API key from Twelve Data or Finnhub<br>• <b>Thai Mutual Funds (K-WORLDX, SCBCE, etc.):</b> Unlisted funds have no open browser CORS API — enter daily NAV in THB (฿) and units directly. The calculator saves it and computes allocations automatically.',
   lblFinnhubKey: 'Finnhub API Key (Recommended):',
   lblTwelveDataKey: 'Twelve Data API Key (Alternative):',
   linkFinnhubFree: 'Get free key (Finnhub.io)',
@@ -408,7 +408,7 @@ const T = {
     testSuccess: (prov, price) => `✓ เชื่อมต่อสำเร็จ! ราคา ${prov}: $${price}`,
     testFailed: '❌ เชื่อมต่อไม่สำเร็จ กรุณาตรวจสอบ API key',
     testCryptoOnly: '✓ Crypto และ FX พร้อมใช้งาน (ยังไม่ได้ระบุ Stock API key)',
-    testCryptoAndGoldReady: '✓ Crypto, ทองคำไทย (YLG) และ FX พร้อมใช้งาน',
+    testCryptoAndGoldReady: '✓ Crypto และ FX พร้อมใช้งาน',
     testTesting: 'กำลังทดสอบการเชื่อมต่อ...',
     bucketStatus: pct => `รวมสัดส่วนในกลุ่มนี้ ${pct}% (ระบบจะปรับให้เป็น 100% อัตโนมัติ)`,
     amount: n => `${n} บาท`,
@@ -434,7 +434,7 @@ const T = {
     testSuccess: (prov, price) => `✓ Connected! ${prov} price: $${price}`,
     testFailed: '❌ Connection failed. Please check your API key.',
     testCryptoOnly: '✓ Crypto & FX ready (No stock API key set)',
-    testCryptoAndGoldReady: '✓ Crypto, Thai Gold (YLG) & FX ready',
+    testCryptoAndGoldReady: '✓ Crypto & FX ready',
     testTesting: 'Testing connection...',
     bucketStatus: pct => `This group's weights total ${pct}% (auto-normalized to 100%)`,
     amount: n => `${n} THB`,
@@ -468,7 +468,7 @@ const state = {
     {
       id: 'ballast', label: 'Ballast', weight: 15,
       assets: [
-        { name: 'YLG Thai Gold Bar (YLG-GOLD)', ticker: 'YLG-GOLD', units: 1, lastPrice: 67850, currency: 'THB', value: 67850, weight: 70 },
+        { name: 'YLG Gold Fund (YLG-GOLD)', ticker: 'YLG-GOLD', units: 1, lastPrice: 8919.09, currency: 'THB', value: 8919.09, weight: 70 },
         { name: 'Fixed Deposit / Cash', ticker: '', units: 0, lastPrice: 0, currency: 'THB', value: 30000, weight: 30 },
       ]
     },
@@ -728,13 +728,16 @@ const CRYPTO_SET = new Set([
 ]);
 
 const THAI_GOLD_SET = new Set([
-  'YLG-GOLD', 'YLG', 'GOLD-TH', 'GOLDTH', 'TH-GOLD', 'GOLD_BAR', 'GOLD-BAR', 'GOLDBAR', 'GOLD'
+  'GOLD-TH', 'GOLDTH', 'TH-GOLD', 'GOLD_BAR', 'GOLD-BAR', 'GOLDBAR', 'GOLD'
 ]);
 
+// NOTE: YLG-GOLD and YLG are mutual fund tickers (YLG Gold Fund NAV per unit).
+// They are classified as isThaiFundSymbol so users enter the NAV manually.
+// THAI_GOLD_SET is reserved for physical gold bar spot price tracking.
 function isThaiGoldSymbol(sym) {
   if (!sym) return false;
   const s = sym.toUpperCase().trim();
-  return THAI_GOLD_SET.has(s) || s.startsWith('YLG') || s.startsWith('GOLD-TH') || s === 'THAI-GOLD';
+  return THAI_GOLD_SET.has(s) || s.startsWith('GOLD-TH') || s === 'THAI-GOLD';
 }
 
 const SET_STOCK_SET = new Set([
@@ -752,7 +755,7 @@ function isSetStockSymbol(sym) {
 function isThaiFundSymbol(sym) {
   if (!sym) return false;
   const s = sym.toUpperCase().trim();
-  return /^(K-|KF[A-Z0-9]|SCB|B-|KT-|TMB|TTB|ONE-|PRINCIPAL|LHPF|LHABS|UOB|ASP|DAOL|KKP|TISCO-)/i.test(s);
+  return /^(K-|KF[A-Z0-9]|SCB|B-|KT-|TMB|TTB|ONE-|PRINCIPAL|LHPF|LHABS|UOB|ASP|DAOL|KKP|TISCO-|YLG)/i.test(s);
 }
 
 function isThaiAssetSymbol(sym) {
@@ -1571,7 +1574,7 @@ initAutoRefresh();
       
       <div style="font-size:12px; color:var(--ink-dim); line-height:1.5; margin-bottom:14px;" id="lblModalDesc">
         • <b>Crypto (BTC, ETH ฯลฯ):</b> ไม่ต้องใช้ API key — ดึงผ่าน Coinbase API ฟรีทันที (USD $)<br>
-        • <b>ทองคำแท่งไทย (YLG-GOLD, ราคาทอง):</b> ดึงราคาขายออกสมาคมค้าทองคำสดฟรีอัตโนมัติ (THB ฿)<br>
+        • <b>ทองคำแท่งไทย (GOLD, GOLDBAR):</b> ดึงราคาขายออกสมาคมค้าทองคำสดฟรีอัตโนมัติ (THB ฿)<br>• <b>YLG-GOLD (กองทุน YLG Gold Fund):</b> ระบุ NAV ต่อหน่วย (฿) โดยตรง เนื่องจากราคากองทุน ≠ ราคาทองคำแท่ง<br>
         • <b>อัตราแลกเปลี่ยน USD/THB:</b> ดึงสดจาก Open Exchange Rates อัตโนมัติ<br>
         • <b>หุ้นและ ETF สหรัฐฯ (NVDA, SGOV) และหุ้นไทย SET (GULF, PTT):</b> ใส่ API Key ฟรีจาก Twelve Data หรือ Finnhub เพื่อดึงราคาอัตโนมัติ<br>
         • <b>กองทุนรวมไทย (K-WORLDX, SCBCE ฯลฯ):</b> กองทุนเปิดของ บลจ. ไม่มี API สดสาธารณะบนเบราว์เซอร์ ผู้ใช้สามารถระบุราคา NAV ต่อหน่วย (฿) และจำนวนหน่วยได้โดยตรง ระบบจะจำราคาไว้และคำนวณสัดส่วน DCA ให้อัตโนมัติ
