@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="1.3.25">
+<meta name="version" content="1.3.26">
 <title>คำนวณการเติมเงินรายเดือน</title>
 <link rel="stylesheet" href="css/theme.css">
 <style>
@@ -339,7 +339,7 @@
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v1.3.25</p>
+  <p class="version-tag">v1.3.26</p>
 
 <script>
 // Language: read once from localStorage (shared origin with the shell nav's toggle).
@@ -1338,38 +1338,66 @@ async function fetchAllPrices() {
       state.usdThbRate = fxRate;
     }
 
-    // 2. Fetch prices for all assets with ticker
-    const fetchPromises = [];
+    // 2. Collect all assets that have a ticker and CAN be auto-fetched.
+    //    Thai mutual funds (isThaiFundSymbol) return null immediately — skip them
+    //    so we don't waste a delay slot or show a spurious "loading" state.
+    const fetchTargets = [];
     state.buckets.forEach(bucket => {
       bucket.assets.forEach(a => {
-        if (a.ticker && a.ticker.trim()) {
-          fetchPromises.push((async () => {
-            const res = await fetchAssetPrice(a.ticker, apiSettings);
-            if (res && res.price > 0) {
-              a.lastPrice = res.price;
-              a.currency = res.currency || (isThaiAssetSymbol(a.ticker) ? 'THB' : 'USD');
-              a.lastFetched = Date.now();
-              if (a.units != null && a.units > 0) {
-                const effectiveRate = a.currency === 'USD' ? (state.usdThbRate || 33.39) : 1;
-                a.value = Math.round(a.units * a.lastPrice * effectiveRate);
-              }
-            } else if (a.units != null && a.units > 0 && a.lastPrice > 0) {
-              const effectiveRate = (a.currency === 'THB' || isThaiAssetSymbol(a.ticker)) ? 1 : (state.usdThbRate || 33.39);
-              a.value = Math.round(a.units * a.lastPrice * effectiveRate);
-            }
-          })());
+        const sym = (a.ticker || '').toUpperCase().trim();
+        if (sym && !isThaiFundSymbol(sym)) {
+          fetchTargets.push(a);
         }
       });
     });
 
-    // Dispatch fetch tasks in batches of 4 with a 800 ms gap between batches.
-    // Twelve Data free tier allows 8 req/min; batching prevents 429 errors.
-    const BATCH_SIZE = 4;
-    const BATCH_DELAY_MS = 800;
-    for (let i = 0; i < fetchPromises.length; i += BATCH_SIZE) {
-      await Promise.all(fetchPromises.slice(i, i + BATCH_SIZE));
-      if (i + BATCH_SIZE < fetchPromises.length) {
-        await new Promise(r => setTimeout(r, BATCH_DELAY_MS));
+    // 3. Clear old fetched prices before starting so the UI shows "—" while loading,
+    //    giving the user clear visual feedback that a refresh is in progress.
+    //    We preserve lastPrice so that manual NAV entries (mutual funds) are untouched.
+    fetchTargets.forEach(a => {
+      // Only wipe if the price was previously auto-fetched (lastFetched exists)
+      if (a.lastFetched) {
+        a._prevPrice = a.lastPrice;   // stash for rollback on total failure
+        a.lastPrice = null;
+        a.lastFetched = null;
+      }
+    });
+    renderBuckets();   // show "—" immediately
+
+    // 4. Fetch sequentially with a per-request delay to respect Twelve Data free tier
+    //    (8 req/min). 2 s gap means max 30 req/min — well within any free-tier limit
+    //    while still completing a typical 6-asset portfolio in ~12 s.
+    const FETCH_DELAY_MS = 2000;
+    for (let idx = 0; idx < fetchTargets.length; idx++) {
+      const a = fetchTargets[idx];
+      const res = await fetchAssetPrice(a.ticker, apiSettings);
+      if (res && res.price > 0) {
+        a.lastPrice = res.price;
+        a.currency = res.currency || (isThaiAssetSymbol(a.ticker) ? 'THB' : 'USD');
+        a.lastFetched = Date.now();
+        delete a._prevPrice;
+        if (a.units != null && a.units > 0) {
+          const effectiveRate = a.currency === 'USD' ? (state.usdThbRate || 33.39) : 1;
+          a.value = Math.round(a.units * a.lastPrice * effectiveRate);
+        }
+      } else {
+        // Restore stashed price so the asset still shows a value
+        if (a._prevPrice != null) {
+          a.lastPrice = a._prevPrice;
+          delete a._prevPrice;
+        }
+        if (a.units != null && a.units > 0 && a.lastPrice > 0) {
+          const effectiveRate = (a.currency === 'THB' || isThaiAssetSymbol(a.ticker)) ? 1 : (state.usdThbRate || 33.39);
+          a.value = Math.round(a.units * a.lastPrice * effectiveRate);
+        }
+      }
+      // Render after each individual asset so the user sees prices fill in one by one
+      renderBuckets();
+      compute();
+
+      // Delay before next request (skip delay after the last one)
+      if (idx < fetchTargets.length - 1) {
+        await new Promise(r => setTimeout(r, FETCH_DELAY_MS));
       }
     }
 
