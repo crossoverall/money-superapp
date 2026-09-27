@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="1.3.20">
+<meta name="version" content="1.3.21">
 <title>คำนวณการเติมเงินรายเดือน</title>
 <link rel="stylesheet" href="css/theme.css">
 <style>
@@ -339,7 +339,7 @@
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v1.3.20</p>
+  <p class="version-tag">v1.3.21</p>
 
 <script>
 // Language: read once from localStorage (shared origin with the shell nav's toggle).
@@ -361,7 +361,7 @@ const EN = {
   lblAutoRefresh: 'Every 10 min',
   lblSettingsBtn: 'API Settings',
   lblModalTitle: 'Live Stock & ETF Price API Settings',
-  lblModalDesc: '• <b>Crypto (BTC, ETH, etc.):</b> No API key needed — fetched via Coinbase API directly.<br>• <b>USD/THB FX:</b> Live exchange rate fetched via Open Exchange Rates.<br>• <b>US Stocks & ETFs (NVDA, SGOV, etc.):</b> Enter free API key from Finnhub or Twelve Data to fetch live quotes.',
+  lblModalDesc: '• <b>Crypto (BTC, ETH, etc.):</b> Live quotes via Coinbase API free (USD)<br>• <b>Thai Gold (YLG-GOLD, Gold Bar):</b> Live quotes via Thai Gold Association API free (THB)<br>• <b>USD/THB FX:</b> Live exchange rate fetched via Open Exchange Rates<br>• <b>US Stocks & ETFs (NVDA, SGOV, etc.):</b> Enter free API key from Finnhub or Twelve Data<br>• <b>Thai Mutual Funds (K-WORLDX, SCBCE, etc.):</b> Enter NAV in THB (฿) and units to auto-calculate total value.',
   lblFinnhubKey: 'Finnhub API Key (Recommended):',
   lblTwelveDataKey: 'Twelve Data API Key (Alternative):',
   linkFinnhubFree: 'Get free key (Finnhub.io)',
@@ -401,13 +401,14 @@ const T = {
     fieldValue: 'มูลค่าปัจจุบัน (บาท)',
     fieldWeight: 'สัดส่วนเป้าหมาย (%)',
     fieldUnits: 'จำนวนหน่วย',
-    fieldPrice: 'ราคา ($)',
+    fieldPrice: 'ราคา / NAV',
     priceFetching: 'กำลังดึงราคา...',
     priceFetchDone: (time, rate) => `อัปเดตราคาล่าสุด: ${time} • USD/THB: ${rate}`,
     priceFetchError: 'ดึงราคาไม่สำเร็จ (ใช้ราคาที่บันทึกไว้)',
     testSuccess: (prov, price) => `✓ เชื่อมต่อสำเร็จ! ราคา ${prov}: $${price}`,
     testFailed: '❌ เชื่อมต่อไม่สำเร็จ กรุณาตรวจสอบ API key',
     testCryptoOnly: '✓ Crypto และ FX พร้อมใช้งาน (ยังไม่ได้ระบุ Stock API key)',
+    testCryptoAndGoldReady: '✓ Crypto, ทองคำไทย (YLG) และ FX พร้อมใช้งาน',
     testTesting: 'กำลังทดสอบการเชื่อมต่อ...',
     bucketStatus: pct => `รวมสัดส่วนในกลุ่มนี้ ${pct}% (ระบบจะปรับให้เป็น 100% อัตโนมัติ)`,
     amount: n => `${n} บาท`,
@@ -426,13 +427,14 @@ const T = {
     fieldValue: 'Current value (THB)',
     fieldWeight: 'Target weight (%)',
     fieldUnits: 'Units',
-    fieldPrice: 'Price ($)',
+    fieldPrice: 'Price / NAV',
     priceFetching: 'Fetching prices...',
     priceFetchDone: (time, rate) => `Prices updated: ${time} • USD/THB: ${rate}`,
     priceFetchError: 'Fetch failed (using cached prices)',
     testSuccess: (prov, price) => `✓ Connected! ${prov} price: $${price}`,
     testFailed: '❌ Connection failed. Please check your API key.',
     testCryptoOnly: '✓ Crypto & FX ready (No stock API key set)',
+    testCryptoAndGoldReady: '✓ Crypto, Thai Gold (YLG) & FX ready',
     testTesting: 'Testing connection...',
     bucketStatus: pct => `This group's weights total ${pct}% (auto-normalized to 100%)`,
     amount: n => `${n} THB`,
@@ -459,15 +461,15 @@ const state = {
     {
       id: 'core', label: 'Core', weight: 45,
       assets: [
+        { name: 'K Global Equity (K-WORLDX)', ticker: 'K-WORLDX', units: 0, lastPrice: 0, currency: 'THB', value: 0, weight: 50 },
         { name: 'Short Treasury (SGOV)', ticker: 'SGOV', units: 0, lastPrice: 0, currency: 'USD', value: 0, weight: 50 },
-        { name: 'Global Equities (VOO)', ticker: 'VOO', units: 0, lastPrice: 0, currency: 'USD', value: 0, weight: 50 },
       ]
     },
     {
       id: 'ballast', label: 'Ballast', weight: 15,
       assets: [
-        { name: 'Gold / Cash', ticker: '', units: 0, lastPrice: 0, currency: 'THB', value: 0, weight: 70 },
-        { name: 'Fixed Deposit', ticker: '', units: 0, lastPrice: 0, currency: 'THB', value: 0, weight: 30 },
+        { name: 'YLG Thai Gold Bar (YLG-GOLD)', ticker: 'YLG-GOLD', units: 0, lastPrice: 0, currency: 'THB', value: 0, weight: 70 },
+        { name: 'Fixed Deposit / Cash', ticker: '', units: 0, lastPrice: 0, currency: 'THB', value: 0, weight: 30 },
       ]
     },
     {
@@ -475,7 +477,7 @@ const state = {
       assets: [
         { name: 'Bitcoin (BTC)', ticker: 'BTC', units: 0, lastPrice: 0, currency: 'USD', value: 0, weight: 34 },
         { name: 'NVIDIA (NVDA)', ticker: 'NVDA', units: 0, lastPrice: 0, currency: 'USD', value: 0, weight: 33 },
-        { name: 'Tech ETF (QQQ)', ticker: 'QQQ', units: 0, lastPrice: 0, currency: 'USD', value: 0, weight: 33 },
+        { name: 'SCB China Equity (SCBCE)', ticker: 'SCBCE', units: 0, lastPrice: 0, currency: 'THB', value: 0, weight: 33 },
       ]
     },
   ]
@@ -716,6 +718,39 @@ function renderBuckets(){
       if(nameInput){ nameInput.focus(); nameInput.select(); }
     });
   });
+// --- Symbol & Currency Classification Helpers ---
+const CRYPTO_SET = new Set([
+  'BTC', 'BITCOIN', 'ETH', 'ETHEREUM', 'SOL', 'SOLANA', 'BNB', 'XRP', 'ADA',
+  'DOGE', 'AVAX', 'DOT', 'LINK', 'MATIC', 'LTC', 'BCH', 'NEAR', 'SUI',
+  'ATOM', 'XLM', 'ALGO', 'UNI', 'SHIB', 'PEPE', 'USDT', 'USDC'
+]);
+
+const THAI_GOLD_SET = new Set([
+  'YLG-GOLD', 'YLG', 'GOLD-TH', 'GOLDTH', 'TH-GOLD', 'GOLD_BAR', 'GOLD-BAR', 'GOLDBAR', 'GOLD'
+]);
+
+function isThaiGoldSymbol(sym) {
+  if (!sym) return false;
+  const s = sym.toUpperCase().trim();
+  return THAI_GOLD_SET.has(s) || s.startsWith('YLG') || s.startsWith('GOLD-TH') || s === 'THAI-GOLD';
+}
+
+function isThaiFundSymbol(sym) {
+  if (!sym) return false;
+  const s = sym.toUpperCase().trim();
+  return /^(K-|SCB|B-|KT-|TMB|TTB|KF-|ONE-|PRINCIPAL|LH|UOB|ASP|DAOL|KKP|TISCO)/i.test(s);
+}
+
+function isThaiAssetSymbol(sym) {
+  if (!sym) return false;
+  const s = sym.toUpperCase().trim();
+  return isThaiGoldSymbol(s) || isThaiFundSymbol(s) || s.endsWith('.BK') || s.endsWith('-THB');
+}
+
+function isCryptoSymbol(sym) {
+  if (!sym) return false;
+  const s = sym.toUpperCase().trim();
+  return CRYPTO_SET.has(s) || s.endsWith('-USD') || s.endsWith('-THB') || s.endsWith('USDT');
 }
 
 function renderAssetRows(bucket){
@@ -750,15 +785,19 @@ function renderAssetRows(bucket){
       <div class="live-fields-row" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-top:8px; padding-top:6px; border-top:1px dashed var(--line); font-size:11px;">
         <div style="display:flex; align-items:center; gap:4px;">
           <label style="color:var(--ink-faint); font-weight:600;" title="Ticker / Symbol">Ticker:</label>
-          <input type="text" class="ticker-input" data-bucket="${bucket.id}" data-idx="${i}" data-field="ticker" value="${safeTicker}" placeholder="BTC / NVDA" style="width:78px; text-transform:uppercase; padding:3px 6px; border:1px solid var(--line); border-radius:5px; background:var(--panel-2); color:var(--ink); font-size:11px; font-family:monospace; font-weight:600;">
+          <input type="text" class="ticker-input" data-bucket="${bucket.id}" data-idx="${i}" data-field="ticker" value="${safeTicker}" placeholder="BTC / NVDA / K-WORLDX" style="width:82px; text-transform:uppercase; padding:3px 6px; border:1px solid var(--line); border-radius:5px; background:var(--panel-2); color:var(--ink); font-size:11px; font-family:monospace; font-weight:600;">
         </div>
         <div style="display:flex; align-items:center; gap:4px;">
           <label style="color:var(--ink-faint); font-weight:600;">${t('fieldUnits')}:</label>
-          <input type="number" step="any" min="0" class="units-input" data-bucket="${bucket.id}" data-idx="${i}" data-field="units" value="${safeUnits}" placeholder="0" style="width:68px; padding:3px 6px; border:1px solid var(--line); border-radius:5px; background:var(--panel-2); color:var(--ink); font-size:11px;">
+          <input type="number" step="any" min="0" class="units-input" data-bucket="${bucket.id}" data-idx="${i}" data-field="units" value="${safeUnits}" placeholder="0" style="width:64px; padding:3px 6px; border:1px solid var(--line); border-radius:5px; background:var(--panel-2); color:var(--ink); font-size:11px;">
         </div>
         <div style="display:flex; align-items:center; gap:4px;">
           <label style="color:var(--ink-faint); font-weight:600;">${t('fieldPrice')}:</label>
-          <input type="number" step="any" min="0" class="price-input" data-bucket="${bucket.id}" data-idx="${i}" data-field="lastPrice" value="${safePrice}" placeholder="$0.00" style="width:78px; padding:3px 6px; border:1px solid var(--line); border-radius:5px; background:var(--panel-2); color:var(--ink); font-size:11px;">
+          <input type="number" step="any" min="0" class="price-input" data-bucket="${bucket.id}" data-idx="${i}" data-field="lastPrice" value="${safePrice}" placeholder="0.00" style="width:70px; padding:3px 6px; border:1px solid var(--line); border-radius:5px; background:var(--panel-2); color:var(--ink); font-size:11px;">
+          <select class="currency-select" data-bucket="${bucket.id}" data-idx="${i}" data-field="currency" title="Currency / สกุลเงิน" style="padding:2px 3px; border:1px solid var(--line); border-radius:5px; background:var(--panel); color:var(--ink); font-size:10px; font-weight:700; cursor:pointer;">
+            <option value="USD"${(a.currency === 'USD' || (!a.currency && !isThaiAssetSymbol(a.ticker))) ? ' selected' : ''}>$</option>
+            <option value="THB"${(a.currency === 'THB' || isThaiAssetSymbol(a.ticker)) ? ' selected' : ''}>฿</option>
+          </select>
         </div>
         <div id="price-status-${bucket.id}-${i}" style="color:var(--ink-dim); font-size:10px; font-weight:600;">
           ${approxTHB}
@@ -774,8 +813,39 @@ function renderAssetRows(bucket){
       const idx = parseInt(e.target.dataset.idx);
       const field = e.target.dataset.field;
       if(field === 'name'){ b.assets[idx].name = e.target.value || t('assetDefaultName', idx+1); }
-      else if(field === 'ticker'){ b.assets[idx].ticker = e.target.value.toUpperCase().trim(); }
+      else if(field === 'ticker'){
+        const sym = e.target.value.toUpperCase().trim();
+        b.assets[idx].ticker = sym;
+        if (isThaiAssetSymbol(sym)) {
+          b.assets[idx].currency = 'THB';
+          const currSel = rowsEl.querySelector(`select[data-field="currency"][data-idx="${idx}"]`);
+          if (currSel) currSel.value = 'THB';
+        } else if (isCryptoSymbol(sym) || sym.length > 0) {
+          b.assets[idx].currency = 'USD';
+          const currSel = rowsEl.querySelector(`select[data-field="currency"][data-idx="${idx}"]`);
+          if (currSel) currSel.value = 'USD';
+        }
+      }
       else{ b.assets[idx][field] = parseFloat(e.target.value) || 0; }
+      compute();
+    });
+  });
+
+  rowsEl.querySelectorAll('select[data-field="currency"]').forEach(sel => {
+    sel.addEventListener('change', e => {
+      const b = state.buckets.find(bk => bk.id === e.target.dataset.bucket);
+      const idx = parseInt(e.target.dataset.idx);
+      b.assets[idx].currency = e.target.value;
+      const a = b.assets[idx];
+      if (a.units > 0 && a.lastPrice > 0) {
+        const isUSD = (a.currency === 'USD');
+        const rate = isUSD ? (state.usdThbRate || 33.39) : 1;
+        a.value = Math.round(a.units * a.lastPrice * rate);
+        const valInput = rowsEl.querySelector(`input[data-field="value"][data-idx="${idx}"]`);
+        if (valInput) valInput.value = fmtPlain(a.value);
+        const statusEl = document.getElementById(`price-status-${b.id}-${idx}`);
+        if (statusEl) statusEl.textContent = `~${fmt(a.value)} ฿`;
+      }
       compute();
     });
   });
@@ -790,7 +860,8 @@ function renderAssetRows(bucket){
 
       const a = b.assets[idx];
       if (a.units > 0 && a.lastPrice > 0) {
-        const rate = (a.currency === 'USD' || !a.currency) ? (state.usdThbRate || 33.39) : 1;
+        const isUSD = (a.currency === 'USD' || (!a.currency && !isThaiAssetSymbol(a.ticker)));
+        const rate = isUSD ? (state.usdThbRate || 33.39) : 1;
         a.value = Math.round(a.units * a.lastPrice * rate);
         const valInput = rowsEl.querySelector(`input[data-field="value"][data-idx="${idx}"]`);
         if (valInput) valInput.value = fmtPlain(a.value);
@@ -1047,13 +1118,14 @@ function copyTradeOrders(){
 function exportCSV(){
   const totalBudget = state.totalBudget || 0;
   const totalBucketW = state.buckets.reduce((s,b) => s + b.weight, 0) || 1;
-  let rows = ['Group,Asset,Ticker,Units,Price (USD),Target %,Current Value (THB),Buy Amount (THB)'];
+  let rows = ['Group,Asset,Ticker,Units,Price,Currency,Target %,Current Value (THB),Buy Amount (THB)'];
   state.buckets.forEach(bucket => {
     const bucketBudget = (bucket.weight / totalBucketW) * totalBudget;
     const x = allocate(bucket.assets, bucketBudget);
     bucket.assets.forEach((a, i) => {
       const add = Math.round(x[i]);
-      rows.push(`"${bucket.label}","${a.name}","${a.ticker || ''}",${a.units || 0},${a.lastPrice || 0},${a.weight},${a.value},${add}`);
+      const curr = a.currency || (isThaiAssetSymbol(a.ticker) ? 'THB' : 'USD');
+      rows.push(`"${bucket.label}","${a.name}","${a.ticker || ''}",${a.units || 0},${a.lastPrice || 0},"${curr}",${a.weight},${a.value},${add}`);
     });
   });
   const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
@@ -1067,16 +1139,22 @@ function exportCSV(){
 
 // --- Live Asset Price Fetching & API Integration ---
 
-const CRYPTO_SET = new Set([
-  'BTC', 'BITCOIN', 'ETH', 'ETHEREUM', 'SOL', 'SOLANA', 'BNB', 'XRP', 'ADA',
-  'DOGE', 'AVAX', 'DOT', 'LINK', 'MATIC', 'LTC', 'BCH', 'NEAR', 'SUI',
-  'ATOM', 'XLM', 'ALGO', 'UNI', 'SHIB', 'PEPE', 'USDT', 'USDC'
-]);
-
-function isCryptoSymbol(sym) {
-  if (!sym) return false;
-  const s = sym.toUpperCase().trim();
-  return CRYPTO_SET.has(s) || s.endsWith('-USD') || s.endsWith('-THB') || s.endsWith('USDT');
+async function fetchThaiGoldPrice() {
+  try {
+    const res = await fetch('https://api.chnwt.dev/thai-gold-api/latest');
+    if (!res.ok) throw new Error('Thai Gold HTTP ' + res.status);
+    const data = await res.json();
+    const rawPrice = data?.response?.price?.gold_bar?.sell || data?.response?.price?.gold?.sell;
+    if (rawPrice) {
+      const num = parseFloat(String(rawPrice).replace(/,/g, ''));
+      if (!isNaN(num) && num > 0) {
+        return { price: num, currency: 'THB' };
+      }
+    }
+  } catch (err) {
+    console.warn('Thai Gold API fetch failed:', err);
+  }
+  return null;
 }
 
 function getApiSettings() {
@@ -1111,7 +1189,13 @@ async function fetchAssetPrice(rawSymbol, apiSettings) {
   if (!rawSymbol) return null;
   const sym = rawSymbol.toUpperCase().trim();
 
-  // 1. Try Coinbase for Crypto
+  // 1. Try Thai Gold API for Thai Gold / Bullion (e.g. YLG-GOLD)
+  if (isThaiGoldSymbol(sym)) {
+    const gold = await fetchThaiGoldPrice();
+    if (gold) return gold;
+  }
+
+  // 2. Try Coinbase for Crypto (e.g. BTC, ETH)
   if (isCryptoSymbol(sym)) {
     const cleanSym = sym.replace(/-USD$|-THB$|USDT$/, '');
     try {
@@ -1126,20 +1210,21 @@ async function fetchAssetPrice(rawSymbol, apiSettings) {
     } catch(e) {}
   }
 
-  // 2. Try Finnhub for US Stocks & ETFs
+  // 3. Try Finnhub for US Stocks & ETFs (or .BK SET stocks)
   if (apiSettings.finnhubKey) {
     try {
       const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(sym)}&token=${encodeURIComponent(apiSettings.finnhubKey)}`);
       if (res.ok) {
         const data = await res.json();
         if (data && typeof data.c === 'number' && data.c > 0) {
-          return { price: data.c, currency: 'USD' };
+          const isTHB = sym.endsWith('.BK');
+          return { price: data.c, currency: isTHB ? 'THB' : 'USD' };
         }
       }
     } catch(e) {}
   }
 
-  // 3. Try Twelve Data for US Stocks & ETFs
+  // 4. Try Twelve Data for US Stocks & ETFs
   if (apiSettings.twelveDataKey) {
     try {
       const res = await fetch(`https://api.twelvedata.com/price?symbol=${encodeURIComponent(sym)}&apikey=${encodeURIComponent(apiSettings.twelveDataKey)}`);
@@ -1147,14 +1232,15 @@ async function fetchAssetPrice(rawSymbol, apiSettings) {
         const data = await res.json();
         const p = parseFloat(data?.price);
         if (!isNaN(p) && p > 0) {
-          return { price: p, currency: 'USD' };
+          const isTHB = sym.endsWith('.BK');
+          return { price: p, currency: isTHB ? 'THB' : 'USD' };
         }
       }
     } catch(e) {}
   }
 
-  // 4. Coinbase fallback for other crypto tickers
-  if (!isCryptoSymbol(sym)) {
+  // 5. Coinbase fallback for other crypto tickers (skip if known Thai asset)
+  if (!isCryptoSymbol(sym) && !isThaiAssetSymbol(sym)) {
     try {
       const res = await fetch(`https://api.coinbase.com/v2/prices/${encodeURIComponent(sym)}-USD/spot`);
       if (res.ok) {
@@ -1202,12 +1288,15 @@ async function fetchAllPrices() {
             const res = await fetchAssetPrice(a.ticker, apiSettings);
             if (res && res.price > 0) {
               a.lastPrice = res.price;
-              a.currency = res.currency || 'USD';
+              a.currency = res.currency || (isThaiAssetSymbol(a.ticker) ? 'THB' : 'USD');
               a.lastFetched = Date.now();
               if (a.units != null && a.units > 0) {
                 const effectiveRate = a.currency === 'USD' ? (state.usdThbRate || 33.39) : 1;
                 a.value = Math.round(a.units * a.lastPrice * effectiveRate);
               }
+            } else if (a.units != null && a.units > 0 && a.lastPrice > 0) {
+              const effectiveRate = (a.currency === 'THB' || isThaiAssetSymbol(a.ticker)) ? 1 : (state.usdThbRate || 33.39);
+              a.value = Math.round(a.units * a.lastPrice * effectiveRate);
             }
           })());
         }
@@ -1334,6 +1423,12 @@ async function testApiKeys() {
     cryptoOk = cb.ok;
   } catch(e){}
 
+  let goldOk = false;
+  try {
+    const gold = await fetchThaiGoldPrice();
+    goldOk = !!(gold && gold.price > 0);
+  } catch(e){}
+
   if (finnhubKey) {
     try {
       const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=NVDA&token=${encodeURIComponent(finnhubKey)}`);
@@ -1361,7 +1456,11 @@ async function testApiKeys() {
   }
 
   if (!finnhubKey && !twelveDataKey) {
-    if (cryptoOk) {
+    if (cryptoOk && goldOk) {
+      statusEl.style.background = 'rgba(47, 139, 118, 0.15)';
+      statusEl.style.color = 'var(--core)';
+      statusEl.textContent = t('testCryptoAndGoldReady');
+    } else if (cryptoOk || goldOk) {
       statusEl.style.background = 'rgba(47, 139, 118, 0.15)';
       statusEl.style.color = 'var(--core)';
       statusEl.textContent = t('testCryptoOnly');
@@ -1406,9 +1505,11 @@ initAutoRefresh();
       </div>
       
       <div style="font-size:12px; color:var(--ink-dim); line-height:1.5; margin-bottom:14px;" id="lblModalDesc">
-        • <b>Crypto (BTC, ETH, etc.):</b> ไม่ต้องใช้ API key — ดึงผ่าน Coinbase API ฟรีทันที<br>
-        • <b>USD/THB:</b> อัตราแลกเปลี่ยนดึงสดจาก Open Exchange Rates อัตโนมัติ<br>
-        • <b>US Stocks & ETFs (NVDA, SGOV, etc.):</b> ใส่ API Key ฟรีจาก Finnhub หรือ Twelve Data เพื่อดึงราคาอัตโนมัติ
+        • <b>Crypto (BTC, ETH ฯลฯ):</b> ไม่ต้องใช้ API key — ดึงผ่าน Coinbase API ฟรีทันที (USD)<br>
+        • <b>ทองคำแท่งไทย (YLG-GOLD, ราคาทอง):</b> ดึงราคาขายออกสมาคมค้าทองคำสดฟรีอัตโนมัติ (THB ฿)<br>
+        • <b>อัตราแลกเปลี่ยน USD/THB:</b> ดึงสดจาก Open Exchange Rates อัตโนมัติ<br>
+        • <b>หุ้นและ ETF สหรัฐฯ (NVDA, SGOV ฯลฯ):</b> ใส่ API Key ฟรีจาก Finnhub หรือ Twelve Data เพื่อดึงราคาอัตโนมัติ<br>
+        • <b>กองทุนรวมไทย (K-WORLDX, SCBCE ฯลฯ):</b> ใส่ราคา NAV ต่อหน่วย (฿) และจำนวนหน่วย ระบบจะคำนวณมูลค่าให้อัตโนมัติ
       </div>
 
       <div style="display:flex; flex-direction:column; gap:12px; font-size:12px;">
