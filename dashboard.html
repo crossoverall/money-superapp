@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="1.3.17">
+  <meta name="version" content="1.3.18">
   <title>ภาพรวมการเงิน</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -99,7 +99,7 @@
 </head>
 <body>
 
-  <div class="eyebrow">DASHBOARD</div>
+  <div class="eyebrow" id="lbl-eyebrow">DASHBOARD</div>
   <h1>
     <span id="txt-title">ภาพรวมการเงิน</span>
     <button onclick="refreshDashboard()" class="action-btn" style="padding:6px; margin:0; border-radius:12px;" id="btn-refresh" title="รีเฟรชข้อมูล">🔄</button>
@@ -179,7 +179,7 @@
     <div onclick="window.parent.postMessage({action:'switchToTab', target:'debt-calculator'},'*')" class="quick-link"><span id="qc-debt-title">📉 วางแผนปลดหนี้ (Debt)</span> <span>Alt+7</span><span id="qc-debt-sub" style="display:none;"></span></div>
   </div>
 
-  <p class="version-tag">Money Superapp v1.3.17</p>
+  <p class="version-tag">Money Superapp v1.3.18</p>
 
 <script>
     const LANG = (function(){ try { return localStorage.getItem('moneySuperapp.lang') || 'th'; } catch(e){ return 'th'; } })();
@@ -188,118 +188,111 @@
     const unit = LANG === 'en' ? 'THB' : 'บาท';
 
     const translations = {
-                th: {
+        th: {
             title: 'ภาพรวมการเงิน',
             subtitle: 'สรุปความมั่งคั่งและประวัติการเติบโต',
-            btnSnapshot: '<span id="lbl-btn-snapshot">+ บันทึกเดือนนี้</span>',
-            printDash: '🖨️',
+            refreshTitle: 'รีเฟรชข้อมูล',
             kpiNetworth: 'ความมั่งคั่งสุทธิ (Net Worth)',
             networthSub: 'สินทรัพย์ - หนี้สิน',
-            kpiSavingsRate: 'เงินออมต่อเดือน (Cash Flow)',
-            savingsSub: 'ออม',
+            kpiSavings: 'เงินออมต่อเดือน (Cash Flow)',
             kpiRunway: 'สายป่าน (Runway)',
             runwaySub: 'ฉุกเฉินอยู่รอด',
-            kpiTaxDebt: 'ยอดหนี้รวม (Debt)',
-            taxBracketSub: 'ฐานภาษีปัจจุบัน',
-            taxAmountSub: 'ประมาณการภาษีที่ต้องจ่าย',
-            quickNavTitle: 'ไปหน้าเครื่องมือ (Tools)',
-            qcRebalTitle: '📊 Rebalance พอร์ต',
-            qcRemTitle: '💰 คำนวณเงินคงเหลือ (Remaining)',
-            qcTaxTitle: '🧾 คำนวณภาษีประจำปี',
-            qcDebtTitle: '📉 วางแผนปลดหนี้ (Debt)',
-            qcSlipTitle: '📄 จำลองสลิปเงินเดือน',
-            qcPvdTitle: '📈 ตารางบันทึก PVD',
-            historyTitle: 'ประวัติที่บันทึกไว้ (History)',
-            historySub: 'ประวัติการเติบโตของความมั่งคั่ง',
+            kpiDebt: 'ยอดหนี้รวม (Debt)',
+            taxBracket: 'ฐานภาษีปัจจุบัน',
+            taxPayLabel: 'ประมาณการภาษีที่ต้องจ่าย',
+            chartTitle: 'แนวโน้มการเติบโต (Trends)',
+            btnSnapshot: '+ บันทึกเดือนนี้',
             btnChartNw: '— Net Worth',
             btnChartSav: '--- Savings Rate',
-            thSnapDate: 'วันที่',
-            thSnapNw: 'ความมั่งคั่ง',
-            thSnapPort: 'พอร์ตลงทุน',
-            thSnapRes: 'เงินฉุกเฉิน',
-            thSnapDebt: 'หนี้สิน',
-            thSnapRate: 'อัตราออม',
+            historyTitle: 'ประวัติที่บันทึกไว้ (History)',
             btnClearHistory: 'ลบประวัติทั้งหมด',
-            chartTitle: 'แนวโน้มการเติบโต (Trends)',
+            quickLinksTitle: 'ไปหน้าเครื่องมือ (Tools)',
+            qcRemTitle: '💰 คำนวณเงินคงเหลือ (Remaining)',
+            qcRebalTitle: '📊 Rebalance พอร์ต',
+            qcSlipTitle: '📄 จำลองสลิปเงินเดือน',
+            qcTaxTitle: '🧾 คำนวณภาษีประจำปี',
+            qcPvdTitle: '📈 ตารางบันทึก PVD',
+            qcDebtTitle: '📉 วางแผนปลดหนี้ (Debt)',
             savedSuccess: '✓ บันทึกสำเร็จ',
             statusHealthy: 'สุขภาพการเงินดี',
-            statusCaution: 'ต้องระวัง'
+            statusCaution: 'ต้องระวัง',
+            deleteTitle: 'ลบ',
+            eyebrow: 'ภาพรวม (DASHBOARD)'
         },
-                en: {
+        en: {
             title: 'Financial Dashboard',
             subtitle: 'Overview of Net Worth and Historical Growth',
-            btnSnapshot: '+ Save Snapshot',
-            printDash: '🖨️',
+            refreshTitle: 'Refresh Data',
             kpiNetworth: 'Net Worth',
             networthSub: 'Assets - Liabilities',
-            kpiSavingsRate: 'Monthly Cash Flow',
-            savingsSub: 'saved',
+            kpiSavings: 'Monthly Cash Flow',
             kpiRunway: 'Emergency Runway',
             runwaySub: 'Liquid Survival',
-            kpiTaxDebt: 'Total Debt Balance',
-            taxBracketSub: 'Current Tax Bracket',
-            taxAmountSub: 'Est. Tax Payable',
-            quickNavTitle: 'Tools & Calculators',
-            qcRebalTitle: '📊 Rebalance Portfolio',
-            qcRemTitle: '💰 Remaining Money & Budget',
-            qcTaxTitle: '🧾 Income Tax Estimation',
-            qcDebtTitle: '📉 Debt Payoff Calculator',
-            qcSlipTitle: '📄 Payslip Simulator',
-            qcPvdTitle: '📈 PVD Tracking Table',
-            historyTitle: 'Historical History',
-            historySub: 'Track Net Worth growth over time',
+            kpiDebt: 'Total Debt Balance',
+            taxBracket: 'Current Tax Bracket',
+            taxPayLabel: 'Estimated Tax Payable',
+            chartTitle: 'Growth Trends',
+            btnSnapshot: '+ Save Snapshot',
             btnChartNw: '— Net Worth',
             btnChartSav: '--- Savings Rate',
-            thSnapDate: 'Date',
-            thSnapNw: 'Net Worth',
-            thSnapPort: 'Portfolio',
-            thSnapRes: 'Reserve',
-            thSnapDebt: 'Debt',
-            thSnapRate: 'Save Rate',
+            historyTitle: 'Saved History',
             btnClearHistory: 'Clear All History',
-            chartTitle: 'Growth Trends',
+            quickLinksTitle: 'Tools & Calculators',
+            qcRemTitle: '💰 Remaining Money & Budget',
+            qcRebalTitle: '📊 Rebalance Portfolio',
+            qcSlipTitle: '📄 Payslip Simulator',
+            qcTaxTitle: '🧾 Income Tax Estimation',
+            qcPvdTitle: '📈 PVD & Severance Tax',
+            qcDebtTitle: '📉 Debt Payoff Calculator',
             savedSuccess: '✓ Saved successfully',
             statusHealthy: 'Financially Healthy',
-            statusCaution: 'Caution'
+            statusCaution: 'Caution',
+            deleteTitle: 'Delete',
+            eyebrow: 'FINANCIAL DASHBOARD'
         }
     };
 
-    if (LANG === 'en') {
-        const t = translations.en;
-        document.title = 'Financial Dashboard — Money Superapp';
-        if (document.getElementById('txt-title')) document.getElementById('txt-title').textContent = t.title;
-        if (document.getElementById('lbl-subtitle')) document.getElementById('lbl-subtitle').textContent = t.subtitle;
-        if (document.getElementById('lbl-btn-snapshot')) document.getElementById('lbl-btn-snapshot').textContent = t.btnSnapshot;
-        if (document.getElementById('lbl-print-dash')) document.getElementById('lbl-print-dash').textContent = t.printDash;
-        if (document.getElementById('lbl-kpi-networth')) document.getElementById('lbl-kpi-networth').textContent = t.kpiNetworth;
-        if (document.getElementById('lbl-networth-sub')) document.getElementById('lbl-networth-sub').textContent = t.networthSub;
-        if (document.getElementById('lbl-kpi-savings-rate')) document.getElementById('lbl-kpi-savings-rate').textContent = t.kpiSavingsRate;
-        if (document.getElementById('lbl-savings-sub')) document.getElementById('lbl-savings-sub').textContent = t.savingsSub;
-        if (document.getElementById('lbl-kpi-runway')) document.getElementById('lbl-kpi-runway').textContent = t.kpiRunway;
-        if (document.getElementById('lbl-runway-sub')) document.getElementById('lbl-runway-sub').textContent = t.runwaySub;
-        if (document.getElementById('lbl-kpi-tax-debt')) document.getElementById('lbl-kpi-tax-debt').textContent = t.kpiTaxDebt;
-        if (document.getElementById('lbl-tax-bracket-sub')) document.getElementById('lbl-tax-bracket-sub').textContent = t.taxBracketSub;
-        if (document.getElementById('lbl-quick-nav-title')) document.getElementById('lbl-quick-nav-title').textContent = t.quickNavTitle;
-        if (document.getElementById('qc-rebal-title')) document.getElementById('qc-rebal-title').textContent = t.qcRebalTitle;
-        if (document.getElementById('qc-rem-title')) document.getElementById('qc-rem-title').textContent = t.qcRemTitle;
-        if (document.getElementById('qc-tax-title')) document.getElementById('qc-tax-title').textContent = t.qcTaxTitle;
-        if (document.getElementById('qc-debt-title')) document.getElementById('qc-debt-title').textContent = t.qcDebtTitle;
-        if (document.getElementById('qc-slip-title')) document.getElementById('qc-slip-title').textContent = t.qcSlipTitle;
-        if (document.getElementById('qc-pvd-title')) document.getElementById('qc-pvd-title').textContent = t.qcPvdTitle;
-        if (document.getElementById('txt-history-title')) document.getElementById('txt-history-title').textContent = t.historyTitle;
-        if (document.getElementById('lbl-history-sub')) document.getElementById('lbl-history-sub').textContent = t.historySub;
-        if (document.getElementById('btn-chart-nw')) document.getElementById('btn-chart-nw').textContent = t.btnChartNw;
-        if (document.getElementById('btn-chart-sav')) document.getElementById('btn-chart-sav').textContent = t.btnChartSav;
-        if (document.getElementById('btn-chart-run')) document.getElementById('btn-chart-run').textContent = t.btnChartRun;
-        if (document.getElementById('th-snap-date')) document.getElementById('th-snap-date').textContent = t.thSnapDate;
-        if (document.getElementById('th-snap-nw')) document.getElementById('th-snap-nw').textContent = t.thSnapNw;
-        if (document.getElementById('th-snap-port')) document.getElementById('th-snap-port').textContent = t.thSnapPort;
-        if (document.getElementById('th-snap-res')) document.getElementById('th-snap-res').textContent = t.thSnapRes;
-        if (document.getElementById('th-snap-debt')) document.getElementById('th-snap-debt').textContent = t.thSnapDebt;
-        if (document.getElementById('th-snap-rate')) document.getElementById('th-snap-rate').textContent = t.thSnapRate;
-        if (document.getElementById('btn-clear-history')) document.getElementById('btn-clear-history').textContent = t.btnClearHistory;
-        if (document.getElementById('lbl-privacy-badge')) document.getElementById('lbl-privacy-badge').textContent = t.privacyBadge;
+    function applyLocalization() {
+        const t = translations[LANG] || translations.th;
+        document.title = (LANG === 'en' ? 'Financial Dashboard — Money Superapp' : 'ภาพรวมการเงิน — Money Superapp');
+
+        const textMapping = {
+            'lbl-eyebrow': t.eyebrow,
+            'txt-title': t.title,
+            'lbl-subtitle': t.subtitle,
+            'lbl-kpi-networth': t.kpiNetworth,
+            'lbl-kpi-nw-sub': t.networthSub,
+            'lbl-kpi-savings': t.kpiSavings,
+            'lbl-kpi-runway': t.kpiRunway,
+            'lbl-kpi-rw-sub': t.runwaySub,
+            'lbl-kpi-debt': t.kpiDebt,
+            'lbl-tax-bracket': t.taxBracket,
+            'lbl-tax-pay-label': t.taxPayLabel,
+            'lbl-chart-title-txt': t.chartTitle,
+            'lbl-btn-snapshot': t.btnSnapshot,
+            'btn-chart-nw': t.btnChartNw,
+            'btn-chart-sav': t.btnChartSav,
+            'lbl-history-title': t.historyTitle,
+            'btn-clear-history': t.btnClearHistory,
+            'lbl-quick-links': t.quickLinksTitle,
+            'qc-rem-title': t.qcRemTitle,
+            'qc-rebal-title': t.qcRebalTitle,
+            'qc-slip-title': t.qcSlipTitle,
+            'qc-tax-title': t.qcTaxTitle,
+            'qc-pvd-title': t.qcPvdTitle,
+            'qc-debt-title': t.qcDebtTitle,
+        };
+
+        Object.keys(textMapping).forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = textMapping[id];
+        });
+
+        const btnRefresh = document.getElementById('btn-refresh');
+        if (btnRefresh) btnRefresh.title = t.refreshTitle;
     }
+
+    applyLocalization();
 
     const SNAPSHOT_KEY = 'moneySuperapp.historicalSnapshots.v1';
     let chartMode = 'networth';
@@ -364,6 +357,7 @@
                 const s = JSON.parse(raw);
                 let pvd = 0;
                 let sso = 0;
+                let totalInc = 0;
                 if (s?.incomeMode === 'yearly') {
                     const yInc = parseNum(s?.yearlyIncome);
                     const yBonus = parseNum(s?.yearlyBonus || s?.bonus);
@@ -381,6 +375,25 @@
                 if (totalInc > 0) {
                     const expense = Math.min(totalInc * 0.5, 100000);
                     const net = Math.max(0, totalInc - expense - 60000 - pvd - sso - parseNum(s?.fundDeduct) - parseNum(s?.thaiEsgDeduct));
+                    
+                    const brackets = [
+                        { limit: 150000, rate: 0 },
+                        { limit: 150000, rate: 0.05 },
+                        { limit: 200000, rate: 0.10 },
+                        { limit: 250000, rate: 0.15 },
+                        { limit: 250000, rate: 0.20 },
+                        { limit: 1000000, rate: 0.25 },
+                        { limit: 3000000, rate: 0.30 },
+                        { limit: Infinity, rate: 0.35 }
+                    ];
+                    let rem = net;
+                    for (const b of brackets) {
+                        if (rem <= 0) break;
+                        const taxable = Math.min(rem, b.limit);
+                        estimatedTax += taxable * b.rate;
+                        rem -= taxable;
+                    }
+
                     if (net <= 150000) topMarginalRate = 0;
                     else if (net <= 300000) topMarginalRate = 5;
                     else if (net <= 500000) topMarginalRate = 10;
@@ -395,13 +408,28 @@
 
         // 4. Debt
         let totalDebt = 0;
-        let monthsToFree = 0;
+        let debtFreeText = LANG === 'en' ? 'Debt Free 🎉' : 'ไม่มีหนี้สิน 🎉';
         try {
             const raw = localStorage.getItem('moneySuperapp.debtCalculator.state.v1');
             if (raw) {
                 const s = JSON.parse(raw);
-                if (s && Array.isArray(s.debts)) {
+                if (s && Array.isArray(s.debts) && s.debts.length > 0) {
                     totalDebt = s.debts.reduce((sum, d) => sum + parseNum(d.balance), 0);
+                    if (totalDebt > 0) {
+                        const totalMin = s.debts.reduce((sum, d) => sum + parseNum(d.minPayment), 0) + parseNum(s.extraPayment);
+                        if (totalMin > 0) {
+                            const approxMonths = Math.ceil(totalDebt / totalMin);
+                            const targetDate = new Date();
+                            targetDate.setMonth(targetDate.getMonth() + approxMonths);
+                            const mEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                            const mTh = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+                            const mName = LANG === 'en' ? mEn[targetDate.getMonth()] : mTh[targetDate.getMonth()];
+                            const yName = LANG === 'en' ? targetDate.getFullYear() : (targetDate.getFullYear() + 543);
+                            debtFreeText = (LANG === 'en' ? 'Target: ' : 'เป้าหมาย: ') + `${mName} ${yName}`;
+                        } else {
+                            debtFreeText = (LANG === 'en' ? 'Debts: ' : 'รายการ: ') + s.debts.length;
+                        }
+                    }
                 }
             }
         } catch(e){}
@@ -422,7 +450,9 @@
             totalDebt,
             netWorth,
             savingsRate,
-            topMarginalRate
+            topMarginalRate,
+            estimatedTax,
+            debtFreeText
         };
     }
 
@@ -431,12 +461,13 @@
         const t = translations[LANG] || translations.th;
 
         if (document.getElementById('kpi-networth-val')) document.getElementById('kpi-networth-val').textContent = formatMoney(p.netWorth) + ' ' + unit;
-        if (document.getElementById('kpi-savings-rate-val')) document.getElementById('kpi-savings-rate-val').textContent = p.savingsRate.toFixed(1) + '%';
+        if (document.getElementById('kpi-savings-rate-val')) document.getElementById('kpi-savings-rate-val').textContent = (LANG === 'en' ? 'Savings Rate: ' : 'อัตราการออม: ') + p.savingsRate.toFixed(1) + '%';
         if (document.getElementById('kpi-monthly-savings-val')) document.getElementById('kpi-monthly-savings-val').textContent = formatMoney(p.monthlySavings + p.monthlyInvest) + ' ' + unit;
         if (document.getElementById('kpi-runway-months')) document.getElementById('kpi-runway-months').textContent = p.runwayMonths > 0 ? p.runwayMonths.toFixed(1) + ' ' + (LANG === 'en' ? 'mos' : 'เดือน') : '-';
-        if (document.getElementById('kpi-runway-reserve-val')) document.getElementById('kpi-runway-reserve-val').textContent = formatMoney(p.emergencyReserve) + ' ' + unit;
         if (document.getElementById('kpi-debt-val')) document.getElementById('kpi-debt-val').textContent = formatMoney(p.totalDebt) + ' ' + unit;
+        if (document.getElementById('kpi-debtfree-date')) document.getElementById('kpi-debtfree-date').textContent = p.debtFreeText;
         if (document.getElementById('kpi-tax-bracket-val')) document.getElementById('kpi-tax-bracket-val').textContent = `${p.topMarginalRate}%`;
+        if (document.getElementById('kpi-tax-amount')) document.getElementById('kpi-tax-amount').textContent = formatMoney(p.estimatedTax) + ' ' + unit;
 
         if (document.getElementById('kpi-networth-badge')) document.getElementById('kpi-networth-badge').textContent = p.netWorth >= 0 ? t.statusHealthy : t.statusCaution;
 
@@ -559,7 +590,14 @@
         const tbody = document.getElementById('historyListContainer');
         if (!tbody) return;
         tbody.innerHTML = '';
-        if (document.getElementById('lbl-snapshot-count')) document.getElementById('lbl-snapshot-count').textContent = `${snapshots.length} ${LANG === 'en' ? 'snapshots' : 'บันทึก'}`;
+        if (document.getElementById('lbl-snapshot-count')) {
+            const count = snapshots.length;
+            document.getElementById('lbl-snapshot-count').textContent = LANG === 'en'
+                ? `${count} ${count === 1 ? 'snapshot' : 'snapshots'}`
+                : `${count} บันทึก`;
+        }
+
+        const t = translations[LANG] || translations.th;
 
         [...snapshots].reverse().forEach(s => {
             const tr = document.createElement('div');
@@ -574,8 +612,8 @@
                 </div>
                 <div class="h-side">
                     <span style="font-size:14px; font-weight:700; color:var(--ink);">${s.savingsRate}%</span>
-                    <span style="font-size:10px; color:var(--ink-dim); font-weight:400;">${formatMoney(s.savings || 0)}/m</span>
-                    <button class="h-del" title="ลบ">&times;</button>
+                    <span style="font-size:10px; color:var(--ink-dim); font-weight:400;">${formatMoney(s.savings || 0)}/${LANG === 'en' ? 'mo' : 'ด'}</span>
+                    <button class="h-del" title="${t.deleteTitle}">&times;</button>
                 </div>
             `;
             const dateBadge = tr.querySelector('.date-badge');
@@ -748,6 +786,7 @@
     renderChart();
 
     function refreshDashboard() {
+        applyLocalization();
         renderDashboardKPIs();
         renderSnapshotsTable();
         renderChart();
