@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="1.3.23">
+<meta name="version" content="1.3.24">
 <title>คำนวณการเติมเงินรายเดือน</title>
 <link rel="stylesheet" href="css/theme.css">
 <style>
@@ -339,7 +339,7 @@
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v1.3.23</p>
+  <p class="version-tag">v1.3.24</p>
 
 <script>
 // Language: read once from localStorage (shared origin with the shell nav's toggle).
@@ -752,7 +752,7 @@ function isSetStockSymbol(sym) {
 function isThaiFundSymbol(sym) {
   if (!sym) return false;
   const s = sym.toUpperCase().trim();
-  return /^(K-|SCB|B-|KT-|TMB|TTB|KF-|ONE-|PRINCIPAL|LH|UOB|ASP|DAOL|KKP|TISCO)/i.test(s);
+  return /^(K-|KF[A-Z0-9]|SCB|B-|KT-|TMB|TTB|ONE-|PRINCIPAL|LHPF|LHABS|UOB|ASP|DAOL|KKP|TISCO-)/i.test(s);
 }
 
 function isThaiAssetSymbol(sym) {
@@ -1227,7 +1227,7 @@ async function fetchAssetPrice(rawSymbol, apiSettings) {
     if (gold) return gold;
   }
 
-  // 2. Try Coinbase for Crypto (e.g. BTC, ETH)
+  // 2. Try Coinbase for known Crypto symbols (e.g. BTC, ETH)
   if (isCryptoSymbol(sym)) {
     const cleanSym = sym.replace(/-USD$|-THB$|USDT$/, '');
     try {
@@ -1240,6 +1240,13 @@ async function fetchAssetPrice(rawSymbol, apiSettings) {
         }
       }
     } catch(e) {}
+  }
+
+  // 2b. Short-circuit Thai mutual funds — no open-CORS public NAV API exists.
+  //     User must enter NAV manually. Prevents spurious 404s to Twelve Data / Coinbase
+  //     for tickers like K-WORLDX, KFCSI300-A, SCBCE, B-INNOTECH, etc.
+  if (isThaiFundSymbol(sym)) {
+    return null;
   }
 
   // 3. Try Finnhub for US Stocks & ETFs (or .BK SET stocks)
@@ -1261,8 +1268,10 @@ async function fetchAssetPrice(rawSymbol, apiSettings) {
   // 4. Try Twelve Data for US Stocks & ETFs and Thai SET Stocks
   if (apiSettings.twelveDataKey) {
     const isThai = isSetStockSymbol(sym);
+    // Normalise the base symbol (strip any existing exchange suffix) then build clean variants
+    const baseSym = sym.replace(/\.BK$/i, '').replace(/:SET$/i, '').replace(/:XBKK$/i, '');
     const querySymbols = isThai
-      ? [sym, `${sym.replace(/\.BK$/, '')}:SET`, `${sym.replace(/:SET$/, '')}.BK`, sym.replace(/\.BK$/, '')]
+      ? [...new Set([baseSym, `${baseSym}:SET`, `${baseSym}.BK`])]
       : [sym];
     for (const qSym of querySymbols) {
       try {
@@ -1279,8 +1288,15 @@ async function fetchAssetPrice(rawSymbol, apiSettings) {
     }
   }
 
-  // 5. Coinbase fallback for other crypto tickers (skip if known Thai asset)
-  if (!isCryptoSymbol(sym) && !isThaiAssetSymbol(sym)) {
+  // 5. Coinbase fallback — only for short unknown tickers that might be crypto.
+  //    Explicitly skip US equities/ETFs so they don't hit Coinbase and return 404.
+  const KNOWN_US_EQUITIES = /^(MSFT|AMZN|GOOGL|GOOG|AAPL|NVDA|TSLA|META|AMD|INTC|NFLX|SPY|QQQ|VTI|VGT|SGOV|IVV|VOO|AGG|BND|GLD|SLV|IAU|TLT|HYG|LQD|XLK|XLF|XLE|XLV|XLY|XLI|VNQ|ARKK|SCHB|SCHA|SCHD|SCHX|VUG|VTV|VB|VO|VV|VXF)$/;
+  const looksLikeCrypto = !isThaiAssetSymbol(sym)
+    && !sym.includes('.')
+    && !sym.includes(':')
+    && sym.length <= 6
+    && !KNOWN_US_EQUITIES.test(sym);
+  if (looksLikeCrypto) {
     try {
       const res = await fetch(`https://api.coinbase.com/v2/prices/${encodeURIComponent(sym)}-USD/spot`);
       if (res.ok) {
@@ -1343,7 +1359,16 @@ async function fetchAllPrices() {
       });
     });
 
-    await Promise.all(fetchPromises);
+    // Dispatch fetch tasks in batches of 4 with a 800 ms gap between batches.
+    // Twelve Data free tier allows 8 req/min; batching prevents 429 errors.
+    const BATCH_SIZE = 4;
+    const BATCH_DELAY_MS = 800;
+    for (let i = 0; i < fetchPromises.length; i += BATCH_SIZE) {
+      await Promise.all(fetchPromises.slice(i, i + BATCH_SIZE));
+      if (i + BATCH_SIZE < fetchPromises.length) {
+        await new Promise(r => setTimeout(r, BATCH_DELAY_MS));
+      }
+    }
 
     state.lastPriceFetch = Date.now();
     saveState();
