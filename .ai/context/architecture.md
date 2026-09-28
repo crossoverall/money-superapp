@@ -94,6 +94,7 @@ Money Superapp uses a decoupled **Iframe Shell & Multi-Document Architecture**:
 7. **Remaining Money & Cash Flow (`remaining-money.html`)**
    - Monthly cash flow budgeting: Incomes, Fixed Expenses, Variable Expenses, Dedicated Savings, and Investable Remaining Surplus.
    - Emergency runway calculator (months of expenses covered by reserve).
+   - Export options: CSV download (with UTF-8 BOM and CWE-1236 neutralization), pretty-printed JSON download, formatted clipboard cash flow summary, and print/PDF view.
    - Persists state in `remainingMoneyCalculator.state.v1` and `remainingMoneyCalculator.pvdPercent`.
    - Ingests incoming bridges (`pendingSlipImport` from Payslip, `pendingLumpSum` from PVD).
    - Offers bridge button to send remaining surplus into Rebalance DCA budget (`moneySuperapp.pendingBudget`).

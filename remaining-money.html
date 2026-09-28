@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="1.3.28">
+  <meta name="version" content="1.3.29">
   <title>คำนวณเงินคงเหลือ</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -176,13 +176,21 @@
 
     .save-status{
       display:flex; justify-content: space-between; align-items:center;
+      flex-wrap: wrap; gap: 8px;
       font-size: 11px; color: var(--ink-faint); margin-top: 14px; padding: 0 2px;
     }
     .save-status .reset-btn{
       background:none; border:none; color: var(--ink-faint); font-size: 11px;
       text-decoration: underline; cursor:pointer; padding:0;
     }
-    .save-status .reset-btn:hover{ color: var(--danger); }
+    .save-status .reset-btn:hover{ color: var(--core); }
+    #resetBtn:hover{ color: var(--danger); }
+
+    @media print {
+      :root { --ink: #000 !important; --ink-dim: #333 !important; --ink-faint: #666 !important; --panel: #fff !important; --panel-2: #fafafa !important; --line: #ccc !important; }
+      body { background: #fff !important; color: #000 !important; }
+      .save-status, .add-btn, .remove-btn, .version-tag, .rebalance-bridge-btn, #bridgeAlertBanner { display: none !important; }
+    }
 
     .version-tag{ font-size: 10px; color: var(--ink-faint); text-align: center; margin-top: 14px; }
 
@@ -329,9 +337,15 @@
 
   <div class="save-status">
     <span id="saveStatus">&nbsp;</span>
-    <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+      <button class="reset-btn" id="copySummaryBtn" onclick="copySummary()">📋 <span id="lblCopySummary">คัดลอกสรุป</span></button>
+      <button class="reset-btn" id="exportCsvBtn" onclick="exportCSV()">📥 <span id="lblExportCsv">ดาวน์โหลด CSV</span></button>
+      <button class="reset-btn" id="exportJsonBtn" onclick="exportJSON()">💾 <span id="lblExportJson">ดาวน์โหลด JSON</span></button>
+      <button class="reset-btn" id="printBtn" onclick="window.print()">🖨️ <span id="lblPrint">พิมพ์ / บันทึก PDF</span></button>
+      <button class="reset-btn" id="resetBtn" style="color:var(--ink-faint);">ล้างข้อมูลที่บันทึกไว้</button>
+    </div>
   </div>
-  <p class="version-tag">v1.3.28</p>
+  <p class="version-tag">v1.3.29</p>
 
 <script>
 // ── Language ──────────────────────────────────────────────────────────────
@@ -381,6 +395,11 @@ const EN = {
   runwayWarning: '⚠️ Warning — Less than 3 months of buffer',
   runwayHealthy: '✅ Healthy — 3–6 months of buffer',
   runwaySolid: '💪 Solid — Over 6 months of buffer',
+  lblCopySummary: 'Copy Summary',
+  lblExportCsv: 'Download CSV',
+  lblExportJson: 'Download JSON',
+  lblPrint: 'Print / PDF',
+  copiedSuccess: '✓ Copied!',
 };
 
 const T = {
@@ -409,6 +428,11 @@ const T = {
     incomeBreakdown: 'รายได้แต่ละรายการ',
     expenseBreakdown: 'ค่าใช้จ่ายแต่ละรายการ',
     savingBreakdown: 'เงินออมแต่ละรายการ',
+    lblCopySummary: 'คัดลอกสรุป',
+    lblExportCsv: 'ดาวน์โหลด CSV',
+    lblExportJson: 'ดาวน์โหลด JSON',
+    lblPrint: 'พิมพ์ / บันทึก PDF',
+    copiedSuccess: '✓ คัดลอกแล้ว!',
   },
   en: {
     scIncomeValue: n => `${n} THB`,
@@ -435,6 +459,11 @@ const T = {
     incomeBreakdown: 'Income breakdown',
     expenseBreakdown: 'Expense breakdown',
     savingBreakdown: 'Savings breakdown',
+    lblCopySummary: 'Copy Summary',
+    lblExportCsv: 'Download CSV',
+    lblExportJson: 'Download JSON',
+    lblPrint: 'Print / PDF',
+    copiedSuccess: '✓ Copied!',
   },
 };
 function t(key, ...args){
@@ -447,7 +476,8 @@ if(LANG === 'en'){
   document.title = 'Remaining Money Calculator';
   ['eyebrow','pageTitle','subtitle','incomePanelTitle','expensePanelTitle','savingPanelTitle',
    'scIncomeLabel','scExpenseLabel','scSavingLabel','remainingLabel','remainingNote',
-   'runwayTitle','lblCurrentReserve','lblReserveUnit'].forEach(id => {
+   'runwayTitle','lblCurrentReserve','lblReserveUnit',
+   'lblCopySummary','lblExportCsv','lblExportJson','lblPrint'].forEach(id => {
     const el = document.getElementById(id);
     if(el && EN[id]) el.textContent = EN[id];
   });
@@ -1435,6 +1465,234 @@ function sendToRebalance(){
     }
   }
 }
+
+// ── Export Features (CSV, JSON, Clipboard Summary) ────────────────────────
+function csvSafe(val) {
+  let str = String(val == null ? '' : val);
+  if (/^\s*[\t\r=+\-@]/.test(str)) {
+    if (isNaN(Number(str))) {
+      str = "'" + str;
+    }
+  }
+  if (/[",\r\n]/.test(str)) {
+    return '"' + str.replace(/"/g, '""') + '"';
+  }
+  return str;
+}
+
+function exportCSV() {
+  const isEN = LANG === 'en';
+  const totalIncome  = state.incomes.reduce((s, item) => s + (item.value || 0), 0);
+  const totalExpense = state.expenses.reduce((s, item) => s + (item.value || 0), 0);
+  const totalSavings = (state.savings || []).reduce((s, item) => s + (item.value || 0), 0);
+  const remaining    = Math.round(totalIncome - totalExpense - totalSavings);
+
+  const header = isEN
+    ? 'Category,Item,Amount (THB),Note'
+    : 'หมวดหมู่ / Category,รายการ / Item,จำนวนเงิน (บาท) / Amount (THB),หมายเหตุ / Note';
+
+  const rows = [header];
+
+  function addRow(cat, item, amount, note = '') {
+    rows.push([
+      csvSafe(cat),
+      csvSafe(item),
+      typeof amount === 'number' ? amount : csvSafe(amount),
+      csvSafe(note)
+    ].join(','));
+  }
+
+  // 1. Income rows
+  const catIncome = isEN ? 'Income' : 'รายได้';
+  state.incomes.forEach((item, idx) => {
+    const isSal = isSalaryRow(item, idx);
+    const note = isSal ? (isEN ? 'Primary Salary' : 'เงินเดือนหลัก') : '';
+    addRow(catIncome, getDisplayName(item.name), Math.round(item.value || 0), note);
+  });
+  addRow(catIncome, isEN ? 'Total Income' : 'รวมรายได้', Math.round(totalIncome), '');
+
+  // 2. Expense rows
+  const catExpense = isEN ? 'Expense' : 'ค่าใช้จ่าย';
+  state.expenses.forEach(item => {
+    const autoType = getAutoType(item);
+    let note = '';
+    if (autoType === 'tax') note = isEN ? 'Estimated Tax' : 'ภาษีเงินได้ (ประมาณการ)';
+    else if (autoType === 'sso') note = isEN ? 'Social Security (SSO)' : 'ประกันสังคม (SSO)';
+    else if (autoType === 'pvd') note = isEN ? `Provident Fund (${pvdPercent}%)` : `กองทุนสำรองเลี้ยงชีพ (${pvdPercent}%)`;
+    addRow(catExpense, getDisplayName(item.name), Math.round(item.value || 0), note);
+  });
+  addRow(catExpense, isEN ? 'Total Expenses' : 'รวมค่าใช้จ่าย', Math.round(totalExpense), '');
+
+  // 3. Savings rows
+  if (state.savings && state.savings.length > 0) {
+    const catSaving = isEN ? 'Savings' : 'เงินออม';
+    state.savings.forEach(item => {
+      addRow(catSaving, getDisplayName(item.name), Math.round(item.value || 0), '');
+    });
+    addRow(catSaving, isEN ? 'Total Savings' : 'รวมเงินออม', Math.round(totalSavings), '');
+  }
+
+  // 4. Net Remaining Money
+  const catSummary = isEN ? 'Summary' : 'สรุป';
+  const remLabel = totalSavings > 0
+    ? (isEN ? 'Remaining for Investment' : 'เงินคงเหลือสำหรับลงทุน')
+    : (isEN ? 'Remaining Money' : 'เงินคงเหลือ');
+  const remNote = remaining > 0 ? (isEN ? 'Surplus' : 'เหลือเงิน') : remaining < 0 ? (isEN ? 'Deficit' : 'เกินงบ') : (isEN ? 'Balanced' : 'สมดุล');
+  addRow(catSummary, remLabel, remaining, remNote);
+
+  // 5. Emergency Reserve & Runway
+  if (state.showEmergencyRunway) {
+    const catRunway = isEN ? 'Emergency Runway' : 'เงินสำรองฉุกเฉิน';
+    const reserve = Number(state.currentEmergencyReserve) || 0;
+    const runwayMonths = totalExpense > 0 ? Math.round((reserve / totalExpense) * 10) / 10 : 0;
+    const note = totalExpense > 0 ? (isEN ? `${runwayMonths.toFixed(1)} months buffer` : `สำรองได้ ${runwayMonths.toFixed(1)} เดือน`) : '';
+    addRow(catRunway, isEN ? 'Current Emergency Reserve' : 'เงินสำรองฉุกเฉินปัจจุบัน', Math.round(reserve), note);
+    addRow(catRunway, isEN ? 'Runway (Months)' : 'ระยะเวลาเงินสำรอง (เดือน)', totalExpense > 0 ? runwayMonths.toFixed(1) : 0, '');
+  }
+
+  const bom = '\uFEFF';
+  const csvContent = bom + rows.join('\r\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `remaining_money_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function fallbackCopyText(text, onSuccess) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    if (typeof onSuccess === 'function') onSuccess();
+  } catch(e){}
+}
+
+function copySummary() {
+  const isEN = LANG === 'en';
+  const totalIncome  = state.incomes.reduce((s, item) => s + (item.value || 0), 0);
+  const totalExpense = state.expenses.reduce((s, item) => s + (item.value || 0), 0);
+  const totalSavings = (state.savings || []).reduce((s, item) => s + (item.value || 0), 0);
+  const remaining    = Math.round(totalIncome - totalExpense - totalSavings);
+
+  const lines = [
+    isEN ? '📊 Monthly Cash Flow Summary' : '📊 สรุปกระแสเงินสดรายเดือน',
+    '==============================',
+    (isEN ? 'Total Income: ' : 'รวมรายได้: ') + fmtCurrency(totalIncome),
+  ];
+
+  if (state.incomes.length > 0) {
+    state.incomes.forEach(item => {
+      const name = getDisplayName(item.name);
+      lines.push(`  + ${name}: ${fmtCurrency(item.value || 0)}`);
+    });
+  }
+
+  lines.push('');
+  lines.push((isEN ? 'Total Expenses: ' : 'รวมค่าใช้จ่าย: ') + fmtCurrency(totalExpense));
+  if (state.expenses.length > 0) {
+    state.expenses.forEach(item => {
+      const name = getDisplayName(item.name);
+      const aType = getAutoType(item);
+      const note = aType === 'tax' ? ` (${isEN ? 'Estimated Tax' : 'ภาษีเงินได้'})`
+                 : aType === 'sso' ? ` (${isEN ? 'Social Security' : 'ประกันสังคม'})`
+                 : aType === 'pvd' ? ` (PVD ${pvdPercent}%)`
+                 : '';
+      lines.push(`  - ${name}${note}: ${fmtCurrency(item.value || 0)}`);
+    });
+  }
+
+  if (state.savings && state.savings.length > 0) {
+    lines.push('');
+    lines.push((isEN ? 'Total Savings: ' : 'รวมเงินออม: ') + fmtCurrency(totalSavings));
+    state.savings.forEach(item => {
+      const name = getDisplayName(item.name);
+      lines.push(`  - ${name}: ${fmtCurrency(item.value || 0)}`);
+    });
+  }
+
+  lines.push('------------------------------');
+  const remLabel = totalSavings > 0
+    ? (isEN ? 'Remaining for Investment: ' : 'เงินคงเหลือสำหรับลงทุน: ')
+    : (isEN ? 'Remaining Money: ' : 'เงินคงเหลือ: ');
+  lines.push(remLabel + fmtCurrency(remaining));
+
+  if (state.showEmergencyRunway && state.currentEmergencyReserve > 0) {
+    const reserve = Number(state.currentEmergencyReserve) || 0;
+    const runwayMonths = totalExpense > 0 ? (Math.round((reserve / totalExpense) * 10) / 10).toFixed(1) : '—';
+    lines.push('');
+    lines.push(isEN
+      ? `🛡️ Emergency Reserve: ${fmtCurrency(reserve)} (Runway: ${runwayMonths} months)`
+      : `🛡️ เงินสำรองฉุกเฉิน: ${fmtCurrency(reserve)} (อยู่รอดได้ ${runwayMonths} เดือน)`);
+  }
+
+  const text = lines.join('\n');
+  const doFeedback = () => {
+    const lbl = document.getElementById('lblCopySummary');
+    if (lbl) {
+      lbl.textContent = t('copiedSuccess') || (isEN ? '✓ Copied!' : '✓ คัดลอกแล้ว!');
+      setTimeout(() => {
+        lbl.textContent = t('lblCopySummary') || (isEN ? 'Copy Summary' : 'คัดลอกสรุป');
+      }, 1800);
+    }
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(doFeedback).catch(() => {
+      fallbackCopyText(text, doFeedback);
+    });
+  } else {
+    fallbackCopyText(text, doFeedback);
+  }
+}
+
+function exportJSON() {
+  const totalIncome  = state.incomes.reduce((s, item) => s + (item.value || 0), 0);
+  const totalExpense = state.expenses.reduce((s, item) => s + (item.value || 0), 0);
+  const totalSavings = (state.savings || []).reduce((s, item) => s + (item.value || 0), 0);
+  const remaining    = Math.round(totalIncome - totalExpense - totalSavings);
+  const reserve      = Number(state.currentEmergencyReserve) || 0;
+  const runwayMonths = totalExpense > 0 ? Math.round((reserve / totalExpense) * 10) / 10 : 0;
+
+  const payload = {
+    version: '1.0.0',
+    app: 'Money Superapp - Remaining Money Calculator',
+    exportedAt: new Date().toISOString(),
+    currency: 'THB',
+    data: state,
+    summary: {
+      totalIncome,
+      totalExpense,
+      totalSavings,
+      remaining,
+      runwayMonths,
+    }
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `remaining_money_${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// Expose on window
+window.exportCSV = exportCSV;
+window.copySummary = copySummary;
+window.exportJSON = exportJSON;
 
 // ── Init ───────────────────────────────────────────────────────────────────
 checkPendingLumpSum();
