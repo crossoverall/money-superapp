@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="1.3.29">
+  <meta name="version" content="1.3.30">
   <title>คำนวณเงินคงเหลือ</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -189,7 +189,7 @@
     @media print {
       :root { --ink: #000 !important; --ink-dim: #333 !important; --ink-faint: #666 !important; --panel: #fff !important; --panel-2: #fafafa !important; --line: #ccc !important; }
       body { background: #fff !important; color: #000 !important; }
-      .save-status, .add-btn, .remove-btn, .version-tag, .rebalance-bridge-btn, #bridgeAlertBanner { display: none !important; }
+      .save-status, .add-btn, .remove-btn, .version-tag, .rebalance-bridge-btn, #bridgeAlertBanner, #importModal, #importFileInput { display: none !important; }
     }
 
     .version-tag{ font-size: 10px; color: var(--ink-faint); text-align: center; margin-top: 14px; }
@@ -338,6 +338,8 @@
   <div class="save-status">
     <span id="saveStatus">&nbsp;</span>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+      <input type="file" id="importFileInput" accept=".json,.csv,text/csv,application/json" onchange="handleImportFile(this)" style="display:none;">
+      <button class="reset-btn" id="importBtn" onclick="document.getElementById('importFileInput').click()">📤 <span id="lblImport">นำเข้าข้อมูล</span></button>
       <button class="reset-btn" id="copySummaryBtn" onclick="copySummary()">📋 <span id="lblCopySummary">คัดลอกสรุป</span></button>
       <button class="reset-btn" id="exportCsvBtn" onclick="exportCSV()">📥 <span id="lblExportCsv">ดาวน์โหลด CSV</span></button>
       <button class="reset-btn" id="exportJsonBtn" onclick="exportJSON()">💾 <span id="lblExportJson">ดาวน์โหลด JSON</span></button>
@@ -345,7 +347,71 @@
       <button class="reset-btn" id="resetBtn" style="color:var(--ink-faint);">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v1.3.29</p>
+  <p class="version-tag">v1.3.30</p>
+
+  <!-- Import Preview Modal -->
+  <div id="importModal" role="dialog" aria-modal="true" aria-labelledby="importModalTitle" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; display:none; align-items:center; justify-content:center; backdrop-filter:blur(2px);" onclick="if(event.target===this)closeImportModal()">
+    <div style="background:var(--panel); border:1px solid var(--line); border-radius:16px; width:92%; max-width:480px; padding:20px; box-shadow:0 12px 30px rgba(0,0,0,0.3); color:var(--ink); font-family:inherit; max-height:90vh; overflow-y:auto;">
+      <!-- Header -->
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; border-bottom:1px solid var(--line); padding-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <h3 id="importModalTitle" style="margin:0; font-size:16px; font-weight:700;">ตรวจสอบข้อมูลที่นำเข้า</h3>
+          <span id="importFormatBadge" style="font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--brand, #059669); color:#fff;">JSON</span>
+        </div>
+        <button type="button" onclick="closeImportModal()" style="background:none; border:none; font-size:22px; line-height:1; color:var(--ink-faint); cursor:pointer; padding:0 4px;" aria-label="Close">&times;</button>
+      </div>
+
+      <!-- File Name Display -->
+      <div style="font-size:12px; color:var(--ink-dim); margin-bottom:14px; word-break:break-all;">
+        <span id="lblImportFile" style="color:var(--ink-faint);">📄 ไฟล์: </span><strong id="importFileName">—</strong>
+      </div>
+
+      <!-- Summary Section -->
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:16px; display:flex; flex-direction:column; gap:8px;">
+        <div style="display:flex; justify-content:space-between; font-size:13px;">
+          <span id="lblImportSummaryIncome" style="color:var(--ink-dim);">รายได้</span>
+          <span id="importIncomeSummary" style="font-weight:700; color:var(--core);">0 บาท</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:13px;">
+          <span id="lblImportSummaryExpense" style="color:var(--ink-dim);">ค่าใช้จ่าย</span>
+          <span id="importExpenseSummary" style="font-weight:700; color:var(--warn);">0 บาท</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:13px;">
+          <span id="lblImportSummarySaving" style="color:var(--ink-dim);">เงินออม</span>
+          <span id="importSavingSummary" style="font-weight:700; color:#2563eb;">0 บาท</span>
+        </div>
+        <div style="border-top:1px dashed var(--line); margin-top:4px; padding-top:8px; display:flex; justify-content:space-between; font-size:14px;">
+          <span id="lblImportSummaryNet" style="font-weight:600;">กระแสเงินสดสุทธิ</span>
+          <span id="importRemainingSummary" style="font-weight:700;">0 บาท</span>
+        </div>
+        <div id="importRunwayRow" style="display:none; border-top:1px dashed var(--line); margin-top:4px; padding-top:8px; justify-content:space-between; font-size:12px; color:var(--ink-dim);">
+          <span id="lblImportSummaryRunway">เงินสำรองฉุกเฉิน</span>
+          <span id="importRunwaySummary" style="font-weight:600;">—</span>
+        </div>
+      </div>
+
+      <!-- Mode Selector -->
+      <div style="margin-bottom:18px;">
+        <div id="lblImportMethod" style="font-size:12px; font-weight:600; color:var(--ink-dim); margin-bottom:8px;">วิธีการนำเข้า:</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px;">
+            <input type="radio" id="importModeReplace" name="importMode" value="replace" checked style="accent-color:var(--brand, #059669);">
+            <span id="lblModeReplace">แทนที่ข้อมูลปัจจุบัน</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px;">
+            <input type="radio" id="importModeMerge" name="importMode" value="merge" style="accent-color:var(--brand, #059669);">
+            <span id="lblModeMerge">รวมเข้ากับข้อมูลปัจจุบัน</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button type="button" id="btnCancelImportModal" onclick="closeImportModal()" style="padding:8px 16px; border-radius:8px; border:1px solid var(--line); background:var(--panel-2); color:var(--ink); font-size:13px; font-weight:600; cursor:pointer;">ยกเลิก</button>
+        <button type="button" id="btnConfirmImport" onclick="confirmImport()" style="padding:8px 16px; border-radius:8px; border:none; background:var(--brand, #059669); color:#fff; font-size:13px; font-weight:600; cursor:pointer;">ยืนยันการนำเข้า</button>
+      </div>
+    </div>
+  </div>
 
 <script>
 // ── Language ──────────────────────────────────────────────────────────────
@@ -400,6 +466,22 @@ const EN = {
   lblExportJson: 'Download JSON',
   lblPrint: 'Print / PDF',
   copiedSuccess: '✓ Copied!',
+  lblImport: 'Import Data',
+  importModalTitle: 'Import Data Preview',
+  importModeReplace: 'Replace current data',
+  importModeMerge: 'Merge with current data',
+  btnConfirmImport: 'Confirm Import',
+  btnCancelModal: 'Cancel',
+  importSuccess: '✓ Data imported successfully',
+  importError: 'Could not import file',
+  importNoData: 'No income or expense data found',
+  importFileLabel: '📄 File: ',
+  importMethod: 'Import Method:',
+  importSummaryIncome: 'Income',
+  importSummaryExpense: 'Expenses',
+  importSummarySaving: 'Savings',
+  importSummaryNet: 'Net Cash Flow',
+  importSummaryRunway: 'Emergency Reserve',
 };
 
 const T = {
@@ -433,6 +515,22 @@ const T = {
     lblExportJson: 'ดาวน์โหลด JSON',
     lblPrint: 'พิมพ์ / บันทึก PDF',
     copiedSuccess: '✓ คัดลอกแล้ว!',
+    lblImport: 'นำเข้าข้อมูล',
+    importModalTitle: 'ตรวจสอบข้อมูลที่นำเข้า',
+    importModeReplace: 'แทนที่ข้อมูลปัจจุบัน',
+    importModeMerge: 'รวมเข้ากับข้อมูลปัจจุบัน',
+    btnConfirmImport: 'ยืนยันการนำเข้า',
+    btnCancelModal: 'ยกเลิก',
+    importSuccess: '✓ นำเข้าข้อมูลเรียบร้อยแล้ว',
+    importError: 'เกิดข้อผิดพลาดในการนำเข้าไฟล์',
+    importNoData: 'ไม่พบข้อมูลรายได้หรือค่าใช้จ่าย',
+    importFileLabel: '📄 ไฟล์: ',
+    importMethod: 'วิธีการนำเข้า:',
+    importSummaryIncome: 'รายได้',
+    importSummaryExpense: 'ค่าใช้จ่าย',
+    importSummarySaving: 'เงินออม',
+    importSummaryNet: 'กระแสเงินสดสุทธิ',
+    importSummaryRunway: 'เงินสำรองฉุกเฉิน',
   },
   en: {
     scIncomeValue: n => `${n} THB`,
@@ -464,6 +562,22 @@ const T = {
     lblExportJson: 'Download JSON',
     lblPrint: 'Print / PDF',
     copiedSuccess: '✓ Copied!',
+    lblImport: 'Import Data',
+    importModalTitle: 'Import Data Preview',
+    importModeReplace: 'Replace current data',
+    importModeMerge: 'Merge with current data',
+    btnConfirmImport: 'Confirm Import',
+    btnCancelModal: 'Cancel',
+    importSuccess: '✓ Data imported successfully',
+    importError: 'Could not import file',
+    importNoData: 'No income or expense data found',
+    importFileLabel: '📄 File: ',
+    importMethod: 'Import Method:',
+    importSummaryIncome: 'Income',
+    importSummaryExpense: 'Expenses',
+    importSummarySaving: 'Savings',
+    importSummaryNet: 'Net Cash Flow',
+    importSummaryRunway: 'Emergency Reserve',
   },
 };
 function t(key, ...args){
@@ -477,7 +591,8 @@ if(LANG === 'en'){
   ['eyebrow','pageTitle','subtitle','incomePanelTitle','expensePanelTitle','savingPanelTitle',
    'scIncomeLabel','scExpenseLabel','scSavingLabel','remainingLabel','remainingNote',
    'runwayTitle','lblCurrentReserve','lblReserveUnit',
-   'lblCopySummary','lblExportCsv','lblExportJson','lblPrint'].forEach(id => {
+   'lblCopySummary','lblExportCsv','lblExportJson','lblPrint',
+   'lblImport','importModalTitle'].forEach(id => {
     const el = document.getElementById(id);
     if(el && EN[id]) el.textContent = EN[id];
   });
@@ -498,6 +613,28 @@ if(LANG === 'en'){
   if (bridgeLbl) bridgeLbl.textContent = EN.lblBridgeBtn;
   const bridgeAlertEl = document.getElementById('bridgeAlertText');
   if (bridgeAlertEl) bridgeAlertEl.textContent = EN.bridgeAlertDefault;
+  const flbl = document.getElementById('lblImportFile');
+  if (flbl) flbl.textContent = EN.importFileLabel;
+  const sMet = document.getElementById('lblImportMethod');
+  if (sMet) sMet.textContent = EN.importMethod;
+  const modeRepl = document.getElementById('lblModeReplace');
+  if (modeRepl && EN.importModeReplace) modeRepl.textContent = EN.importModeReplace;
+  const modeMrg = document.getElementById('lblModeMerge');
+  if (modeMrg && EN.importModeMerge) modeMrg.textContent = EN.importModeMerge;
+  const sInc = document.getElementById('lblImportSummaryIncome');
+  if (sInc) sInc.textContent = EN.importSummaryIncome;
+  const sExp = document.getElementById('lblImportSummaryExpense');
+  if (sExp) sExp.textContent = EN.importSummaryExpense;
+  const sSav = document.getElementById('lblImportSummarySaving');
+  if (sSav) sSav.textContent = EN.importSummarySaving;
+  const sNet = document.getElementById('lblImportSummaryNet');
+  if (sNet) sNet.textContent = EN.importSummaryNet;
+  const sRun = document.getElementById('lblImportSummaryRunway');
+  if (sRun) sRun.textContent = EN.importSummaryRunway;
+  const btnConf = document.getElementById('btnConfirmImport');
+  if (btnConf && EN.btnConfirmImport) btnConf.textContent = EN.btnConfirmImport;
+  const btnCanc = document.getElementById('btnCancelImportModal');
+  if (btnCanc && EN.btnCancelModal) btnCanc.textContent = EN.btnCancelModal;
 }
 
 // ── Canonical names & Translation helper ──────────────────────────────────
@@ -1689,10 +1826,660 @@ function exportJSON() {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+// ── Import Features (CSV, JSON, Preview & Apply) ──────────────────────────
+let pendingImportData = null;
+
+function parseCSVRows(csvText) {
+  if (csvText.charCodeAt(0) === 0xFEFF) {
+    csvText = csvText.slice(1);
+  }
+  const rows = [];
+  let currentRow = [];
+  let currentVal = '';
+  let inQuotes = false;
+  let i = 0;
+  const len = csvText.length;
+
+  while (i < len) {
+    const char = csvText[i];
+    if (inQuotes) {
+      if (char === '"') {
+        if (i + 1 < len && csvText[i + 1] === '"') {
+          currentVal += '"';
+          i += 2;
+          continue;
+        } else {
+          inQuotes = false;
+          i++;
+          continue;
+        }
+      } else {
+        currentVal += char;
+        i++;
+        continue;
+      }
+    } else {
+      if (char === '"') {
+        inQuotes = true;
+        i++;
+        continue;
+      } else if (char === ',') {
+        currentRow.push(currentVal.trim());
+        currentVal = '';
+        i++;
+        continue;
+      } else if (char === '\r') {
+        if (i + 1 < len && csvText[i + 1] === '\n') {
+          i++;
+        }
+        currentRow.push(currentVal.trim());
+        rows.push(currentRow);
+        currentRow = [];
+        currentVal = '';
+        i++;
+        continue;
+      } else if (char === '\n') {
+        currentRow.push(currentVal.trim());
+        rows.push(currentRow);
+        currentRow = [];
+        currentVal = '';
+        i++;
+        continue;
+      } else {
+        currentVal += char;
+        i++;
+        continue;
+      }
+    }
+  }
+  if (currentVal.length > 0 || currentRow.length > 0) {
+    currentRow.push(currentVal.trim());
+    rows.push(currentRow);
+  }
+  return rows;
+}
+
+function detectColumns(headerRow) {
+  let catCol = -1, itemCol = -1, amtCol = -1, noteCol = -1;
+  headerRow.forEach((col, idx) => {
+    const c = col.toLowerCase().trim();
+    if (c.includes('category') || c.includes('หมวด') || c.includes('ประเภท')) {
+      if (catCol === -1) catCol = idx;
+    } else if (c.includes('item') || c.includes('รายการ') || c.includes('ชื่อ') || c.includes('name')) {
+      if (itemCol === -1) itemCol = idx;
+    } else if (c.includes('amount') || c.includes('จำนวน') || c.includes('value') || c.includes('thb') || c.includes('บาท')) {
+      if (amtCol === -1) amtCol = idx;
+    } else if (c.includes('note') || c.includes('หมายเหตุ') || c.includes('remark') || c.includes('comment')) {
+      if (noteCol === -1) noteCol = idx;
+    }
+  });
+  if (catCol === -1) catCol = 0;
+  if (itemCol === -1) itemCol = 1;
+  if (amtCol === -1) amtCol = 2;
+  if (noteCol === -1) noteCol = 3;
+  return { catCol, itemCol, amtCol, noteCol };
+}
+
+function cleanField(val) {
+  if (typeof val !== 'string') return '';
+  let s = val.trim();
+  if (s.startsWith("'")) {
+    s = s.slice(1).trim();
+  }
+  return s;
+}
+
+function cleanAmount(val) {
+  if (typeof val === 'number') return isNaN(val) ? 0 : Math.max(0, val);
+  if (typeof val !== 'string') return 0;
+  let s = val.trim();
+  if (s.startsWith("'")) s = s.slice(1).trim();
+  s = s.replace(/,/g, '').replace(/[^\d.-]/g, '');
+  const num = parseFloat(s);
+  return isNaN(num) ? 0 : Math.max(0, num);
+}
+
+function isSubtotalRow(cat, item) {
+  const c = cat.toLowerCase();
+  const it = item.toLowerCase();
+  if (c === 'summary' || c === 'สรุป') return true;
+  if (it === 'total' || it === 'รวม') return true;
+  if (it.startsWith('total income') || it.startsWith('รวมรายได้')) return true;
+  if (it.startsWith('total expense') || it.startsWith('รวมค่าใช้จ่าย')) return true;
+  if (it.startsWith('total saving') || it.startsWith('รวมเงินออม')) return true;
+  if (it.includes('subtotal') || it.includes('รวมทั้งสิ้น')) return true;
+  if (it.includes('remaining money') || it.includes('remaining for investment') || it.includes('เงินคงเหลือสำหรับลงทุน') || it.includes('เงินคงเหลือ')) return true;
+  return false;
+}
+
+function handleImportFile(inputEl) {
+  if (!inputEl || !inputEl.files || !inputEl.files[0]) return;
+  const file = inputEl.files[0];
+  const fileName = file.name || 'import';
+  const reader = new FileReader();
+
+  reader.onload = function(e) {
+    try {
+      const text = e.target.result;
+      if (typeof text !== 'string' || !text.trim()) {
+        showBridgeNotification(t('importNoData') || (LANG === 'en' ? 'No income or expense data found' : 'ไม่พบข้อมูลรายได้หรือค่าใช้จ่าย'));
+        return;
+      }
+      const trimmed = text.trim();
+      const isJson = file.name.toLowerCase().endsWith('.json') ||
+        (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+        (trimmed.startsWith('[') && trimmed.endsWith(']'));
+
+      if (isJson) {
+        parseImportJSON(trimmed, fileName);
+      } else {
+        parseImportCSV(text, fileName);
+      }
+    } catch (err) {
+      console.error('Import error:', err);
+      showBridgeNotification(t('importError') || (LANG === 'en' ? 'Could not import file' : 'เกิดข้อผิดพลาดในการนำเข้าไฟล์'));
+    } finally {
+      inputEl.value = '';
+    }
+  };
+
+  reader.onerror = function() {
+    showBridgeNotification(t('importError') || (LANG === 'en' ? 'Could not import file' : 'เกิดข้อผิดพลาดในการนำเข้าไฟล์'));
+    inputEl.value = '';
+  };
+
+  reader.readAsText(file);
+}
+
+function parseImportJSON(text, fileName = 'data.json') {
+  let parsed;
+  try {
+    parsed = typeof text === 'string' ? JSON.parse(text) : text;
+  } catch (e) {
+    showBridgeNotification(t('importError') || (LANG === 'en' ? 'Could not import file' : 'เกิดข้อผิดพลาดในการนำเข้าไฟล์'));
+    return null;
+  }
+  if (!parsed || typeof parsed !== 'object') {
+    showBridgeNotification(t('importError') || (LANG === 'en' ? 'Could not import file' : 'เกิดข้อผิดพลาดในการนำเข้าไฟล์'));
+    return null;
+  }
+
+  let dataObj = null;
+  let detectedPvd = null;
+
+  if (parsed.data && typeof parsed.data === 'object' && parsed.data[STORAGE_KEY]) {
+    try {
+      dataObj = typeof parsed.data[STORAGE_KEY] === 'string' ? JSON.parse(parsed.data[STORAGE_KEY]) : parsed.data[STORAGE_KEY];
+    } catch(e){}
+    if (parsed.data[PVD_PERCENT_KEY]) {
+      const p = parseFloat(parsed.data[PVD_PERCENT_KEY]);
+      if (!isNaN(p) && p >= 0 && p <= 100) detectedPvd = p;
+    }
+  } else if (parsed[STORAGE_KEY]) {
+    try {
+      dataObj = typeof parsed[STORAGE_KEY] === 'string' ? JSON.parse(parsed[STORAGE_KEY]) : parsed[STORAGE_KEY];
+    } catch(e){}
+    if (parsed[PVD_PERCENT_KEY]) {
+      const p = parseFloat(parsed[PVD_PERCENT_KEY]);
+      if (!isNaN(p) && p >= 0 && p <= 100) detectedPvd = p;
+    }
+  } else if (parsed.data && typeof parsed.data === 'object' && (Array.isArray(parsed.data.incomes) || Array.isArray(parsed.data.expenses))) {
+    dataObj = parsed.data;
+  } else if (Array.isArray(parsed.incomes) || Array.isArray(parsed.expenses)) {
+    dataObj = parsed;
+  }
+
+  if (!dataObj || (!Array.isArray(dataObj.incomes) && !Array.isArray(dataObj.expenses))) {
+    showBridgeNotification(t('importNoData') || (LANG === 'en' ? 'No income or expense data found' : 'ไม่พบข้อมูลรายได้หรือค่าใช้จ่าย'));
+    return null;
+  }
+
+  if (detectedPvd === null) {
+    if (typeof dataObj.pvdPercent === 'number' && !isNaN(dataObj.pvdPercent) && dataObj.pvdPercent >= 0 && dataObj.pvdPercent <= 100) {
+      detectedPvd = dataObj.pvdPercent;
+    } else if (typeof parsed.pvdPercent === 'number' && !isNaN(parsed.pvdPercent) && parsed.pvdPercent >= 0 && parsed.pvdPercent <= 100) {
+      detectedPvd = parsed.pvdPercent;
+    }
+  }
+
+  const incomes = Array.isArray(dataObj.incomes) ? dataObj.incomes.map((it, idx) => ({
+    name: String(it.name || (LANG === 'en' ? `Income ${idx+1}` : `รายได้ ${idx+1}`)),
+    value: Math.max(0, parseFloat(it.value) || 0),
+    isSalary: !!it.isSalary || (idx === 0)
+  })) : [];
+
+  let expenses = Array.isArray(dataObj.expenses) ? dataObj.expenses.map((it, idx) => {
+    const aType = getAutoType(it);
+    return {
+      name: String(it.name || (LANG === 'en' ? `Expense ${idx+1}` : `ค่าใช้จ่าย ${idx+1}`)),
+      value: Math.max(0, parseFloat(it.value) || 0),
+      auto: !!aType || !!it.auto,
+      autoType: aType || undefined
+    };
+  }) : [];
+
+  if (!expenses.some(e => getAutoType(e) === 'tax')) {
+    expenses.unshift({ name: AUTO_TAX_NAME_TH, value: 0, auto: true, autoType: 'tax' });
+  }
+  if (!expenses.some(e => getAutoType(e) === 'sso')) {
+    expenses.unshift({ name: AUTO_SSO_NAME_TH, value: 0, auto: true, autoType: 'sso' });
+  }
+  if (!expenses.some(e => getAutoType(e) === 'pvd')) {
+    expenses.unshift({ name: AUTO_PVD_NAME_TH, value: 0, auto: true, autoType: 'pvd' });
+  }
+  expenses.forEach(e => {
+    const aType = getAutoType(e);
+    if (aType) {
+      e.auto = true;
+      e.autoType = aType;
+      e.name = aType === 'tax' ? AUTO_TAX_NAME_TH : aType === 'sso' ? AUTO_SSO_NAME_TH : AUTO_PVD_NAME_TH;
+    }
+  });
+
+  const savings = Array.isArray(dataObj.savings) ? dataObj.savings.map((it, idx) => ({
+    name: String(it.name || (LANG === 'en' ? `Savings ${idx+1}` : `เงินออม ${idx+1}`)),
+    value: Math.max(0, parseFloat(it.value) || 0)
+  })) : [];
+
+  const manualOverrides = (dataObj.manualOverrides && typeof dataObj.manualOverrides === 'object')
+    ? { tax: !!dataObj.manualOverrides.tax, sso: !!dataObj.manualOverrides.sso, pvd: !!dataObj.manualOverrides.pvd }
+    : { tax: false, sso: false, pvd: false };
+
+  const showEmergencyRunway = typeof dataObj.showEmergencyRunway === 'boolean' ? dataObj.showEmergencyRunway : false;
+  const currentEmergencyReserve = Number(dataObj.currentEmergencyReserve) >= 0 ? Number(dataObj.currentEmergencyReserve) : 0;
+
+  const candidate = {
+    incomes,
+    expenses,
+    savings,
+    manualOverrides,
+    showEmergencyRunway,
+    currentEmergencyReserve,
+    pvdPercent: detectedPvd !== null ? detectedPvd : pvdPercent
+  };
+
+  showImportPreview(candidate, fileName, 'JSON');
+  return candidate;
+}
+
+function parseImportCSV(text, fileName = 'data.csv') {
+  if (typeof text !== 'string' || !text.trim()) {
+    showBridgeNotification(t('importNoData') || (LANG === 'en' ? 'No income or expense data found' : 'ไม่พบข้อมูลรายได้หรือค่าใช้จ่าย'));
+    return null;
+  }
+  const rows = parseCSVRows(text);
+  if (rows.length === 0) {
+    showBridgeNotification(t('importNoData') || (LANG === 'en' ? 'No income or expense data found' : 'ไม่พบข้อมูลรายได้หรือค่าใช้จ่าย'));
+    return null;
+  }
+
+  let headerIdx = -1;
+  let colMap = null;
+  for (let i = 0; i < Math.min(5, rows.length); i++) {
+    const row = rows[i];
+    const rowStr = row.join(' ').toLowerCase();
+    if (rowStr.includes('category') || rowStr.includes('หมวด') || rowStr.includes('item') || rowStr.includes('รายการ') || rowStr.includes('amount') || rowStr.includes('จำนวน')) {
+      headerIdx = i;
+      colMap = detectColumns(row);
+      break;
+    }
+  }
+
+  if (!colMap) {
+    colMap = { catCol: 0, itemCol: 1, amtCol: 2, noteCol: 3 };
+  }
+
+  const startIdx = headerIdx >= 0 ? headerIdx + 1 : 0;
+  const candidate = {
+    incomes: [],
+    expenses: [],
+    savings: [],
+    manualOverrides: { tax: false, sso: false, pvd: false },
+    showEmergencyRunway: false,
+    currentEmergencyReserve: 0,
+    pvdPercent: pvdPercent
+  };
+
+  for (let i = startIdx; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || row.length === 0 || (row.length === 1 && !row[0])) continue;
+
+    const cat = cleanField(row[colMap.catCol] || '');
+    const item = cleanField(row[colMap.itemCol] || '');
+    const amount = cleanAmount(row[colMap.amtCol]);
+    const note = cleanField(row[colMap.noteCol] || '');
+
+    if (!item && amount === 0) continue;
+
+    const isRunwayCat = cat.toLowerCase().includes('runway') || cat.includes('เงินสำรอง') || cat.includes('สำรองฉุกเฉิน');
+    if (isRunwayCat) {
+      if (item.toLowerCase().includes('runway') || item.includes('ระยะเวลา')) {
+        if (amount > 0) candidate.showEmergencyRunway = true;
+      } else if (item.toLowerCase().includes('reserve') || item.includes('เงินสำรองฉุกเฉิน') || item.includes('สำรองฉุกเฉิน') || item.includes('เงินสำรอง')) {
+        candidate.currentEmergencyReserve = amount;
+        if (amount > 0) candidate.showEmergencyRunway = true;
+      }
+      continue;
+    }
+
+    if (isSubtotalRow(cat, item)) continue;
+
+    const combinedText = item + ' ' + note;
+    const isPvdText = /(?:pvd|provident\s*fund|กองทุนสำรองเลี้ยงชีพ)/i.test(combinedText);
+    if (isPvdText) {
+      const pvdMatch = combinedText.match(/(?:pvd|provident\s*fund|กองทุนสำรองเลี้ยงชีพ).*?\(?(\d+(?:\.\d+)?)\s*%\)?/i) ||
+                       combinedText.match(/(\d+(?:\.\d+)?)\s*%/);
+      if (pvdMatch) {
+        const pct = parseFloat(pvdMatch[1]);
+        if (!isNaN(pct) && pct >= 0 && pct <= 100) {
+          candidate.pvdPercent = pct;
+        }
+      }
+    }
+
+    const isIncomeCat = cat.toLowerCase().includes('income') || cat.includes('รายได้');
+    const isExpenseCat = cat.toLowerCase().includes('expense') || cat.includes('ค่าใช้จ่าย') || cat.includes('รายจ่าย');
+    const isSavingCat = cat.toLowerCase().includes('saving') || cat.includes('เงินออม') || cat.includes('ออม');
+
+    if (isIncomeCat) {
+      const isSal = note.toLowerCase().includes('salary') || note.includes('เงินเดือน') ||
+                    item.toLowerCase().includes('salary') || item.includes('เงินเดือน');
+      candidate.incomes.push({ name: item, value: amount, isSalary: isSal });
+    } else if (isExpenseCat) {
+      const aType = getAutoType({ name: item }) ||
+                    (note.toLowerCase().includes('tax') || note.includes('ภาษี') ? 'tax' :
+                     note.toLowerCase().includes('sso') || note.includes('ประกันสังคม') ? 'sso' :
+                     note.toLowerCase().includes('pvd') || note.includes('กองทุนสำรองเลี้ยงชีพ') ? 'pvd' : null);
+      candidate.expenses.push({
+        name: item,
+        value: amount,
+        auto: !!aType,
+        autoType: aType || undefined
+      });
+    } else if (isSavingCat) {
+      candidate.savings.push({ name: item, value: amount });
+    } else {
+      if (item.toLowerCase().includes('salary') || item.includes('เงินเดือน') || note.toLowerCase().includes('salary') || note.includes('เงินเดือน')) {
+        candidate.incomes.push({ name: item, value: amount, isSalary: true });
+      } else if (item.toLowerCase().includes('saving') || item.includes('เงินออม') || item.includes('สำรอง')) {
+        candidate.savings.push({ name: item, value: amount });
+      } else {
+        const aType = getAutoType({ name: item });
+        candidate.expenses.push({
+          name: item,
+          value: amount,
+          auto: !!aType,
+          autoType: aType || undefined
+        });
+      }
+    }
+  }
+
+  if (!candidate.expenses.some(e => getAutoType(e) === 'tax')) {
+    candidate.expenses.unshift({ name: AUTO_TAX_NAME_TH, value: 0, auto: true, autoType: 'tax' });
+  }
+  if (!candidate.expenses.some(e => getAutoType(e) === 'sso')) {
+    candidate.expenses.unshift({ name: AUTO_SSO_NAME_TH, value: 0, auto: true, autoType: 'sso' });
+  }
+  if (!candidate.expenses.some(e => getAutoType(e) === 'pvd')) {
+    candidate.expenses.unshift({ name: AUTO_PVD_NAME_TH, value: 0, auto: true, autoType: 'pvd' });
+  }
+  candidate.expenses.forEach(e => {
+    const aType = getAutoType(e);
+    if (aType) {
+      e.auto = true;
+      e.autoType = aType;
+      e.name = aType === 'tax' ? AUTO_TAX_NAME_TH : aType === 'sso' ? AUTO_SSO_NAME_TH : AUTO_PVD_NAME_TH;
+    }
+  });
+
+  if (candidate.incomes.length > 0 && !candidate.incomes.some(i => i.isSalary)) {
+    candidate.incomes[0].isSalary = true;
+  }
+
+  const nonAutoExp = candidate.expenses.filter(e => !getAutoType(e));
+  if (candidate.incomes.length === 0 && nonAutoExp.length === 0 && candidate.savings.length === 0) {
+    showBridgeNotification(t('importNoData') || (LANG === 'en' ? 'No income or expense data found' : 'ไม่พบข้อมูลรายได้หรือค่าใช้จ่าย'));
+    return null;
+  }
+
+  showImportPreview(candidate, fileName, 'CSV');
+  return candidate;
+}
+
+function showImportPreview(candidate, fileName, format) {
+  pendingImportData = candidate;
+  if (typeof document === 'undefined') return;
+
+  const isEN = LANG === 'en';
+  const nameEl = document.getElementById('importFileName');
+  if (nameEl) nameEl.textContent = fileName || '—';
+
+  const badgeEl = document.getElementById('importFormatBadge');
+  if (badgeEl) badgeEl.textContent = format || 'FILE';
+
+  const incCount = (candidate.incomes || []).length;
+  const incTotal = (candidate.incomes || []).reduce((s, it) => s + (Number(it.value) || 0), 0);
+
+  const salary = ((candidate.incomes || []).find((it, idx) => isSalaryRow(it, idx)) || {}).value || 0;
+  const candPvdPct = (candidate.pvdPercent != null && !isNaN(candidate.pvdPercent)) ? candidate.pvdPercent : pvdPercent;
+
+  let expCount = 0;
+  let expTotal = 0;
+  (candidate.expenses || []).forEach(it => {
+    const aType = getAutoType(it);
+    let v = Number(it.value) || 0;
+    if (aType) {
+      if (v === 0 && salary > 0) {
+        if (aType === 'tax') v = calculateMonthlyTax(salary, candPvdPct);
+        else if (aType === 'sso') v = calculateSSO(salary);
+        else if (aType === 'pvd') v = calculatePVD(salary, candPvdPct);
+      }
+      if (v > 0) expCount++;
+    } else {
+      expCount++;
+    }
+    expTotal += v;
+  });
+
+  const savCount = (candidate.savings || []).length;
+  const savTotal = (candidate.savings || []).reduce((s, it) => s + (Number(it.value) || 0), 0);
+  const remaining = Math.round(incTotal - expTotal - savTotal);
+
+  const incSummaryEl = document.getElementById('importIncomeSummary');
+  if (incSummaryEl) incSummaryEl.textContent = `${fmtCurrency(incTotal)} (${incCount} ${isEN ? 'items' : 'รายการ'})`;
+
+  const expSummaryEl = document.getElementById('importExpenseSummary');
+  if (expSummaryEl) expSummaryEl.textContent = `${fmtCurrency(expTotal)} (${expCount} ${isEN ? 'items' : 'รายการ'})`;
+
+  const savSummaryEl = document.getElementById('importSavingSummary');
+  if (savSummaryEl) savSummaryEl.textContent = `${fmtCurrency(savTotal)} (${savCount} ${isEN ? 'items' : 'รายการ'})`;
+
+  const remSummaryEl = document.getElementById('importRemainingSummary');
+  if (remSummaryEl) {
+    remSummaryEl.textContent = fmtCurrency(remaining);
+    remSummaryEl.style.color = remaining > 0 ? 'var(--core)' : remaining < 0 ? 'var(--warn)' : 'var(--ink)';
+  }
+
+  const runwayRow = document.getElementById('importRunwayRow');
+  const runwaySummaryEl = document.getElementById('importRunwaySummary');
+  if (candidate.showEmergencyRunway || candidate.currentEmergencyReserve > 0) {
+    const reserve = Number(candidate.currentEmergencyReserve) || 0;
+    const runwayMonths = expTotal > 0 ? (reserve / expTotal).toFixed(1) : '—';
+    if (runwaySummaryEl) {
+      runwaySummaryEl.textContent = `${fmtCurrency(reserve)} (${runwayMonths} ${isEN ? 'months' : 'เดือน'})`;
+    }
+    if (runwayRow) runwayRow.style.display = 'flex';
+  } else {
+    if (runwayRow) runwayRow.style.display = 'none';
+  }
+
+  const rReplace = document.getElementById('importModeReplace');
+  if (rReplace) rReplace.checked = true;
+
+  const modal = document.getElementById('importModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function confirmImport() {
+  if (!pendingImportData) {
+    closeImportModal();
+    return;
+  }
+
+  const isEN = LANG === 'en';
+  const modeReplaceEl = document.getElementById('importModeReplace');
+  const isReplace = modeReplaceEl ? modeReplaceEl.checked : true;
+
+  const candidate = pendingImportData;
+
+  if (isReplace) {
+    state.incomes = candidate.incomes.map(item => ({ ...item }));
+    if (state.incomes.length === 0) state.incomes.push({ name: 'เงินเดือน', value: 0, isSalary: true });
+    state.expenses = candidate.expenses.map(item => ({ ...item }));
+    state.savings = (candidate.savings || []).map(item => ({ ...item }));
+
+    if (candidate.manualOverrides) {
+      manualOverrides.tax = !!candidate.manualOverrides.tax;
+      manualOverrides.sso = !!candidate.manualOverrides.sso;
+      manualOverrides.pvd = !!candidate.manualOverrides.pvd;
+    } else {
+      manualOverrides.tax = false;
+      manualOverrides.sso = false;
+      manualOverrides.pvd = false;
+    }
+
+    if (candidate.pvdPercent != null && !isNaN(candidate.pvdPercent)) {
+      pvdPercent = candidate.pvdPercent;
+      try { localStorage.setItem(PVD_PERCENT_KEY, String(pvdPercent)); } catch(e){}
+    }
+
+    state.showEmergencyRunway = !!candidate.showEmergencyRunway;
+    state.currentEmergencyReserve = Number(candidate.currentEmergencyReserve) || 0;
+  } else {
+    // Merge mode
+    (candidate.incomes || []).forEach(candInc => {
+      const isSal = isSalaryRow(candInc);
+      if (isSal) {
+        const sal = state.incomes.find((it, idx) => isSalaryRow(it, idx));
+        if (sal) {
+          if (candInc.value > 0) sal.value = candInc.value;
+        } else {
+          state.incomes.unshift({ ...candInc });
+        }
+      } else {
+        const existing = state.incomes.find(it => !isSalaryRow(it) && String(it.name || '').trim().toLowerCase() === String(candInc.name || '').trim().toLowerCase());
+        if (existing) {
+          existing.value = candInc.value;
+        } else {
+          state.incomes.push({ ...candInc });
+        }
+      }
+    });
+
+    (candidate.expenses || []).forEach(candExp => {
+      const aType = getAutoType(candExp);
+      if (aType) {
+        const autoExp = state.expenses.find(it => getAutoType(it) === aType);
+        if (autoExp && candExp.value > 0) {
+          autoExp.value = candExp.value;
+        }
+      } else {
+        const existing = state.expenses.find(it => !getAutoType(it) && String(it.name || '').trim().toLowerCase() === String(candExp.name || '').trim().toLowerCase());
+        if (existing) {
+          existing.value = candExp.value;
+        } else {
+          state.expenses.push({ ...candExp });
+        }
+      }
+    });
+
+    if (!Array.isArray(state.savings)) state.savings = [];
+    (candidate.savings || []).forEach(candSav => {
+      const existing = state.savings.find(it => String(it.name || '').trim().toLowerCase() === String(candSav.name || '').trim().toLowerCase());
+      if (existing) {
+        existing.value = candSav.value;
+      } else {
+        state.savings.push({ ...candSav });
+      }
+    });
+
+    if (candidate.manualOverrides) {
+      if (candidate.manualOverrides.tax) manualOverrides.tax = true;
+      if (candidate.manualOverrides.sso) manualOverrides.sso = true;
+      if (candidate.manualOverrides.pvd) manualOverrides.pvd = true;
+    }
+
+    if (candidate.pvdPercent != null && !isNaN(candidate.pvdPercent)) {
+      pvdPercent = candidate.pvdPercent;
+      try { localStorage.setItem(PVD_PERCENT_KEY, String(pvdPercent)); } catch(e){}
+    }
+
+    if (candidate.showEmergencyRunway) {
+      state.showEmergencyRunway = true;
+    }
+    if (candidate.currentEmergencyReserve > 0) {
+      state.currentEmergencyReserve = candidate.currentEmergencyReserve;
+    }
+  }
+
+  const txtReserve = document.getElementById('txtCurrentReserve');
+  if (txtReserve) {
+    txtReserve.value = state.currentEmergencyReserve || '';
+  }
+
+  const chkRunway = document.getElementById('chkShowRunway');
+  if (chkRunway) {
+    chkRunway.checked = !!state.showEmergencyRunway;
+    const runwayContent = document.getElementById('runwayContent');
+    if (runwayContent) runwayContent.style.display = state.showEmergencyRunway ? '' : 'none';
+  }
+
+  const pvdInp = document.getElementById('pvdPctInput');
+  if (pvdInp) {
+    pvdInp.value = pvdPercent;
+  }
+
+  updateAutoExpenses(pvdPercent);
+  renderRows();
+  renderPvdRow();
+  compute();
+  saveState();
+
+  closeImportModal();
+
+  const incCount = state.incomes.length;
+  const expCount = state.expenses.filter(e => !getAutoType(e) || e.value > 0).length;
+  const savCount = (state.savings || []).length;
+  const summaryMsg = (t('importSuccess') || (LANG === 'en' ? '✓ Data imported successfully' : '✓ นำเข้าข้อมูลเรียบร้อยแล้ว')) +
+    (LANG === 'en' ? ` (${incCount} incomes, ${expCount} expenses, ${savCount} savings)` : ` (รายได้ ${incCount}, ค่าใช้จ่าย ${expCount}, เงินออม ${savCount} รายการ)`);
+  showBridgeNotification(summaryMsg);
+}
+
+function closeImportModal() {
+  const modal = document.getElementById('importModal');
+  if (modal) modal.style.display = 'none';
+  pendingImportData = null;
+}
+
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const modal = document.getElementById('importModal');
+    if (modal && modal.style.display !== 'none') {
+      closeImportModal();
+    }
+  }
+});
+
 // Expose on window
 window.exportCSV = exportCSV;
 window.copySummary = copySummary;
 window.exportJSON = exportJSON;
+window.handleImportFile = handleImportFile;
+window.confirmImport = confirmImport;
+window.closeImportModal = closeImportModal;
+window.parseImportJSON = parseImportJSON;
+window.parseImportCSV = parseImportCSV;
 
 // ── Init ───────────────────────────────────────────────────────────────────
 checkPendingLumpSum();
