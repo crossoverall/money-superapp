@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="1.3.32">
+<meta name="version" content="1.4.0">
 <meta name="theme-color" content="#2F8B76">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -12,6 +12,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon.svg">
 <link rel="stylesheet" href="css/theme.css">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <meta name="description" content="Money Superapp — financial tools (dashboard, rebalance, payslip simulator, income tax, PVD tax, remaining money, debt payoff) in Thai and English with light/dark theme.">
 <title>Money Superapp</title>
 <style>
@@ -306,7 +307,7 @@
       <button data-theme-btn="light" id="btn-theme-light" title="☀ Light Theme"><span class="theme-icon">☀</span></button>
       <button data-theme-btn="dark" id="btn-theme-dark" title="☾ Dark Theme"><span class="theme-icon">☾</span></button>
     </div>
-    <span class="version-badge">v1.3.32</span>
+    <span class="version-badge">v1.4.0</span>
     <button id="btn-settings-modal" onclick="openSettingsModal()" title="Data & Backup Management">
       <span class="settings-icon">⚙️</span>
     </button>
@@ -318,7 +319,7 @@
 <!-- Privacy Footer Notice -->
 <div class="privacy-bar">
   <span id="lbl-privacy-footer">🔒 100% Client-Side Privacy — ทุกการคำนวณและข้อมูลถูกเก็บไว้ในอุปกรณ์ของคุณเท่านั้น ไม่มีการส่งข้อมูลสู่เซิร์ฟเวอร์</span>
-  <span style="color: #64748b; font-size: 10px;">Money Superapp v1.3.32</span>
+  <span style="color: #64748b; font-size: 10px;">Money Superapp v1.4.0</span>
 </div>
 
 <!-- Mobile Bottom Navigation Bar (Visible on Mobile <= 768px) -->
@@ -368,6 +369,72 @@
     </div>
 
     <div style="display: flex; flex-direction: column; gap: 10px;">
+      <!-- Google Drive Cloud Sync -->
+      <div style="background: #0E1512; padding: 14px; border-radius: 10px; border: 1px solid #24352C;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+          <div>
+            <div style="font-weight: 700; font-size: 13.5px; display: flex; align-items: center; gap: 6px;">
+              <span>☁️</span>
+              <span id="lbl-gdrive-title">Google Drive Cloud Sync</span>
+            </div>
+            <div style="font-size: 11px; color: #8FA69C; margin-top: 2px;" id="lbl-gdrive-desc">สำรองและกู้คืนข้อมูลผ่าน Google Drive ส่วนตัวของคุณ (AppData Folder)</div>
+          </div>
+        </div>
+
+        <!-- Google Auth State Container -->
+        <div id="gdrive-auth-container" style="margin-top: 8px;">
+          <!-- State 1: Signed Out -->
+          <div id="gdrive-signed-out" style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 8px; border: 1px solid #24352C;">
+            <div style="font-size: 11.5px; color: #8FA69C;" id="lbl-gdrive-not-connected">ยังไม่ได้เชื่อมต่อบัญชี Google</div>
+            <button onclick="handleGoogleSignIn()" id="btn-google-signin" style="display: inline-flex; align-items: center; gap: 8px; background: #FFFFFF; color: #1f2937; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">
+              <svg width="15" height="15" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+              <span id="lbl-btn-google-signin">เข้าสู่ระบบด้วย Google</span>
+            </button>
+          </div>
+
+          <!-- State 2: Signed In -->
+          <div id="gdrive-signed-in" style="display: none; flex-direction: column; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(47, 139, 118, 0.1); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(47, 139, 118, 0.25);">
+              <div style="display: flex; align-items: center; gap: 8px; overflow: hidden;">
+                <span id="gdrive-user-avatar" style="width: 24px; height: 24px; border-radius: 50%; background: #2F8B76; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff;">👤</span>
+                <span id="gdrive-user-email" style="font-size: 12px; font-weight: 600; color: #EAF2EE; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">user@gmail.com</span>
+              </div>
+              <button onclick="handleGoogleSignOut()" id="btn-google-signout" style="background: none; border: 1px solid #24352C; color: #8FA69C; padding: 4px 8px; border-radius: 5px; font-size: 11px; cursor: pointer;">
+                <span id="lbl-btn-google-signout">ออกจากระบบ</span>
+              </button>
+            </div>
+
+            <!-- Sync Action Buttons -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px;">
+              <button onclick="saveToGoogleDrive()" id="btn-gdrive-upload" style="display: flex; align-items: center; justify-content: center; gap: 6px; background: #2F8B76; color: #fff; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                <span id="lbl-btn-gdrive-upload">📤 สำรองขึ้น Drive</span>
+              </button>
+              <button onclick="restoreFromGoogleDrive()" id="btn-gdrive-download" style="display: flex; align-items: center; justify-content: center; gap: 6px; background: #2563eb; color: #fff; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                <span id="lbl-btn-gdrive-download">📥 กู้คืนจาก Drive</span>
+              </button>
+            </div>
+
+            <!-- Sync Status Text -->
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: #8FA69C; padding: 0 2px;">
+              <span id="lbl-gdrive-last-sync">สำรองล่าสุด: ยังไม่เคยสำรอง</span>
+              <span id="gdrive-sync-spinner" style="display: none; color: #4FA894;">⏳ กำลังทำงาน...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Optional Custom Client ID toggle for self-hosters -->
+        <details style="margin-top: 10px; font-size: 11px; color: #8FA69C;">
+          <summary style="cursor: pointer; user-select: none;" id="lbl-gdrive-advanced">⚙️ การตั้งค่าขั้นสูง (Client ID)</summary>
+          <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px; background: rgba(0,0,0,0.25); padding: 8px; border-radius: 6px; border: 1px solid #24352C;">
+            <div style="display: flex; gap: 6px;">
+              <input type="text" id="inputGoogleClientId" placeholder="Google OAuth Client ID" style="flex: 1; background: #131E19; border: 1px solid #24352C; color: #EAF2EE; font-size: 11px; padding: 4px 8px; border-radius: 4px;">
+              <button onclick="saveCustomClientId()" style="background: #24352C; color: #EAF2EE; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;" id="lbl-btn-save-client-id">บันทึก</button>
+            </div>
+            <div style="font-size: 10px; color: #5B7168;" id="lbl-gdrive-client-id-note">ค่าเริ่มต้น: ผูกกับ https://crossoverall.github.io</div>
+          </div>
+        </details>
+      </div>
+
       <!-- Export -->
       <div style="display: flex; justify-content: space-between; align-items: center; background: #0E1512; padding: 12px 14px; border-radius: 10px; border: 1px solid #24352C;">
         <div>
@@ -429,7 +496,19 @@
       btnImport: "📥 นำเข้า",
       resetTitle: "ล้างข้อมูลทั้งหมด (Master Reset)",
       resetDesc: "ลบข้อมูลในเครื่องมือทั้งหมดและคืนค่าเริ่มต้น",
-      btnReset: "🗑️ ล้างทั้งหมด"
+      btnReset: "🗑️ ล้างทั้งหมด",
+      gdriveTitle: "Google Drive Cloud Sync",
+      gdriveDesc: "สำรองและกู้คืนข้อมูลผ่าน Google Drive ส่วนตัวของคุณ (AppData Folder)",
+      gdriveNotConnected: "ยังไม่ได้เชื่อมต่อบัญชี Google",
+      btnGoogleSignin: "เข้าสู่ระบบด้วย Google",
+      btnGoogleSignout: "ออกจากระบบ",
+      btnGdriveUpload: "📤 สำรองขึ้น Drive",
+      btnGdriveDownload: "📥 กู้คืนจาก Drive",
+      gdriveNeverSynced: "สำรองล่าสุด: ยังไม่เคยสำรอง",
+      gdriveLastSync: t => `สำรองล่าสุด: ${t}`,
+      gdriveAdvanced: "⚙️ การตั้งค่าขั้นสูง (Client ID)",
+      btnSaveClientId: "บันทึก",
+      gdriveClientIdNote: "ค่าเริ่มต้น: ผูกกับ https://crossoverall.github.io"
     },
     en: {
       settingsBtn: "Data",
@@ -445,7 +524,19 @@
       btnImport: "📥 Import",
       resetTitle: "Master Reset (Clear All Data)",
       resetDesc: "Delete data across all tools and reset to defaults",
-      btnReset: "🗑️ Reset All"
+      btnReset: "🗑️ Reset All",
+      gdriveTitle: "Google Drive Cloud Sync",
+      gdriveDesc: "Backup and restore data via your private Google Drive (AppData Folder)",
+      gdriveNotConnected: "Google Account not connected",
+      btnGoogleSignin: "Sign in with Google",
+      btnGoogleSignout: "Sign out",
+      btnGdriveUpload: "📤 Save to Drive",
+      btnGdriveDownload: "📥 Restore from Drive",
+      gdriveNeverSynced: "Last backup: Never",
+      gdriveLastSync: t => `Last backup: ${t}`,
+      gdriveAdvanced: "⚙️ Advanced Settings (Client ID)",
+      btnSaveClientId: "Save",
+      gdriveClientIdNote: "Default: Configured for https://crossoverall.github.io"
     }
   };
 
@@ -487,9 +578,364 @@
     if(document.getElementById('lbl-reset-title')) document.getElementById('lbl-reset-title').textContent = t.resetTitle;
     if(document.getElementById('lbl-reset-desc')) document.getElementById('lbl-reset-desc').textContent = t.resetDesc;
     if(document.getElementById('lbl-btn-reset')) document.getElementById('lbl-btn-reset').textContent = t.btnReset;
+
+    if(document.getElementById('lbl-gdrive-title')) document.getElementById('lbl-gdrive-title').textContent = t.gdriveTitle;
+    if(document.getElementById('lbl-gdrive-desc')) document.getElementById('lbl-gdrive-desc').textContent = t.gdriveDesc;
+    if(document.getElementById('lbl-gdrive-not-connected')) document.getElementById('lbl-gdrive-not-connected').textContent = t.gdriveNotConnected;
+    if(document.getElementById('lbl-btn-google-signin')) document.getElementById('lbl-btn-google-signin').textContent = t.btnGoogleSignin;
+    if(document.getElementById('lbl-btn-google-signout')) document.getElementById('lbl-btn-google-signout').textContent = t.btnGoogleSignout;
+    if(document.getElementById('lbl-btn-gdrive-upload')) document.getElementById('lbl-btn-gdrive-upload').textContent = t.btnGdriveUpload;
+    if(document.getElementById('lbl-btn-gdrive-download')) document.getElementById('lbl-btn-gdrive-download').textContent = t.btnGdriveDownload;
+    if(document.getElementById('lbl-gdrive-advanced')) document.getElementById('lbl-gdrive-advanced').textContent = t.gdriveAdvanced;
+    if(document.getElementById('lbl-btn-save-client-id')) document.getElementById('lbl-btn-save-client-id').textContent = t.btnSaveClientId;
+    if(document.getElementById('lbl-gdrive-client-id-note')) document.getElementById('lbl-gdrive-client-id-note').textContent = t.gdriveClientIdNote;
+    updateGoogleUI();
+  }
+
+  // --- Google Drive Cloud Sync Integration ---
+  const DEFAULT_GOOGLE_CLIENT_ID = '1070703131970-ujtq2m3ea48f0f632c2adc7e8caq5cao.apps.googleusercontent.com';
+  let googleTokenClient = null;
+  let googleAccessToken = null;
+  let googleTokenExpiry = 0;
+
+  function getGoogleClientId() {
+    try {
+      return localStorage.getItem('moneySuperapp.googleClientId') || DEFAULT_GOOGLE_CLIENT_ID;
+    } catch(e) {
+      return DEFAULT_GOOGLE_CLIENT_ID;
+    }
+  }
+
+  function saveCustomClientId() {
+    const input = document.getElementById('inputGoogleClientId');
+    if (!input) return;
+    const val = input.value.trim();
+    try {
+      if (val) {
+        localStorage.setItem('moneySuperapp.googleClientId', val);
+      } else {
+        localStorage.removeItem('moneySuperapp.googleClientId');
+      }
+      alert(getLang() === 'en' ? 'Client ID updated.' : 'บันทึก Client ID เรียบร้อย');
+      googleTokenClient = null;
+      updateGoogleUI();
+    } catch(e) {}
+  }
+
+  function initGoogleTokenClient(onSuccessCallback) {
+    if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
+      alert(getLang() === 'en'
+        ? 'Google Identity Services is loading or unavailable. Please check your internet connection.'
+        : 'ไม่สามารถโหลดบริการ Google Identity ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต');
+      return false;
+    }
+    const clientId = getGoogleClientId();
+    try {
+      googleTokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: 'https://www.googleapis.com/auth/drive.appdata email profile',
+        callback: async (resp) => {
+          if (resp.error !== undefined) {
+            console.error('Google Auth Error:', resp);
+            alert((getLang() === 'en' ? 'Google authentication failed: ' : 'การยืนยันตัวตนกับ Google ล้มเหลว: ') + (resp.error_description || resp.error));
+            updateGoogleUI();
+            return;
+          }
+          googleAccessToken = resp.access_token;
+          googleTokenExpiry = Date.now() + ((resp.expires_in || 3599) * 1000);
+          try {
+            sessionStorage.setItem('moneySuperapp.googleToken', googleAccessToken);
+            sessionStorage.setItem('moneySuperapp.googleTokenExpiry', String(googleTokenExpiry));
+          } catch(e) {}
+          await fetchGoogleUserInfo();
+          updateGoogleUI();
+          if (typeof onSuccessCallback === 'function') {
+            onSuccessCallback();
+          }
+        }
+      });
+      return true;
+    } catch(err) {
+      console.error('initTokenClient error:', err);
+      alert((getLang() === 'en' ? 'Failed to initialize Google Login: ' : 'ไม่สามารถเริ่มต้นระบบ Google Login ได้: ') + err.message);
+      return false;
+    }
+  }
+
+  async function fetchGoogleUserInfo() {
+    if (!googleAccessToken) return;
+    try {
+      const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${googleAccessToken}` }
+      });
+      if (res.ok) {
+        const info = await res.json();
+        localStorage.setItem('moneySuperapp.googleUser', JSON.stringify({
+          email: info.email || '',
+          name: info.name || '',
+          picture: info.picture || ''
+        }));
+      }
+    } catch(e) {}
+  }
+
+  function handleGoogleSignIn(afterSignInCallback) {
+    if (!initGoogleTokenClient(afterSignInCallback)) return;
+    // Check if we already have an active valid token in memory or sessionStorage
+    try {
+      const savedToken = sessionStorage.getItem('moneySuperapp.googleToken');
+      const savedExp = parseInt(sessionStorage.getItem('moneySuperapp.googleTokenExpiry') || '0', 10);
+      if (savedToken && savedExp > Date.now() + 60000) {
+        googleAccessToken = savedToken;
+        googleTokenExpiry = savedExp;
+        updateGoogleUI();
+        if (typeof afterSignInCallback === 'function') afterSignInCallback();
+        return;
+      }
+    } catch(e) {}
+    // Trigger standard Google OAuth popup
+    googleTokenClient.requestAccessToken({ prompt: '' });
+  }
+
+  function handleGoogleSignOut() {
+    if (googleAccessToken && typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
+      try { google.accounts.oauth2.revoke(googleAccessToken, () => {}); } catch(e) {}
+    }
+    googleAccessToken = null;
+    googleTokenExpiry = 0;
+    try {
+      sessionStorage.removeItem('moneySuperapp.googleToken');
+      sessionStorage.removeItem('moneySuperapp.googleTokenExpiry');
+      localStorage.removeItem('moneySuperapp.googleUser');
+    } catch(e) {}
+    updateGoogleUI();
+    alert(getLang() === 'en' ? 'Signed out of Google.' : 'ออกจากระบบ Google แล้ว');
+  }
+
+  function getStoredGoogleUser() {
+    try {
+      const raw = localStorage.getItem('moneySuperapp.googleUser');
+      return raw ? JSON.parse(raw) : null;
+    } catch(e) { return null; }
+  }
+
+  function updateGoogleUI() {
+    const user = getStoredGoogleUser();
+    const signedOutEl = document.getElementById('gdrive-signed-out');
+    const signedInEl = document.getElementById('gdrive-signed-in');
+    const emailEl = document.getElementById('gdrive-user-email');
+    const avatarEl = document.getElementById('gdrive-user-avatar');
+    const lastSyncEl = document.getElementById('lbl-gdrive-last-sync');
+    const inputClientEl = document.getElementById('inputGoogleClientId');
+
+    if (inputClientEl && (!inputClientEl.value || inputClientEl.value === DEFAULT_GOOGLE_CLIENT_ID)) {
+      inputClientEl.value = getGoogleClientId();
+    }
+
+    if (user && user.email) {
+      if (signedOutEl) signedOutEl.style.display = 'none';
+      if (signedInEl) signedInEl.style.display = 'flex';
+      if (emailEl) emailEl.textContent = user.email;
+      if (avatarEl) {
+        avatarEl.innerHTML = '';
+        if (user.picture) {
+          const img = document.createElement('img');
+          img.src = user.picture;
+          img.alt = 'avatar';
+          img.style.cssText = 'width:100%;height:100%;border-radius:50%;object-fit:cover;';
+          avatarEl.appendChild(img);
+        } else {
+          avatarEl.textContent = (user.name || user.email || 'U').charAt(0).toUpperCase();
+        }
+      }
+    } else {
+      if (signedOutEl) signedOutEl.style.display = 'flex';
+      if (signedInEl) signedInEl.style.display = 'none';
+    }
+
+    if (lastSyncEl) {
+      try {
+        const lastSync = localStorage.getItem('moneySuperapp.lastGoogleSync');
+        const t = translations[getLang()] || translations.th;
+        if (lastSync) {
+          const d = new Date(lastSync);
+          const timeStr = d.toLocaleDateString(getLang() === 'en' ? 'en-US' : 'th-TH', {
+            year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+          });
+          lastSyncEl.textContent = typeof t.gdriveLastSync === 'function' ? t.gdriveLastSync(timeStr) : `สำรองล่าสุด: ${timeStr}`;
+        } else {
+          lastSyncEl.textContent = t.gdriveNeverSynced || 'สำรองล่าสุด: ยังไม่เคยสำรอง';
+        }
+      } catch(e) {}
+    }
+  }
+
+  async function ensureValidGoogleToken() {
+    if (googleAccessToken && googleTokenExpiry > Date.now() + 60000) {
+      return googleAccessToken;
+    }
+    try {
+      const savedToken = sessionStorage.getItem('moneySuperapp.googleToken');
+      const savedExp = parseInt(sessionStorage.getItem('moneySuperapp.googleTokenExpiry') || '0', 10);
+      if (savedToken && savedExp > Date.now() + 60000) {
+        googleAccessToken = savedToken;
+        googleTokenExpiry = savedExp;
+        return googleAccessToken;
+      }
+    } catch(e) {}
+
+    return new Promise((resolve) => {
+      handleGoogleSignIn(() => {
+        resolve(googleAccessToken);
+      });
+    });
+  }
+
+  async function saveToGoogleDrive() {
+    const spinner = document.getElementById('gdrive-sync-spinner');
+    const btnUpload = document.getElementById('btn-gdrive-upload');
+    if (spinner) spinner.style.display = 'inline';
+    if (btnUpload) btnUpload.disabled = true;
+
+    try {
+      const token = await ensureValidGoogleToken();
+      if (!token) throw new Error('No Google token available');
+
+      const backup = {
+        version: "1.0.0",
+        appName: "Money Superapp",
+        exportedAt: new Date().toISOString(),
+        data: {}
+      };
+      const allowedPrefixes = ['moneySuperapp.', 'remainingMoneyCalculator.', 'rebalanceCalculator.'];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && allowedPrefixes.some(p => key.startsWith(p))) {
+          backup.data[key] = localStorage.getItem(key);
+        }
+      }
+      const backupJson = JSON.stringify(backup, null, 2);
+
+      const q = encodeURIComponent("name = 'money-superapp-backup.json' and 'appDataFolder' in parents and trashed = false");
+      const listRes = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=${q}&fields=files(id,name,modifiedTime)`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!listRes.ok) throw new Error(`Drive API error (${listRes.status})`);
+      const listData = await listRes.json();
+      const existingFile = (listData.files && listData.files.length > 0) ? listData.files[0] : null;
+
+      let saveRes;
+      if (existingFile) {
+        saveRes = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${existingFile.id}?uploadType=media`, {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: backupJson
+        });
+      } else {
+        const metadata = {
+          name: 'money-superapp-backup.json',
+          parents: ['appDataFolder'],
+          mimeType: 'application/json'
+        };
+        const boundary = '-------314159265358979323846';
+        const delimiter = `\r\n--${boundary}\r\n`;
+        const closeDelimiter = `\r\n--${boundary}--`;
+        const body = delimiter +
+          'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+          JSON.stringify(metadata) +
+          delimiter +
+          'Content-Type: application/json\r\n\r\n' +
+          backupJson +
+          closeDelimiter;
+
+        saveRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': `multipart/related; boundary=${boundary}`
+          },
+          body: body
+        });
+      }
+
+      if (!saveRes.ok) throw new Error(`Upload failed (${saveRes.status})`);
+
+      const nowIso = new Date().toISOString();
+      localStorage.setItem('moneySuperapp.lastGoogleSync', nowIso);
+      updateGoogleUI();
+      alert(getLang() === 'en' ? '✓ Backup saved to Google Drive successfully!' : '✓ สำรองข้อมูลขึ้น Google Drive เรียบร้อยแล้ว!');
+    } catch(err) {
+      console.error('Google Drive Backup Error:', err);
+      alert((getLang() === 'en' ? 'Backup failed: ' : 'สำรองข้อมูลไม่สำเร็จ: ') + err.message);
+    } finally {
+      if (spinner) spinner.style.display = 'none';
+      if (btnUpload) btnUpload.disabled = false;
+    }
+  }
+
+  async function restoreFromGoogleDrive() {
+    const spinner = document.getElementById('gdrive-sync-spinner');
+    const btnDownload = document.getElementById('btn-gdrive-download');
+    if (spinner) spinner.style.display = 'inline';
+    if (btnDownload) btnDownload.disabled = true;
+
+    try {
+      const token = await ensureValidGoogleToken();
+      if (!token) throw new Error('No Google token available');
+
+      const q = encodeURIComponent("name = 'money-superapp-backup.json' and 'appDataFolder' in parents and trashed = false");
+      const listRes = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=${q}&fields=files(id,name,modifiedTime)`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!listRes.ok) throw new Error(`Drive API error (${listRes.status})`);
+      const listData = await listRes.json();
+      if (!listData.files || listData.files.length === 0) {
+        alert(getLang() === 'en' ? 'No backup file found in your Google Drive AppData.' : 'ไม่พบไฟล์สำรองข้อมูลใน Google Drive AppData ของคุณ');
+        return;
+      }
+
+      const file = listData.files[0];
+      const modDate = file.modifiedTime ? new Date(file.modifiedTime).toLocaleString(getLang() === 'en' ? 'en-US' : 'th-TH') : '';
+      const confirmMsg = getLang() === 'en'
+        ? `Found backup saved on ${modDate}.\n\nRestore this data? Current calculator data will be replaced.`
+        : `พบไฟล์สำรองข้อมูลบันทึกเมื่อ ${modDate}\n\nต้องการกู้คืนข้อมูลนี้หรือไม่? ข้อมูลปัจจุบันในเครื่องจะถูกแทนที่`;
+      if (!confirm(confirmMsg)) return;
+
+      const getRes = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!getRes.ok) throw new Error(`Download failed (${getRes.status})`);
+      const backup = await getRes.json();
+
+      if (!backup || typeof backup !== 'object' || !backup.data) {
+        alert(getLang() === 'en' ? 'Invalid backup data from Google Drive' : 'ข้อมูลสำรองจาก Google Drive ไม่ถูกต้อง');
+        return;
+      }
+
+      const allowedPrefixes = ['moneySuperapp.', 'remainingMoneyCalculator.', 'rebalanceCalculator.'];
+      Object.keys(backup.data).forEach(key => {
+        if (allowedPrefixes.some(p => key.startsWith(p)) && typeof backup.data[key] === 'string') {
+          localStorage.setItem(key, backup.data[key]);
+        }
+      });
+
+      alert(getLang() === 'en' ? '✓ Backup restored from Google Drive successfully!' : '✓ กู้คืนข้อมูลจาก Google Drive สำเร็จแล้ว!');
+      reloadFrame();
+      closeSettingsModal();
+    } catch(err) {
+      console.error('Google Drive Restore Error:', err);
+      alert((getLang() === 'en' ? 'Restore failed: ' : 'กู้คืนข้อมูลไม่สำเร็จ: ') + err.message);
+    } finally {
+      if (spinner) spinner.style.display = 'none';
+      if (btnDownload) btnDownload.disabled = false;
+    }
   }
 
   function openSettingsModal() {
+    updateGoogleUI();
     document.getElementById('settingsModal').style.display = 'flex';
   }
   function closeSettingsModal() {

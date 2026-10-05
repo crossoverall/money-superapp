@@ -183,3 +183,16 @@ When adding a lesson, include:
   5. Enhanced group-level feedback: when a bucket receives 0 budget because it is over target, display an explicit banner explaining that the group is over target and its share has been redistributed to lagging groups.
 - **Rule:** In multi-tier portfolio allocators, every hierarchy tier (group level down to asset level) must execute the same water-filling constraint solver so that overweight branches are capped and freed budget bubbles to underweight branches.
 
+
+### 2026-10-05: 100% Client-Side Google Sign-In & Google Drive AppData Cloud Sync
+
+- **Date & Context:** 2026-10-05, implementation of Google OAuth 2.0 Sign-In and Google Drive Cloud Backup/Restore in `index.html` (`v1.4.0`).
+- **Problem:** Users needed seamless cross-device backup and restore without violating ADR-001 (100% client-side privacy, zero server-side storage, zero custom backends). Asking users to copy/paste developer tokens or configure complex backends creates friction.
+- **Solution — Direct GIS Token Client & Google Drive REST API v3:**
+  1. **Google Identity Services (GIS):** Used `google.accounts.oauth2.initTokenClient` with scope `https://www.googleapis.com/auth/drive.appdata email profile`.
+  2. **Dedicated AppData Isolation:** Files are written to Google Drive's hidden `appDataFolder` (`money-superapp-backup.json`). This folder is private to the application, invisible in the user's regular Google Drive file list, and cannot be accessed by other third-party apps.
+  3. **Multipart/related Upload:** Implemented `uploadType=multipart` for creation and `uploadType=media` with `PATCH` for existing file updates, bypassing any intermediate proxy.
+  4. **Strict Token Security:** Access tokens are stored exclusively in memory and `sessionStorage`, never in `localStorage` or external storage.
+  5. **Prefix Whitelisting on Restore:** When restoring from Drive, the payload is parsed and sanitized against strict allowed prefixes (`moneySuperapp.`, `remainingMoneyCalculator.`, `rebalanceCalculator.`), preventing arbitrary key injection.
+- **Rule:** When adding cloud synchronization to privacy-first, zero-backend SPAs, leverage direct OAuth token flows to user-owned storage (such as Google Drive `appDataFolder` or iCloud/Dropbox) with memory-only token storage and strict JSON schema / prefix verification on import.
+
