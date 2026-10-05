@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="1.3.30">
+<meta name="version" content="1.3.31">
 <title>คำนวณการเติมเงินรายเดือน</title>
 <link rel="stylesheet" href="css/theme.css">
 <style>
@@ -339,7 +339,7 @@
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v1.3.30</p>
+  <p class="version-tag">v1.3.31</p>
 
 <script>
 // Language: read once from localStorage (shared origin with the shell nav's toggle).
@@ -624,13 +624,22 @@ if(resetBtn){
   });
 }
 
-// Water-filling allocation: buy-only rebalance toward target weights
+// Water-filling allocation: buy-only rebalance toward target weights.
+// Zero-weight assets are "frozen": they receive no new budget but their
+// existing value is kept in lockedValue so T always reflects the full
+// bucket portfolio, not just the active (non-frozen) slice.
 function allocate(assets, budget){
   const n = assets.length;
   const x = new Array(n).fill(0);
-  let active = assets.map((_, i) => i);
   const totalW = assets.reduce((s,a) => s + a.weight, 0) || 1;
   const w = assets.map(a => a.weight / totalW);
+
+  // Pre-eject zero-weight (frozen) assets; their value is locked into the total.
+  let lockedValue = 0;
+  let active = assets.map((_, i) => i).filter(i => {
+    if (w[i] <= 0) { lockedValue += assets[i].value; return false; }
+    return true;
+  });
 
   let remaining = budget;
   let guard = 0;
@@ -639,15 +648,21 @@ function allocate(assets, budget){
     const sumWActive = active.reduce((s,i) => s + w[i], 0);
     if(sumWActive <= 0) break;
     const sumVActive = active.reduce((s,i) => s + assets[i].value, 0);
-    const T = sumVActive + remaining;
+    // T includes locked value so % targets stay proportional to the full bucket.
+    const T = sumVActive + lockedValue + remaining;
     const target = {};
-    active.forEach(i => { target[i] = (w[i] / sumWActive) * T; });
+    // Active assets share only the non-locked portion of T.
+    active.forEach(i => { target[i] = (w[i] / sumWActive) * (T - lockedValue); });
     const over = active.filter(i => target[i] < assets[i].value);
     if(over.length === 0){
       active.forEach(i => { x[i] = target[i] - assets[i].value; });
       break;
     } else {
-      over.forEach(i => { x[i] = 0; active = active.filter(j => j !== i); });
+      over.forEach(i => {
+        x[i] = 0;
+        lockedValue += assets[i].value; // value stays in total, receives no budget
+        active = active.filter(j => j !== i);
+      });
     }
   }
   return x;
@@ -1023,18 +1038,26 @@ function compute(){
       const add = x[i];
       const newValue = a.value + add;
       const newPct = newTotal > 0 ? (newValue / newTotal * 100) : 0;
-      if(add <= 0.5 && a.value > 0) cappedCount++;
+      // Only count as "capped" if the asset has a real target weight (not frozen at 0%).
+      if(add <= 0.5 && a.value > 0 && a.weight > 0) cappedCount++;
 
       const currPct = currentTotal > 0 ? (a.value / currentTotal * 100) : 0;
-      const drift = currPct - a.weight;
-      let driftClass = 'drift-ok';
-      let driftText = `✓ ${drift >= 0 ? '+' : ''}${drift.toFixed(1)}%`;
-      if (drift > 2) {
-        driftClass = 'drift-over';
-        driftText = `+${drift.toFixed(1)}% 🔼`;
-      } else if (drift < -2) {
-        driftClass = 'drift-under';
-        driftText = `${drift.toFixed(1)}% 🔽`;
+      let driftClass, driftText;
+      if (a.weight === 0) {
+        // Intentionally frozen: no drift concept applies; surface a neutral badge.
+        driftClass = 'drift-ok';
+        driftText = LANG === 'en' ? '🔒 frozen' : '🔒 ตรึง';
+      } else {
+        const drift = currPct - a.weight;
+        driftClass = 'drift-ok';
+        driftText = `✓ ${drift >= 0 ? '+' : ''}${drift.toFixed(1)}%`;
+        if (drift > 2) {
+          driftClass = 'drift-over';
+          driftText = `+${drift.toFixed(1)}% 🔼`;
+        } else if (drift < -2) {
+          driftClass = 'drift-under';
+          driftText = `${drift.toFixed(1)}% 🔽`;
+        }
       }
 
       const minTrade = parseFloat(document.getElementById('minTradeThreshold')?.value) || 0;

@@ -152,3 +152,20 @@ When adding a lesson, include:
 - `KNOWN_US_EQUITIES` moved to module-level constant.
 
 **Rule reinforced:** The AGENTS.md rule "Mandatory Full SDLC for All Fixes" exists precisely because QA verifies correctness but not security. The Security Reviewer catches XSS, key exposure, and DoS patterns that tests can't see. Never skip it.
+
+### 2026-10-05: Water-fill allocate() — lockedValue pattern for frozen zero-weight assets
+
+- **Date & Context:** 2026-10-05, fix for `rebalance.html` `allocate()` (`v1.3.31`).
+- **Problem:** The water-filling algorithm ejected assets from `active` when their target fell below their current value. On ejection, the asset's value disappeared from `sumVActive` in subsequent iterations, causing `T = sumVActive + remaining` to shrink. For zero-weight (frozen) assets like a "Cash" position the user no longer tops up, this meant Gold and SGOV computed their targets against a shrunken bucket total — producing inflated top-up amounts and incorrect after-top-up percentages.
+- **Root Cause:** `T` was computed purely from `sumVActive` (only currently-active assets). Assets ejected mid-loop as "over target" silently dropped out of the denominator, leaving remaining active assets to fill a smaller-than-real pool.
+- **Solution — `lockedValue` pattern:**
+  1. Pre-eject zero-weight assets before the loop; add their value to `lockedValue`.
+  2. Every iteration: `T = sumVActive + lockedValue + remaining` — locked value always present.
+  3. Active asset targets: `target[i] = (w[i] / sumWActive) * (T - lockedValue)` — only the distributable (non-locked) slice is allocated.
+  4. When any active asset is ejected mid-loop (it's over target), add its value to `lockedValue` before removing from `active`.
+- **Display side effects fixed:**
+  - Zero-weight assets now show `🔒 frozen` badge (EN) / `🔒 ตรึง` (TH) instead of `🔼 over target`.
+  - `cappedCount` now excludes zero-weight assets (`a.weight > 0` guard added) so the "X assets capped" note only fires for real rebalancing overflows, not intentional freezes.
+- **Security note:** `driftText` for frozen path is a hardcoded emoji literal — not derived from user input — so no XSS surface is introduced.
+- **Rule:** Any time a water-fill or quota-allocation algorithm ejects a participant, preserve that participant's current value in the running total (via a `lockedValue` accumulator or equivalent) so percentage targets for remaining participants stay proportional to the real portfolio.
+
