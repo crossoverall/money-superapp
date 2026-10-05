@@ -196,3 +196,11 @@ When adding a lesson, include:
   5. **Prefix Whitelisting on Restore:** When restoring from Drive, the payload is parsed and sanitized against strict allowed prefixes (`moneySuperapp.`, `remainingMoneyCalculator.`, `rebalanceCalculator.`), preventing arbitrary key injection.
 - **Rule:** When adding cloud synchronization to privacy-first, zero-backend SPAs, leverage direct OAuth token flows to user-owned storage (such as Google Drive `appDataFolder` or iCloud/Dropbox) with memory-only token storage and strict JSON schema / prefix verification on import.
 
+
+### 2026-10-05: Google Cloud API Enablement Propagation Latency (403 Transient)
+
+- **Date & Context:** 2026-10-05, Google Drive API 403 on newly created OAuth 2.0 Client ID.
+- **Problem:** When enabling Google Drive API on a Google Cloud Console project for the first time, initial API requests may continue returning `403 Forbidden` (`Drive API error (403)` / `accessNotConfigured`).
+- **Root Cause:** Google Cloud Console API enablement propagates across Google's edge authentication servers with a 1–2 minute delay. In addition, existing OAuth tokens requested prior to API enablement lack permission grants.
+- **Resolution & Lesson:** Once Google Drive API is enabled, wait ~1–2 minutes for Google edge servers to synchronize. If necessary, sign out and sign back in to obtain an updated access token.
+
