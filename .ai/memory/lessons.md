@@ -169,3 +169,17 @@ When adding a lesson, include:
 - **Security note:** `driftText` for frozen path is a hardcoded emoji literal — not derived from user input — so no XSS surface is introduced.
 - **Rule:** Any time a water-fill or quota-allocation algorithm ejects a participant, preserve that participant's current value in the running total (via a `lockedValue` accumulator or equivalent) so percentage targets for remaining participants stay proportional to the real portfolio.
 
+
+### 2026-10-05: Hierarchical Water-filling Rebalancing (Bucket level and Asset level)
+
+- **Date & Context:** 2026-10-05, fix for top-level bucket budget split in `rebalance.html` (`v1.3.32`).
+- **Problem:** While assets *within* each bucket were rebalanced using buy-only water-filling, the top-level budget split across buckets (Core / Ballast / Satellite) was performed via a naive proportional division (`bucket.weight / totalBucketW * totalBudget`). If an entire bucket was already over its target weight (e.g. Ballast holding 30% of total portfolio value vs a 15% target), it still received its naive percentage slice of the monthly top-up budget instead of 0.
+- **Root Cause:** Rebalancing was hierarchical in concept, but only the leaf layer (assets inside buckets) implemented water-filling. The group layer used static proportional allocation, ignoring current bucket portfolio values.
+- **Solution — `allocateBuckets()`:**
+  1. Map each bucket to an entity with its target weight and total current value (`sum of asset values`).
+  2. Run `allocate()` across buckets to determine how much new budget each bucket actually needs to progress toward its group-level target weight without selling.
+  3. Over-allocated buckets receive 0 budget, and their shares are automatically redirected to lagging buckets.
+  4. Synchronized `compute()`, `copyTradeOrders()`, and `exportCSV()` to use `allocateBuckets()`.
+  5. Enhanced group-level feedback: when a bucket receives 0 budget because it is over target, display an explicit banner explaining that the group is over target and its share has been redistributed to lagging groups.
+- **Rule:** In multi-tier portfolio allocators, every hierarchy tier (group level down to asset level) must execute the same water-filling constraint solver so that overweight branches are capped and freed budget bubbles to underweight branches.
+
