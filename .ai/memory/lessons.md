@@ -251,3 +251,16 @@ When adding a lesson, include:
 - **Rule:** In multi-tier hierarchical optimizers, exclusion switches must be applied symmetrically at both the macro-group level and the micro-asset level, with active-index vector remapping preserving state indices.
 
 
+### 2026-10-06: Analytical Minimum Budget Suggestion for Zero-Drift DCA Rebalancing
+
+- **Date & Context:** 2026-10-06, feature addition to `rebalance.html` (`v1.8.0`).
+- **Problem:** Investors wanted to know the exact minimum amount of new cash needed to correct all portfolio drift to 100% target weights without selling any assets.
+- **Solution — 2-Tier Hierarchical Bottleneck Solver:**
+  1. **Asset Level:** For each active asset in bucket $b$, find $T_{b, a} = a.value / (a.weight / W_b)$. The required bucket total is $V_b^{\text{req}} = \max(\sum a.value, \max_a T_{b, a})$.
+  2. **Group Level:** For each active bucket $b$, find $T_{\text{port}, b} = V_b^{\text{req}} / (b.weight / W_{\text{port}})$. The required portfolio total is $T^* = \max(\sum V_b, \max_b T_{\text{port}, b})$.
+  3. **Minimum Budget:** $B_{\min} = \max(0, \text{Math.round}(T^* - V_{\text{total}}))$.
+  4. **UI Banner:** Rendered directly below the budget row with THB and USD amounts and a 1-click "Apply" button (`applyMinBudget(amt)`). Applying this budget mathematically drives drift on all active assets and groups to $\le 0.05\%$.
+- **Rule:** For buy-only water-filling rebalancers, avoid iterative search algorithms to find the zero-drift point; solve the bottleneck directly using the max-ratio projection $T^* = \max(V_i / w_i)$.
+
+
+

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="1.7.0">
+<meta name="version" content="1.8.0">
 <title>คำนวณการเติมเงินรายเดือน</title>
 <link rel="stylesheet" href="css/theme.css">
 <style>
@@ -80,6 +80,21 @@
     padding: 10px 12px; font-variant-numeric: tabular-nums; text-align:right;
   }
   .budget-row input:focus{ outline: none; border-color: var(--ink-dim); }
+
+  .min-budget-banner{
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+    margin-top: 10px; padding: 8px 12px; border-radius: 10px;
+    background: var(--panel-2); border: 1px solid var(--line);
+    font-size: 11.5px; color: var(--ink-dim); line-height: 1.4;
+  }
+  .min-budget-banner .accent-amt{ color: var(--core); font-weight: 700; }
+  .min-budget-banner .rusd{ font-size: 11px; font-weight: 600; opacity: 0.85; margin-left: 3px; }
+  .min-budget-apply-btn{
+    background: var(--core-dim); color: var(--core); border: 1px solid var(--core);
+    border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s ease; white-space: nowrap;
+  }
+  .min-budget-apply-btn:hover{ background: var(--core); color: #fff; }
 
   .split-bar{ display:flex; height: 8px; border-radius: 5px; overflow: hidden; margin: 14px 0 8px; }
   .split-legend{ display:flex; justify-content: space-between; font-size: 11px; color: var(--ink-dim); }
@@ -283,6 +298,7 @@
       <label id="budgetUnit">บาท</label>
       <input type="text" inputmode="decimal" id="totalBudget" value="200000">
     </div>
+    <div id="minBudgetBanner" class="min-budget-banner" style="display:none;"></div>
     <div class="split-bar" id="splitBar"></div>
     <div class="split-legend" id="splitLegend"></div>
     <div class="split-warn" id="splitWarn"></div>
@@ -346,7 +362,7 @@
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v1.7.0</p>
+  <p class="version-tag">v1.8.0</p>
 
 <script>
 // Language: read once from localStorage (shared origin with the shell nav's toggle).
@@ -429,6 +445,9 @@ const T = {
     assetExcluded: '🚫 ไม่รวมคำนวณ',
     toggleBucket: 'รวม/ไม่รวมทั้งกลุ่มนี้ในการคำนวณสัดส่วน',
     bucketExcluded: '🚫 กลุ่มนี้ไม่รวมคำนวณ',
+    minBudgetSuggestion: (thb, usd) => `💡 เติมเงินอย่างน้อย <span class="accent-amt">+${thb} บาท</span><span class="rusd">($${usd})</span> เพื่อปรับพอร์ตให้ตรงเป้าหมาย 100% โดยไม่ต้องขาย`,
+    minBudgetBalanced: '✓ สัดส่วนพอร์ตตรงตามเป้าหมายแล้ว (ไม่ต้องเติมเงินเพิ่ม)',
+    minBudgetApply: 'ใช้ยอดนี้',
   },
   en: {
     splitWarn: pct => `Core+Ballast+Satellite total = ${pct}% (auto-normalized to 100% during calculation)`,
@@ -459,6 +478,9 @@ const T = {
     assetExcluded: '🚫 Excluded',
     toggleBucket: 'Include/exclude this whole group from calculation',
     bucketExcluded: '🚫 Group Excluded',
+    minBudgetSuggestion: (thb, usd) => `💡 Add at least <span class="accent-amt">+${thb} THB</span><span class="rusd">($${usd})</span> to reach 100% target weights without selling`,
+    minBudgetBalanced: '✓ Portfolio is currently at target weights (0 THB needed)',
+    minBudgetApply: 'Apply this budget',
   },
 };
 function t(key, ...args){
@@ -703,6 +725,71 @@ function allocateBuckets(totalBudget){
     x[origIdx] = activeAlloc[activeIdx];
   });
   return x;
+}
+
+// Calculate the minimum budget needed to reach 100% target weights across all active assets and groups
+function calcMinBudget(){
+  const activeBuckets = state.buckets.filter(b => b.enabled !== false);
+  const totalBucketW = activeBuckets.reduce((s,b) => s + b.weight, 0);
+  if (activeBuckets.length === 0 || totalBucketW <= 0) return 0;
+
+  const requiredPortTotals = [];
+  let curTotalVal = 0;
+
+  activeBuckets.forEach(b => {
+    const activeAssets = b.assets.filter(a => a.enabled !== false);
+    const totalAssetW = activeAssets.reduce((s,a) => s + a.weight, 0);
+    const curBucketVal = activeAssets.reduce((s,a) => s + (a.value || 0), 0);
+    curTotalVal += curBucketVal;
+
+    let minBucketVal = curBucketVal;
+    if (totalAssetW > 0) {
+      activeAssets.forEach(a => {
+        if (a.weight > 0 && a.value > 0) {
+          const normAssetW = a.weight / totalAssetW;
+          const needed = a.value / normAssetW;
+          if (needed > minBucketVal) minBucketVal = needed;
+        }
+      });
+    }
+
+    if (b.weight > 0) {
+      const normBucketW = b.weight / totalBucketW;
+      const portNeeded = minBucketVal / normBucketW;
+      requiredPortTotals.push(portNeeded);
+    }
+  });
+
+  const minPortTotal = Math.max(...requiredPortTotals, curTotalVal);
+  return Math.max(0, Math.round(minPortTotal - curTotalVal));
+}
+
+function updateMinBudgetBanner(){
+  const bannerEl = document.getElementById('minBudgetBanner');
+  if (!bannerEl) return;
+
+  const minBudget = calcMinBudget();
+  const rate = state.usdThbRate || 33.39;
+  const usdMin = Math.round(minBudget / rate);
+
+  if (minBudget <= 0) {
+    bannerEl.style.display = 'flex';
+    bannerEl.innerHTML = `<span>${t('minBudgetBalanced')}</span>`;
+  } else {
+    bannerEl.style.display = 'flex';
+    bannerEl.innerHTML = `
+      <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+        <span>${t('minBudgetSuggestion', fmt(minBudget), fmtUSD(usdMin))}</span>
+      </div>
+      <button class="min-budget-apply-btn" onclick="applyMinBudget(${minBudget})">${t('minBudgetApply')}</button>
+    `;
+  }
+}
+
+function applyMinBudget(amt){
+  state.totalBudget = amt;
+  totalBudgetEl.value = fmtPlain(amt);
+  compute();
 }
 
 function renderSplit(){
@@ -1094,6 +1181,7 @@ function compute(){
   const totalBudget = state.totalBudget || 0;
   renderSplit();
   renderDonutChart();
+  updateMinBudgetBanner();
 
   const activeBuckets = state.buckets.filter(b => b.enabled !== false);
   const totalVal = activeBuckets.reduce((acc, b) => acc + b.assets.filter(a => a.enabled !== false).reduce((sum, a) => sum + (a.value || 0), 0), 0);
