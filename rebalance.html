@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="1.6.0">
+<meta name="version" content="1.6.1">
 <title>คำนวณการเติมเงินรายเดือน</title>
 <link rel="stylesheet" href="css/theme.css">
 <style>
@@ -343,7 +343,7 @@
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v1.6.0</p>
+  <p class="version-tag">v1.6.1</p>
 
 <script>
 // Language: read once from localStorage (shared origin with the shell nav's toggle).
@@ -1112,6 +1112,7 @@ function compute(){
 
       const rate = state.usdThbRate || 33.39;
       const usdAdd = Math.round(add / rate);
+      const usdVal = Math.round(a.value / rate);
       const addText = (!isExcluded && add > 0.5)
         ? `+${fmt(add)}<span class="rusd">($${fmtUSD(usdAdd)})</span>`
         : '—';
@@ -1125,7 +1126,7 @@ function compute(){
             <span>${escapeAttr(a.name)}</span>
             <span class="drift-badge ${driftClass}" title="${isExcluded ? t('assetExcluded') : (LANG === 'en' ? 'Drift from target' : 'ส่วนต่างจากเป้าหมาย')}">${driftText}</span>
           </div>
-          <div class="rmeta">${isExcluded ? `(${t('assetExcluded')})` : `${t('rmeta', fmt(a.value), a.weight)} (${LANG === 'en' ? 'Current' : 'ปัจจุบัน'}: ${currPct.toFixed(1)}%)`}</div>
+          <div class="rmeta">${isExcluded ? `(${t('assetExcluded')})` : `${t('rmeta', `${fmt(a.value)} ($${fmtUSD(usdVal)})`, a.weight)} (${LANG === 'en' ? 'Current' : 'ปัจจุบัน'}: ${currPct.toFixed(1)}%)`}</div>
         </div>
         <div class="result-right">
           <div class="radd ${add <= 0.5 ? 'zero' : ''}">${addText}</div>

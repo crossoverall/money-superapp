@@ -229,3 +229,11 @@ When adding a lesson, include:
      - `exportCSV()` adds a dedicated `Buy Amount (USD)` column in the header and rows: `"Group","Asset","Ticker",Units,Price,"Currency",Target %,Current Value (THB),Buy Amount (THB),Buy Amount (USD),"Status"`.
 - **Rule:** Whenever multi-currency metrics are displayed alongside primary local currency values, maintain parity across all three channels: interactive UI card, clipboard text orders, and tabular CSV export.
 
+
+### 2026-10-06: Dual-Currency Current Value in Results Card Subtitle
+
+- **Date & Context:** 2026-10-06, feature addition to `rebalance.html` (`v1.6.1`).
+- **Problem:** Users viewing asset rebalancing results needed to see both their current holding value in THB and its equivalent USD valuation in the `.rmeta` subtitle (e.g. `Current 12,500 ($374) → target 50%`) to assess positioning at a glance.
+- **Solution:** In `compute()`, calculated `usdVal = Math.round(a.value / (state.usdThbRate || 33.39))` and formatted the first parameter of `t('rmeta', ...)` as `${fmt(a.value)} ($${fmtUSD(usdVal)})`.
+- **Rule:** Re-use the existing localized string translation functions (`t('rmeta', cur, target)`) by enriching the formatted currency argument rather than hardcoding language templates in the render loop.
+
