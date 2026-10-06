@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="1.5.0">
+<meta name="version" content="1.6.0">
 <title>คำนวณการเติมเงินรายเดือน</title>
 <link rel="stylesheet" href="css/theme.css">
 <style>
@@ -154,6 +154,7 @@
   .result-right{ text-align:right; }
   .result-right .radd{ font-size: 14.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
   .result-right .radd.zero{ color: var(--ink-faint); }
+  .result-right .rusd{ font-size: 11.5px; font-weight: 600; opacity: 0.85; margin-left: 3px; }
   .result-right .rnewpct{ font-size: 10.5px; color: var(--ink-faint); margin-top:2px; }
 
   .bucket-panel.core .radd{ color: var(--core); }
@@ -342,7 +343,7 @@
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v1.5.0</p>
+  <p class="version-tag">v1.6.0</p>
 
 <script>
 // Language: read once from localStorage (shared origin with the shell nav's toggle).
@@ -499,6 +500,7 @@ const saveStatusEl = document.getElementById('saveStatus');
 const resetBtn = document.getElementById('resetBtn');
 
 function fmt(n){ return Math.round(n).toLocaleString(LANG === 'en' ? 'en-US' : 'th-TH'); }
+function fmtUSD(n){ return Math.round(n).toLocaleString('en-US'); }
 
 // --- Quick math entry (+10000 / -5000 adds/subtracts from the field's current value) ---
 const inputBaseValues = new WeakMap();
@@ -1108,6 +1110,12 @@ function compute(){
       const minTrade = parseFloat(document.getElementById('minTradeThreshold')?.value) || 0;
       const isBelowMin = !isExcluded && minTrade > 0 && add > 0 && add < minTrade;
 
+      const rate = state.usdThbRate || 33.39;
+      const usdAdd = Math.round(add / rate);
+      const addText = (!isExcluded && add > 0.5)
+        ? `+${fmt(add)}<span class="rusd">($${fmtUSD(usdAdd)})</span>`
+        : '—';
+
       const row = document.createElement('div');
       row.className = 'result-row' + (isExcluded ? ' excluded' : '');
       if (isExcluded) row.style.opacity = '0.55';
@@ -1120,7 +1128,7 @@ function compute(){
           <div class="rmeta">${isExcluded ? `(${t('assetExcluded')})` : `${t('rmeta', fmt(a.value), a.weight)} (${LANG === 'en' ? 'Current' : 'ปัจจุบัน'}: ${currPct.toFixed(1)}%)`}</div>
         </div>
         <div class="result-right">
-          <div class="radd ${add <= 0.5 ? 'zero' : ''}">${add > 0.5 ? '+' + fmt(add) : '—'}</div>
+          <div class="radd ${add <= 0.5 ? 'zero' : ''}">${addText}</div>
           ${isBelowMin ? `<div class="below-min-badge" title="${LANG === 'en' ? 'Below minimum trade threshold' : 'ต่ำกว่ายอดซื้อขั้นต่ำ'}">⚠️ &lt; ${fmt(minTrade)}</div>` : ''}
           <div class="rnewpct">${isExcluded ? '—' : t('rnewpct', newPct.toFixed(1))}</div>
         </div>
@@ -1207,6 +1215,7 @@ function copyTradeOrders(){
   const isEN = LANG === 'en';
   let lines = [isEN ? `📋 Trade Orders (Budget: ${fmt(totalBudget)} THB)` : `📋 รายการสั่งซื้อ (งบ: ${fmt(totalBudget)} บาท)`, ''];
   const bucketBudgets = allocateBuckets(totalBudget);
+  const rate = state.usdThbRate || 33.39;
   state.buckets.forEach((bucket, bi) => {
     const bucketBudget = bucketBudgets[bi] || 0;
     const activeIndices = [];
@@ -1224,7 +1233,8 @@ function copyTradeOrders(){
       if (a.enabled === false) return;
       const add = Math.round(x[i]);
       if (add > 0) {
-        lines.push(`  ${a.name}: +${fmt(add)} ${isEN ? 'THB' : 'บาท'} (${a.weight}%)`);
+        const usdAdd = Math.round(add / rate);
+        lines.push(`  ${a.name}: +${fmt(add)} ${isEN ? 'THB' : 'บาท'} ($${fmtUSD(usdAdd)}) (${a.weight}%)`);
       }
     });
     lines.push('');
@@ -1241,8 +1251,9 @@ function copyTradeOrders(){
 
 function exportCSV(){
   const totalBudget = state.totalBudget || 0;
-  let rows = ['Group,Asset,Ticker,Units,Price,Currency,Target %,Current Value (THB),Buy Amount (THB),Status'];
+  let rows = ['Group,Asset,Ticker,Units,Price,Currency,Target %,Current Value (THB),Buy Amount (THB),Buy Amount (USD),Status'];
   const bucketBudgets = allocateBuckets(totalBudget);
+  const rate = state.usdThbRate || 33.39;
   state.buckets.forEach((bucket, bi) => {
     const bucketBudget = bucketBudgets[bi] || 0;
     const activeIndices = [];
@@ -1258,9 +1269,10 @@ function exportCSV(){
     bucket.assets.forEach((a, i) => {
       const isEx = a.enabled === false;
       const add = isEx ? 0 : Math.round(x[i]);
+      const usdAdd = isEx ? 0 : Math.round(add / rate);
       const curr = a.currency || (isThaiAssetSymbol(a.ticker) ? 'THB' : 'USD');
       const status = isEx ? 'Excluded' : 'Active';
-      rows.push(`"${bucket.label}","${a.name}","${a.ticker || ''}",${a.units || 0},${a.lastPrice || 0},"${curr}",${a.weight},${a.value},${add},"${status}"`);
+      rows.push(`"${bucket.label}","${a.name}","${a.ticker || ''}",${a.units || 0},${a.lastPrice || 0},"${curr}",${a.weight},${a.value},${add},${usdAdd},"${status}"`);
     });
   });
   const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });

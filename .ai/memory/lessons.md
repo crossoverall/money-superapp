@@ -216,3 +216,16 @@ When adding a lesson, include:
   4. **Aggregations Filtered:** Bucket values (`currentTotal`), target weight totals (`totalAssetW`), and portfolio donut values (`totalVal`) filter only assets where `a.enabled !== false`.
 - **Rule:** When adding toggleable entities to constrained optimizers (water-filling/rebalancers), preserve original array order by mapping active indices into an isolated sub-vector, and remap results back to the original index domain so all DOM rows maintain 1-to-1 parity.
 
+
+### 2026-10-06: Dual-Currency Top-Up Equivalent in Constrained Rebalancers
+
+- **Date & Context:** 2026-10-06, feature addition to `rebalance.html` (`v1.6.0`).
+- **Problem:** Investors holding international assets (US ETFs, global equities, crypto) needed to see the USD equivalent amount alongside THB top-up amounts (e.g. `+33,390 ($1,000)`) both on-screen and across export workflows (Trade Orders and CSV) to place orders directly on foreign broker platforms without manual currency math.
+- **Solution — Synchronized Dual-Currency Display & CSV Schema Extension:**
+  1. **Helper & Rounding:** Implemented `fmtUSD(n) = Math.round(n).toLocaleString('en-US')`. Uses dynamic `state.usdThbRate` with fallback `33.39`.
+  2. **Screen Rendering:** In `compute()`, when `add > 0.5` and the asset is not excluded, renders `+${fmt(add)}<span class="rusd">($${fmtUSD(usdAdd)})</span>` inside `.radd`. Excluded or zero top-up assets consistently render `—` without USD noise.
+  3. **Export Parity:**
+     - `copyTradeOrders()` outputs `Asset Name: +XXXX THB ($YYY) (Weight%)` (or `+XXXX บาท ($YYY)` in Thai).
+     - `exportCSV()` adds a dedicated `Buy Amount (USD)` column in the header and rows: `"Group","Asset","Ticker",Units,Price,"Currency",Target %,Current Value (THB),Buy Amount (THB),Buy Amount (USD),"Status"`.
+- **Rule:** Whenever multi-currency metrics are displayed alongside primary local currency values, maintain parity across all three channels: interactive UI card, clipboard text orders, and tabular CSV export.
+
