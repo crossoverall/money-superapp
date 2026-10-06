@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="1.6.1">
+<meta name="version" content="1.7.0">
 <title>คำนวณการเติมเงินรายเดือน</title>
 <link rel="stylesheet" href="css/theme.css">
 <style>
@@ -107,6 +107,9 @@
   .bucket-panel.core .name{ color: var(--core); }
   .bucket-panel.ballast .name{ color: var(--ballast); }
   .bucket-panel.satellite .name{ color: var(--satellite); }
+  .bucket-panel.excluded{ opacity: 0.55; }
+  .bucket-panel.excluded .bucket-head .name{ text-decoration: line-through; }
+  .bucket-enable-cb{ width: 16px; height: 16px; accent-color: var(--core); cursor: pointer; margin: 0; flex-shrink: 0; }
 
   .rows{ display:flex; flex-direction:column; gap:10px; margin-top: 10px; }
   .asset-row{ background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; transition: opacity 0.2s ease; }
@@ -343,7 +346,7 @@
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v1.6.1</p>
+  <p class="version-tag">v1.7.0</p>
 
 <script>
 // Language: read once from localStorage (shared origin with the shell nav's toggle).
@@ -424,6 +427,8 @@ const T = {
     resetConfirm: 'ล้างข้อมูลที่บันทึกไว้ในเบราว์เซอร์นี้ และกลับไปใช้ค่าตั้งต้น?',
     toggleAsset: 'รวม/ไม่รวมสินทรัพย์นี้ในการคำนวณ',
     assetExcluded: '🚫 ไม่รวมคำนวณ',
+    toggleBucket: 'รวม/ไม่รวมทั้งกลุ่มนี้ในการคำนวณสัดส่วน',
+    bucketExcluded: '🚫 กลุ่มนี้ไม่รวมคำนวณ',
   },
   en: {
     splitWarn: pct => `Core+Ballast+Satellite total = ${pct}% (auto-normalized to 100% during calculation)`,
@@ -452,6 +457,8 @@ const T = {
     resetConfirm: 'Clear the data saved in this browser and go back to defaults?',
     toggleAsset: 'Include/exclude this asset from calculation',
     assetExcluded: '🚫 Excluded',
+    toggleBucket: 'Include/exclude this whole group from calculation',
+    bucketExcluded: '🚫 Group Excluded',
   },
 };
 function t(key, ...args){
@@ -679,30 +686,46 @@ function allocate(assets, budget){
 
 // Rebalance budget across Core / Ballast / Satellite groups using buy-only water-filling
 function allocateBuckets(totalBudget){
-  const bucketAssets = state.buckets.map(b => ({
-    weight: b.weight || 0,
-    value: b.assets.filter(a => a.enabled !== false).reduce((s, a) => s + (a.value || 0), 0)
-  }));
-  return allocate(bucketAssets, totalBudget);
+  const activeIndices = [];
+  state.buckets.forEach((b, idx) => {
+    if (b.enabled !== false) activeIndices.push(idx);
+  });
+  const activeBucketAssets = activeIndices.map(idx => {
+    const b = state.buckets[idx];
+    return {
+      weight: b.weight || 0,
+      value: b.assets.filter(a => a.enabled !== false).reduce((s, a) => s + (a.value || 0), 0)
+    };
+  });
+  const activeAlloc = allocate(activeBucketAssets, totalBudget);
+  const x = new Array(state.buckets.length).fill(0);
+  activeIndices.forEach((origIdx, activeIdx) => {
+    x[origIdx] = activeAlloc[activeIdx];
+  });
+  return x;
 }
 
 function renderSplit(){
   splitBarEl.innerHTML = '';
   splitLegendEl.innerHTML = '';
-  const totalW = state.buckets.reduce((s,b) => s + b.weight, 0);
+  const activeBuckets = state.buckets.filter(b => b.enabled !== false);
+  const totalW = activeBuckets.reduce((s,b) => s + b.weight, 0);
 
   state.buckets.forEach(b => {
+    const isEx = (b.enabled === false);
     const seg = document.createElement('div');
     seg.style.background = `var(--${b.id})`;
-    seg.style.flex = Math.max(b.weight, 0.0001);
+    seg.style.flex = isEx ? 0 : Math.max(b.weight, 0.0001);
+    if (isEx) seg.style.display = 'none';
     splitBarEl.appendChild(seg);
 
     const item = document.createElement('span');
-    item.innerHTML = `<span class="dot" style="background:var(--${b.id})"></span>${b.label}<input type="number" data-bucket="${b.id}" value="${b.weight}" min="0" max="100" step="1" aria-label="${escapeAttr(b.label)} weight (%)">%`;
+    if (isEx) item.style.opacity = '0.5';
+    item.innerHTML = `<span class="dot" style="background:var(--${b.id})"></span>${escapeAttr(b.label)}${isEx ? ` <span style="font-size:10px;color:var(--ink-faint);">(${t('assetExcluded')})</span>` : ''}<input type="number" data-bucket="${b.id}" value="${b.weight}" min="0" max="100" step="1" aria-label="${escapeAttr(b.label)} weight (%)" ${isEx ? 'disabled style="opacity:0.6;"' : ''}>%`;
     splitLegendEl.appendChild(item);
   });
 
-  splitLegendEl.querySelectorAll('input').forEach(inp => {
+  splitLegendEl.querySelectorAll('input:not([disabled])').forEach(inp => {
     inp.addEventListener('input', e => {
       const bucket = state.buckets.find(b => b.id === e.target.dataset.bucket);
       bucket.weight = parseFloat(e.target.value) || 0;
@@ -721,11 +744,15 @@ function renderSplit(){
 function renderBuckets(){
   bucketsContainer.innerHTML = '';
   state.buckets.forEach(bucket => {
+    const isExcluded = (bucket.enabled === false);
     const panel = document.createElement('div');
-    panel.className = `bucket-panel ${bucket.id}`;
+    panel.className = `bucket-panel ${bucket.id}${isExcluded ? ' excluded' : ''}`;
     panel.innerHTML = `
       <div class="bucket-head">
-        <div class="name">${escapeAttr(bucket.label)}</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" class="bucket-enable-cb" data-bucket="${bucket.id}" ${!isExcluded ? 'checked' : ''} title="${t('toggleBucket')}" aria-label="${t('toggleBucket')} - ${escapeAttr(bucket.label)}">
+          <div class="name">${escapeAttr(bucket.label)}</div>
+        </div>
         <div class="amount" id="amt-${bucket.id}">—</div>
       </div>
       <div class="bucket-body">
@@ -738,6 +765,19 @@ function renderBuckets(){
       </div>
     `;
     bucketsContainer.appendChild(panel);
+
+    const cb = panel.querySelector('.bucket-enable-cb');
+    if (cb) {
+      cb.addEventListener('change', e => {
+        const b = state.buckets.find(bk => bk.id === e.target.dataset.bucket);
+        if (b) {
+          b.enabled = e.target.checked;
+          panel.classList.toggle('excluded', !e.target.checked);
+          renderSplit();
+          compute();
+        }
+      });
+    }
 
     renderAssetRows(bucket);
 
@@ -984,7 +1024,8 @@ function renderAssetRows(bucket){
 }
 
 function renderDonutChart(){
-  const totalVal = state.buckets.reduce((acc, b) => acc + b.assets.filter(a => a.enabled !== false).reduce((sum, a) => sum + a.value, 0), 0);
+  const activeBuckets = state.buckets.filter(b => b.enabled !== false);
+  const totalVal = activeBuckets.reduce((acc, b) => acc + b.assets.filter(a => a.enabled !== false).reduce((sum, a) => sum + a.value, 0), 0);
   const totalBudget = state.totalBudget || 0;
   const newTotalVal = totalVal + totalBudget;
 
@@ -1000,9 +1041,9 @@ function renderDonutChart(){
   const bBallast = state.buckets.find(b => b.id === 'ballast');
   const bSatellite = state.buckets.find(b => b.id === 'satellite');
 
-  const vCore = bCore ? bCore.assets.filter(a => a.enabled !== false).reduce((s, a) => s + a.value, 0) : 0;
-  const vBallast = bBallast ? bBallast.assets.filter(a => a.enabled !== false).reduce((s, a) => s + a.value, 0) : 0;
-  const vSatellite = bSatellite ? bSatellite.assets.filter(a => a.enabled !== false).reduce((s, a) => s + a.value, 0) : 0;
+  const vCore = (bCore && bCore.enabled !== false) ? bCore.assets.filter(a => a.enabled !== false).reduce((s, a) => s + a.value, 0) : 0;
+  const vBallast = (bBallast && bBallast.enabled !== false) ? bBallast.assets.filter(a => a.enabled !== false).reduce((s, a) => s + a.value, 0) : 0;
+  const vSatellite = (bSatellite && bSatellite.enabled !== false) ? bSatellite.assets.filter(a => a.enabled !== false).reduce((s, a) => s + a.value, 0) : 0;
 
   const pCore = totalVal > 0 ? (vCore / totalVal * 100) : 0;
   const pBallast = totalVal > 0 ? (vBallast / totalVal * 100) : 0;
@@ -1011,9 +1052,21 @@ function renderDonutChart(){
   const statCore = document.getElementById('donutCoreStat');
   const statBallast = document.getElementById('donutBallastStat');
   const statSatellite = document.getElementById('donutSatelliteStat');
-  if (statCore) statCore.textContent = `Core: ${pCore.toFixed(1)}% (${fmt(vCore)})`;
-  if (statBallast) statBallast.textContent = `Ballast: ${pBallast.toFixed(1)}% (${fmt(vBallast)})`;
-  if (statSatellite) statSatellite.textContent = `Satellite: ${pSatellite.toFixed(1)}% (${fmt(vSatellite)})`;
+  if (statCore) {
+    statCore.textContent = (bCore && bCore.enabled === false)
+      ? `Core: ${t('assetExcluded')}`
+      : `Core: ${pCore.toFixed(1)}% (${fmt(vCore)})`;
+  }
+  if (statBallast) {
+    statBallast.textContent = (bBallast && bBallast.enabled === false)
+      ? `Ballast: ${t('assetExcluded')}`
+      : `Ballast: ${pBallast.toFixed(1)}% (${fmt(vBallast)})`;
+  }
+  if (statSatellite) {
+    statSatellite.textContent = (bSatellite && bSatellite.enabled === false)
+      ? `Satellite: ${t('assetExcluded')}`
+      : `Satellite: ${pSatellite.toFixed(1)}% (${fmt(vSatellite)})`;
+  }
 
   const segCore = (pCore / 100) * C;
   const segBallast = (pBallast / 100) * C;
@@ -1042,29 +1095,36 @@ function compute(){
   renderSplit();
   renderDonutChart();
 
-  const totalVal = state.buckets.reduce((acc, b) => acc + b.assets.filter(a => a.enabled !== false).reduce((sum, a) => sum + (a.value || 0), 0), 0);
+  const activeBuckets = state.buckets.filter(b => b.enabled !== false);
+  const totalVal = activeBuckets.reduce((acc, b) => acc + b.assets.filter(a => a.enabled !== false).reduce((sum, a) => sum + (a.value || 0), 0), 0);
   const bucketBudgets = allocateBuckets(totalBudget);
 
   state.buckets.forEach((bucket, bi) => {
-    const bucketBudget = bucketBudgets[bi] || 0;
-    document.getElementById(`amt-${bucket.id}`).textContent = t('amount', fmt(bucketBudget));
+    const isBucketExcluded = (bucket.enabled === false);
+    const bucketBudget = isBucketExcluded ? 0 : (bucketBudgets[bi] || 0);
+    const amtEl = document.getElementById(`amt-${bucket.id}`);
+    if (amtEl) {
+      amtEl.textContent = isBucketExcluded ? t('assetExcluded') : t('amount', fmt(bucketBudget));
+    }
 
     const activeIndices = [];
     bucket.assets.forEach((a, idx) => {
-      if (a.enabled !== false) activeIndices.push(idx);
+      if (a.enabled !== false && !isBucketExcluded) activeIndices.push(idx);
     });
     const activeAssets = activeIndices.map(idx => bucket.assets[idx]);
 
     const totalAssetW = activeAssets.reduce((s,a) => s + a.weight, 0);
     const statusEl = document.getElementById(`status-${bucket.id}`);
-    if(Math.abs(totalAssetW - 100) < 0.5){
+    if (isBucketExcluded) {
+      statusEl.className = 'weight-status ok';
+    } else if(Math.abs(totalAssetW - 100) < 0.5){
       statusEl.className = 'weight-status ok';
     } else {
       statusEl.className = 'weight-status';
       statusEl.textContent = t('bucketStatus', totalAssetW.toFixed(0));
     }
 
-    const activeAlloc = allocate(activeAssets, bucketBudget);
+    const activeAlloc = isBucketExcluded ? [] : allocate(activeAssets, bucketBudget);
     const x = new Array(bucket.assets.length).fill(0);
     activeIndices.forEach((origIdx, activeIdx) => {
       x[origIdx] = activeAlloc[activeIdx];
@@ -1078,7 +1138,7 @@ function compute(){
     let cappedCount = 0;
 
     bucket.assets.forEach((a, i) => {
-      const isExcluded = (a.enabled === false);
+      const isExcluded = isBucketExcluded || (a.enabled === false);
       const add = isExcluded ? 0 : x[i];
       const newValue = isExcluded ? a.value : (a.value + add);
       const newPct = (!isExcluded && newTotal > 0) ? (newValue / newTotal * 100) : 0;
@@ -1138,11 +1198,18 @@ function compute(){
     });
 
     const totalAllocated = x.reduce((s,v) => s + Math.max(v,0), 0);
-    document.getElementById(`total-${bucket.id}`).innerHTML =
-      `<span>${t('totalAdded')}</span><strong>${t('amount', `${fmt(totalAllocated)} / ${fmt(bucketBudget)}`)}</strong>`;
+    const totalCheckEl = document.getElementById(`total-${bucket.id}`);
+    if (totalCheckEl) {
+      totalCheckEl.innerHTML = isBucketExcluded
+        ? `<span>${t('totalAdded')}</span><strong>—</strong>`
+        : `<span>${t('totalAdded')}</span><strong>${t('amount', `${fmt(totalAllocated)} / ${fmt(bucketBudget)}`)}</strong>`;
+    }
 
     const cappedEl = document.getElementById(`capped-${bucket.id}`);
-    if(totalBudget > 0 && bucketBudget <= 0.5 && currentTotal > 0 && bucket.weight > 0){
+    if (isBucketExcluded) {
+      cappedEl.style.display = 'block';
+      cappedEl.textContent = t('bucketExcluded');
+    } else if(totalBudget > 0 && bucketBudget <= 0.5 && currentTotal > 0 && bucket.weight > 0){
       cappedEl.style.display = 'block';
       const curPct = totalVal > 0 ? ((currentTotal / totalVal) * 100).toFixed(1) : '0';
       cappedEl.textContent = LANG === 'en'
@@ -1195,9 +1262,10 @@ function dismissPendingBudget(){
 function copyPortfolioSummary(){
   let lines = [LANG === 'en' ? `Portfolio DCA Top-up Plan (Budget: ${fmt(state.totalBudget)} THB):` : `แผนเติมเงิน DCA (งบ: ${fmt(state.totalBudget)} บาท):`];
   state.buckets.forEach(b => {
-    lines.push(`\n[${b.label}]`);
+    const isBucketEx = b.enabled === false;
+    lines.push(`\n[${b.label}]${isBucketEx ? (LANG === 'en' ? ' [Group Excluded]' : ' [กลุ่มนี้ไม่รวมคำนวณ]') : ''}`);
     b.assets.forEach(a => {
-      const isEx = a.enabled === false;
+      const isEx = isBucketEx || (a.enabled === false);
       lines.push(`- ${a.name}: ${LANG === 'en' ? 'Current' : 'ปัจจุบัน'} ${fmt(a.value)} (${a.weight}%)${isEx ? (LANG === 'en' ? ' [Excluded]' : ' [ไม่รวมคำนวณ]') : ''}`);
     });
   });
@@ -1218,6 +1286,7 @@ function copyTradeOrders(){
   const bucketBudgets = allocateBuckets(totalBudget);
   const rate = state.usdThbRate || 33.39;
   state.buckets.forEach((bucket, bi) => {
+    if (bucket.enabled === false) return;
     const bucketBudget = bucketBudgets[bi] || 0;
     const activeIndices = [];
     bucket.assets.forEach((a, idx) => {
@@ -1256,23 +1325,24 @@ function exportCSV(){
   const bucketBudgets = allocateBuckets(totalBudget);
   const rate = state.usdThbRate || 33.39;
   state.buckets.forEach((bucket, bi) => {
-    const bucketBudget = bucketBudgets[bi] || 0;
+    const isBucketEx = bucket.enabled === false;
+    const bucketBudget = isBucketEx ? 0 : (bucketBudgets[bi] || 0);
     const activeIndices = [];
     bucket.assets.forEach((a, idx) => {
-      if (a.enabled !== false) activeIndices.push(idx);
+      if (a.enabled !== false && !isBucketEx) activeIndices.push(idx);
     });
     const activeAssets = activeIndices.map(idx => bucket.assets[idx]);
-    const activeAlloc = allocate(activeAssets, bucketBudget);
+    const activeAlloc = isBucketEx ? [] : allocate(activeAssets, bucketBudget);
     const x = new Array(bucket.assets.length).fill(0);
     activeIndices.forEach((origIdx, activeIdx) => {
       x[origIdx] = activeAlloc[activeIdx];
     });
     bucket.assets.forEach((a, i) => {
-      const isEx = a.enabled === false;
+      const isEx = isBucketEx || (a.enabled === false);
       const add = isEx ? 0 : Math.round(x[i]);
       const usdAdd = isEx ? 0 : Math.round(add / rate);
       const curr = a.currency || (isThaiAssetSymbol(a.ticker) ? 'THB' : 'USD');
-      const status = isEx ? 'Excluded' : 'Active';
+      const status = isBucketEx ? 'Group Excluded' : (isEx ? 'Excluded' : 'Active');
       rows.push(`"${bucket.label}","${a.name}","${a.ticker || ''}",${a.units || 0},${a.lastPrice || 0},"${curr}",${a.weight},${a.value},${add},${usdAdd},"${status}"`);
     });
   });

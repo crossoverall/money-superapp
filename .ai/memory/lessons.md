@@ -237,3 +237,17 @@ When adding a lesson, include:
 - **Solution:** In `compute()`, calculated `usdVal = Math.round(a.value / (state.usdThbRate || 33.39))` and formatted the first parameter of `t('rmeta', ...)` as `${fmt(a.value)} ($${fmtUSD(usdVal)})`.
 - **Rule:** Re-use the existing localized string translation functions (`t('rmeta', cur, target)`) by enriching the formatted currency argument rather than hardcoding language templates in the render loop.
 
+
+### 2026-10-06: Hierarchical Section-Level Exclusion in Multi-Tier Portfolio Rebalancers
+
+- **Date & Context:** 2026-10-06, feature addition to `rebalance.html` (`v1.7.0`).
+- **Problem:** Investors dividing portfolios across macro-asset classes (Core / Ballast / Satellite) wanted to temporarily disable an entire section (e.g. freezing crypto/satellite or pausing ballast) while rebalancing only the remaining active groups with 100% of the monthly budget.
+- **Solution — Top-Level Bucket Filter & Dynamic Split Normalization:**
+  1. **Data Model:** Added `bucket.enabled` boolean (default `true`) stored with `saveState()`.
+  2. **Allocation Layer:** In `allocateBuckets()`, mapped active bucket indices (`b.enabled !== false`), passing only active buckets to `allocate()`, and filled `0` budget for disabled groups so active buckets receive 100% of the total monthly cash injection.
+  3. **Visual Feedback:** Unchecked bucket headers dim the entire panel (`.bucket-panel.excluded`, opacity `0.55`, strikethrough title), display `🚫 Excluded` on the group budget amount, and disable the weight input in the split legend bar.
+  4. **Donut & Portfolio Totals:** `totalVal` and donut chart segments filter only active buckets, recalculating 100% donut proportions across the active subset.
+  5. **Exports:** `copyTradeOrders()` skips disabled sections; `exportCSV()` records `Group Excluded`.
+- **Rule:** In multi-tier hierarchical optimizers, exclusion switches must be applied symmetrically at both the macro-group level and the micro-asset level, with active-index vector remapping preserving state indices.
+
+
