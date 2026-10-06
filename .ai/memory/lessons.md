@@ -204,3 +204,15 @@ When adding a lesson, include:
 - **Root Cause:** Google Cloud Console API enablement propagates across Google's edge authentication servers with a 1–2 minute delay. In addition, existing OAuth tokens requested prior to API enablement lack permission grants.
 - **Resolution & Lesson:** Once Google Drive API is enabled, wait ~1–2 minutes for Google edge servers to synchronize. If necessary, sign out and sign back in to obtain an updated access token.
 
+
+### 2026-10-06: Dynamic Asset Inclusion/Exclusion in Portfolio Allocation
+
+- **Date & Context:** 2026-10-06, feature addition to `rebalance.html` (`v1.5.0`).
+- **Problem:** Users needed a way to temporarily include or exclude individual assets from portfolio calculations (what-if analysis or tracking assets outside active rebalancing) without deleting the asset row or wiping historical inputs.
+- **Solution — Active Index Mapping & Filtered Math:**
+  1. **Data Model:** Added `a.enabled` boolean (default `true`). Unchecking sets `enabled: false`.
+  2. **Active Indices Mapping:** Rather than mutating the underlying asset array, `compute()`, `copyTradeOrders()`, and `exportCSV()` extract `activeIndices = bucket.assets.map(...).filter(...)`. Only active assets are sent to `allocate(activeAssets, budget)`. Result allocations are remapped back to full asset indices, guaranteeing `0` allocation for disabled assets.
+  3. **Visual Feedback:** Unchecked rows receive `.asset-row.excluded` styling (`opacity: 0.55`, strikethrough/dimmed title). In results, excluded items show an explicit `🚫 Excluded` / `🚫 ไม่รวมคำนวณ` badge and `—` for top-up amount.
+  4. **Aggregations Filtered:** Bucket values (`currentTotal`), target weight totals (`totalAssetW`), and portfolio donut values (`totalVal`) filter only assets where `a.enabled !== false`.
+- **Rule:** When adding toggleable entities to constrained optimizers (water-filling/rebalancers), preserve original array order by mapping active indices into an isolated sub-vector, and remap results back to the original index domain so all DOM rows maintain 1-to-1 parity.
+
