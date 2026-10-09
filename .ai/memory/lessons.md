@@ -264,3 +264,18 @@ When adding a lesson, include:
 
 
 
+
+
+### 2026-10-09: Non-Atomic Template Literal Edits Corrupt Inline Script Blocks
+
+- **Date & Context:** 2026-10-09, adding reorder buttons to 
+ebalance.html (1.8.1).
+- **Problem:** A multi_replace_file_content edit replaced only the opening portion of a 40-line 
+ow.innerHTML template literal, inadvertently closing the template early. The remaining HTML became disconnected raw strings, corrupting the JS. A git checkout -- rebalance.html recovery was required.
+- **Rule:** Never split a template literal across multiple replacement chunks. Always replace the entire ariable = backtick...backtick block atomically. If an edit produces a parse error, immediately restore with git checkout -- <file> before further edits.
+
+### 2026-10-09: SDLC Pipeline Was Skipped on Feature Addition
+
+- **Date & Context:** 2026-10-09, reorder buttons feature (1.8.1).
+- **Problem:** Agent shipped a feature without running the mandatory Plan -> Human Approval -> Code -> QA -> Security Review -> Release pipeline.
+- **Rule Reinforced:** The SDLC pipeline is mandatory for ALL code changes. Level 2 tasks must pause for human approval after the Plan phase. QA must run after every edit.
