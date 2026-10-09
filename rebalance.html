@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="1.8.0">
+<meta name="version" content="1.8.1">
 <title>คำนวณการเติมเงินรายเดือน</title>
 <link rel="stylesheet" href="css/theme.css">
 <style>
@@ -139,6 +139,9 @@
   .asset-row-top input.name:focus{ outline:none; }
   .remove-btn{ background:none; border:none; color: var(--ink-faint); font-size:18px; cursor:pointer; line-height:1; padding:2px 6px; }
   .remove-btn:hover{ color: var(--satellite); }
+  .reorder-btn{ background:none; border:1px solid var(--line); color: var(--ink-faint); font-size:10px; cursor:pointer; line-height:1; padding:2px 4px; border-radius:4px; transition: all 0.15s; flex-shrink:0; }
+  .reorder-btn:hover:not([disabled]){ background: var(--panel); color: var(--ink); border-color: var(--ink-dim); }
+  .reorder-btn[disabled]{ opacity: 0.22; cursor: default; }
 
   .field-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .field{ display:flex; flex-direction:column; gap:3px; }
@@ -362,7 +365,7 @@
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v1.8.0</p>
+  <p class="version-tag">v1.8.1</p>
 
 <script>
 // Language: read once from localStorage (shared origin with the shell nav's toggle).
@@ -965,11 +968,17 @@ function renderAssetRows(bucket){
       }
     }
 
+    const isFirst = (i === 0);
+    const isLast  = (i === bucket.assets.length - 1);
     row.innerHTML = `
       <div class="asset-row-top">
         <input type="checkbox" class="asset-enable-cb" data-bucket="${bucket.id}" data-idx="${i}" data-field="enabled" ${!isExcluded ? 'checked' : ''} title="${t('toggleAsset')}" aria-label="${t('toggleAsset')} - ${safeName || defName}">
         <input class="name" data-bucket="${bucket.id}" data-idx="${i}" data-field="name" value="${safeName}" aria-label="${defName} - ${safeBucket}">
-        <button class="remove-btn" data-bucket="${bucket.id}" data-idx="${i}" title="${t('remove')}" aria-label="${t('remove')} ${safeName || defName}">×</button>
+        <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">
+          <button class="reorder-btn move-up-btn" data-bucket="${bucket.id}" data-idx="${i}" title="Move up" ${isFirst ? 'disabled' : ''}>&#9650;</button>
+          <button class="reorder-btn move-down-btn" data-bucket="${bucket.id}" data-idx="${i}" title="Move down" ${isLast ? 'disabled' : ''}>&#9660;</button>
+        </div>
+        <button class="remove-btn" data-bucket="${bucket.id}" data-idx="${i}" title="${t('remove')}" aria-label="${t('remove')} ${safeName || defName}">&times;</button>
       </div>
       <div class="field-grid">
         <div class="field">
@@ -1105,6 +1114,30 @@ function renderAssetRows(bucket){
       const idx = parseInt(btn.dataset.idx);
       b.assets.splice(idx, 1);
       renderAssetRows(b);
+      compute();
+    });
+  });
+
+  rowsEl.querySelectorAll('.move-up-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const b = state.buckets.find(bk => bk.id === btn.dataset.bucket);
+      const idx = parseInt(btn.dataset.idx);
+      if (idx <= 0) return;
+      [b.assets[idx - 1], b.assets[idx]] = [b.assets[idx], b.assets[idx - 1]];
+      renderAssetRows(b);
+      saveState();
+      compute();
+    });
+  });
+
+  rowsEl.querySelectorAll('.move-down-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const b = state.buckets.find(bk => bk.id === btn.dataset.bucket);
+      const idx = parseInt(btn.dataset.idx);
+      if (idx >= b.assets.length - 1) return;
+      [b.assets[idx], b.assets[idx + 1]] = [b.assets[idx + 1], b.assets[idx]];
+      renderAssetRows(b);
+      saveState();
       compute();
     });
   });
