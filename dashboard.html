@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="1.8.3">
+  <meta name="version" content="1.8.4">
   <title>ภาพรวมการเงิน</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -102,12 +102,12 @@
   <div class="eyebrow" id="lbl-eyebrow">DASHBOARD</div>
   <h1>
     <span id="txt-title">ภาพรวมการเงิน</span>
-    <button onclick="refreshDashboard()" class="action-btn" style="padding:6px; margin:0; border-radius:12px;" id="btn-refresh" title="รีเฟรชข้อมูล">🔄</button>
+    <button onclick="refreshDashboard()" class="action-btn" style="padding:6px; margin:0; border-radius:12px;" id="btn-refresh" title="รีเฟรชข้อมูล" aria-label="Refresh financial data">🔄</button>
   </h1>
   <div class="sub" id="lbl-subtitle">สรุปความมั่งคั่งและประวัติการเติบโต</div>
 
-  <div class="panel">
-    <div class="summary-grid">
+  <div class="panel" role="region" aria-label="Key Financial Indicators">
+    <div class="summary-grid" aria-live="polite">
       <div class="summary-card blue" id="kpi-networth">
         <div class="sc-label" id="lbl-kpi-networth">ความมั่งคั่งสุทธิ (Net Worth)</div>
         <div class="sc-value" id="kpi-networth-val">0</div>
@@ -142,34 +142,34 @@
     </div>
   </div>
 
-  <div class="panel">
+  <div class="panel" role="region" aria-label="Growth Trends">
     <div class="panel-title" id="lbl-chart-title">
       <span id="lbl-chart-title-txt">แนวโน้มการเติบโต (Trends)</span>
-      <button onclick="takeSnapshot()" class="action-btn" style="padding:4px 8px; font-size:10px;"><span id="lbl-btn-snapshot">+ บันทึกเดือนนี้</span></button>
+      <button onclick="takeSnapshot()" class="action-btn" style="padding:4px 8px; font-size:10px;" aria-label="Save current monthly snapshot"><span id="lbl-btn-snapshot">+ บันทึกเดือนนี้</span></button>
     </div>
-    <div style="display:flex; gap:12px; font-size:11px; font-weight:600;">
-      <span id="btn-chart-nw" style="color:var(--blue); cursor:pointer;" onclick="setChartMode('networth')">— Net Worth</span>
-      <span id="btn-chart-sav" style="color:var(--ok); cursor:pointer;" onclick="setChartMode('savings')">--- Savings Rate</span>
+    <div style="display:flex; gap:12px; font-size:11px; font-weight:600;" role="tablist" aria-label="Chart display mode">
+      <span id="btn-chart-nw" style="color:var(--blue); cursor:pointer;" onclick="setChartMode('networth')" role="tab" tabindex="0" aria-selected="true">— Net Worth</span>
+      <span id="btn-chart-sav" style="color:var(--ok); cursor:pointer;" onclick="setChartMode('savings')" role="tab" tabindex="0" aria-selected="false">--- Savings Rate</span>
     </div>
     <div class="chart-container">
-      <svg id="svgChart" viewBox="0 0 600 220" preserveAspectRatio="none"></svg>
+      <svg id="svgChart" viewBox="0 0 600 220" preserveAspectRatio="none" role="img" aria-label="Financial growth trends line chart"><title id="svgChartTitle">Trends Chart</title></svg>
       <div id="chartLegend" class="tooltip" style="position:static; opacity:1; box-shadow:none; margin-top:8px; font-size:11px;"></div>
-      <div id="chartTooltip" class="tooltip"></div>
+      <div id="chartTooltip" class="tooltip" role="tooltip"></div>
     </div>
-    <div id="snapshotAlertBanner" style="display:none; margin-top:12px; padding:10px 14px; background:var(--ok-dim); border:1px solid var(--ok); border-radius:8px; color:var(--ok); font-size:12px; font-weight:600; align-items:center; justify-content:space-between;">
+    <div id="snapshotAlertBanner" style="display:none; margin-top:12px; padding:10px 14px; background:var(--ok-dim); border:1px solid var(--ok); border-radius:8px; color:var(--ok); font-size:12px; font-weight:600; align-items:center; justify-content:space-between;" role="alert">
       <span id="snapshotAlertText"></span>
-      <button onclick="this.parentElement.style.display='none'" style="background:none; border:none; color:inherit; font-size:16px; cursor:pointer; padding:0 4px;">&times;</button>
+      <button onclick="this.parentElement.style.display='none'" style="background:none; border:none; color:inherit; font-size:16px; cursor:pointer; padding:0 4px;" aria-label="Dismiss">&times;</button>
     </div>
   </div>
 
-  <div class="panel">
+  <div class="panel" role="region" aria-label="Historical Records">
   <div class="panel-title" id="lbl-history-title">ประวัติที่บันทึกไว้ (History)</div>
   <div id="lbl-snapshot-count" style="margin-bottom:12px; font-size:12px; color:var(--ink-dim);"></div>
   <div id="historyListContainer" style="margin-bottom:12px;"></div>
   <button onclick="clearAllSnapshots()" class="reset-btn" style="width:100%; text-align:center;"><span id="btn-clear-history">ลบประวัติทั้งหมด</span></button>
   </div>
 
-  <div class="panel">
+  <div class="panel" role="navigation" aria-label="Tools Navigation">
     <div class="panel-title" id="lbl-quick-links">ไปหน้าเครื่องมือ (Tools)</div>
     <div onclick="window.parent.postMessage({action:'switchToTab', target:'remaining-money'},'*')" class="quick-link"><span id="qc-rem-title">💰 คำนวณเงินคงเหลือ (Remaining)</span> <span>Alt+6</span></div>
     <div onclick="window.parent.postMessage({action:'switchToTab', target:'rebalance'},'*')" class="quick-link"><span id="qc-rebal-title">📊 Rebalance พอร์ต</span> <span>Alt+2</span><span id="qc-rebal-sub" style="display:none;"></span></div>
@@ -179,7 +179,7 @@
     <div onclick="window.parent.postMessage({action:'switchToTab', target:'debt-calculator'},'*')" class="quick-link"><span id="qc-debt-title">📉 วางแผนปลดหนี้ (Debt)</span> <span>Alt+7</span><span id="qc-debt-sub" style="display:none;"></span></div>
   </div>
 
-  <p class="version-tag">Money Superapp v1.8.3</p>
+  <p class="version-tag">Money Superapp v1.8.4</p>
 
 <script src="js/shared.js"></script>
 <script>
@@ -566,9 +566,16 @@
 
     function setChartMode(mode) {
         chartMode = mode;
-        if(document.getElementById('btn-chart-nw')) document.getElementById('btn-chart-nw').classList.toggle('active', mode === 'networth');
-        if(document.getElementById('btn-chart-sav')) document.getElementById('btn-chart-sav').classList.toggle('active', mode === 'savings');
-        // document.getElementById('btn-chart-run').classList.toggle('active', mode === 'runway');
+        const btnNw = document.getElementById('btn-chart-nw');
+        const btnSav = document.getElementById('btn-chart-sav');
+        if(btnNw) {
+            btnNw.classList.toggle('active', mode === 'networth');
+            btnNw.setAttribute('aria-selected', mode === 'networth' ? 'true' : 'false');
+        }
+        if(btnSav) {
+            btnSav.classList.toggle('active', mode === 'savings');
+            btnSav.setAttribute('aria-selected', mode === 'savings' ? 'true' : 'false');
+        }
         renderChart();
     }
 

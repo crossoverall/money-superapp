@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="1.8.3">
+  <meta name="version" content="1.8.4">
   <title>วางแผนปลดหนี้ (Debt Payoff)</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -139,7 +139,7 @@
     </button>
   </div>
 
-  <div class="summary-grid">
+  <div class="summary-grid" role="region" aria-label="Debt Payoff Summary" aria-live="polite">
     <div class="summary-card">
       <div class="sc-label" id="lbl-kpi-total-debt">ยอดหนี้รวม</div>
       <div class="sc-value" id="kpi-total-debt">0</div>
@@ -162,17 +162,17 @@
     </div>
   </div>
 
-  <div class="panel">
+  <div class="panel" role="region" aria-label="Payoff Strategy">
     <div class="panel-title" id="lbl-strategy-title">กลยุทธ์ (Strategy)</div>
-    <div class="strategy-toggle">
-      <div class="strategy-btn active" id="btn-strat-avalanche" onclick="setStrategy('avalanche')">Avalanche<br><span id="strat-av-sub" style="font-size:10px; font-weight:400;">ดอกสูงสุดก่อน</span></div>
-      <div class="strategy-btn" id="btn-strat-snowball" onclick="setStrategy('snowball')">Snowball<br><span id="strat-sn-sub" style="font-size:10px; font-weight:400;">ยอดน้อยสุดก่อน</span></div>
+    <div class="strategy-toggle" role="tablist" aria-label="Payoff Strategy">
+      <div class="strategy-btn active" id="btn-strat-avalanche" onclick="setStrategy('avalanche')" role="tab" tabindex="0" aria-selected="true">Avalanche<br><span id="strat-av-sub" style="font-size:10px; font-weight:400;">ดอกสูงสุดก่อน</span></div>
+      <div class="strategy-btn" id="btn-strat-snowball" onclick="setStrategy('snowball')" role="tab" tabindex="0" aria-selected="false">Snowball<br><span id="strat-sn-sub" style="font-size:10px; font-weight:400;">ยอดน้อยสุดก่อน</span></div>
     </div>
     
     <div style="margin-top:16px;">
       <div class="panel-title" id="lbl-extra-pay">เงินจ่ายเพิ่มต่อเดือน (Extra)</div>
       <div style="display:flex; align-items:center; gap:10px;">
-        <input type="number" id="txtExtraPayment" value="5000" min="0" step="500" class="value-input" style="flex:1; font-size:16px; padding:8px 12px;" oninput="onExtraPaymentChange(this.value)">
+        <input type="number" id="txtExtraPayment" value="5000" min="0" step="500" inputmode="decimal" aria-label="Extra Monthly Payment" class="value-input" style="flex:1; font-size:16px; padding:8px 12px;" oninput="onExtraPaymentChange(this.value)">
         <span class="unit" id="lbl-unit-monthly">บาท/เดือน</span>
       </div>
     </div>
@@ -253,7 +253,7 @@
     <span id="saveStatus">&nbsp;</span>
     <button class="reset-btn" id="btn-reset-debts" onclick="resetDefaults()">รีเซ็ตค่าเริ่มต้น</button>
   </div>
-  <p class="version-tag">v1.8.3</p>
+  <p class="version-tag">v1.8.4</p>
 
 <script src="js/shared.js"></script>
 <script>
@@ -435,8 +435,16 @@
 
     function setStrategy(strat) {
         state.strategy = strat;
-        document.getElementById('btn-strat-avalanche').classList.toggle('active', strat === 'avalanche');
-        document.getElementById('btn-strat-snowball').classList.toggle('active', strat === 'snowball');
+        const btnAv = document.getElementById('btn-strat-avalanche');
+        const btnSn = document.getElementById('btn-strat-snowball');
+        if (btnAv) {
+            btnAv.classList.toggle('active', strat === 'avalanche');
+            btnAv.setAttribute('aria-selected', strat === 'avalanche' ? 'true' : 'false');
+        }
+        if (btnSn) {
+            btnSn.classList.toggle('active', strat === 'snowball');
+            btnSn.setAttribute('aria-selected', strat === 'snowball' ? 'true' : 'false');
+        }
         const explEl = document.getElementById('strategy-explanation');
         const t = translations[LANG] || translations.th;
         explEl.innerHTML = strat === 'avalanche' ? t.avalancheExpl : t.snowballExpl;
@@ -517,15 +525,15 @@
                 </div>
                 <div class="val-group" style="flex-basis:100%;">
                     <label>${t.colBalance}</label>
-                    <input type="number" value="${debt.balance}" step="1000" min="0" oninput="onDebtChange(${debt.id}, 'balance', this.value)" class="value-input">
+                    <input type="number" value="${debt.balance}" step="1000" min="0" inputmode="decimal" oninput="onDebtChange(${debt.id}, 'balance', this.value)" class="value-input">
                 </div>
                 <div class="val-group">
                     <label>${t.colRate}</label>
-                    <input type="number" value="${debt.rate}" step="0.1" min="0" oninput="onDebtChange(${debt.id}, 'rate', this.value)" class="value-input" style="color:var(--warn);">
+                    <input type="number" value="${debt.rate}" step="0.1" min="0" inputmode="decimal" oninput="onDebtChange(${debt.id}, 'rate', this.value)" class="value-input" style="color:var(--warn);">
                 </div>
                 <div class="val-group">
                     <label>${t.colMin}</label>
-                    <input type="number" value="${debt.minPayment}" step="100" min="0" oninput="onDebtChange(${debt.id}, 'minPayment', this.value)" class="value-input" style="color:var(--blue);">
+                    <input type="number" value="${debt.minPayment}" step="100" min="0" inputmode="decimal" oninput="onDebtChange(${debt.id}, 'minPayment', this.value)" class="value-input" style="color:var(--blue);">
                 </div>
             `;
             tbody.appendChild(tr);

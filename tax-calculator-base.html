@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="1.8.3">
+    <meta name="version" content="1.8.4">
     <meta name="description" content="คำนวณภาษีเงินได้บุคคลธรรมดา — ประมาณการภาษีเงินได้จากเงินเดือนและโบนัส พร้อมแสดงรายละเอียดตามขั้นบันได">
     <title>คำนวณภาษีเงินได้บุคคลธรรมดา</title>
     <link rel="stylesheet" href="css/tailwind-lite.css">
@@ -197,15 +197,15 @@
             <div id="section-monthly" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-salary">เงินเดือน (บาท/เดือน)</label>
-                    <input type="number" id="salary" placeholder="เช่น 50000" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
+                    <input type="number" id="salary" placeholder="เช่น 50000" inputmode="decimal" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-bonus">โบนัส (บาท/ปี)</label>
-                    <input type="number" id="bonus" placeholder="เช่น 100000" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
+                    <input type="number" id="bonus" placeholder="เช่น 100000" inputmode="decimal" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-pvdPercent">กองทุนสำรองเลี้ยงชีพ (%)</label>
-                    <input type="number" id="pvd" placeholder="เช่น 5" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
+                    <input type="number" id="pvd" placeholder="เช่น 5" inputmode="decimal" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-sso-ceiling">เพดานประกันสังคม</label>
@@ -226,12 +226,12 @@
                         <label class="block text-sm font-medium text-gray-700" id="lbl-yearly-income">รายได้รวมทั้งปี (บาท/ปี)</label>
                         <span class="text-[11px] text-gray-400" id="lbl-yearly-income-tag">เงินได้ 40(1), 40(2)</span>
                     </div>
-                    <input type="number" id="yearlyIncome" placeholder="เช่น 600000" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
+                    <input type="number" id="yearlyIncome" placeholder="เช่น 600000" inputmode="decimal" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
                     <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1" id="lbl-yearly-hint">สำหรับฟรีแลนซ์ ค้าขาย คอมมิชชั่น หรือรายได้แต่ละเดือนไม่แน่นอน</p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-yearly-bonus">โบนัส / รายได้พิเศษอื่นๆ ทั้งปี (บาท/ปี)</label>
-                    <input type="number" id="yearlyBonus" placeholder="เช่น 50000" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
+                    <input type="number" id="yearlyBonus" placeholder="เช่น 50000" inputmode="decimal" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
                 </div>
 
                 <!-- 12-Month Inconsistent Income Breakdown Helper -->
@@ -401,7 +401,7 @@
                     <span id="lbl-print-tax">🖨️ พิมพ์ / PDF</span>
                 </button>
             </div>
-            <p class="text-xs text-gray-400">v1.8.3</p>
+            <p class="text-xs text-gray-400">v1.8.4</p>
         </div>
     </div>
 
