@@ -51,7 +51,14 @@ python3 -m http.server 8000
 
 ### Test & Lint
 ```bash
-# UNKNOWN (no test runner or linter configured in repository)
+# Run automated test suite (Node.js native test runner, zero runtime deps)
+npm test
+
+# Lint & formatting verification (Biome)
+npm run lint
+
+# Auto-format codebase
+npm run format
 ```
 
 ### Release / Version Bumping

@@ -7,7 +7,7 @@
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -47,7 +47,10 @@ console.log(`Bumping version: v${currentVersion} -> v${newVersion} (${arg})`);
 
 // 1. Update index.html
 indexHtml = indexHtml.replace(/<meta name="version" content="[^"]+">/, `<meta name="version" content="${newVersion}">`);
-indexHtml = indexHtml.replace(/<span class="version-badge">v[^<]+<\/span>/, `<span class="version-badge">v${newVersion}</span>`);
+indexHtml = indexHtml.replace(
+  /<span class="version-badge">v[^<]+<\/span>/,
+  `<span class="version-badge">v${newVersion}</span>`,
+);
 indexHtml = indexHtml.replace(/Money Superapp v[0-9.]+/g, `Money Superapp v${newVersion}`);
 writeFileSync(indexPath, indexHtml);
 console.log(`  ✓ Updated index.html`);
@@ -55,7 +58,10 @@ console.log(`  ✓ Updated index.html`);
 // 2. Update sw.js CACHE_NAME
 const swPath = resolve(ROOT, 'sw.js');
 let swJs = readFileSync(swPath, 'utf8');
-swJs = swJs.replace(/const CACHE_NAME = 'money-superapp-v[^']+';/, `const CACHE_NAME = 'money-superapp-v${newVersion}';`);
+swJs = swJs.replace(
+  /const CACHE_NAME = 'money-superapp-v[^']+';/,
+  `const CACHE_NAME = 'money-superapp-v${newVersion}';`,
+);
 writeFileSync(swPath, swJs);
 console.log(`  ✓ Updated sw.js (CACHE_NAME = money-superapp-v${newVersion})`);
 
@@ -67,7 +73,7 @@ const toolFiles = [
   'tax-calculator-base.html',
   'tax-calculator.html',
   'remaining-money.html',
-  'debt-calculator.html'
+  'debt-calculator.html',
 ];
 
 for (const file of toolFiles) {
@@ -86,5 +92,14 @@ let readme = readFileSync(readmePath, 'utf8');
 readme = readme.replace(/# Money Superapp \(v[0-9.]+\)/, `# Money Superapp (v${newVersion})`);
 writeFileSync(readmePath, readme);
 console.log(`  ✓ Updated README.md`);
+
+// 5. Update package.json
+const pkgPath = resolve(ROOT, 'package.json');
+try {
+  let pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+  pkg.version = newVersion;
+  writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
+  console.log(`  ✓ Updated package.json`);
+} catch (_e) {}
 
 console.log(`\n🎉 Done! Successfully bumped Money Superapp to v${newVersion}`);

@@ -4,21 +4,19 @@
  * 100% offline & client-side compatible (file:// and http(s)://).
  */
 
-(function(global) {
-  'use strict';
-
-  var LANG = (function() {
+((global) => {
+  var LANG = (() => {
     try {
       return (typeof localStorage !== 'undefined' && localStorage.getItem('moneySuperapp.lang')) || 'th';
-    } catch (e) {
+    } catch (_e) {
       return 'th';
     }
   })();
 
-  var THEME = (function() {
+  var THEME = (() => {
     try {
       return (typeof localStorage !== 'undefined' && localStorage.getItem('moneySuperapp.theme')) || 'light';
-    } catch (e) {
+    } catch (_e) {
       return 'light';
     }
   })();
@@ -37,38 +35,40 @@
     var num = Number(amount) || 0;
     return num.toLocaleString(LANG === 'en' ? 'en-US' : 'th-TH', {
       minimumFractionDigits: dec,
-      maximumFractionDigits: dec
+      maximumFractionDigits: dec,
     });
   }
 
   function parseNum(val) {
-    if (typeof val === 'number') return isNaN(val) ? 0 : val;
+    if (typeof val === 'number') return Number.isNaN(val) ? 0 : val;
     if (!val) return 0;
     var clean = String(val).replace(/,/g, '').trim();
     return parseFloat(clean) || 0;
   }
 
   function escapeHtml(str) {
-    return String(str == null ? '' : str).replace(/[&<>"']/g, function(m) {
-      return {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-      }[m];
-    });
+    return String(str == null ? '' : str).replace(
+      /[&<>"']/g,
+      (m) =>
+        ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;',
+        })[m],
+    );
   }
 
   function initShortcutForwarding() {
     if (typeof window !== 'undefined' && window.addEventListener) {
-      window.addEventListener('keydown', function(e) {
+      window.addEventListener('keydown', (e) => {
         if (e.altKey && e.key >= '1' && e.key <= '7') {
           try {
             if (window.parent && window.parent !== window) {
               window.parent.postMessage({ action: 'shortcutKey', key: e.key }, '*');
             }
-          } catch (err) {}
+          } catch (_err) {}
         }
       });
     }
@@ -86,7 +86,7 @@
     parseNum: parseNum,
     escapeHtml: escapeHtml,
     initTheme: initTheme,
-    initShortcutForwarding: initShortcutForwarding
+    initShortcutForwarding: initShortcutForwarding,
   };
 
   // Expose on global window object

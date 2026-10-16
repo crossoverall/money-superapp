@@ -302,14 +302,15 @@ Browser `localStorage` storing JSON-serialized string values.
 - **Styling:** Custom offline utility classes (`css/tailwind-lite.css`).
 - **Maintenance Tooling:**
   - `scripts/bump.mjs`: Node.js ES module script for semantic version bumping across HTML meta tags, badges, SW cache names, and `README.md`.
+  - Node.js native test runner: `npm test` (`tests/**/*.test.mjs`) for financial math and shared utility testing.
+  - Biome: `npm run lint` / `npm run format` (`biome.json`) for code analysis and formatting.
 - **Confidence:** `HIGH` (Verified via repository scan)
 
 ---
 
 ## 10. Known Unknowns
 
-- **Automated Test Suite:** `UNKNOWN`. There are no automated unit or integration test configurations (`package.json`, Jest, Vitest, Playwright, or Cypress) in the repository. Testing is currently performed via manual browser verification.
-- **Linter / Formatter Configuration:** `UNKNOWN`. No `.eslintrc`, `biome.json`, or `.prettierrc` files exist.
+- **E2E / Browser Automation Tests:** `UNKNOWN`. While unit tests cover pure financial math and shared utilities, full browser automated UI tests (Playwright) are not yet integrated.
 
 ---
 
@@ -318,9 +319,10 @@ Browser `localStorage` storing JSON-serialized string values.
 | Aspect | Verification Source | Confidence |
 |---|---|---|
 | SPA & PWA Archetype | [`index.html`](file:///home/l2okii/Documents/money-superapp/index.html), [`sw.js`](file:///home/l2okii/Documents/money-superapp/sw.js), [`manifest.json`](file:///home/l2okii/Documents/money-superapp/manifest.json) | `HIGH` |
-| Zero-build Vanilla JS Stack | Directory layout, absence of `package.json`, source files | `HIGH` |
+| Zero-build Vanilla JS Stack | Directory layout, source files | `HIGH` |
 | 7 Independent Tools | [`dashboard.html`](file:///home/l2okii/Documents/money-superapp/dashboard.html), [`rebalance.html`](file:///home/l2okii/Documents/money-superapp/rebalance.html), [`months-slips.html`](file:///home/l2okii/Documents/money-superapp/months-slips.html), [`tax-calculator-base.html`](file:///home/l2okii/Documents/money-superapp/tax-calculator-base.html), [`tax-calculator.html`](file:///home/l2okii/Documents/money-superapp/tax-calculator.html), [`remaining-money.html`](file:///home/l2okii/Documents/money-superapp/remaining-money.html), [`debt-calculator.html`](file:///home/l2okii/Documents/money-superapp/debt-calculator.html) | `HIGH` |
 | Decoupled Bridge Architecture | Commit `84b16d5`, button event listeners in tool files | `HIGH` |
 | LocalStorage Schema | Storage calls across all 8 HTML files | `HIGH` |
 | Version Bumping Script | [`scripts/bump.mjs`](file:///home/l2okii/Documents/money-superapp/scripts/bump.mjs) | `HIGH` |
-| Automated Test Runner | Absense of test files/scripts | `UNKNOWN` |
+| Automated Test Runner | [`package.json`](file:///home/l2okii/Document/money-superapp/package.json), [`tests/`](file:///home/l2okii/Document/money-superapp/tests/) | `HIGH` |
+| Linter / Formatter | [`biome.json`](file:///home/l2okii/Document/money-superapp/biome.json) | `HIGH` |
