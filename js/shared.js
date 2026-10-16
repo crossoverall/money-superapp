@@ -74,6 +74,82 @@
     }
   }
 
+  function safeJsonParse(key, fallback) {
+    if (typeof localStorage === 'undefined') return fallback;
+    var raw;
+    var parsed;
+    try {
+      raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      parsed = JSON.parse(raw);
+      return parsed != null ? parsed : fallback;
+    } catch (_e) {
+      console.warn('[MoneySuperapp] Corrupted localStorage key:', key);
+      return fallback;
+    }
+  }
+
+  function createUndoManager(options) {
+    var opts = options || {};
+    var maxDepth = opts.maxDepth || 15;
+    var onUndo = opts.onUndo || (() => {});
+    var stack = [];
+
+    function push(state) {
+      if (state == null) return;
+      var clone;
+      try {
+        clone = JSON.parse(JSON.stringify(state));
+        stack.push(clone);
+        if (stack.length > maxDepth) {
+          stack.shift();
+        }
+      } catch (_e) {}
+    }
+
+    function undo() {
+      if (stack.length === 0) return null;
+      var previous = stack.pop();
+      try {
+        onUndo(previous);
+      } catch (_e) {}
+      return previous;
+    }
+
+    function canUndo() {
+      return stack.length > 0;
+    }
+
+    function size() {
+      return stack.length;
+    }
+
+    function clear() {
+      stack = [];
+    }
+
+    if (opts.enableShortcuts && typeof window !== 'undefined') {
+      window.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+          const tag = e.target?.tagName;
+          if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+          if (canUndo()) {
+            e.preventDefault();
+            undo();
+          }
+        }
+      });
+    }
+
+    return {
+      push: push,
+      undo: undo,
+      canUndo: canUndo,
+      size: size,
+      clear: clear,
+    };
+  }
+
   // Auto-initialize document theme and shortcuts when running in browser
   initTheme();
   initShortcutForwarding();
@@ -87,6 +163,8 @@
     escapeHtml: escapeHtml,
     initTheme: initTheme,
     initShortcutForwarding: initShortcutForwarding,
+    safeJsonParse: safeJsonParse,
+    createUndoManager: createUndoManager,
   };
 
   // Expose on global window object
@@ -99,5 +177,7 @@
     if (typeof global.formatMoney === 'undefined') global.formatMoney = formatMoney;
     if (typeof global.parseNum === 'undefined') global.parseNum = parseNum;
     if (typeof global.escapeHtml === 'undefined') global.escapeHtml = escapeHtml;
+    if (typeof global.safeJsonParse === 'undefined') global.safeJsonParse = safeJsonParse;
+    if (typeof global.createUndoManager === 'undefined') global.createUndoManager = createUndoManager;
   }
 })(typeof window !== 'undefined' ? window : this);

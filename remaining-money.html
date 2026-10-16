@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="1.8.4">
+  <meta name="version" content="1.8.5">
   <title>คำนวณเงินคงเหลือ</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -185,11 +185,26 @@
     }
     .save-status .reset-btn:hover{ color: var(--core); }
     #resetBtn:hover{ color: var(--danger); }
+    .undo-btn {
+      background: var(--panel-2, #f4f4f5);
+      border: 1px solid var(--line, #e4e4e7);
+      color: var(--brand, #059669);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .undo-btn:hover { background: var(--line, #e4e4e7); }
 
     @media print {
       :root { --ink: #000 !important; --ink-dim: #333 !important; --ink-faint: #666 !important; --panel: #fff !important; --panel-2: #fafafa !important; --line: #ccc !important; }
       body { background: #fff !important; color: #000 !important; }
-      .save-status, .add-btn, .remove-btn, .version-tag, .rebalance-bridge-btn, #bridgeAlertBanner, #importModal, #importFileInput { display: none !important; }
+      .save-status, .add-btn, .remove-btn, .undo-btn, .version-tag, .rebalance-bridge-btn, #bridgeAlertBanner, #importModal, #importFileInput { display: none !important; }
     }
 
     .version-tag{ font-size: 10px; color: var(--ink-faint); text-align: center; margin-top: 14px; }
@@ -241,7 +256,10 @@
 <body>
 
   <div class="eyebrow" id="eyebrow">เครื่องมือจัดการเงิน</div>
-  <h1 id="pageTitle">คำนวณเงินคงเหลือ</h1>
+  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+    <h1 id="pageTitle" style="margin:0;">คำนวณเงินคงเหลือ</h1>
+    <button type="button" class="undo-btn no-print" id="btnUndoTop" onclick="undoRemainingChange()" style="display:none;" title="เลิกทำ / Undo (Ctrl+Z)" aria-label="Undo last change">↩ <span id="lblUndo">เลิกทำ (Undo)</span></button>
+  </div>
   <div class="sub" id="subtitle">บันทึกรายได้และค่าใช้จ่าย แล้วดูว่าแต่ละเดือนเหลือเงินเท่าไหร่ — เมื่อกรอกเงินเดือน ระบบจะคำนวณภาษีและประกันสังคมโดยอัตโนมัติ</div>
 
   <div id="bridgeAlertBanner" style="display: none; margin-bottom: 16px; padding: 12px 16px; border-radius: 10px; background: #ecfdf5; border: 1px solid #10b981; color: #065f46; font-size: 13px; font-weight: 600; align-items: center; justify-content: space-between;">
@@ -344,10 +362,11 @@
       <button class="reset-btn" id="exportCsvBtn" onclick="exportCSV()">📥 <span id="lblExportCsv">ดาวน์โหลด CSV</span></button>
       <button class="reset-btn" id="exportJsonBtn" onclick="exportJSON()">💾 <span id="lblExportJson">ดาวน์โหลด JSON</span></button>
       <button class="reset-btn" id="printBtn" onclick="window.print()">🖨️ <span id="lblPrint">พิมพ์ / บันทึก PDF</span></button>
+      <button class="reset-btn" id="btnUndoBottom" onclick="undoRemainingChange()" style="display:none; color:var(--brand); font-weight:700;">↩ <span id="lblUndoBottom">เลิกทำ (Undo)</span></button>
       <button class="reset-btn" id="resetBtn" style="color:var(--ink-faint);">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v1.8.4</p>
+  <p class="version-tag">v1.8.5</p>
 
   <!-- Import Preview Modal -->
   <div id="importModal" role="dialog" aria-modal="true" aria-labelledby="importModalTitle" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; display:none; align-items:center; justify-content:center; backdrop-filter:blur(2px);" onclick="if(event.target===this)closeImportModal()">
@@ -462,6 +481,7 @@ const EN = {
   lblExportCsv: 'Download CSV',
   lblExportJson: 'Download JSON',
   lblPrint: 'Print / PDF',
+  lblUndo: 'Undo',
   copiedSuccess: '✓ Copied!',
   lblImport: 'Import Data',
   importModalTitle: 'Import Data Preview',
@@ -632,6 +652,10 @@ if(LANG === 'en'){
   if (btnConf && EN.btnConfirmImport) btnConf.textContent = EN.btnConfirmImport;
   const btnCanc = document.getElementById('btnCancelImportModal');
   if (btnCanc && EN.btnCancelModal) btnCanc.textContent = EN.btnCancelModal;
+  const lblU = document.getElementById('lblUndo');
+  if (lblU) lblU.textContent = EN.lblUndo;
+  const lblUB = document.getElementById('lblUndoBottom');
+  if (lblUB) lblUB.textContent = EN.lblUndo;
 }
 
 // ── Canonical names & Translation helper ──────────────────────────────────
@@ -720,9 +744,7 @@ const defaultState = {
 
 const state = (function(){
   try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(!raw) return JSON.parse(JSON.stringify(defaultState));
-    const saved = JSON.parse(raw);
+    const saved = MoneyApp.safeJsonParse(STORAGE_KEY, null);
     if(saved && Array.isArray(saved.incomes) && Array.isArray(saved.expenses)){
       // Ensure auto rows exist in loaded state (and update existing ones to have auto: true and autoType)
       const expenses = Array.isArray(saved.expenses) ? saved.expenses : defaultState.expenses.slice();
@@ -991,12 +1013,92 @@ function showBridgeNotification(msg){
   }
 }
 
+// ── Undo Subsystem ────────────────────────────────────────────────────────
+function captureSnapshot(){
+  return {
+    incomes: JSON.parse(JSON.stringify(state.incomes || [])),
+    expenses: JSON.parse(JSON.stringify(state.expenses || [])),
+    savings: JSON.parse(JSON.stringify(state.savings || [])),
+    manualOverrides: {
+      tax: !!manualOverrides.tax,
+      sso: !!manualOverrides.sso,
+      pvd: !!manualOverrides.pvd,
+    },
+    pvdPercent: pvdPercent,
+    showEmergencyRunway: !!state.showEmergencyRunway,
+    currentEmergencyReserve: state.currentEmergencyReserve || 0,
+  };
+}
+
+function restoreSnapshot(snap){
+  if (!snap) return;
+  state.incomes = snap.incomes ? JSON.parse(JSON.stringify(snap.incomes)) : [];
+  state.expenses = snap.expenses ? JSON.parse(JSON.stringify(snap.expenses)) : [];
+  state.savings = snap.savings ? JSON.parse(JSON.stringify(snap.savings)) : [];
+  if (snap.manualOverrides) {
+    manualOverrides.tax = !!snap.manualOverrides.tax;
+    manualOverrides.sso = !!snap.manualOverrides.sso;
+    manualOverrides.pvd = !!snap.manualOverrides.pvd;
+  } else {
+    manualOverrides.tax = false;
+    manualOverrides.sso = false;
+    manualOverrides.pvd = false;
+  }
+  if (snap.pvdPercent != null && !isNaN(snap.pvdPercent)) {
+    pvdPercent = snap.pvdPercent;
+  } else {
+    pvdPercent = 5;
+  }
+  try { localStorage.setItem(PVD_PERCENT_KEY, String(pvdPercent)); } catch(_e){}
+  const pvdInput = document.getElementById('pvdPctInput');
+  if (pvdInput) pvdInput.value = pvdPercent;
+
+  state.showEmergencyRunway = !!snap.showEmergencyRunway;
+  state.currentEmergencyReserve = Number(snap.currentEmergencyReserve) || 0;
+
+  const txtReserve = document.getElementById('txtCurrentReserve');
+  if (txtReserve) txtReserve.value = state.currentEmergencyReserve || '';
+
+  const chkRunway = document.getElementById('chkShowRunway');
+  if (chkRunway) {
+    chkRunway.checked = !!state.showEmergencyRunway;
+    const runwayContent = document.getElementById('runwayContent');
+    if (runwayContent) runwayContent.style.display = state.showEmergencyRunway ? '' : 'none';
+  }
+
+  updateAutoExpenses(pvdPercent);
+  renderRows();
+  renderPvdRow();
+  compute();
+  saveState();
+  updateUndoUI();
+}
+
+const undoMgr = MoneyApp.createUndoManager({
+  maxDepth: 15,
+  enableShortcuts: true,
+  onUndo: (previousState) => {
+    restoreSnapshot(previousState);
+  },
+});
+
+function updateUndoUI(){
+  const can = undoMgr.canUndo();
+  const btnTop = document.getElementById('btnUndoTop');
+  if (btnTop) btnTop.style.display = can ? 'inline-flex' : 'none';
+  const btnBottom = document.getElementById('btnUndoBottom');
+  if (btnBottom) btnBottom.style.display = can ? 'inline-block' : 'none';
+}
+
+function undoRemainingChange(){
+  undoMgr.undo();
+}
+
 function checkPendingLumpSum(){
   try{
-    const raw = localStorage.getItem('moneySuperapp.pendingLumpSum');
-    if(!raw) return;
-    const lump = JSON.parse(raw);
+    const lump = MoneyApp.safeJsonParse('moneySuperapp.pendingLumpSum', null);
     if(lump && lump.value > 0){
+      undoMgr.push(captureSnapshot());
       let existing = state.incomes.find(item => item.name === lump.name);
       if(existing){
         existing.value = lump.value;
@@ -1007,6 +1109,8 @@ function checkPendingLumpSum(){
       renderRows();
       renderPvdRow();
       compute();
+      saveState();
+      updateUndoUI();
       showBridgeNotification(LANG === 'en'
         ? `✓ Imported ${getDisplayName(lump.name)}: ${fmtCurrency(lump.value)}`
         : `✓ นำเข้า${getDisplayName(lump.name)}: ${fmtCurrency(lump.value)} เรียบร้อยแล้ว`);
@@ -1016,10 +1120,9 @@ function checkPendingLumpSum(){
 
 function checkPendingSlipImport(){
   try{
-    const raw = localStorage.getItem('moneySuperapp.pendingSlipImport');
-    if(!raw) return;
-    const slip = JSON.parse(raw);
+    const slip = MoneyApp.safeJsonParse('moneySuperapp.pendingSlipImport', null);
     if(slip && slip.salary > 0){
+      undoMgr.push(captureSnapshot());
       if(state.incomes.length > 0 && isSalaryRow(state.incomes[0])){
         state.incomes[0].value = slip.salary;
       }
@@ -1045,6 +1148,8 @@ function checkPendingSlipImport(){
       renderRows();
       renderPvdRow();
       compute();
+      saveState();
+      updateUndoUI();
       showBridgeNotification(LANG === 'en'
         ? `✓ Synced salary (${fmtCurrency(slip.salary)}) and allowances from payslip simulator`
         : `✓ ซิงค์เงินเดือน (${fmtCurrency(slip.salary)}) และ allowances จากสลิปเงินเดือนเรียบร้อยแล้ว`);
@@ -1055,8 +1160,10 @@ function checkPendingSlipImport(){
 if(resetBtn){
   resetBtn.addEventListener('click', () => {
     if(confirm(LANG === 'en' ? EN.resetConfirm : 'ล้างข้อมูลที่บันทึกไว้ในเบราว์เซอร์นี้ และกลับไปใช้ค่าตั้งต้น?')){
-      try{ localStorage.removeItem(STORAGE_KEY); } catch(e){}
-      location.reload();
+      undoMgr.push(captureSnapshot());
+      restoreSnapshot(defaultState);
+      saveState();
+      updateUndoUI();
     }
   });
 }
@@ -1265,6 +1372,7 @@ function bindRows(container, type){
   // Remove button (only for non-auto rows and non-protected rows)
   container.querySelectorAll('.remove-btn:not(.disabled)').forEach(btn => {
     btn.addEventListener('click', () => {
+      undoMgr.push(captureSnapshot());
       const idx = parseInt(btn.dataset.idx);
       if(type === 'income'){
         state.incomes.splice(idx, 1);
@@ -1282,6 +1390,8 @@ function bindRows(container, type){
       if(type === 'income') renderPvdRow();
       bindRows(targetContainer, type);
       compute();
+      saveState();
+      updateUndoUI();
     });
   });
 
@@ -1312,6 +1422,7 @@ function renderRows(){
 
 // ── Add row ────────────────────────────────────────────────────────────────
 function addRow(type){
+  undoMgr.push(captureSnapshot());
   const items = type === 'income' ? state.incomes : type === 'expense' ? state.expenses : state.savings;
   const container = type === 'income' ? incomeContainer : type === 'expense' ? expenseContainer : savingContainer;
   const idx = items.length;
@@ -1326,6 +1437,8 @@ function addRow(type){
   const nameInput = container.querySelector(`input.name-input[data-idx="${idx}"]`);
   if(nameInput){ nameInput.focus(); nameInput.select(); }
   compute();
+  saveState();
+  updateUndoUI();
 }
 
 incomeAddBtn.addEventListener('click', () => addRow('income'));
@@ -2329,6 +2442,7 @@ function confirmImport() {
   const isReplace = modeReplaceEl ? modeReplaceEl.checked : true;
 
   const candidate = pendingImportData;
+  undoMgr.push(captureSnapshot());
 
   if (isReplace) {
     state.incomes = candidate.incomes.map(item => ({ ...item }));
@@ -2442,6 +2556,7 @@ function confirmImport() {
   renderPvdRow();
   compute();
   saveState();
+  updateUndoUI();
 
   closeImportModal();
 

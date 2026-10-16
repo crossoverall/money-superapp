@@ -100,4 +100,87 @@ describe('MoneyApp Shared Core Module', () => {
       assert.equal(MoneyApp.escapeHtml(''), '');
     });
   });
+
+  describe('safeJsonParse', () => {
+    it('returns parsed object for valid JSON', () => {
+      const mockStorage = {
+        'test.key': JSON.stringify({ a: 1, b: 'hello' }),
+      };
+      const mockEnv = {
+        addEventListener: () => {},
+        document: { documentElement: { lang: '', dataset: {} } },
+        localStorage: { getItem: (k) => mockStorage[k] || null },
+      };
+      const fn = new Function('window', 'document', 'localStorage', `${sharedCode}; return window.MoneyApp;`);
+      const app = fn(mockEnv, mockEnv.document, mockEnv.localStorage);
+
+      const res = app.safeJsonParse('test.key', { fallback: true });
+      assert.deepEqual(res, { a: 1, b: 'hello' });
+    });
+
+    it('returns fallback when key is not found or corrupted', () => {
+      const mockStorage = {
+        'corrupt.key': '{invalid_json...',
+      };
+      const mockEnv = {
+        addEventListener: () => {},
+        document: { documentElement: { lang: '', dataset: {} } },
+        localStorage: { getItem: (k) => mockStorage[k] || null },
+      };
+      const fn = new Function('window', 'document', 'localStorage', `${sharedCode}; return window.MoneyApp;`);
+      const app = fn(mockEnv, mockEnv.document, mockEnv.localStorage);
+
+      assert.deepEqual(app.safeJsonParse('missing.key', { def: 1 }), { def: 1 });
+      assert.deepEqual(app.safeJsonParse('corrupt.key', { def: 2 }), { def: 2 });
+    });
+  });
+
+  describe('createUndoManager', () => {
+    const { MoneyApp } = createEnvironment();
+
+    it('pushes snapshots and restores previous state on undo', () => {
+      let restored = null;
+      const undoMgr = MoneyApp.createUndoManager({
+        maxDepth: 5,
+        onUndo: (state) => {
+          restored = state;
+        },
+      });
+
+      assert.equal(undoMgr.canUndo(), false);
+      assert.equal(undoMgr.size(), 0);
+
+      undoMgr.push({ step: 1 });
+      assert.equal(undoMgr.canUndo(), true);
+      assert.equal(undoMgr.size(), 1);
+
+      undoMgr.push({ step: 2 });
+      assert.equal(undoMgr.size(), 2);
+
+      const popped = undoMgr.undo();
+      assert.deepEqual(popped, { step: 2 });
+      assert.deepEqual(restored, { step: 2 });
+      assert.equal(undoMgr.size(), 1);
+
+      undoMgr.undo();
+      assert.deepEqual(restored, { step: 1 });
+      assert.equal(undoMgr.canUndo(), false);
+      assert.equal(undoMgr.undo(), null);
+    });
+
+    it('enforces maximum stack depth', () => {
+      const undoMgr = MoneyApp.createUndoManager({ maxDepth: 3 });
+
+      undoMgr.push({ i: 1 });
+      undoMgr.push({ i: 2 });
+      undoMgr.push({ i: 3 });
+      undoMgr.push({ i: 4 });
+
+      assert.equal(undoMgr.size(), 3);
+      assert.deepEqual(undoMgr.undo(), { i: 4 });
+      assert.deepEqual(undoMgr.undo(), { i: 3 });
+      assert.deepEqual(undoMgr.undo(), { i: 2 });
+      assert.equal(undoMgr.canUndo(), false);
+    });
+  });
 });

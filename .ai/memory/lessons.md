@@ -287,3 +287,16 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
 - **Date & Context:** 2026-10-09, reorder buttons feature (1.8.1).
 - **Problem:** Agent shipped a feature without running the mandatory Plan -> Human Approval -> Code -> QA -> Security Review -> Release pipeline.
 - **Rule Reinforced:** The SDLC pipeline is mandatory for ALL code changes. Level 2 tasks must pause for human approval after the Plan phase. QA must run after every edit.
+
+### 2026-10-16: In-Memory Undo Stack & Safe JSON Deserialization
+
+- **Date & Context:** 2026-10-16, implementing universal undo and crash recovery (`v1.8.5`).
+- **Problem:**
+  1. Users making accidental row removals, resets, or external JSON/CSV imports had no revert mechanism without manual re-entry.
+  2. Malformed or truncated localStorage values could throw uncaught JSON syntax errors, breaking iframe initialization and rendering blank pages.
+  3. Linter flagged `noInnerDeclarations` when declaring `var` inside `try`/`if` blocks in classic scripts.
+- **Resolution:**
+  1. Implemented `MoneyApp.createUndoManager({ maxDepth: 15, enableShortcuts: true, onUndo })` in `js/shared.js`. Keyboard shortcuts safely ignore active inputs (`INPUT`, `TEXTAREA`) to avoid interfering with native typing undo.
+  2. Implemented `MoneyApp.safeJsonParse(key, fallback)` which safely intercepts `localStorage` and `JSON.parse` failures, warning to console and returning default state.
+  3. Replaced `var` inside `if`/`try` blocks with block-scoped declarations or declared them at function roots to satisfy Biome rules.
+- **Rule:** Never use raw `JSON.parse(localStorage.getItem(...))` in client tools; always route through `MoneyApp.safeJsonParse`. For destructive actions (clearing data, deleting items, or importing backups), always push snapshots to `undoMgr` beforehand.

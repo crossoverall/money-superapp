@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="1.8.4">
+  <meta name="version" content="1.8.5">
   <title>วางแผนปลดหนี้ (Debt Payoff)</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -122,6 +122,7 @@
   <h1>
     <span id="txt-title">วางแผนปลดหนี้</span>
     <div style="display:flex; gap:6px;">
+      <button onclick="undoDebtChange()" class="action-btn no-print" style="padding:4px 8px; margin:0; display:none;" id="btn-undo-debt" title="เลิกทำ / Undo (Ctrl+Z)" aria-label="Undo last change">↩</button>
       <button onclick="window.print()" class="action-btn no-print" style="padding:4px 8px; margin:0;" id="lbl-print-plan">🖨️</button>
       <button onclick="copyPayoffPlan()" class="action-btn no-print" style="padding:4px 8px; margin:0;" id="lbl-copy-plan">📋</button>
     </div>
@@ -253,7 +254,7 @@
     <span id="saveStatus">&nbsp;</span>
     <button class="reset-btn" id="btn-reset-debts" onclick="resetDefaults()">รีเซ็ตค่าเริ่มต้น</button>
   </div>
-  <p class="version-tag">v1.8.4</p>
+  <p class="version-tag">v1.8.5</p>
 
 <script src="js/shared.js"></script>
 <script>
@@ -415,6 +416,30 @@
 
     let state = JSON.parse(JSON.stringify(defaultState));
 
+    const undoMgr = MoneyApp.createUndoManager({
+        maxDepth: 15,
+        enableShortcuts: true,
+        onUndo: (previousState) => {
+            state = JSON.parse(JSON.stringify(previousState));
+            document.getElementById('txtExtraPayment').value = state.extraPayment;
+            renderTable();
+            setStrategy(state.strategy);
+            saveState();
+            updateUndoUI();
+        }
+    });
+
+    function updateUndoUI() {
+        const btnUndo = document.getElementById('btn-undo-debt');
+        if (btnUndo) {
+            btnUndo.style.display = undoMgr.canUndo() ? 'inline-flex' : 'none';
+        }
+    }
+
+    function undoDebtChange() {
+        undoMgr.undo();
+    }
+
     function saveState() {
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -422,15 +447,10 @@
     }
 
     function loadState() {
-        try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            if (raw) {
-                const parsed = JSON.parse(raw);
-                if (parsed && Array.isArray(parsed.debts)) {
-                    state = parsed;
-                }
-            }
-        } catch(e){}
+        const parsed = MoneyApp.safeJsonParse(STORAGE_KEY, null);
+        if (parsed && Array.isArray(parsed.debts)) {
+            state = parsed;
+        }
     }
 
     function setStrategy(strat) {
@@ -459,6 +479,7 @@
     }
 
     function addDebtRow() {
+        undoMgr.push(state);
         const newId = Date.now();
         state.debts.push({
             id: newId,
@@ -470,6 +491,7 @@
         renderTable();
         computePayoff();
         saveState();
+        updateUndoUI();
         const row = document.getElementById(`debt-row-${newId}`);
         if (row) {
             const nameInput = row.querySelector('.name-input');
@@ -481,10 +503,12 @@
     }
 
     function removeDebtRow(id) {
+        undoMgr.push(state);
         state.debts = state.debts.filter(d => d.id !== id);
         renderTable();
         computePayoff();
         saveState();
+        updateUndoUI();
     }
 
     function onDebtChange(id, field, value) {
@@ -763,10 +787,12 @@
             }
 
             if (monthlySaving > 0) {
+                undoMgr.push(state);
                 state.extraPayment = monthlySaving;
                 document.getElementById('txtExtraPayment').value = monthlySaving;
                 computePayoff();
                 saveState();
+                updateUndoUI();
                 const banner = document.getElementById('bridgeAlertBanner');
                 if (document.getElementById('bridgeAlertText')) document.getElementById('bridgeAlertText').textContent = LANG === 'en'
                     ? `✓ Successfully imported ${formatMoney(monthlySaving)} THB monthly savings from Remaining Money calculator!`
@@ -804,11 +830,13 @@
             ? 'Reset all debt accounts to default values?'
             : 'คุณต้องการรีเซ็ตรายการหนี้สินทั้งหมดกลับเป็นค่าเริ่มต้นหรือไม่?';
         if (!confirm(confirmMsg)) return;
+        undoMgr.push(state);
         state = JSON.parse(JSON.stringify(defaultState));
         document.getElementById('txtExtraPayment').value = state.extraPayment;
         renderTable();
         setStrategy(state.strategy);
         saveState();
+        updateUndoUI();
     }
 
     // Initialize
