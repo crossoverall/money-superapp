@@ -9,6 +9,7 @@ const ASSETS_TO_CACHE = [
   './tax-calculator.html',
   './remaining-money.html',
   './debt-calculator.html',
+  './js/shared.js',
   './css/tailwind-lite.css',
   './css/theme.css',
   './manifest.json',

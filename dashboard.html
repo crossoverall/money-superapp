@@ -181,12 +181,8 @@
 
   <p class="version-tag">Money Superapp v1.8.1</p>
 
+<script src="js/shared.js"></script>
 <script>
-    const LANG = (function(){ try { return localStorage.getItem('moneySuperapp.lang') || 'th'; } catch(e){ return 'th'; } })();
-    document.documentElement.lang = LANG;
-    document.documentElement.dataset.theme = (function(){ try { return localStorage.getItem('moneySuperapp.theme') || 'light'; } catch(e){ return 'light'; } })();
-    const unit = LANG === 'en' ? 'THB' : 'บาท';
-
     const translations = {
         th: {
             title: 'ภาพรวมการเงิน',
@@ -298,23 +294,6 @@
 
     const SNAPSHOT_KEY = 'moneySuperapp.historicalSnapshots.v1';
     let chartMode = 'networth';
-
-    function formatMoney(amount) {
-        return Math.round(amount).toLocaleString(LANG === 'en' ? 'en-US' : 'th-TH');
-    }
-
-    function parseNum(val) {
-        if (typeof val === 'number') return val;
-        if (!val) return 0;
-        const clean = String(val).replace(/,/g, '').trim();
-        return parseFloat(clean) || 0;
-    }
-
-    function escapeHtml(str) {
-        return String(str ?? '').replace(/[&<>"']/g, m => ({
-            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-        }[m]));
-    }
 
     /**
      * Read cross-calculator live state from localStorage
@@ -796,15 +775,6 @@
         const tip = document.getElementById('chartTooltip');
         tip.style.opacity = '0';
     }
-
-    // Global shortcut listener Alt+1..7
-    window.addEventListener('keydown', (e) => {
-        if (e.altKey && e.key >= '1' && e.key <= '7') {
-            try {
-                window.parent.postMessage({ action: 'shortcutKey', key: e.key }, '*');
-            } catch(err){}
-        }
-    });
 
     // Initialize
     renderDashboardKPIs();

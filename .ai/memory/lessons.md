@@ -263,6 +263,14 @@ When adding a lesson, include:
 - **Rule:** For buy-only water-filling rebalancers, avoid iterative search algorithms to find the zero-drift point; solve the bottleneck directly using the max-ratio projection $T^* = \max(V_i / w_i)$.
 
 
+### 2026-10-16: Zero-Build Desktop Execution and `file://` CORS Constraint with ES Modules
+
+- **Date & Context:** 2026-10-16, core shared utilities extraction (`v1.8.1`).
+- **Problem:** When designing shared script modules in zero-build static applications, modern JavaScript ES modules (`<script type="module">` or `import ... from ...`) fail with CORS policy errors when users open `index.html` or tool files directly from local storage via `file://` (`xdg-open index.html` / `open index.html`).
+- **Resolution:** Implement shared utilities using universal classic scripts (`<script src="js/shared.js"></script>`) wrapped in an IIFE that exports to `window.MoneyApp` as well as backwards-compatible globals (`window.LANG`, `window.formatMoney`, `window.parseNum`, `window.escapeHtml`). Classic script tags are completely immune to `file://` CORS restrictions across Chrome, Firefox, and Safari.
+- **Rule:** For privacy-first zero-build static web applications supporting direct `file://` execution, always use classic browser scripts (`<script src="...">`) rather than ES modules (`<script type="module">`) for shared code.
+
+
 
 
 

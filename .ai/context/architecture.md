@@ -108,11 +108,16 @@ Money Superapp uses a decoupled **Iframe Shell & Multi-Document Architecture**:
    - Persists state in `moneySuperapp.debtCalculator.state.v1`.
    - Includes explicit "Import Savings" button to pull monthly savings from `remainingMoneyCalculator.state.v1`.
 
-9. **Offline CSS & Assets (`css/tailwind-lite.css`, `icon.svg`, `manifest.json`)**
+9. **Offline CSS & Assets (`css/tailwind-lite.css`, `css/theme.css`, `icon.svg`, `manifest.json`)**
    - Standalone utility CSS eliminating external CDN dependencies.
    - Manifest and vector SVG icons enabling installable PWA behavior across platforms.
 
-10. **Service Worker (`sw.js`)**
+10. **Shared Core Utilities (`js/shared.js`)**
+    - Zero-dependency universal browser script exposing `window.MoneyApp` (`LANG`, `THEME`, `unit`, `formatMoney`, `parseNum`, `escapeHtml`, `initTheme`, `initShortcutForwarding`).
+    - Uses classic script loading for 100% compatibility with direct local `file://` execution.
+    - Precached in `sw.js` for offline PWA operation.
+
+11. **Service Worker (`sw.js`)**
     - Intercepts GET requests, precaches all application files during install, cleans old caches on activation, and serves cached responses using stale-while-revalidate for local assets.
 
 - **Confidence:** `HIGH` (Directly verified across all 8 HTML files and assets)

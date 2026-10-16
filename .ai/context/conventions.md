@@ -50,15 +50,13 @@ money-superapp/
 
 ## 3. Architecture & Code Patterns
 
-### 3.1 Self-Contained Tool Initialization
-Every tool file reads language and theme immediately upon script execution to prevent flash of unstyled content or wrong locale:
+### 3.1 Shared Core Utility Initialization (`js/shared.js`)
+Tools include `<script src="js/shared.js"></script>` prior to local scripts. `js/shared.js` auto-initializes `document.documentElement.lang`, `dataset.theme`, shortcut key forwarding (`Alt+1..7`), and exposes canonical helpers via `window.MoneyApp` (as well as backwards-compatible top-level globals `LANG`, `THEME`, `unit`, `formatMoney`, `parseNum`, `escapeHtml`):
 
-```javascript
-// Verified in dashboard.html, debt-calculator.html, rebalance.html
-const LANG = (function(){ try { return localStorage.getItem('moneySuperapp.lang') || 'th'; } catch(e){ return 'th'; } })();
-document.documentElement.lang = LANG;
-document.documentElement.dataset.theme = (function(){ try { return localStorage.getItem('moneySuperapp.theme') || 'light'; } catch(e){ return 'light'; } })();
-const unit = LANG === 'en' ? 'THB' : 'บาท';
+```html
+<script src="js/shared.js"></script>
+<script>
+    // LANG, THEME, unit, formatMoney, parseNum, escapeHtml are immediately available
 ```
 
 ### 3.2 Dual-Language Dictionary Pattern

@@ -255,12 +255,8 @@
   </div>
   <p class="version-tag">v1.8.1</p>
 
+<script src="js/shared.js"></script>
 <script>
-    const LANG = (function(){ try { return localStorage.getItem('moneySuperapp.lang') || 'th'; } catch(e){ return 'th'; } })();
-    document.documentElement.lang = LANG;
-    document.documentElement.dataset.theme = (function(){ try { return localStorage.getItem('moneySuperapp.theme') || 'light'; } catch(e){ return 'light'; } })();
-    const unit = LANG === 'en' ? 'THB' : 'บาท';
-
     const translations = {
                 th: {
             title: 'วางแผนปลดหนี้ (Debt Payoff)',
@@ -419,17 +415,6 @@
 
     let state = JSON.parse(JSON.stringify(defaultState));
 
-    function formatMoney(amount) {
-        return amount.toLocaleString(LANG === 'en' ? 'en-US' : 'th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-    }
-
-    function parseNum(val) {
-        if (typeof val === 'number') return val;
-        if (!val) return 0;
-        const clean = String(val).replace(/,/g, '').trim();
-        return parseFloat(clean) || 0;
-    }
-
     function saveState() {
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -504,12 +489,6 @@
         }
         computePayoff();
         saveState();
-    }
-
-    function escapeHtml(str) {
-        return String(str ?? '').replace(/[&<>"']/g, m => ({
-            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-        }[m]));
     }
 
     function renderTable() {
@@ -823,15 +802,6 @@
         setStrategy(state.strategy);
         saveState();
     }
-
-    // Keyboard shortcut forwarding Alt+1..7
-    window.addEventListener('keydown', (e) => {
-        if (e.altKey && e.key >= '1' && e.key <= '7') {
-            try {
-                window.parent.postMessage({ action: 'shortcutKey', key: e.key }, '*');
-            } catch(err){}
-        }
-    });
 
     // Initialize
     loadState();
