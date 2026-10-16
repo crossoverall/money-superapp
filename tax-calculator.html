@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="version" content="1.8.1">
+  <meta name="version" content="1.8.2">
   <meta name="description" content="คำนวณภาษีเงินชดเชยและเงินสะสมกองทุนสำรองเลี้ยงชีพ (PVD) — ครอบคลุมสมาชิกไม่เกิน 5 ปี, 5 ปีขึ้นไปอายุไม่ถึง 55, และ 5 ปีขึ้นไปอายุ 55 ปีขึ้นไป">
   <title>คำนวณภาษีเงินชดเชย + PVD</title>
   <link rel="stylesheet" href="css/theme.css">
@@ -509,16 +509,12 @@
       </button>
       <button class="reset-btn" onclick="reset()" id="btn-reset">ล้างข้อมูล</button>
     </div>
-    <p style="text-align:center;font-size:0.72rem;color:#94a3b8;margin-top:16px;">v1.8.1</p>
+    <p style="text-align:center;font-size:0.72rem;color:#94a3b8;margin-top:16px;">v1.8.2</p>
   </div>
 
+  <script src="js/shared.js"></script>
   <script>
     // Language: read once from localStorage (shared origin with the shell nav's toggle).
-    const LANG = (function(){ try { return localStorage.getItem('moneySuperapp.lang') || 'th'; } catch(e){ return 'th'; } })();
-    document.documentElement.lang = LANG;
-    document.documentElement.dataset.theme = (function(){ try { return localStorage.getItem('moneySuperapp.theme') || 'light'; } catch(e){ return 'light'; } })();
-    const unit = LANG === 'en' ? 'THB' : 'บาท';
-
     if (LANG === 'en') {
       document.title = 'Severance & PVD Tax Calculator';
       const EN = {
@@ -903,13 +899,6 @@
       const yrs = parseFloat(e.target.value);
       if (!isNaN(yrs) && yrs > 0) {
         syncBracketFromYears(yrs);
-      }
-    });
-
-    // Forward global Alt+1..7 shortcuts to parent
-    window.addEventListener('keydown', (e) => {
-      if (e.altKey && e.key >= '1' && e.key <= '7') {
-        try { window.parent.postMessage({ action: 'shortcutKey', key: e.key }, '*'); } catch(err){}
       }
     });
 

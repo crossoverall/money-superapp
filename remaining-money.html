@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="1.8.1">
+  <meta name="version" content="1.8.2">
   <title>คำนวณเงินคงเหลือ</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -347,7 +347,7 @@
       <button class="reset-btn" id="resetBtn" style="color:var(--ink-faint);">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v1.8.1</p>
+  <p class="version-tag">v1.8.2</p>
 
   <!-- Import Preview Modal -->
   <div id="importModal" role="dialog" aria-modal="true" aria-labelledby="importModalTitle" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; display:none; align-items:center; justify-content:center; backdrop-filter:blur(2px);" onclick="if(event.target===this)closeImportModal()">
@@ -413,12 +413,9 @@
     </div>
   </div>
 
+<script src="js/shared.js"></script>
 <script>
 // ── Language ──────────────────────────────────────────────────────────────
-const LANG = (function(){ try { return localStorage.getItem('moneySuperapp.lang') || 'th'; } catch(e){ return 'th'; } })();
-document.documentElement.lang = LANG;
-document.documentElement.dataset.theme = (function(){ try { return localStorage.getItem('moneySuperapp.theme') || 'light'; } catch(e){ return 'light'; } })();
-
 const EN = {
   eyebrow: 'Money Manager',
   pageTitle: 'Remaining Money Calculator',
@@ -2509,12 +2506,6 @@ window.addEventListener('message', (e) => {
   if (e.data && e.data.action === 'importPendingData') {
     checkPendingLumpSum();
     checkPendingSlipImport();
-  }
-});
-// Forward global Alt+1..7 shortcuts to parent
-window.addEventListener('keydown', (e) => {
-  if (e.altKey && e.key >= '1' && e.key <= '7') {
-    try { window.parent.postMessage({ action: 'shortcutKey', key: e.key }, '*'); } catch(err){}
   }
 });
 </script>

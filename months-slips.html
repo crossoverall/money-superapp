@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="1.8.1">
+    <meta name="version" content="1.8.2">
     <meta name="description" content="จำลองสลิปเงินเดือนรวมโบนัส — คำนวณรายได้ ภาษี เงินสมทบประกันสังคม และกองทุนสำรองเลี้ยงชีพ per เดือน">
     <title>จำลองสลิปเงินเดือน (รวมโบนัส)</title>
     <link rel="stylesheet" href="css/tailwind-lite.css">
@@ -238,7 +238,7 @@
                         <button onclick="window.print()" id="btn-print-slip" class="py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all flex items-center gap-1.5">
                             <span id="lbl-print-slip">🖨️ พิมพ์ / บันทึก PDF</span>
                         </button>
-                        <p class="text-xs text-gray-400 ml-auto">v1.8.1</p>
+                        <p class="text-xs text-gray-400 ml-auto">v1.8.2</p>
                     </div>
                 </div>
             </div>
@@ -273,11 +273,9 @@
 
     </div>
 
+    <script src="js/shared.js"></script>
     <script>
         // Language: read once from localStorage (shared origin with the shell nav's toggle).
-        const LANG = (function(){ try { return localStorage.getItem('moneySuperapp.lang') || 'th'; } catch(e){ return 'th'; } })();
-        document.documentElement.lang = LANG;
-        document.documentElement.dataset.theme = (function(){ try { return localStorage.getItem('moneySuperapp.theme') || 'light'; } catch(e){ return 'light'; } })();
         if (LANG === 'en') {
             document.title = 'Payslip Simulator (with bonus)';
             const EN = {
@@ -346,13 +344,6 @@
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
             } catch(e){}
-        }
-
-        function parseNum(val) {
-            if (typeof val === 'number') return val;
-            if (!val) return 0;
-            const clean = String(val).replace(/,/g, '').trim();
-            return parseFloat(clean) || 0;
         }
 
         function calculateSlip() {
@@ -507,13 +498,6 @@
                 }
             } catch(e){}
         }
-
-        // Forward global Alt+1..7 shortcuts to parent
-        window.addEventListener('keydown', (e) => {
-            if (e.altKey && e.key >= '1' && e.key <= '7') {
-                try { window.parent.postMessage({ action: 'shortcutKey', key: e.key }, '*'); } catch(err){}
-            }
-        });
 
         function toggleCompare() {
             const panel = document.getElementById('comparePanel');

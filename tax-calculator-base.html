@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="1.8.1">
+    <meta name="version" content="1.8.2">
     <meta name="description" content="คำนวณภาษีเงินได้บุคคลธรรมดา — ประมาณการภาษีเงินได้จากเงินเดือนและโบนัส พร้อมแสดงรายละเอียดตามขั้นบันได">
     <title>คำนวณภาษีเงินได้บุคคลธรรมดา</title>
     <link rel="stylesheet" href="css/tailwind-lite.css">
@@ -401,16 +401,13 @@
                     <span id="lbl-print-tax">🖨️ พิมพ์ / PDF</span>
                 </button>
             </div>
-            <p class="text-xs text-gray-400">v1.8.1</p>
+            <p class="text-xs text-gray-400">v1.8.2</p>
         </div>
     </div>
 
+    <script src="js/shared.js"></script>
     <script>
         // Language: read once from localStorage (shared origin with the shell nav's toggle).
-        const LANG = (function(){ try { return localStorage.getItem('moneySuperapp.lang') || 'th'; } catch(e){ return 'th'; } })();
-        document.documentElement.lang = LANG;
-        document.documentElement.dataset.theme = (function(){ try { return localStorage.getItem('moneySuperapp.theme') || 'light'; } catch(e){ return 'light'; } })();
-        const unit = LANG === 'en' ? 'THB' : 'บาท';
         if (LANG === 'en') {
             document.title = 'Personal Income Tax Calculator';
             const EN = {
@@ -609,13 +606,6 @@
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
             } catch(e){}
-        }
-
-        function parseNum(val) {
-            if (typeof val === 'number') return val;
-            if (!val) return 0;
-            const clean = String(val).replace(/,/g, '').trim();
-            return parseFloat(clean) || 0;
         }
 
         function calculateTax() {
@@ -1095,15 +1085,6 @@
                 }
             } catch(e){}
         }
-
-        // Forward global Alt+1..7 shortcuts to parent
-        window.addEventListener('keydown', (e) => {
-            if (e.altKey && e.key >= '1' && e.key <= '7') {
-                try {
-                    window.parent.postMessage({ action: 'shortcutKey', key: e.key }, '*');
-                } catch(err){}
-            }
-        });
 
         loadState();
     </script>
