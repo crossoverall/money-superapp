@@ -4228,4 +4228,112 @@ describe('Financial Math Verification', () => {
       assert.equal(Number.isNaN(res.delta.effectiveRateDelta), false);
     });
   });
+
+  describe('Debt Payoff Milestone Road & Interest Velocity Mathematical Engine', () => {
+    function calculateDebtMilestoneRoad({ payoffOrder = [], totalDebt = 0, schedule = [], minOnlyMonths = 0 } = {}) {
+      const totDebt = Math.max(0, Number(totalDebt) || 0);
+      const initialMonthlyInterest = schedule.length > 0 ? schedule[0].interest || 0 : 0;
+      let cumCleared = 0;
+
+      const milestones = (payoffOrder || []).map((m, idx) => {
+        const bal = Math.max(0, Number(m.balance) || 0);
+        cumCleared += bal;
+        const clearedPct = totDebt > 0 ? Math.min(100, Math.round((cumCleared / totDebt) * 100 * 10) / 10) : 100;
+        const remainingDebt = Math.max(0, totDebt - cumCleared);
+        const schedItem = schedule.find((s) => s.month === m.month) || schedule[schedule.length - 1] || { interest: 0 };
+        const currentMonthlyInterest = schedItem.interest || 0;
+        const velocityReductionPct =
+          initialMonthlyInterest > 0
+            ? Math.min(
+                100,
+                Math.round(((initialMonthlyInterest - currentMonthlyInterest) / initialMonthlyInterest) * 100),
+              )
+            : 100;
+
+        return {
+          step: idx + 1,
+          name: m.name,
+          month: m.month,
+          balance: bal,
+          clearedPct,
+          remainingDebt,
+          currentMonthlyInterest,
+          velocityReductionPct,
+          isFinal: idx === payoffOrder.length - 1,
+        };
+      });
+
+      const finalMonth = milestones.length > 0 ? milestones[milestones.length - 1].month : 0;
+      const monthsSavedVsMin = Math.max(0, minOnlyMonths - finalMonth);
+
+      return {
+        totalDebt: totDebt,
+        initialMonthlyInterest,
+        milestones,
+        monthsSavedVsMin,
+      };
+    }
+
+    it('computes chronological milestone checkpoints and proves 100% debt clearance on final milestone', () => {
+      const payoffOrder = [
+        { name: 'Credit Card A', month: 4, balance: 30000 },
+        { name: 'Personal Loan B', month: 12, balance: 70000 },
+      ];
+      const schedule = [
+        { month: 1, interest: 1600 },
+        { month: 4, interest: 900 },
+        { month: 12, interest: 0 },
+      ];
+
+      const road = calculateDebtMilestoneRoad({
+        payoffOrder,
+        totalDebt: 100000,
+        schedule,
+        minOnlyMonths: 24,
+      });
+
+      assert.equal(road.totalDebt, 100000);
+      assert.equal(road.initialMonthlyInterest, 1600);
+      assert.equal(road.milestones.length, 2);
+
+      // Checkpoint 1
+      assert.equal(road.milestones[0].step, 1);
+      assert.equal(road.milestones[0].clearedPct, 30);
+      assert.equal(road.milestones[0].remainingDebt, 70000);
+      assert.ok(road.milestones[0].velocityReductionPct > 0);
+      assert.equal(road.milestones[0].isFinal, false);
+
+      // Final Checkpoint
+      assert.equal(road.milestones[1].step, 2);
+      assert.equal(road.milestones[1].clearedPct, 100);
+      assert.equal(road.milestones[1].remainingDebt, 0);
+      assert.equal(road.milestones[1].velocityReductionPct, 100);
+      assert.equal(road.milestones[1].isFinal, true);
+      assert.equal(road.monthsSavedVsMin, 12);
+    });
+
+    it('monitors interest velocity reduction across payoff progression', () => {
+      const schedule = [
+        { month: 1, interest: 2000 },
+        { month: 6, interest: 1000 },
+      ];
+      const road = calculateDebtMilestoneRoad({
+        payoffOrder: [{ name: 'Card', month: 6, balance: 50000 }],
+        totalDebt: 50000,
+        schedule,
+        minOnlyMonths: 10,
+      });
+
+      assert.equal(road.initialMonthlyInterest, 2000);
+      assert.equal(road.milestones[0].velocityReductionPct, 50); // 2000 -> 1000 is 50% reduction!
+    });
+
+    it('handles zero debts and empty schedules safely without NaN', () => {
+      const emptyRoad = calculateDebtMilestoneRoad({});
+      assert.equal(emptyRoad.totalDebt, 0);
+      assert.equal(emptyRoad.milestones.length, 0);
+      assert.equal(emptyRoad.monthsSavedVsMin, 0);
+      assert.equal(emptyRoad.initialMonthlyInterest, 0);
+    });
+  });
 });

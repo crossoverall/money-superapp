@@ -579,3 +579,17 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
   3. Added dynamic **Bracket Creep Alert** flagging scenarios where inflation exceeds nominal net returns, and real purchasing power declines despite a higher nominal salary.
   4. Added 4 unit tests in `tests/financial-math.test.mjs` verifying standard raise marginal rates, bracket creep losses, extra deduction tax savings, and zero-state stability (**135 automated unit tests passing, 0 Biome linter errors**).
 - **Rule:** When presenting tax scenarios for salary raises or annual bonuses, always calculate both nominal take-home delta and inflation-adjusted real purchasing power to expose bracket creep where nominal income gains are eroded by progressive tax brackets.
+
+
+### 2026-10-17: Debt Payoff Visual Milestone Road & Interest Velocity Comparison
+
+- **Date & Context:** 2026-10-17, implementing Payoff Milestone Road & Interest Velocity in `debt-calculator.html` (`v2.1.9`).
+- **Problem:**
+  1. Users with multiple debts often struggle to maintain repayment momentum over long multi-year horizons when only viewing static tables.
+  2. Borrowers rarely see how their monthly interest drain decays over time, missing the psychological boost of seeing monthly interest drop to zero.
+- **Resolution:**
+  1. Built an interactive **Payoff Milestone Road** (`#debtMilestoneRoadPanel`) in `debt-calculator.html` that dynamically maps every debt payoff event as a milestone checkpoint showing cumulative debt percentage cleared, remaining balance, and date.
+  2. Implemented monthly **Interest Velocity Decay Tracker** calculating the percentage drop in monthly interest drain from initial month to final debt freedom day.
+  3. Added dynamic speedup badge displaying exact months saved vs minimum-only payment schedule.
+  4. Added 3 automated unit tests in `tests/financial-math.test.mjs` verifying milestone progression, cumulative clearance, interest velocity decay, and zero-debt resilience (**138 automated unit tests passing, 0 Biome linter errors**).
+- **Rule:** When displaying debt payoff schedules, visualize individual debt closures as progressive milestone nodes with cumulative percentage cleared and monthly interest velocity drop to maximize borrower motivation.

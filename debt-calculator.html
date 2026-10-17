@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.1.8">
+  <meta name="version" content="2.1.9">
   <title>วางแผนปลดหนี้ (Debt Payoff)</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -428,6 +428,18 @@
     </div>
   </div>
 
+  <!-- Debt Payoff Visual Milestone Road & Interest Velocity Panel -->
+  <div class="panel" id="debtMilestoneRoadPanel" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+      <div class="panel-title" style="margin:0;" id="lbl-milestone-road-title">🛣️ แผนที่สู่เสรีภาพทางการเงิน (Payoff Milestone Road)</div>
+      <span id="badge-velocity-drop" style="font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; background:rgba(16,185,129,0.12); color:#059669;"></span>
+    </div>
+    
+    <div id="milestoneRoadCheckpoints" style="display:flex; flex-direction:column; gap:8px; margin-top:8px;"></div>
+    
+    <div id="interestVelocityBox" style="margin-top:12px; padding:10px 12px; border-radius:10px; background:var(--panel-2); border:1px solid var(--line); font-size:11px;"></div>
+  </div>
+
   <div class="panel">
     <details>
       <summary id="lbl-schedule-title">📅 ดูตารางกำหนดการปลดหนี้</summary>
@@ -453,7 +465,7 @@
     <span id="saveStatus">&nbsp;</span>
     <button class="reset-btn" id="btn-reset-debts" onclick="resetDefaults()">รีเซ็ตค่าเริ่มต้น</button>
   </div>
-  <p class="version-tag">v2.1.8</p>
+  <p class="version-tag">v2.1.9</p>
 
 <script src="js/shared.js"></script>
 <script>
@@ -1132,6 +1144,93 @@
         updateOrderBadges();
         renderPayoffChart(simCurrent, simMinOnly, totalDebt, simAvalanche, simSnowball, windfall, simBaseline);
         updateRefinanceVisual(totalDebt, totalMin, avgRate, simCurrent);
+        renderDebtMilestoneRoad(simCurrent, simMinOnly, totalDebt, now);
+    }
+
+    function renderDebtMilestoneRoad(simCurrent, simMinOnly, totalDebt, now) {
+        const container = document.getElementById('debtMilestoneRoadPanel');
+        const checkList = document.getElementById('milestoneRoadCheckpoints');
+        const velocityBox = document.getElementById('interestVelocityBox');
+        const badgeDrop = document.getElementById('badge-velocity-drop');
+        if (!container || !checkList) return;
+
+        if (!simCurrent || !simCurrent.payoffOrder || simCurrent.payoffOrder.length === 0 || totalDebt <= 0) {
+            container.style.display = 'none';
+            return;
+        }
+        container.style.display = 'block';
+
+        const isEn = LANG === 'en';
+        const unit = isEn ? 'THB' : 'บาท';
+        const initialMonthlyInterest = (simCurrent.schedule && simCurrent.schedule.length > 0) ? simCurrent.schedule[0].interest : 0;
+        let cumCleared = 0;
+
+        let html = '';
+        simCurrent.payoffOrder.forEach((m, idx) => {
+            cumCleared += (m.balance || 0);
+            const clearedPct = totalDebt > 0 ? Math.min(100, Math.round((cumCleared / totalDebt) * 100 * 10) / 10) : 100;
+            const pDate = new Date(now.getFullYear(), now.getMonth() + m.month, 1);
+            const pDateStr = isEn
+                ? `${monthNamesEn[pDate.getMonth()]} ${pDate.getFullYear()}`
+                : `${monthNamesTh[pDate.getMonth()]} ${pDate.getFullYear() + 543}`;
+            
+            const schedItem = (simCurrent.schedule || []).find(s => s.month === m.month) || { interest: 0 };
+            const curInterest = schedItem.interest || 0;
+            const dropPct = initialMonthlyInterest > 0
+                ? Math.min(100, Math.round(((initialMonthlyInterest - curInterest) / initialMonthlyInterest) * 100))
+                : 100;
+
+            const isFinal = idx === simCurrent.payoffOrder.length - 1;
+            const icon = isFinal ? '🏆' : idx === 0 ? '🚀' : '🎉';
+            const borderColor = isFinal ? 'var(--ok, #10b981)' : 'var(--line)';
+            const bg = isFinal ? 'rgba(16,185,129,0.08)' : 'var(--panel-2)';
+
+            html += `
+                <div style="background:${bg}; border:1px solid ${borderColor}; border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:16px;">${icon}</span>
+                        <div>
+                            <div style="font-weight:700; color:var(--ink); font-size:12px;">
+                                ${m.name} ${isFinal ? (isEn ? '— 100% Debt Free!' : '— ปลดหนี้หมดสิ้น 100%!') : ''}
+                            </div>
+                            <div style="font-size:10px; color:var(--ink-dim); margin-top:2px;">
+                                ${isEn ? 'Cleared:' : 'ปลดได้แล้ว:'} <strong>${clearedPct}%</strong> (${formatMoney(cumCleared)} ${unit}) • ${isEn ? 'Month' : 'เดือนที่'} ${m.month}
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-weight:700; color:${isFinal ? '#059669' : 'var(--ink)'}; font-size:12px;">${pDateStr}</div>
+                        <div style="font-size:10px; color:#059669; font-weight:600; margin-top:2px;">
+                            🔻 ${isEn ? 'Interest drop' : 'ดอกเบี้ยลดลง'} -${dropPct}%
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        checkList.innerHTML = html;
+
+        if (velocityBox) {
+            const totalMonthsSaved = Math.max(0, (simMinOnly ? simMinOnly.months : 0) - simCurrent.months);
+            const interestSaved = Math.max(0, (simMinOnly ? simMinOnly.totalInterest : 0) - simCurrent.totalInterest);
+            
+            if (badgeDrop) {
+                badgeDrop.textContent = isEn
+                    ? `⚡ ${totalMonthsSaved} Months Faster`
+                    : `⚡ ปลดหนี้เร็วขึ้น ${totalMonthsSaved} เดือน`;
+            }
+
+            velocityBox.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span style="font-weight:700; color:var(--ink);">📉 ${isEn ? 'Monthly Interest Velocity:' : 'อัตราการเผาผลาญดอกเบี้ยรายเดือน:'}</span>
+                    <span style="color:#059669; font-weight:700;">${isEn ? 'Total Saved:' : 'ประหยัดดอกเบี้ยสะสม:'} ${formatMoney(interestSaved)} ${unit}</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; font-size:10.5px; color:var(--ink-dim);">
+                    <span>${isEn ? 'Start:' : 'เดือนแรก:'} <b style="color:var(--danger);">${formatMoney(initialMonthlyInterest)} ${unit}/ด.</b></span>
+                    <span>→</span>
+                    <span>${isEn ? 'Final Month:' : 'เดือนสุดท้าย:'} <b style="color:var(--ok);">0 ${unit} (เสรีภาพ 🎉)</b></span>
+                </div>
+            `;
+        }
     }
 
     /**
