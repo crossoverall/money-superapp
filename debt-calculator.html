@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="1.9.2">
+  <meta name="version" content="1.9.3">
   <title>วางแผนปลดหนี้ (Debt Payoff)</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -118,16 +118,94 @@
     #svgDebtChart { width:100%; height:200px; overflow:visible; display:block; }
     .debt-chart-legend { display:flex; justify-content:center; align-items:center; gap:14px; margin-top:10px; font-size:11px; flex-wrap:wrap; color:var(--ink-dim); }
     .debt-chart-legend-item { display:inline-flex; align-items:center; gap:5px; }
+
+    @media screen {
+      .print-only { display: none !important; }
+    }
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        padding: 10px 16px !important;
+        max-width: 100% !important;
+      }
+      .no-print, button, .action-btn, .btn-row, .add-btn, .remove-btn, .reset-btn, #bridgeAlertBanner, .save-status {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+      .panel, #debtChartPanel {
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 8px !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+        margin-bottom: 12px !important;
+        padding: 12px !important;
+      }
+      .summary-card {
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+      }
+      .entry-row {
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+        page-break-inside: avoid;
+      }
+      .value-input, .name-input {
+        background: transparent !important;
+        border: none !important;
+        color: #0f172a !important;
+        font-weight: 700 !important;
+      }
+      #svgDebtChart {
+        height: 170px !important;
+      }
+      details {
+        display: block !important;
+      }
+      details[open] summary, details summary {
+        display: none !important;
+      }
+      .table-container {
+        display: block !important;
+      }
+      table, th, td {
+        border-color: #cbd5e1 !important;
+      }
+      #print-debt-footer {
+        display: block !important;
+        text-align: center;
+        font-size: 10px;
+        color: #94a3b8;
+        border-top: 1px dashed #cbd5e1;
+        margin-top: 20px;
+        padding-top: 8px;
+      }
+    }
   </style>
 </head>
 <body>
+
+  <div id="print-debt-header" class="print-only" style="display:none; border-bottom:2px solid #0f172a; padding-bottom:8px; margin-bottom:14px;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+      <div>
+        <div style="font-size:18px; font-weight:800; color:#0f172a;" id="lbl-print-debt-doc-title">Money Superapp — Debt Payoff Strategy Roadmap</div>
+        <div style="font-size:11px; color:#64748b;" id="lbl-print-debt-doc-sub">แผนกลยุทธ์การปลดหนี้สินและการจำลองระยะเวลาปลอดหนี้</div>
+      </div>
+      <div style="text-align:right; font-size:11px; color:#64748b;">
+        <div id="print-debt-timestamp">100% Private &amp; Client-Side</div>
+      </div>
+    </div>
+  </div>
 
   <div class="eyebrow">DEBT PAYOFF</div>
   <h1>
     <span id="txt-title">วางแผนปลดหนี้</span>
     <div style="display:flex; gap:6px;">
       <button onclick="undoDebtChange()" class="action-btn no-print" style="padding:4px 8px; margin:0; display:none;" id="btn-undo-debt" title="เลิกทำ / Undo (Ctrl+Z)" aria-label="Undo last change">↩</button>
-      <button onclick="window.print()" class="action-btn no-print" style="padding:4px 8px; margin:0;" id="lbl-print-plan">🖨️</button>
+      <button onclick="printDebtPlan()" class="action-btn no-print" style="padding:4px 8px; margin:0;" id="lbl-print-plan">🖨️</button>
       <button onclick="copyPayoffPlan()" class="action-btn no-print" style="padding:4px 8px; margin:0;" id="lbl-copy-plan">📋</button>
     </div>
   </h1>
@@ -281,7 +359,7 @@
     <span id="saveStatus">&nbsp;</span>
     <button class="reset-btn" id="btn-reset-debts" onclick="resetDefaults()">รีเซ็ตค่าเริ่มต้น</button>
   </div>
-  <p class="version-tag">v1.9.2</p>
+  <p class="version-tag">v1.9.3</p>
 
 <script src="js/shared.js"></script>
 <script>
@@ -1008,11 +1086,31 @@
         updateUndoUI();
     }
 
+    function printDebtPlan() {
+        const now = new Date();
+        const tsEl = document.getElementById('print-debt-timestamp');
+        if (tsEl) {
+            const day = now.getDate();
+            const enMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const thMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+            const m = LANG === 'en' ? enMonths[now.getMonth()] : thMonths[now.getMonth()];
+            const y = LANG === 'en' ? now.getFullYear() : now.getFullYear() + 543;
+            const hh = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            tsEl.textContent = `${LANG === 'en' ? 'Generated: ' : 'สร้างเมื่อ: '}${day} ${m} ${y} ${hh}:${mm}`;
+        }
+        window.print();
+    }
+
     // Initialize
     loadState();
     document.getElementById('txtExtraPayment').value = state.extraPayment;
     renderTable();
     setStrategy(state.strategy);
 </script>
+
+  <div id="print-debt-footer" class="print-only" style="display:none;">
+    Money Superapp (100% Offline &amp; Client-Side Private) &bull; https://crossoverall.github.io/money-superapp/
+  </div>
 </body>
 </html>

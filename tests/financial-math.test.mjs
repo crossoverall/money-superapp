@@ -541,4 +541,71 @@ describe('Financial Math Verification', () => {
       assert.equal(wf6m.headroom, Infinity);
     });
   });
+
+  describe('Printable Financial Report Serialization & Timestamps', () => {
+    function formatReportDate(d, lang) {
+      const enMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const thMonths = [
+        'ม.ค.',
+        'ก.พ.',
+        'มี.ค.',
+        'เม.ย.',
+        'พ.ค.',
+        'มิ.ย.',
+        'ก.ค.',
+        'ส.ค.',
+        'ก.ย.',
+        'ต.ค.',
+        'พ.ย.',
+        'ธ.ค.',
+      ];
+      const day = d.getDate();
+      const m = lang === 'en' ? enMonths[d.getMonth()] : thMonths[d.getMonth()];
+      const y = lang === 'en' ? d.getFullYear() : d.getFullYear() + 543;
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      return `${day} ${m} ${y} ${hh}:${mm}`;
+    }
+
+    function buildPrintableExecutiveSummary(profile, goals) {
+      return {
+        timestamp: formatReportDate(new Date(2026, 9, 17, 10, 30), 'en'),
+        metrics: {
+          netWorth: profile.netWorth,
+          runwayMonths: profile.runwayMonths,
+          savingsRate: profile.savingsRate,
+          totalDebt: profile.totalDebt,
+        },
+        goalsProgress: {
+          emergencyMet: profile.runwayMonths >= goals.emergencyMonths,
+          netWorthMet: profile.netWorth >= goals.netWorthTarget,
+          debtFree: profile.totalDebt <= 0,
+        },
+      };
+    }
+
+    it('formats report date correctly in Thai and English Buddhist/Gregorian years', () => {
+      const sampleDate = new Date(2026, 9, 17, 9, 5); // 17 Oct 2026, 09:05
+      assert.equal(formatReportDate(sampleDate, 'en'), '17 Oct 2026 09:05');
+      assert.equal(formatReportDate(sampleDate, 'th'), '17 ต.ค. 2569 09:05');
+    });
+
+    it('builds executive summary report structure with verified goal criteria', () => {
+      const profile = {
+        netWorth: 1200000,
+        runwayMonths: 8.5,
+        savingsRate: 35.2,
+        totalDebt: 0,
+      };
+      const goals = {
+        emergencyMonths: 6,
+        netWorthTarget: 1000000,
+      };
+      const report = buildPrintableExecutiveSummary(profile, goals);
+      assert.equal(report.metrics.netWorth, 1200000);
+      assert.equal(report.goalsProgress.emergencyMet, true);
+      assert.equal(report.goalsProgress.netWorthMet, true);
+      assert.equal(report.goalsProgress.debtFree, true);
+    });
+  });
 });

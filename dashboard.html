@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="1.9.2">
+  <meta name="version" content="1.9.3">
   <title>ภาพรวมการเงิน</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -95,14 +95,76 @@
     .reset-btn{ background:none; border:none; color: var(--ink-faint); text-decoration:underline; cursor:pointer; font-size:12px; }
     .reset-btn:hover{ color: var(--danger); }
     .version-tag{ text-align:center; font-size:11px; color:var(--line); margin-top:16px; }
+
+    @media screen {
+      .print-only { display: none !important; }
+    }
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        padding: 10px 16px !important;
+        max-width: 100% !important;
+      }
+      .no-print, button, .action-btn, .reset-btn, [role="navigation"], #goalsModal, .tooltip, #snapshotAlertBanner {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+      .panel {
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 8px !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+        margin-bottom: 12px !important;
+        padding: 12px !important;
+      }
+      .summary-card {
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+      }
+      .chart-container {
+        height: 160px !important;
+      }
+      .eyebrow, .sub, .version-tag {
+        color: #64748b !important;
+      }
+      #print-footer {
+        display: block !important;
+        text-align: center;
+        font-size: 10px;
+        color: #94a3b8;
+        border-top: 1px dashed #cbd5e1;
+        margin-top: 20px;
+        padding-top: 8px;
+      }
+    }
   </style>
 </head>
 <body>
 
+  <div id="print-header" class="print-only" style="display:none; border-bottom:2px solid #0f172a; padding-bottom:8px; margin-bottom:14px;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+      <div>
+        <div style="font-size:18px; font-weight:800; color:#0f172a;" id="lbl-print-doc-title">Money Superapp — Financial Overview Report</div>
+        <div style="font-size:11px; color:#64748b;" id="lbl-print-doc-sub">รายงานสรุปภาพรวมสถานะการเงินและความมั่งคั่งสุทธิ</div>
+      </div>
+      <div style="text-align:right; font-size:11px; color:#64748b;">
+        <div id="print-timestamp">Generated: 17/10/2026</div>
+        <div>100% Private &amp; Client-Side</div>
+      </div>
+    </div>
+  </div>
+
   <div class="eyebrow" id="lbl-eyebrow">DASHBOARD</div>
   <h1>
     <span id="txt-title">ภาพรวมการเงิน</span>
-    <button onclick="refreshDashboard()" class="action-btn" style="padding:6px; margin:0; border-radius:12px;" id="btn-refresh" title="รีเฟรชข้อมูล" aria-label="Refresh financial data">🔄</button>
+    <div style="display:flex; gap:6px; align-items:center;" class="no-print">
+      <button onclick="printDashboardReport()" class="action-btn" style="padding:6px 10px; margin:0; border-radius:12px; font-size:12px;" id="btn-print" title="พิมพ์รายงานภาพรวมการเงิน" aria-label="Print Financial Summary Report">🖨️ <span id="lbl-btn-print">พิมพ์</span></button>
+      <button onclick="refreshDashboard()" class="action-btn" style="padding:6px; margin:0; border-radius:12px;" id="btn-refresh" title="รีเฟรชข้อมูล" aria-label="Refresh financial data">🔄</button>
+    </div>
   </h1>
   <div class="sub" id="lbl-subtitle">สรุปความมั่งคั่งและประวัติการเติบโต</div>
 
@@ -278,7 +340,7 @@
     </div>
   </div>
 
-  <p class="version-tag">Money Superapp v1.9.2</p>
+  <p class="version-tag">Money Superapp v1.9.3</p>
 
 <script src="js/shared.js"></script>
 <script>
@@ -325,7 +387,11 @@
             btnResetGoalsText: 'รีเซ็ตค่าเริ่มต้น',
             btnCloseGoalsModal: 'ยกเลิก',
             btnSaveGoalsText: 'บันทึก',
-            monthsUnit: 'เดือน'
+            monthsUnit: 'เดือน',
+            btnPrint: 'พิมพ์',
+            printTitle: 'พิมพ์รายงานภาพรวมการเงิน',
+            printDocTitle: 'Money Superapp — Financial Overview Report',
+            printDocSub: 'รายงานสรุปภาพรวมสถานะการเงินและความมั่งคั่งสุทธิ'
         },
         en: {
             title: 'Financial Dashboard',
@@ -369,7 +435,11 @@
             btnResetGoalsText: 'Reset Defaults',
             btnCloseGoalsModal: 'Cancel',
             btnSaveGoalsText: 'Save Goals',
-            monthsUnit: 'mos'
+            monthsUnit: 'mos',
+            btnPrint: 'Print',
+            printTitle: 'Print Financial Summary Report',
+            printDocTitle: 'Money Superapp — Financial Overview Report',
+            printDocSub: 'Comprehensive Financial Health & Net Worth Summary'
         }
     };
 
@@ -413,6 +483,9 @@
             'btnResetGoalsText': t.btnResetGoalsText,
             'btnCloseGoalsModal': t.btnCloseGoalsModal,
             'btnSaveGoalsText': t.btnSaveGoalsText,
+            'lbl-btn-print': t.btnPrint,
+            'lbl-print-doc-title': t.printDocTitle,
+            'lbl-print-doc-sub': t.printDocSub,
         };
 
         Object.keys(textMapping).forEach(id => {
@@ -426,6 +499,9 @@
 
         const btnRefresh = document.getElementById('btn-refresh');
         if (btnRefresh) btnRefresh.title = t.refreshTitle;
+
+        const btnPrint = document.getElementById('btn-print');
+        if (btnPrint) btnPrint.title = t.printTitle;
     }
 
     applyLocalization();
@@ -1117,11 +1193,36 @@
         renderChart();
     }
 
+    function printDashboardReport() {
+        const now = new Date();
+        const tsEl = document.getElementById('print-timestamp');
+        if (tsEl) {
+            const formatted = formatReportDate(now, LANG);
+            tsEl.textContent = `${LANG === 'en' ? 'Generated: ' : 'สร้างเมื่อ: '}${formatted}`;
+        }
+        window.print();
+    }
+
+    function formatReportDate(d, lang) {
+        const enMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const thMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        const day = d.getDate();
+        const m = lang === 'en' ? enMonths[d.getMonth()] : thMonths[d.getMonth()];
+        const y = lang === 'en' ? d.getFullYear() : d.getFullYear() + 543;
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
+        return `${day} ${m} ${y} ${hh}:${mm}`;
+    }
+
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             closeGoalsModal();
         }
     });
 </script>
+
+  <div id="print-footer" class="print-only" style="display:none;">
+    Money Superapp (100% Offline &amp; Client-Side Private) &bull; https://crossoverall.github.io/money-superapp/
+  </div>
 </body>
 </html>
