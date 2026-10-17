@@ -150,9 +150,104 @@
     };
   }
 
-  // Auto-initialize document theme and shortcuts when running in browser
+  function detectSwipeGesture(params) {
+    if (!params) return null;
+    var startX = params.startX;
+    var startY = params.startY;
+    var endX = params.endX;
+    var endY = params.endY;
+    var startTime = params.startTime || 0;
+    var endTime = params.endTime || 0;
+    var minDistance = params.minDistance || 60;
+    var maxPerpendicular = params.maxPerpendicular || 50;
+    var maxDuration = params.maxDuration || 550;
+
+    if (typeof startX !== 'number' || typeof endX !== 'number') return null;
+    if (typeof startY !== 'number' || typeof endY !== 'number') return null;
+
+    var duration = endTime - startTime;
+    if (duration > maxDuration) return null;
+
+    var deltaX = endX - startX;
+    var deltaY = endY - startY;
+    var absX = Math.abs(deltaX);
+    var absY = Math.abs(deltaY);
+
+    if (absX < minDistance) return null;
+    if (absY > maxPerpendicular) return null;
+    if (absX / (absY + 1) < 1.7) return null;
+
+    return {
+      direction: deltaX < 0 ? 'next' : 'prev',
+      deltaX: deltaX,
+      deltaY: deltaY,
+      duration: duration,
+    };
+  }
+
+  function isInteractiveElement(target) {
+    if (!target?.closest) return false;
+    return Boolean(
+      target.closest(
+        'input, textarea, select, button, [contenteditable="true"], .no-swipe, [role="slider"], [role="scrollbar"]',
+      ),
+    );
+  }
+
+  function initTouchSwipeNavigation() {
+    if (typeof window === 'undefined' || !window.addEventListener) return;
+    var touchStartX = 0;
+    var touchStartY = 0;
+    var touchStartTime = 0;
+    var isIgnored = false;
+
+    window.addEventListener(
+      'touchstart',
+      (e) => {
+        if (e.touches?.length !== 1) {
+          isIgnored = true;
+          return;
+        }
+        isIgnored = isInteractiveElement(e.target);
+        if (isIgnored) return;
+
+        var touch = e.touches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+        touchStartTime = Date.now();
+      },
+      { passive: true },
+    );
+
+    window.addEventListener(
+      'touchend',
+      (e) => {
+        if (isIgnored || !e.changedTouches?.length) return;
+        var touch = e.changedTouches[0];
+        var swipe = detectSwipeGesture({
+          startX: touchStartX,
+          startY: touchStartY,
+          endX: touch.clientX,
+          endY: touch.clientY,
+          startTime: touchStartTime,
+          endTime: Date.now(),
+        });
+        if (swipe) {
+          try {
+            if (window.parent && window.parent !== window) {
+              window.parent.postMessage({ action: 'swipeTab', direction: swipe.direction }, '*');
+            }
+          } catch (_err) {}
+        }
+      },
+      { passive: true },
+    );
+  }
+
+  // Auto-initialize document theme, shortcuts, and swipe navigation when running in browser
   initTheme();
   initShortcutForwarding();
+  initTouchSwipeNavigation();
 
   var MoneyApp = {
     LANG: LANG,
@@ -165,6 +260,8 @@
     initShortcutForwarding: initShortcutForwarding,
     safeJsonParse: safeJsonParse,
     createUndoManager: createUndoManager,
+    detectSwipeGesture: detectSwipeGesture,
+    initTouchSwipeNavigation: initTouchSwipeNavigation,
   };
 
   // Expose on global window object
@@ -179,5 +276,6 @@
     if (typeof global.escapeHtml === 'undefined') global.escapeHtml = escapeHtml;
     if (typeof global.safeJsonParse === 'undefined') global.safeJsonParse = safeJsonParse;
     if (typeof global.createUndoManager === 'undefined') global.createUndoManager = createUndoManager;
+    if (typeof global.detectSwipeGesture === 'undefined') global.detectSwipeGesture = detectSwipeGesture;
   }
 })(typeof window !== 'undefined' ? window : this);

@@ -310,3 +310,19 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
   2. For hierarchical 2-tier structures (Buckets -> Assets), the global target allocation is derived via normalized weight tree multiplication: $\text{Target\%} = \frac{W_b}{\sum W} \times \frac{w_a}{\sum w_b} \times 100\%$.
   3. In buy-only DCA water-filling algorithms, the monthly cash top-up is routed strictly to lagging/underweight assets. Mathematically, this guarantees $\text{Post-Tracking Error} \le \text{Pre-Tracking Error}$, providing real-time verification of portfolio convergence.
 - **Rule:** When displaying aggregate portfolio drift, use the normalized half-sum index and show both Pre-DCA and Post-DCA metrics to give users immediate feedback on how their monthly budget corrects allocation imbalances.
+
+### 2026-10-17: Cross-Frame Touch Swipe Navigation & False-Positive Suppression
+
+- **Date & Context:** 2026-10-17, implementing Touch Swipe Gesture Navigation across tools (`v2.0.1`).
+- **Problem:**
+  1. In multi-frame SPA architectures, touch events inside an iframe do not automatically bubble to the parent document, preventing shell navigation tab switches when users swipe on mobile screen content.
+  2. Naive horizontal touch listeners trigger accidental tab switches during natural vertical scrolling, pinch-to-zoom, or dragging on range sliders, text inputs, and table cells.
+- **Resolution:**
+  1. Built a dual-surface listener: `js/shared.js` captures gestures in child iframes and posts `{ action: 'swipeTab', direction: 'next' | 'prev' }` to parent `index.html`, while `index.html` captures gestures directly on `#bottomNav` and shell elements.
+  2. Suppressed false positives with a 5-point guardrail:
+     - Minimum displacement: $|\Delta X| \ge 60\text{px}$.
+     - Maximum perpendicular deviation: $|\Delta Y| \le 50\text{px}$.
+     - Horizontal dominance ratio: $|\Delta X| / (|\Delta Y| + 1) \ge 1.7$.
+     - Maximum duration: $\le 550\text{ms}$ (filters slow drags / resting fingers).
+     - Interactive element exclusion: `input`, `textarea`, `select`, `button`, `[role="slider"]`, `.no-swipe`.
+- **Rule:** For iframe-based SPAs, route child touch events via `postMessage` with strict perpendicular displacement filters and interactive element exclusions before triggering tab navigation.

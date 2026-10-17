@@ -193,4 +193,119 @@ describe('MoneyApp Shared Core Module', () => {
       assert.equal(hasSeen(store), true);
     });
   });
+
+  describe('Touch Swipe Gesture Navigation', () => {
+    const { MoneyApp } = createEnvironment();
+
+    it('detects valid left swipe (navigates to next tab)', () => {
+      const res = MoneyApp.detectSwipeGesture({
+        startX: 200,
+        startY: 100,
+        endX: 80,
+        endY: 110,
+        startTime: 1000,
+        endTime: 1250,
+      });
+      assert.notEqual(res, null);
+      assert.equal(res.direction, 'next');
+      assert.equal(res.deltaX, -120);
+      assert.equal(res.deltaY, 10);
+      assert.equal(res.duration, 250);
+    });
+
+    it('detects valid right swipe (navigates to prev tab)', () => {
+      const res = MoneyApp.detectSwipeGesture({
+        startX: 100,
+        startY: 150,
+        endX: 220,
+        endY: 145,
+        startTime: 1000,
+        endTime: 1200,
+      });
+      assert.notEqual(res, null);
+      assert.equal(res.direction, 'prev');
+      assert.equal(res.deltaX, 120);
+      assert.equal(res.deltaY, -5);
+      assert.equal(res.duration, 200);
+    });
+
+    it('rejects swipe when horizontal distance is below threshold (< 60px)', () => {
+      const res = MoneyApp.detectSwipeGesture({
+        startX: 100,
+        startY: 100,
+        endX: 55, // delta = -45px (< 60)
+        endY: 102,
+        startTime: 1000,
+        endTime: 1150,
+      });
+      assert.equal(res, null);
+    });
+
+    it('rejects predominantly vertical scrolling gestures', () => {
+      const res = MoneyApp.detectSwipeGesture({
+        startX: 100,
+        startY: 100,
+        endX: 80, // deltaX = -20
+        endY: 250, // deltaY = +150
+        startTime: 1000,
+        endTime: 1200,
+      });
+      assert.equal(res, null);
+    });
+
+    it('rejects diagonal movements where vertical displacement exceeds limit', () => {
+      const res = MoneyApp.detectSwipeGesture({
+        startX: 100,
+        startY: 100,
+        endX: 190, // deltaX = 90
+        endY: 160, // deltaY = 60 (> 50)
+        startTime: 1000,
+        endTime: 1200,
+      });
+      assert.equal(res, null);
+    });
+
+    it('rejects slow drags exceeding max duration (> 550ms)', () => {
+      const res = MoneyApp.detectSwipeGesture({
+        startX: 100,
+        startY: 100,
+        endX: 220,
+        endY: 105,
+        startTime: 1000,
+        endTime: 1600, // duration = 600ms (> 550)
+      });
+      assert.equal(res, null);
+    });
+
+    it('correctly clamps tab index progression across ordered tab list', () => {
+      const tabs = [
+        'dashboard',
+        'rebalance',
+        'months-slips',
+        'tax-calculator-base',
+        'tax-calculator',
+        'remaining-money',
+        'debt-calculator',
+      ];
+
+      function computeTargetIndex(currentIndex, direction) {
+        if (currentIndex < 0 || currentIndex >= tabs.length) return currentIndex;
+        if (direction === 'next') return Math.min(tabs.length - 1, currentIndex + 1);
+        if (direction === 'prev') return Math.max(0, currentIndex - 1);
+        return currentIndex;
+      }
+
+      // Clamped at start
+      assert.equal(computeTargetIndex(0, 'prev'), 0);
+      assert.equal(computeTargetIndex(0, 'next'), 1);
+
+      // Middle progression
+      assert.equal(computeTargetIndex(3, 'prev'), 2);
+      assert.equal(computeTargetIndex(3, 'next'), 4);
+
+      // Clamped at end
+      assert.equal(computeTargetIndex(6, 'prev'), 5);
+      assert.equal(computeTargetIndex(6, 'next'), 6);
+    });
+  });
 });

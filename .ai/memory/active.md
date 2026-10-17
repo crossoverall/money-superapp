@@ -1,5 +1,5 @@
 ---
-task_id: "FEAT-PORTFOLIO-DRIFT-VIZ-01"
+task_id: "FEAT-TOUCH-SWIPE-NAV-01"
 status: "completed"
 current_stage: "release"
 complexity: "level_2"
@@ -7,23 +7,23 @@ iteration_count: 0
 pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Feature Completed: Portfolio Drift & Allocation Deviation Visualizer (v2.0.0 Major Milestone)
+### Feature Completed: Touch Swipe Gesture Navigation Between Tabs on Mobile (v2.0.1)
 
 #### Summary of Delivery:
-- **Mathematical Engine:** Implemented normalized half-sum tracking error calculation across 3-tier weighting trees in [`js/rebalance.js`](file:///home/l2okii/Document/money-superapp/js/rebalance.js).
-- **Visual Convergence Tracker:** Added Pre-DCA & Post-DCA progress bars, color-coded health badge (`✓ Well-Balanced`, `⚠️ Mild Drift`, `🚨 High Drift`), percentage reduction readout, and top overweight/underweight chips.
-- **Automated Verification:** 58 unit tests passing (`tests/financial-math.test.mjs`), Biome lint passing with 0 errors.
-- **Version Bumping:** Major milestone `v2.0.0` bumped across 11 files via `node scripts/bump.mjs major`.
+- **Mathematical Gesture Engine:** Implemented pure `detectSwipeGesture()` in [`js/shared.js`](file:///home/l2okii/Document/money-superapp/js/shared.js) with 5-point guardrails (min $\Delta X \ge 60\text{px}$, max perpendicular $\le 50\text{px}$, dominance ratio $\ge 1.7$, duration $\le 550\text{ms}$).
+- **Dual-Surface Listener & Cross-Frame Forwarding:** Added `initTouchSwipeNavigation()` inside child iframes forwarding via `postMessage`, plus direct shell listener in [`index.html`](file:///home/l2okii/Document/money-superapp/index.html).
+- **Accidental Trigger Suppression:** Excludes inputs, buttons, sliders, textareas, and `.no-swipe` elements.
+- **Automated Verification:** 65 unit tests passing (`npm test`), Biome linter passing with 0 errors (`npm run lint`).
+- **Version Bumping:** Bumped to `v2.0.1` (patch) across all 11 project manifests and tools.
 
 ---
 
-### Next Candidate Milestone: Phase 18 — Touch Swipe Gesture Navigation Between Tabs on Mobile (Roadmap Item 2.2)
+### Next Candidate Milestone: Phase 19 — Debt Payoff Timeline SVG Amortization Curve (Roadmap Item 3.2)
 
 #### Overview & Scope:
-- **Objective:** Add smooth touch swipe gesture handling on mobile devices (`touchstart`, `touchmove`, `touchend`) to swipe left/right across tools in the shell navigation.
+- **Objective:** Add an interactive SVG debt payoff amortization chart in [`debt-calculator.html`](file:///home/l2okii/Document/money-superapp/debt-calculator.html) comparing Snowball vs. Avalanche balances over time down to zero.
 - **Constraints:**
-  - Zero external libraries; lightweight touch event listener in `index.html`.
-  - Horizontal swipe threshold (e.g. min 50px delta, max vertical displacement 30px to prevent conflict with vertical scrolling).
-  - Respect form inputs and sliders so horizontal dragging on sliders or horizontal tables doesn't trigger accidental tab switches.
-- **Files:** `index.html`, `tests/` unit tests for touch delta parsing.
-
+  - Zero external charting libraries (vanilla SVG Catmull-Rom or multi-series polyline).
+  - Clear visual milestone chips (debt-free target date, total interest saved under Avalanche vs Snowball).
+  - 100% offline standalone compatibility (ADR-001).
+- **Files:** `debt-calculator.html`, `tests/financial-math.test.mjs`.
