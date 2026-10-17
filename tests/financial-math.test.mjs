@@ -4700,4 +4700,103 @@ describe('Financial Math Verification', () => {
       assert.equal(Number.isNaN(exactRes.adjustedAnnualTakeHome), false);
     });
   });
+
+  describe('Net Worth Real-Value Inflation Deflator & Purchasing Power Projection Engine', () => {
+    function calculateInflationDeflator({ nominalAmount = 0, inflationRatePct = 2.5, years = 10 } = {}) {
+      const nominal = Math.max(0, Number(nominalAmount) || 0);
+      const rate = Math.max(0, Number(inflationRatePct) || 0) / 100;
+      const t = Math.max(0, Number(years) || 0);
+
+      const growthFactor = Math.pow(1 + rate, t);
+      const deflatorMultiplier = growthFactor > 0 ? 1 / growthFactor : 1;
+      const realValue = Math.round(nominal * deflatorMultiplier * 100) / 100;
+      const purchasingPowerErosionPct = Math.round((1 - deflatorMultiplier) * 10000) / 100;
+      const requiredNominalForTargetReal = Math.round(nominal * growthFactor * 100) / 100;
+
+      return {
+        nominalAmount: nominal,
+        inflationRatePct: rate * 100,
+        years: t,
+        deflatorMultiplier: Math.round(deflatorMultiplier * 10000) / 10000,
+        realValue,
+        purchasingPowerErosionPct,
+        requiredNominalForTargetReal,
+      };
+    }
+
+    function generateInflationDiscountSchedule({
+      nominalAmount = 0,
+      inflationRatePct = 2.5,
+      horizons = [1, 5, 10, 15, 20, 25, 30],
+    } = {}) {
+      return (horizons || [1, 5, 10, 15, 20, 25, 30]).map((y) =>
+        calculateInflationDeflator({
+          nominalAmount,
+          inflationRatePct,
+          years: y,
+        }),
+      );
+    }
+
+    it('accurately discounts 1,000,000 THB over 10 years at 3.0% inflation', () => {
+      const res = calculateInflationDeflator({
+        nominalAmount: 1000000,
+        inflationRatePct: 3.0,
+        years: 10,
+      });
+
+      // (1 + 0.03)^10 = 1.343916
+      // Deflator = 1 / 1.343916 = 0.74409
+      // Real value = 744,094 THB
+      // Erosion = 25.59%
+      assert.ok(Math.abs(res.realValue - 744094) < 10);
+      assert.ok(Math.abs(res.purchasingPowerErosionPct - 25.59) < 0.1);
+      assert.ok(Math.abs(res.requiredNominalForTargetReal - 1343916) < 10);
+      assert.equal(res.years, 10);
+    });
+
+    it('accurately calculates real purchasing power for 10M THB FIRE target over 20 years at 2.5% inflation', () => {
+      const res = calculateInflationDeflator({
+        nominalAmount: 10000000,
+        inflationRatePct: 2.5,
+        years: 20,
+      });
+
+      // (1.025)^20 = 1.638616 -> Real value = ~6,102,709 THB
+      assert.ok(Math.abs(res.realValue - 6102709) < 20);
+      assert.ok(Math.abs(res.purchasingPowerErosionPct - 38.97) < 0.1);
+      assert.ok(Math.abs(res.requiredNominalForTargetReal - 16386164) < 20);
+    });
+
+    it('generates monotonically decreasing purchasing power across multi-year horizon schedule', () => {
+      const schedule = generateInflationDiscountSchedule({
+        nominalAmount: 5000000,
+        inflationRatePct: 3.0,
+        horizons: [1, 5, 10, 15, 20, 25, 30],
+      });
+
+      assert.equal(schedule.length, 7);
+      for (let i = 1; i < schedule.length; i++) {
+        assert.ok(schedule[i].realValue < schedule[i - 1].realValue);
+        assert.ok(schedule[i].purchasingPowerErosionPct > schedule[i - 1].purchasingPowerErosionPct);
+        assert.ok(schedule[i].requiredNominalForTargetReal > schedule[i - 1].requiredNominalForTargetReal);
+      }
+    });
+
+    it('handles zero inflation, zero years, and zero amount edge cases safely without NaN', () => {
+      const zeroRate = calculateInflationDeflator({ nominalAmount: 1000000, inflationRatePct: 0, years: 10 });
+      assert.equal(zeroRate.realValue, 1000000);
+      assert.equal(zeroRate.purchasingPowerErosionPct, 0);
+      assert.equal(zeroRate.deflatorMultiplier, 1.0);
+
+      const zeroYears = calculateInflationDeflator({ nominalAmount: 1000000, inflationRatePct: 3.0, years: 0 });
+      assert.equal(zeroYears.realValue, 1000000);
+      assert.equal(zeroYears.purchasingPowerErosionPct, 0);
+
+      const zeroAmount = calculateInflationDeflator({ nominalAmount: 0, inflationRatePct: 3.0, years: 15 });
+      assert.equal(zeroAmount.realValue, 0);
+      assert.equal(zeroAmount.requiredNominalForTargetReal, 0);
+      assert.equal(Number.isNaN(zeroAmount.realValue), false);
+    });
+  });
 });

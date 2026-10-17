@@ -15,6 +15,19 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-17: Net Worth Real-Value Inflation Deflator & Purchasing Power Projection Engine (v2.2.2)
+
+- **Date & Context:** 2026-10-17, during implementation of net worth real-value inflation deflator & purchasing power projection engine in `dashboard.html` (`v2.2.2`).
+- **Problem:** Over multi-decade financial horizons (10–30 years), nominal targets create a severe money illusion: at 2.5% inflation, a 10M THB net worth target has only ~6.1M THB of real purchasing power after 20 years (38.97% purchasing power erosion). Users planning for retirement or long-term wealth goals had no way to quantify real inflation-discounted value vs required nominal targets.
+- **Root Cause:** Dashboard goal and net worth metrics tracked nominal THB amounts exclusively, omitting compound inflation discounting.
+- **Solution & Rule:**
+  1. Implement deflation discount multiplier $\text{Multiplier} = (1 + r)^{-t}$, computing Real Present Value = $\text{Nominal} \times \text{Multiplier}$ and Purchasing Power Erosion % = $(1 - \text{Multiplier}) \times 100\%$.
+  2. Compute required future nominal savings to preserve today's real purchasing power: $\text{Required Nominal} = \text{Target} \times (1 + r)^t$.
+  3. Render dynamic multi-year discount schedules (1, 5, 10, 15, 20, 25, 30 years) with interactive inflation rate and horizon sliders.
+  4. Use isolated CSS pill classes (`.deflator-pill`) instead of existing `.swr-pill` or `.scenario-pill` to prevent pill querySelector collisions and dataset attribute bugs.
+
+
+
 ### 2026-10-17: Annual Cumulative Payslip Withholding vs PIT Reconciliation Bridge (v2.2.1)
 
 - **Date & Context:** 2026-10-17, during implementation of annual cumulative payslip withholding vs statutory PIT reconciliation bridge with PromptPay direct deposit refund simulation in `months-slips.html` (`v2.2.1`).

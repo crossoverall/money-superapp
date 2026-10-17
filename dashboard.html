@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.2.1">
+  <meta name="version" content="2.2.2">
   <title>ภาพรวมการเงิน</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -98,6 +98,9 @@
     .swr-pill { background: var(--panel); border: 1px solid var(--line); color: var(--ink-faint); border-radius: 12px; padding: 1px 7px; font-size: 10px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; }
     .swr-pill:hover { border-color: var(--ok); color: var(--ink); }
     .swr-pill.active { background: rgba(16,185,129,0.12); border-color: var(--ok); color: var(--ok); font-weight: 700; }
+    .deflator-pill { background: var(--panel); border: 1px solid var(--line); color: var(--ink-faint); border-radius: 12px; padding: 1px 7px; font-size: 10px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; }
+    .deflator-pill:hover { border-color: var(--blue); color: var(--ink); }
+    .deflator-pill.active { background: rgba(37,99,235,0.12); border-color: var(--blue); color: var(--blue); font-weight: 700; }
 
     .chart-container { width: 100%; height: 200px; margin-top: 10px; position: relative; }
     #svgChart { width:100%; height:100%; overflow:visible; }
@@ -333,6 +336,82 @@
     </div>
   </div>
 
+  <!-- Net Worth Real-Value Inflation Deflator & Purchasing Power Projection Engine -->
+  <div class="panel" role="region" aria-label="Inflation Deflator &amp; Real Purchasing Power Engine" id="panelInflationDeflator">
+    <div class="panel-title" id="lbl-deflator-panel-title">
+      <span id="lbl-deflator-title">📉 ปรับลดเงินเฟ้อ &amp; อำนาจซื้อที่แท้จริง (Inflation Deflator &amp; Real Purchasing Power)</span>
+      <span id="badge-deflator-loss" style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--warn-dim, #fef3c7); color:var(--warn, #d97706); border:1px solid var(--warn, #d97706);">อำนาจซื้อลดลง -21.9%</span>
+    </div>
+
+    <!-- Controls Bar -->
+    <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:12px;">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; font-size:11px;">
+        <!-- Inflation Rate Selector -->
+        <div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <label for="inpInflationRate" style="font-weight:700; color:var(--ink);" id="lbl-deflator-rate">
+              อัตราเงินเฟ้อเฉลี่ยต่อปี (Inflation Rate):
+            </label>
+            <span id="valInflationRateDisplay" style="font-weight:700; color:var(--blue, #2563eb);">2.5%</span>
+          </div>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <input type="range" id="inpInflationRate" min="0.5" max="8.0" step="0.1" value="2.5" style="flex:1;" oninput="updateInflationDeflator()">
+          </div>
+          <div style="display:flex; gap:4px; margin-top:6px; flex-wrap:wrap;">
+            <button type="button" class="deflator-pill" onclick="setInflationRate(2.0)" id="btnInfPreset20">🇹🇭 2.0% (TH)</button>
+            <button type="button" class="deflator-pill active" onclick="setInflationRate(2.5)" id="btnInfPreset25">🌐 2.5% (Std)</button>
+            <button type="button" class="deflator-pill" onclick="setInflationRate(3.5)" id="btnInfPreset35">⚡ 3.5% (High)</button>
+          </div>
+        </div>
+
+        <!-- Time Horizon Selector -->
+        <div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <label for="inpInflationHorizon" style="font-weight:700; color:var(--ink);" id="lbl-deflator-horizon">
+              ระยะเวลาคาดการณ์ (Horizon Years):
+            </label>
+            <span id="valInflationHorizonDisplay" style="font-weight:700; color:var(--blue, #2563eb);">10 ปี</span>
+          </div>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <input type="range" id="inpInflationHorizon" min="1" max="30" step="1" value="10" style="flex:1;" oninput="updateInflationDeflator()">
+          </div>
+          <div style="display:flex; gap:4px; margin-top:6px; flex-wrap:wrap;">
+            <button type="button" class="deflator-pill" onclick="setInflationHorizon(5)" id="btnHorPreset5">5 ปี</button>
+            <button type="button" class="deflator-pill active" onclick="setInflationHorizon(10)" id="btnHorPreset10">10 ปี</button>
+            <button type="button" class="deflator-pill" onclick="setInflationHorizon(20)" id="btnHorPreset20">20 ปี</button>
+            <button type="button" class="deflator-pill" onclick="setInflationHorizon(30)" id="btnHorPreset30">30 ปี</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparison Metric Cards -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px; margin-bottom:12px; font-size:11px;">
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
+        <span style="color:var(--ink-faint); display:block; margin-bottom:2px;" id="lbl-card-nominal-nw">ความมั่งคั่งสุทธิปัจจุบัน (Nominal)</span>
+        <span id="txtDeflatorNominalNW" style="font-size:14px; font-weight:800; color:var(--ink);">0 บาท</span>
+      </div>
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
+        <span style="color:var(--ink-faint); display:block; margin-bottom:2px;" id="lbl-card-real-power">อำนาจซื้อที่แท้จริงในอนาคต (Real Power)</span>
+        <span id="txtDeflatorRealPower" style="font-size:14px; font-weight:800; color:var(--warn, #d97706);">0 บาท</span>
+      </div>
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
+        <span style="color:var(--ink-faint); display:block; margin-bottom:2px;" id="lbl-card-required-nominal">ยอดเงินที่ต้องมีเพื่อรักษาอำนาจซื้อ</span>
+        <span id="txtDeflatorRequiredNominal" style="font-size:14px; font-weight:800; color:var(--ok);">0 บาท</span>
+      </div>
+    </div>
+
+    <!-- Multi-Year Horizon Schedule Table & Erosion Visualizer -->
+    <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px; overflow-x:auto;">
+      <div style="font-size:11px; font-weight:700; color:var(--ink); margin-bottom:6px;" id="lbl-deflator-table-title">
+        📊 ตารางเปรียบเทียบอำนาจซื้อลดทอนตามเวลา (Inflation Discount Schedule)
+      </div>
+      <div id="deflatorScheduleContainer" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(105px, 1fr)); gap:6px;">
+        <!-- Dynamic discount cards -->
+      </div>
+    </div>
+  </div>
+
   <div class="panel" role="region" aria-label="Asset Allocation & Net Worth Composition">
     <div class="panel-title" id="lbl-composition-panel-title">
       <span id="lbl-composition-title">⚖️ โครงสร้างความมั่งคั่งและสินทรัพย์ (Net Worth Composition)</span>
@@ -551,7 +630,7 @@
     </div>
   </div>
 
-  <p class="version-tag">Money Superapp v2.2.1</p>
+  <p class="version-tag">Money Superapp v2.2.2</p>
 
 <script src="js/shared.js"></script>
 <script>
@@ -632,7 +711,14 @@
             lblFireSwrPillsTitle: 'อัตราถอน (SWR):',
             lblFirePassiveIncome: '🛡️ Passive Income ปลอดภัย:',
             lblModalAnnualExpenses: '🔥 ค่าใช้จ่ายรายปีสำหรับคำนวณ FIRE (บาท/ปี, 0 = ดึงอัตโนมัติ)',
-            btnAutoExpenses: 'ดึงอัตโนมัติ (Auto)'
+            btnAutoExpenses: 'ดึงอัตโนมัติ (Auto)',
+            deflatorTitle: '📉 ปรับลดเงินเฟ้อ &amp; อำนาจซื้อที่แท้จริง (Inflation Deflator &amp; Real Purchasing Power)',
+            deflatorRateLabel: 'อัตราเงินเฟ้อเฉลี่ยต่อปี (Inflation Rate):',
+            deflatorHorizonLabel: 'ระยะเวลาคาดการณ์ (Horizon Years):',
+            cardNominalNW: 'ความมั่งคั่งสุทธิปัจจุบัน (Nominal)',
+            cardRealPower: 'อำนาจซื้อที่แท้จริงในอนาคต (Real Power)',
+            cardRequiredNominal: 'ยอดเงินที่ต้องมีเพื่อรักษาอำนาจซื้อ',
+            deflatorTableTitle: '📊 ตารางเปรียบเทียบอำนาจซื้อลดทอนตามเวลา (Inflation Discount Schedule)'
         },
         en: {
             title: 'Financial Dashboard',
@@ -710,7 +796,14 @@
             lblFireSwrPillsTitle: 'Safe Withdrawal (SWR):',
             lblFirePassiveIncome: '🛡️ Safe Annual Passive Income:',
             lblModalAnnualExpenses: '🔥 Annual Expenses for FIRE (THB/yr, 0 = Auto)',
-            btnAutoExpenses: 'Auto Sync'
+            btnAutoExpenses: 'Auto Sync',
+            deflatorTitle: '📉 Inflation Deflator &amp; Real Purchasing Power',
+            deflatorRateLabel: 'Annual Inflation Rate:',
+            deflatorHorizonLabel: 'Projection Horizon:',
+            cardNominalNW: 'Current Net Worth (Nominal)',
+            cardRealPower: 'Future Real Purchasing Power',
+            cardRequiredNominal: 'Target Needed to Preserve Real Wealth',
+            deflatorTableTitle: '📊 Multi-Year Purchasing Power Discount Schedule'
         }
     };
 
@@ -777,7 +870,14 @@
             'lbl-comp-invest': t.compInvest,
             'lbl-comp-debt': t.compDebt,
             'lbl-solvency-title': t.solvencyTitle,
-            'lbl-donut-center-title': t.donutCenterNetWorth
+            'lbl-donut-center-title': t.donutCenterNetWorth,
+            'lbl-deflator-title': t.deflatorTitle,
+            'lbl-deflator-rate': t.deflatorRateLabel,
+            'lbl-deflator-horizon': t.deflatorHorizonLabel,
+            'lbl-card-nominal-nw': t.cardNominalNW,
+            'lbl-card-real-power': t.cardRealPower,
+            'lbl-card-required-nominal': t.cardRequiredNominal,
+            'lbl-deflator-table-title': t.deflatorTableTitle
         };
 
         Object.keys(textMapping).forEach(id => {
@@ -970,6 +1070,7 @@
         if (document.getElementById('qc-debt-sub')) document.getElementById('qc-debt-sub').textContent = `${(LANG === 'en' ? 'Debt: ' : 'ยอดหนี้: ')}${formatMoney(p.totalDebt)} ${unit}`;
 
         renderNetWorthComposition(p, t);
+        renderInflationDeflator(p.netWorth);
     }
 
     function renderNetWorthComposition(p, t) {
@@ -1067,6 +1168,133 @@
                 badgeSolvency.style.borderColor = 'var(--danger)';
                 badgeSolvency.textContent = t.solvencyCaution || 'หนี้สินสูง';
             }
+        }
+    }
+
+    // --- Inflation Deflator & Purchasing Power Engine ---
+    let deflatorState = {
+        inflationRate: 2.5,
+        horizonYears: 10,
+        currentNetWorth: 0
+    };
+
+    function setInflationRate(rate) {
+        deflatorState.inflationRate = rate;
+        const inp = document.getElementById('inpInflationRate');
+        if (inp) inp.value = rate;
+        const pills = [
+            { id: 'btnInfPreset20', rate: 2.0 },
+            { id: 'btnInfPreset25', rate: 2.5 },
+            { id: 'btnInfPreset35', rate: 3.5 }
+        ];
+        pills.forEach(p => {
+            const btn = document.getElementById(p.id);
+            if (btn) btn.classList.toggle('active', Math.abs(p.rate - rate) < 0.05);
+        });
+        updateInflationDeflator();
+    }
+
+    function setInflationHorizon(years) {
+        deflatorState.horizonYears = years;
+        const inp = document.getElementById('inpInflationHorizon');
+        if (inp) inp.value = years;
+        const pills = [
+            { id: 'btnHorPreset5', years: 5 },
+            { id: 'btnHorPreset10', years: 10 },
+            { id: 'btnHorPreset20', years: 20 },
+            { id: 'btnHorPreset30', years: 30 }
+        ];
+        pills.forEach(p => {
+            const btn = document.getElementById(p.id);
+            if (btn) btn.classList.toggle('active', p.years === years);
+        });
+        updateInflationDeflator();
+    }
+
+    function updateInflationDeflator() {
+        const inpRate = document.getElementById('inpInflationRate');
+        const inpHori = document.getElementById('inpInflationHorizon');
+        if (inpRate) deflatorState.inflationRate = parseFloat(inpRate.value) || 2.5;
+        if (inpHori) deflatorState.horizonYears = parseInt(inpHori.value, 10) || 10;
+
+        const rateDisplay = document.getElementById('valInflationRateDisplay');
+        const horiDisplay = document.getElementById('valInflationHorizonDisplay');
+        if (rateDisplay) rateDisplay.textContent = `${deflatorState.inflationRate.toFixed(1)}%`;
+        if (horiDisplay) horiDisplay.textContent = `${deflatorState.horizonYears} ${LANG === 'en' ? 'yrs' : 'ปี'}`;
+
+        renderInflationDeflator(deflatorState.currentNetWorth);
+    }
+
+    function calculateInflationMetrics({ nominalAmount = 0, inflationRatePct = 2.5, years = 10 } = {}) {
+        const nominal = Math.max(0, Number(nominalAmount) || 0);
+        const rate = Math.max(0, Number(inflationRatePct) || 0) / 100;
+        const t = Math.max(0, Number(years) || 0);
+
+        const growthFactor = Math.pow(1 + rate, t);
+        const deflatorMultiplier = growthFactor > 0 ? (1 / growthFactor) : 1;
+        const realValue = Math.round(nominal * deflatorMultiplier * 100) / 100;
+        const purchasingPowerErosionPct = Math.round((1 - deflatorMultiplier) * 10000) / 100;
+        const requiredNominalForTargetReal = Math.round(nominal * growthFactor * 100) / 100;
+
+        return {
+            nominalAmount: nominal,
+            inflationRatePct: rate * 100,
+            years: t,
+            deflatorMultiplier: Math.round(deflatorMultiplier * 10000) / 10000,
+            realValue,
+            purchasingPowerErosionPct,
+            requiredNominalForTargetReal
+        };
+    }
+
+    function renderInflationDeflator(netWorth) {
+        deflatorState.currentNetWorth = Math.max(0, netWorth || 0);
+        const metrics = calculateInflationMetrics({
+            nominalAmount: deflatorState.currentNetWorth,
+            inflationRatePct: deflatorState.inflationRate,
+            years: deflatorState.horizonYears
+        });
+
+        const isEn = LANG === 'en';
+        const curUnit = isEn ? 'THB' : 'บาท';
+
+        const badgeLoss = document.getElementById('badge-deflator-loss');
+        if (badgeLoss) {
+            badgeLoss.textContent = isEn
+                ? `Purchasing Power: -${metrics.purchasingPowerErosionPct.toFixed(1)}%`
+                : `อำนาจซื้อลดลง -${metrics.purchasingPowerErosionPct.toFixed(1)}%`;
+            badgeLoss.style.background = metrics.purchasingPowerErosionPct > 35 ? 'var(--danger-dim, #fee2e2)' : 'var(--warn-dim, #fef3c7)';
+            badgeLoss.style.color = metrics.purchasingPowerErosionPct > 35 ? 'var(--danger, #dc2626)' : 'var(--warn, #d97706)';
+            badgeLoss.style.borderColor = metrics.purchasingPowerErosionPct > 35 ? 'var(--danger, #dc2626)' : 'var(--warn, #d97706)';
+        }
+
+        const txtNominal = document.getElementById('txtDeflatorNominalNW');
+        const txtReal = document.getElementById('txtDeflatorRealPower');
+        const txtReq = document.getElementById('txtDeflatorRequiredNominal');
+
+        if (txtNominal) txtNominal.textContent = `${formatMoney(metrics.nominalAmount)} ${curUnit}`;
+        if (txtReal) txtReal.textContent = `${formatMoney(metrics.realValue)} ${curUnit}`;
+        if (txtReq) txtReq.textContent = `${formatMoney(metrics.requiredNominalForTargetReal)} ${curUnit}`;
+
+        // Render Discount Schedule
+        const schedContainer = document.getElementById('deflatorScheduleContainer');
+        if (schedContainer) {
+            const horizons = [1, 5, 10, 15, 20, 25, 30];
+            schedContainer.innerHTML = horizons.map(h => {
+                const item = calculateInflationMetrics({
+                    nominalAmount: deflatorState.currentNetWorth,
+                    inflationRatePct: deflatorState.inflationRate,
+                    years: h
+                });
+                const isSelected = h === deflatorState.horizonYears;
+                return `
+                    <div style="background:${isSelected ? 'rgba(37,99,235,0.08)' : 'var(--panel)'}; border:1px solid ${isSelected ? 'var(--blue, #2563eb)' : 'var(--line)'}; border-radius:8px; padding:8px 6px; text-align:center; transition:all 0.2s ease;">
+                        <div style="font-weight:700; font-size:11px; color:${isSelected ? 'var(--blue, #2563eb)' : 'var(--ink)'};">${h} ${isEn ? 'Yrs' : 'ปี'}</div>
+                        <div style="font-size:10px; font-weight:800; color:var(--warn, #d97706); margin-top:2px;">${formatMoney(item.realValue)}</div>
+                        <div style="font-size:9.5px; color:var(--ink-faint); margin-top:1px;">-${item.purchasingPowerErosionPct.toFixed(0)}% ${isEn ? 'loss' : 'อำนาจซื้อ'}</div>
+                    </div>
+                `;
+            }).join('');
         }
     }
 
