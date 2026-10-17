@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="2.1.0">
+    <meta name="version" content="2.1.1">
     <meta name="description" content="คำนวณภาษีเงินได้บุคคลธรรมดา — ประมาณการภาษีเงินได้จากเงินเดือนและโบนัส พร้อมแสดงรายละเอียดตามขั้นบันได">
     <title>คำนวณภาษีเงินได้บุคคลธรรมดา</title>
     <link rel="stylesheet" href="css/tailwind-lite.css">
@@ -51,12 +51,15 @@
         [data-theme="dark"] .text-gray-500 { color: var(--ink-dim) !important; }
         [data-theme="dark"] .text-blue-800 { color: var(--core) !important; }
         [data-theme="dark"] input, [data-theme="dark"] select { background-color: var(--input-bg) !important; color: var(--ink) !important; border-color: var(--line) !important; }
-        [data-theme="dark"] details { background-color: var(--panel) !important; border-color: var(--line) !important; }
         [data-theme="dark"] #taxAdvisorCard { background-color: var(--panel-2) !important; border-color: var(--core) !important; color: var(--ink) !important; }
-        [data-theme="dark"] #taxAdvisorCard .bg-white\/80 { background-color: var(--panel) !important; border-color: var(--line) !important; color: var(--ink) !important; }
+        [data-theme="dark"] #taxAdvisorCard .bg-white\/80,
+        [data-theme="dark"] #taxAdvisorCard .bg-white\/90 { background-color: var(--panel) !important; border-color: var(--line) !important; color: var(--ink) !important; }
         [data-theme="dark"] #taxAdvisorCard .text-emerald-800 { color: var(--ok) !important; }
         [data-theme="dark"] #taxAdvisorCard .text-emerald-900 { color: var(--ink) !important; }
         [data-theme="dark"] #taxAdvisorCard #badge-marginal-rate { background-color: var(--core) !important; color: #fff !important; }
+        [data-theme="dark"] #taxAdvisorCard .sim-pill { background-color: var(--panel-2) !important; border-color: var(--line) !important; color: var(--ink) !important; }
+        [data-theme="dark"] #taxAdvisorCard .sim-pill.active { background-color: var(--core) !important; color: #fff !important; border-color: var(--core) !important; }
+        [data-theme="dark"] #taxAdvisorCard #sim-result-callout { background-color: var(--panel) !important; border-color: var(--line) !important; color: var(--ink) !important; }
         .print-only { display: none !important; }
 
         @media print {
@@ -398,21 +401,58 @@
             <div id="taxBreakdown" class="space-y-2 text-xs text-gray-600"></div>
         </div>
 
-        <!-- Tax Optimization Advisor (SSF/RMF/Thai ESG Smart Suggestions) -->
-        <div id="taxAdvisorCard" class="mt-4 p-4 rounded-xl border border-emerald-300 bg-emerald-50 text-xs space-y-2.5" style="display:none;">
+        <!-- Tax Optimization Advisor & Deduction Capacity Room -->
+        <div id="taxAdvisorCard" class="mt-4 p-4 rounded-xl border border-emerald-300 bg-emerald-50 text-xs space-y-3" style="display:none;">
             <div class="flex items-center justify-between">
                 <span class="font-bold text-emerald-900 flex items-center gap-1.5" id="lbl-advisor-title">
-                    <span>💡</span> <span id="txt-advisor-title">คำแนะนำประหยัดภาษีอัจฉริยะ</span>
+                    <span>💡</span> <span id="txt-advisor-title">คำแนะนำและโอกาสประหยัดภาษี (Optimization Room)</span>
                 </span>
-                <span id="badge-marginal-rate" class="px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-800 font-bold text-[11px]"></span>
+                <span id="badge-marginal-rate" class="px-2.5 py-0.5 rounded-full bg-emerald-200 text-emerald-800 font-bold text-[11px]"></span>
             </div>
+
             <p id="advisor-summary" class="text-emerald-800 leading-relaxed"></p>
-            <div id="advisor-details" class="bg-white/80 p-2.5 rounded-lg border border-emerald-200 text-gray-700 space-y-1"></div>
+
+            <!-- Deduction Capacity Progress Meters -->
+            <div class="bg-white/90 p-3 rounded-lg border border-emerald-200 text-gray-700 space-y-2.5" id="advisor-meters-box">
+                <div class="flex justify-between items-center text-[11px] font-semibold text-gray-600">
+                    <span id="lbl-capacity-title">📊 สิทธิ์ลดหย่อนและโควตาคงเหลือ (Deduction Capacity)</span>
+                    <span id="txt-total-room-badge" class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold"></span>
+                </div>
+                <div id="capacityMetersList" class="space-y-2">
+                    <!-- Dynamic capacity meters rendered by updateTaxAdvisor -->
+                </div>
+            </div>
+
+            <!-- What-If Simulation Playground -->
+            <div id="advisor-sim-box" class="bg-white/90 p-3 rounded-lg border border-emerald-200 text-gray-700 space-y-2" style="display:none;">
+                <div class="flex justify-between items-center text-[11px] font-semibold text-gray-600">
+                    <span id="lbl-sim-title">⚡ จำลองผลภาษีเมื่อลงทุนเพิ่ม (What-If Simulation)</span>
+                    <span id="txt-sim-roi-badge" class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-bold text-[10px]"></span>
+                </div>
+                <!-- Simulation Quick Pills -->
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="text-[11px] text-gray-500 font-medium" id="lbl-sim-pills">เลือกลงทุนเพิ่ม:</span>
+                    <button type="button" class="sim-pill px-2 py-1 rounded bg-gray-100 hover:bg-emerald-100 border border-gray-300 font-medium text-[11px] transition-all" onclick="selectSimExtra(10000)">+10k</button>
+                    <button type="button" class="sim-pill px-2 py-1 rounded bg-gray-100 hover:bg-emerald-100 border border-gray-300 font-medium text-[11px] transition-all" onclick="selectSimExtra(30000)">+30k</button>
+                    <button type="button" class="sim-pill px-2 py-1 rounded bg-gray-100 hover:bg-emerald-100 border border-gray-300 font-medium text-[11px] transition-all" onclick="selectSimExtra(50000)">+50k</button>
+                    <button type="button" class="sim-pill px-2 py-1 rounded bg-gray-100 hover:bg-emerald-100 border border-gray-300 font-medium text-[11px] transition-all" onclick="selectSimExtra(100000)">+100k</button>
+                    <button type="button" class="sim-pill px-2 py-1 rounded bg-gray-100 hover:bg-emerald-100 border border-gray-300 font-medium text-[11px] transition-all" onclick="selectSimExtra('max')">Max Room</button>
+                </div>
+                <!-- Simulated Result Callout -->
+                <div id="sim-result-callout" class="p-2.5 rounded bg-emerald-50/80 border border-emerald-200 text-[11px] text-emerald-900 leading-normal"></div>
+                <div class="flex justify-end pt-1">
+                    <button type="button" id="btn-apply-sim" onclick="applyCurrentSimulation()" class="py-1 px-3 bg-emerald-700 hover:bg-emerald-800 text-white font-medium rounded-md text-[11px] transition-all shadow-xs">
+                        ✓ นำยอดจำลองนี้ไปกรอกจริง
+                    </button>
+                </div>
+            </div>
+
+            <!-- Legacy Quick Actions -->
             <div id="advisor-actions" class="flex flex-wrap gap-2 pt-1">
-                <button type="button" id="btn-advisor-drop" onclick="applyAdvisorDropOne()" class="flex-1 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg text-center transition-all">
+                <button type="button" id="btn-advisor-drop" onclick="applyAdvisorDropOne()" class="flex-1 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg text-center transition-all shadow-xs">
                     🎯 ลด 1 ขั้นบันได
                 </button>
-                <button type="button" id="btn-advisor-max" onclick="applyAdvisorMax()" class="flex-1 py-1.5 px-2 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg text-center transition-all">
+                <button type="button" id="btn-advisor-max" onclick="applyAdvisorMax()" class="flex-1 py-1.5 px-2 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg text-center transition-all shadow-xs">
                     🌟 ใช้สิทธิ์สูงสุด
                 </button>
                 <button type="button" id="btn-advisor-revert" onclick="revertAdvisorOptimization()" class="py-1.5 px-2 font-medium rounded-lg text-center transition-all" style="display:none; background:var(--panel-2); color:var(--ink); border:1px solid var(--line);">
@@ -436,7 +476,7 @@
                     <span id="lbl-reset-tax">ล้างข้อมูล</span>
                 </button>
             </div>
-            <p class="text-xs text-gray-400">v2.1.0</p>
+            <p class="text-xs text-gray-400">v2.1.1</p>
         </div>
     </div>
 
@@ -608,7 +648,11 @@
                 'lbl-netIncome': 'Net taxable income:',
                 'lbl-taxAmount': 'Estimated tax payable',
                 'lbl-breakdownTitle': 'Tax breakdown by bracket (Waterfall)',
-                'txt-advisor-title': 'Tax Optimization Advisor',
+                'txt-advisor-title': 'Tax Optimization & Deduction Capacity',
+                'lbl-capacity-title': '📊 Deduction Capacity & Remaining Quota',
+                'lbl-sim-title': '⚡ Simulated Tax Savings (What-If)',
+                'lbl-sim-pills': 'Invest extra:',
+                'btn-apply-sim': '✓ Apply to Deductions',
                 'btn-advisor-drop': '🎯 Drop 1 Bracket',
                 'btn-advisor-max': '🌟 Maximize Deductions',
                 'btn-advisor-revert': '↺ Revert Changes',
@@ -1122,8 +1166,8 @@
             document.getElementById('netIncome').innerText = formatMoney(netIncome) + ' ' + unit;
             document.getElementById('taxAmount').innerText = formatMoney(tax);
 
-            // Update proactive tax optimization advisor (Task 3)
-            updateTaxAdvisor(netIncome, totalIncome, pvdDeduction, effectiveFund, effectiveThaiEsg, tax);
+            // Update proactive tax optimization advisor and deduction room
+            updateTaxAdvisor(netIncome, totalIncome, pvdDeduction, effectiveFund, effectiveThaiEsg, effectiveInsurance, effectiveEasyReceipt, tax);
 
             // Update printable annual tax filing report
             updatePrintReportView({
@@ -1257,13 +1301,18 @@
         let advisorState = {
             originalFund: null,
             originalThaiEsg: null,
+            originalInsurance: null,
+            originalEasyReceipt: null,
             isApplied: false,
+            selectedSimAmt: 50000,
             dropAmount: 0,
             maxAmount: 0,
             thaiEsgDrop: 0,
             fundDrop: 0,
             thaiEsgMax: 0,
-            fundMax: 0
+            fundMax: 0,
+            currentRoom: null,
+            simResult: null
         };
 
         function computeTaxForNet(net) {
@@ -1289,15 +1338,22 @@
             return tax;
         }
 
-        function updateTaxAdvisor(netIncome, totalIncome, pvdDeduction, currentFund, currentThaiEsg, currentTax) {
-            const card = document.getElementById('taxAdvisorCard');
-            if (!card) return;
-
-            if (totalIncome <= 0) {
-                card.style.display = 'none';
-                return;
-            }
-            card.style.display = 'block';
+        function calculateTaxOptimizationRoom({
+            totalIncome = 0,
+            netIncome = 0,
+            pvdDeduction = 0,
+            currentFund = 0,
+            currentThaiEsg = 0,
+            currentInsurance = 0,
+            currentEasyReceipt = 0
+        } = {}) {
+            const totInc = Math.max(0, Number(totalIncome) || 0);
+            const net = Math.max(0, Number(netIncome) || 0);
+            const pvd = Math.max(0, Number(pvdDeduction) || 0);
+            const fund = Math.max(0, Number(currentFund) || 0);
+            const esg = Math.max(0, Number(currentThaiEsg) || 0);
+            const ins = Math.max(0, Number(currentInsurance) || 0);
+            const receipt = Math.max(0, Number(currentEasyReceipt) || 0);
 
             const brackets = [
                 { upper: 150000, lower: 0, rate: 0 },
@@ -1312,17 +1368,341 @@
 
             let curBracket = brackets[0];
             for (const b of brackets) {
-                if (netIncome > b.lower) {
+                if (net > b.lower) {
                     curBracket = b;
                 }
             }
 
+            // 1. ThaiESG: up to 300k, capped at 30% of total income
+            const maxEsg = Math.min(300000, totInc > 0 ? totInc * 0.3 : 300000);
+            const usedEsg = Math.min(esg, maxEsg);
+            const remEsg = Math.max(0, maxEsg - usedEsg);
+            const pctEsg = maxEsg > 0 ? (usedEsg / maxEsg) * 100 : 0;
+
+            // 2. Retirement Bundle: SSF + RMF + PVD combined max 500,000 THB
+            const usedPvd = Math.min(pvd, 500000);
+            const maxFund = Math.max(0, 500000 - usedPvd);
+            const usedFund = Math.min(fund, maxFund);
+            const usedRetirement = usedPvd + usedFund;
+            const remRetirement = Math.max(0, 500000 - usedRetirement);
+            const pctRetirement = (usedRetirement / 500000) * 100;
+
+            // 3. Life & Health Insurance: combined max 100,000 THB
+            const usedIns = Math.min(ins, 100000);
+            const remIns = Math.max(0, 100000 - usedIns);
+            const pctIns = (usedIns / 100000) * 100;
+
+            // 4. Easy E-Receipt: max 50,000 THB
+            const usedReceipt = Math.min(receipt, 50000);
+            const remReceipt = Math.max(0, 50000 - usedReceipt);
+            const pctReceipt = (usedReceipt / 50000) * 100;
+
+            const totalRemainingRoom = remEsg + remRetirement + remIns + remReceipt;
+            const currentTax = computeTaxForNet(net);
+
+            function simulateExtraInvestment(extraAmt) {
+                const extra = Math.max(0, Number(extraAmt) || 0);
+                const effectiveExtra = Math.min(extra, totalRemainingRoom);
+                const newNet = Math.max(0, net - effectiveExtra);
+                const newTax = computeTaxForNet(newNet);
+                const taxSaved = Math.max(0, currentTax - newTax);
+                const effectiveRoiPct = effectiveExtra > 0 ? (taxSaved / effectiveExtra) * 100 : 0;
+
+                let simBracket = brackets[0];
+                for (const b of brackets) {
+                    if (newNet > b.lower) {
+                        simBracket = b;
+                    }
+                }
+
+                return {
+                    extraInvested: extra,
+                    effectiveExtra,
+                    newNetIncome: newNet,
+                    currentTax,
+                    newTax,
+                    taxSaved,
+                    effectiveRoiPct: Math.round(effectiveRoiPct * 10) / 10,
+                    newMarginalRate: simBracket.rate
+                };
+            }
+
+            return {
+                marginalRate: curBracket.rate,
+                marginalRatePct: Math.round(curBracket.rate * 100),
+                currentTax,
+                curBracket,
+                totalRemainingRoom,
+                categories: {
+                    thaiEsg: {
+                        limit: maxEsg,
+                        used: usedEsg,
+                        remaining: remEsg,
+                        pctUsed: Math.min(100, Math.round(pctEsg * 10) / 10)
+                    },
+                    retirement: {
+                        limit: 500000,
+                        used: usedRetirement,
+                        pvdUsed: usedPvd,
+                        fundUsed: usedFund,
+                        remaining: remRetirement,
+                        pctUsed: Math.min(100, Math.round(pctRetirement * 10) / 10)
+                    },
+                    insurance: {
+                        limit: 100000,
+                        used: usedIns,
+                        remaining: remIns,
+                        pctUsed: Math.min(100, Math.round(pctIns * 10) / 10)
+                    },
+                    easyReceipt: {
+                        limit: 50000,
+                        used: usedReceipt,
+                        remaining: remReceipt,
+                        pctUsed: Math.min(100, Math.round(pctReceipt * 10) / 10)
+                    }
+                },
+                simulateExtraInvestment
+            };
+        }
+
+        function renderCapacityMeters(categories) {
+            const container = document.getElementById('capacityMetersList');
+            if (!container) return;
+            const isEn = LANG === 'en';
+            const cats = [
+                {
+                    name: isEn ? 'ThaiESG Fund' : 'กองทุน ThaiESG',
+                    tag: isEn ? '5-yr hold' : 'ถือครอง 5 ปี',
+                    color: '#10b981',
+                    data: categories.thaiEsg
+                },
+                {
+                    name: isEn ? 'Retirement Pool (SSF/RMF/PVD)' : 'กลุ่มเกษียณ (SSF + RMF + PVD)',
+                    tag: isEn ? 'Max 500k' : 'รวมไม่เกิน 5 แสน',
+                    color: '#06b6d4',
+                    data: categories.retirement
+                },
+                {
+                    name: isEn ? 'Life & Health Insurance' : 'ประกันชีวิต + สุขภาพ',
+                    tag: isEn ? 'Max 100k' : 'สูงสุด 1 แสน',
+                    color: '#6366f1',
+                    data: categories.insurance
+                },
+                {
+                    name: isEn ? 'Easy E-Receipt Scheme' : 'มาตรการ Easy E-Receipt',
+                    tag: isEn ? 'Max 50k' : 'สูงสุด 5 หมื่น',
+                    color: '#f59e0b',
+                    data: categories.easyReceipt
+                }
+            ];
+
+            container.innerHTML = cats.map(c => {
+                const d = c.data;
+                const usedStr = formatMoney(d.used);
+                const limitStr = formatMoney(d.limit);
+                const remStr = formatMoney(d.remaining);
+                const isMaxed = d.remaining <= 0;
+                const badgeText = isMaxed
+                    ? (isEn ? 'Maxed' : 'เต็มเพดาน')
+                    : (isEn ? `+${remStr} room` : `เหลืออีก ${remStr}`);
+                const badgeClass = isMaxed
+                    ? 'bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-gray-300'
+                    : 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300';
+
+                return `
+                    <div class="space-y-1">
+                        <div class="flex justify-between items-center text-[11px]">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="font-medium text-gray-800 dark:text-gray-200">${c.name}</span>
+                                <span class="text-[10px] text-gray-400">(${c.tag})</span>
+                            </div>
+                            <div class="text-[11px] font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-1.5">
+                                <span>${usedStr} / ${limitStr} ${unit}</span>
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${badgeClass}">${badgeText}</span>
+                            </div>
+                        </div>
+                        <div class="w-full h-1.5 rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden">
+                            <div class="h-full rounded-full transition-all duration-300" style="width:${Math.min(100, d.pctUsed)}%; background:${c.color};"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectSimExtra(amt) {
+            if (!advisorState.currentRoom) return;
+            if (amt === 'max') {
+                advisorState.selectedSimAmt = advisorState.currentRoom.totalRemainingRoom;
+            } else {
+                advisorState.selectedSimAmt = Number(amt) || 0;
+            }
+            renderSimCallout();
+        }
+
+        function renderSimCallout() {
+            const simBox = document.getElementById('advisor-sim-box');
+            const callout = document.getElementById('sim-result-callout');
+            const roiBadge = document.getElementById('txt-sim-roi-badge');
+            const applyBtn = document.getElementById('btn-apply-sim');
+            if (!simBox || !callout || !advisorState.currentRoom) return;
+
+            const room = advisorState.currentRoom;
+            if (room.totalRemainingRoom <= 0 || room.currentTax <= 0) {
+                simBox.style.display = 'none';
+                return;
+            }
+            simBox.style.display = 'block';
+
+            // Highlight active pill
+            document.querySelectorAll('.sim-pill').forEach(btn => {
+                const text = btn.textContent.trim().toLowerCase();
+                const curAmt = advisorState.selectedSimAmt;
+                let match = false;
+                if (text.includes('10k') && curAmt === 10000) match = true;
+                else if (text.includes('30k') && curAmt === 30000) match = true;
+                else if (text.includes('50k') && curAmt === 50000) match = true;
+                else if (text.includes('100k') && curAmt === 100000) match = true;
+                else if (text.includes('max') && curAmt === room.totalRemainingRoom) match = true;
+                btn.classList.toggle('active', match);
+                btn.classList.toggle('border-emerald-500', match);
+                btn.classList.toggle('bg-emerald-100', match);
+            });
+
+            const sim = room.simulateExtraInvestment(advisorState.selectedSimAmt);
+            advisorState.simResult = sim;
+            const isEn = LANG === 'en';
+
+            if (roiBadge) {
+                roiBadge.textContent = `${isEn ? 'Tax ROI: ' : 'ผลตอบแทนภาษี: '}${sim.effectiveRoiPct}%`;
+            }
+
+            if (isEn) {
+                callout.innerHTML = `
+                    <div class="flex justify-between items-center font-semibold mb-1">
+                        <span>Investing +${formatMoney(sim.effectiveExtra)} ${unit}:</span>
+                        <span class="text-emerald-700 dark:text-emerald-300 font-bold">Tax Saved: -${formatMoney(sim.taxSaved)} ${unit}</span>
+                    </div>
+                    <div class="text-[10px] text-gray-500 dark:text-gray-400 flex justify-between">
+                        <span>Tax liability drops from ${formatMoney(sim.currentTax)} to ${formatMoney(sim.newTax)} ${unit}</span>
+                        <span>Marginal rate becomes ${Math.round(sim.newMarginalRate * 100)}%</span>
+                    </div>
+                `;
+                if (applyBtn) {
+                    applyBtn.textContent = `✓ Apply +${formatMoney(sim.effectiveExtra)} ${unit} to Deductions`;
+                }
+            } else {
+                callout.innerHTML = `
+                    <div class="flex justify-between items-center font-semibold mb-1">
+                        <span>หากลงทุนเพิ่ม +${formatMoney(sim.effectiveExtra)} ${unit}:</span>
+                        <span class="text-emerald-700 dark:text-emerald-300 font-bold">ประหยัดภาษีได้: -${formatMoney(sim.taxSaved)} ${unit}</span>
+                    </div>
+                    <div class="text-[10px] text-gray-500 dark:text-gray-400 flex justify-between">
+                        <span>ภาษีที่ต้องจ่ายลดจาก ${formatMoney(sim.currentTax)} เหลือ ${formatMoney(sim.newTax)} ${unit}</span>
+                        <span>ฐานภาษีใหม่กลายเป็น ${Math.round(sim.newMarginalRate * 100)}%</span>
+                    </div>
+                `;
+                if (applyBtn) {
+                    applyBtn.textContent = `✓ นำยอด +${formatMoney(sim.effectiveExtra)} ${unit} ไปกรอกลดหย่อน`;
+                }
+            }
+        }
+
+        function applyCurrentSimulation() {
+            if (!advisorState.simResult || !advisorState.currentRoom) return;
+            const effAmt = advisorState.simResult.effectiveExtra;
+            if (effAmt <= 0) return;
+
+            undoMgr.push(captureSnapshot());
+            if (!advisorState.isApplied) {
+                advisorState.originalFund = document.getElementById('fundDeduct').value;
+                advisorState.originalThaiEsg = document.getElementById('thaiEsgDeduct')?.value || '';
+                advisorState.originalInsurance = document.getElementById('insuranceDeduct')?.value || '';
+                advisorState.originalEasyReceipt = document.getElementById('easyReceiptDeduct')?.value || '';
+            }
+            advisorState.isApplied = true;
+
+            let remToApply = effAmt;
+            const room = advisorState.currentRoom;
+
+            // 1. ThaiESG first
+            const curEsg = parseNum(document.getElementById('thaiEsgDeduct')?.value);
+            const addEsg = Math.min(remToApply, room.categories.thaiEsg.remaining);
+            if (document.getElementById('thaiEsgDeduct') && addEsg > 0) {
+                document.getElementById('thaiEsgDeduct').value = Math.round(curEsg + addEsg);
+                remToApply -= addEsg;
+            }
+
+            // 2. Fund next
+            const curFund = parseNum(document.getElementById('fundDeduct')?.value);
+            const addFund = Math.min(remToApply, room.categories.retirement.remaining);
+            if (addFund > 0) {
+                document.getElementById('fundDeduct').value = Math.round(curFund + addFund);
+                remToApply -= addFund;
+            }
+
+            // 3. Insurance next
+            const curIns = parseNum(document.getElementById('insuranceDeduct')?.value);
+            const addIns = Math.min(remToApply, room.categories.insurance.remaining);
+            if (addIns > 0) {
+                document.getElementById('insuranceDeduct').value = Math.round(curIns + addIns);
+                remToApply -= addIns;
+            }
+
+            // 4. Easy E-Receipt next
+            const curReceipt = parseNum(document.getElementById('easyReceiptDeduct')?.value);
+            const addReceipt = Math.min(remToApply, room.categories.easyReceipt.remaining);
+            if (addReceipt > 0) {
+                document.getElementById('easyReceiptDeduct').value = Math.round(curReceipt + addReceipt);
+                remToApply -= addReceipt;
+            }
+
+            calculateTax();
+            updateUndoUI();
+        }
+
+        function updateTaxAdvisor(netIncome, totalIncome, pvdDeduction, currentFund, currentThaiEsg, arg6, arg7, arg8) {
+            const card = document.getElementById('taxAdvisorCard');
+            if (!card) return;
+
+            if (totalIncome <= 0) {
+                card.style.display = 'none';
+                return;
+            }
+            card.style.display = 'block';
+
+            let currentInsurance = 0;
+            let currentEasyReceipt = 0;
+            let currentTax = 0;
+
+            if (arguments.length <= 6) {
+                currentTax = Number(arg6) || 0;
+                currentInsurance = parseNum(document.getElementById('insuranceDeduct')?.value) || 0;
+                currentEasyReceipt = parseNum(document.getElementById('easyReceiptDeduct')?.value) || 0;
+            } else {
+                currentInsurance = Number(arg6) || 0;
+                currentEasyReceipt = Number(arg7) || 0;
+                currentTax = Number(arg8) || 0;
+            }
+
+            const room = calculateTaxOptimizationRoom({
+                totalIncome,
+                netIncome,
+                pvdDeduction,
+                currentFund,
+                currentThaiEsg,
+                currentInsurance,
+                currentEasyReceipt
+            });
+            advisorState.currentRoom = room;
+
             const badgeMarginal = document.getElementById('badge-marginal-rate');
             const summaryEl = document.getElementById('advisor-summary');
-            const detailsEl = document.getElementById('advisor-details');
+            const totalRoomBadge = document.getElementById('txt-total-room-badge');
+            const simBox = document.getElementById('advisor-sim-box');
             const dropBtn = document.getElementById('btn-advisor-drop');
             const maxBtn = document.getElementById('btn-advisor-max');
             const revertBtn = document.getElementById('btn-advisor-revert');
+            const isEn = LANG === 'en';
 
             if (advisorState.isApplied) {
                 revertBtn.style.display = 'inline-block';
@@ -1330,86 +1710,69 @@
                 revertBtn.style.display = 'none';
             }
 
-            // Available deduction room
-            const maxAllowedThaiEsg = Math.min(300000, totalIncome > 0 ? totalIncome * 0.3 : 300000);
-            const roomThaiEsg = Math.max(0, maxAllowedThaiEsg - currentThaiEsg);
-            const maxAllowedFund = Math.max(0, 500000 - pvdDeduction);
-            const roomFund = Math.max(0, maxAllowedFund - currentFund);
-            const totalRoom = roomThaiEsg + roomFund;
+            if (totalRoomBadge) {
+                totalRoomBadge.textContent = isEn
+                    ? `Total Room: ${formatMoney(room.totalRemainingRoom)} ${unit}`
+                    : `โควตารวมคงเหลือ: ${formatMoney(room.totalRemainingRoom)} ${unit}`;
+            }
 
-            if (netIncome <= 150000 || curBracket.rate === 0) {
-                badgeMarginal.textContent = LANG === 'en' ? 'Marginal Rate: 0%' : 'ฐานภาษี: 0%';
-                summaryEl.textContent = LANG === 'en'
+            renderCapacityMeters(room.categories);
+
+            if (netIncome <= 150000 || room.marginalRate === 0) {
+                badgeMarginal.textContent = isEn ? 'Marginal Rate: 0%' : 'ฐานภาษี: 0%';
+                summaryEl.textContent = isEn
                     ? '🎉 Your net income is within the 0-150,000 THB tax-exempt bracket. You have 0 THB tax liability!'
                     : '🎉 รายได้สุทธิของคุณไม่เกิน 150,000 บาท ได้รับการยกเว้นภาษี (0%) ไม่มีภาระภาษีที่ต้องชำระ';
-                detailsEl.innerHTML = LANG === 'en'
-                    ? `<div class="text-xs text-gray-500">Remaining ThaiESG allowance: ${formatMoney(roomThaiEsg)} ${unit} | SSF/RMF: ${formatMoney(roomFund)} ${unit}</div>`
-                    : `<div class="text-xs text-gray-500">สิทธิ์คงเหลือ ThaiESG: ${formatMoney(roomThaiEsg)} ${unit} | SSF/RMF: ${formatMoney(roomFund)} ${unit}</div>`;
+                if (simBox) simBox.style.display = 'none';
                 dropBtn.style.display = 'none';
                 maxBtn.style.display = 'none';
                 return;
             }
 
-            const ratePct = (curBracket.rate * 100).toFixed(0);
-            badgeMarginal.textContent = LANG === 'en' ? `Marginal Rate: ${ratePct}%` : `ฐานภาษีสูงสุด: ${ratePct}%`;
+            badgeMarginal.textContent = isEn
+                ? `Marginal Rate: ${room.marginalRatePct}%`
+                : `ฐานภาษีสูงสุด: ${room.marginalRatePct}%`;
 
-            const excessIncome = netIncome - curBracket.lower;
-            const dropDeduction = Math.min(excessIncome, totalRoom);
+            const returnPer10k = formatMoney(10000 * room.marginalRate);
+            summaryEl.innerHTML = isEn
+                ? `Your assessable net income is taxed at the <strong>${room.marginalRatePct}%</strong> bracket. Every <strong>10,000 ${unit}</strong> added to deductions immediately saves <strong>${returnPer10k} ${unit}</strong> in tax (guaranteed <strong>${room.marginalRatePct}%</strong> tax return)!`
+                : `คุณมีเงินได้สุทธิอยู่ในฐาน <strong>${room.marginalRatePct}%</strong> โดยทุกๆ <strong>10,000 ${unit}</strong> ที่ลงทุนเพิ่มในหมวดลดหย่อน จะช่วยประหยัดภาษีทันที <strong>${returnPer10k} ${unit}</strong> (ผลตอบแทนภาษีทันที <strong>${room.marginalRatePct}%</strong>)`;
 
-            // Drop 1 bracket allocation: prioritize ThaiESG (5 yr hold) then SSF/RMF
-            const thaiEsgDrop = Math.min(dropDeduction, roomThaiEsg);
-            const fundDrop = dropDeduction - thaiEsgDrop;
+            renderSimCallout();
+
+            const excessIncome = netIncome - room.curBracket.lower;
+            const dropDeduction = Math.min(excessIncome, room.totalRemainingRoom);
+            const thaiEsgDrop = Math.min(dropDeduction, room.categories.thaiEsg.remaining);
+            const fundDrop = Math.min(dropDeduction - thaiEsgDrop, room.categories.retirement.remaining);
             const newNetDrop = Math.max(0, netIncome - dropDeduction);
             const newTaxDrop = computeTaxForNet(newNetDrop);
             const taxSavedDrop = Math.max(0, currentTax - newTaxDrop);
 
-            // Maximize allocation
-            const thaiEsgMax = roomThaiEsg;
-            const fundMax = roomFund;
-            const newNetMax = Math.max(0, netIncome - totalRoom);
+            const newNetMax = Math.max(0, netIncome - room.totalRemainingRoom);
             const newTaxMax = computeTaxForNet(newNetMax);
             const taxSavedMax = Math.max(0, currentTax - newTaxMax);
 
             advisorState.dropAmount = dropDeduction;
             advisorState.thaiEsgDrop = thaiEsgDrop;
             advisorState.fundDrop = fundDrop;
-            advisorState.maxAmount = totalRoom;
-            advisorState.thaiEsgMax = thaiEsgMax;
-            advisorState.fundMax = fundMax;
+            advisorState.maxAmount = room.totalRemainingRoom;
+            advisorState.thaiEsgMax = room.categories.thaiEsg.remaining;
+            advisorState.fundMax = room.categories.retirement.remaining;
 
-            if (totalRoom <= 0) {
-                summaryEl.textContent = LANG === 'en'
-                    ? 'You have fully utilized all available ThaiESG and retirement fund deduction quotas.'
-                    : 'คุณใช้สิทธิ์ลดหย่อนกองทุน ThaiESG และกลุ่มเกษียณ (SSF/RMF/PVD) เต็มเพดานสูงสุดแล้ว';
-                detailsEl.innerHTML = LANG === 'en'
-                    ? `<div class="font-medium text-emerald-800">Current Tax: ${formatMoney(currentTax)} ${unit}</div>`
-                    : `<div class="font-medium text-emerald-800">ภาษีปัจจุบัน: ${formatMoney(currentTax)} ${unit}</div>`;
+            if (room.totalRemainingRoom <= 0) {
                 dropBtn.style.display = 'none';
                 maxBtn.style.display = 'none';
-                return;
-            }
-
-            dropBtn.style.display = 'inline-block';
-            maxBtn.style.display = 'inline-block';
-
-            if (LANG === 'en') {
-                summaryEl.innerHTML = `You have <strong>${formatMoney(excessIncome)} ${unit}</strong> taxed at <strong>${ratePct}%</strong>. Investing <strong>${formatMoney(dropDeduction)} ${unit}</strong> drops your taxable bracket and saves <strong>${formatMoney(taxSavedDrop)} ${unit}</strong> immediately (${ratePct}% instant tax return).`;
-                detailsEl.innerHTML = `
-                    <div class="flex justify-between"><span>ThaiESG allowance available (5-yr hold):</span><span class="font-medium">${formatMoney(roomThaiEsg)} ${unit}</span></div>
-                    <div class="flex justify-between"><span>SSF/RMF retirement allowance available:</span><span class="font-medium">${formatMoney(roomFund)} ${unit}</span></div>
-                    <div class="flex justify-between border-t border-emerald-200 pt-1 font-semibold text-emerald-900"><span>Potential Tax Savings (Drop 1 bracket):</span><span class="text-emerald-700">-${formatMoney(taxSavedDrop)} ${unit}</span></div>
-                `;
-                dropBtn.textContent = `🎯 Drop 1 Bracket (-${formatMoney(taxSavedDrop)} ${unit})`;
-                maxBtn.textContent = `🌟 Maximize All (-${formatMoney(taxSavedMax)} ${unit})`;
+                if (simBox) simBox.style.display = 'none';
             } else {
-                summaryEl.innerHTML = `คุณมีเงินได้สุทธิส่วนเกินในฐาน <strong>${ratePct}%</strong> อยู่ <strong>${formatMoney(excessIncome)} ${unit}</strong> หากลงทุนเพิ่ม <strong>${formatMoney(dropDeduction)} ${unit}</strong> จะลดฐานภาษีลง 1 ขั้น และประหยัดภาษีทันที <strong>${formatMoney(taxSavedDrop)} ${unit}</strong> (ผลตอบแทนภาษี ${ratePct}%)`;
-                detailsEl.innerHTML = `
-                    <div class="flex justify-between"><span>สิทธิ์ ThaiESG คงเหลือ (ถือครอง 5 ปี):</span><span class="font-medium">${formatMoney(roomThaiEsg)} ${unit}</span></div>
-                    <div class="flex justify-between"><span>สิทธิ์ SSF/RMF เกษียณคงเหลือ:</span><span class="font-medium">${formatMoney(roomFund)} ${unit}</span></div>
-                    <div class="flex justify-between border-t border-emerald-200 pt-1 font-semibold text-emerald-900"><span>ภาษีที่จะประหยัดได้ (ลด 1 ขั้น):</span><span class="text-emerald-700">-${formatMoney(taxSavedDrop)} ${unit}</span></div>
-                `;
-                dropBtn.textContent = `🎯 ลด 1 ขั้นบันได (-${formatMoney(taxSavedDrop)} ${unit})`;
-                maxBtn.textContent = `🌟 ใช้สิทธิ์เต็มเพดาน (-${formatMoney(taxSavedMax)} ${unit})`;
+                dropBtn.style.display = 'inline-block';
+                maxBtn.style.display = 'inline-block';
+                if (isEn) {
+                    dropBtn.textContent = `🎯 Drop 1 Bracket (-${formatMoney(taxSavedDrop)} ${unit})`;
+                    maxBtn.textContent = `🌟 Maximize All (-${formatMoney(taxSavedMax)} ${unit})`;
+                } else {
+                    dropBtn.textContent = `🎯 ลด 1 ขั้นบันได (-${formatMoney(taxSavedDrop)} ${unit})`;
+                    maxBtn.textContent = `🌟 ใช้สิทธิ์เต็มเพดาน (-${formatMoney(taxSavedMax)} ${unit})`;
+                }
             }
         }
 
@@ -1418,6 +1781,8 @@
             if (!advisorState.isApplied) {
                 advisorState.originalFund = document.getElementById('fundDeduct').value;
                 advisorState.originalThaiEsg = document.getElementById('thaiEsgDeduct')?.value || '';
+                advisorState.originalInsurance = document.getElementById('insuranceDeduct')?.value || '';
+                advisorState.originalEasyReceipt = document.getElementById('easyReceiptDeduct')?.value || '';
             }
             advisorState.isApplied = true;
             const curThaiEsg = parseNum(document.getElementById('thaiEsgDeduct')?.value);
@@ -1435,6 +1800,8 @@
             if (!advisorState.isApplied) {
                 advisorState.originalFund = document.getElementById('fundDeduct').value;
                 advisorState.originalThaiEsg = document.getElementById('thaiEsgDeduct')?.value || '';
+                advisorState.originalInsurance = document.getElementById('insuranceDeduct')?.value || '';
+                advisorState.originalEasyReceipt = document.getElementById('easyReceiptDeduct')?.value || '';
             }
             advisorState.isApplied = true;
             const curThaiEsg = parseNum(document.getElementById('thaiEsgDeduct')?.value);
@@ -1454,8 +1821,15 @@
             if (advisorState.originalThaiEsg !== null && document.getElementById('thaiEsgDeduct')) {
                 document.getElementById('thaiEsgDeduct').value = advisorState.originalThaiEsg;
             }
+            if (advisorState.originalInsurance !== null && document.getElementById('insuranceDeduct')) {
+                document.getElementById('insuranceDeduct').value = advisorState.originalInsurance;
+            }
+            if (advisorState.originalEasyReceipt !== null && document.getElementById('easyReceiptDeduct')) {
+                document.getElementById('easyReceiptDeduct').value = advisorState.originalEasyReceipt;
+            }
             advisorState.isApplied = false;
             calculateTax();
+            updateUndoUI();
         }
 
         function copyTaxSummary() {

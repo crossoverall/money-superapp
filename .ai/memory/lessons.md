@@ -448,3 +448,18 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
   4. Added prominent Total Annual Net Take-Home Pay KPI badge with full bilingual Thai/English localization and state persistence in `localStorage`.
   5. Added 4 comprehensive automated unit tests in `tests/financial-math.test.mjs` verifying 12-month stream allocation, December and custom fiscal-year bonus payout months, total annual net reconciliation, and SVG coordinate bounds.
 - **Rule:** When calculating payroll slips, complement the single-month snapshot with a 12-month stacked net cashflow stream that highlights annual bonus distribution and full-year net take-home pay, ensuring stacked SVG columns correctly scale to the peak monthly gross income.
+
+### 2026-10-17: Tax Deduction Capacity Room & Marginal Tax Savings Simulator
+
+- **Date & Context:** 2026-10-17, implementing Tax Deduction Optimization Capacity Room & What-If Marginal Savings Simulator in `tax-calculator-base.html` (`v2.1.1`).
+- **Problem:**
+  1. Thai taxpayers often underutilize available tax-saving allowances (ThaiESG, SSF/RMF, Life Insurance, Easy E-Receipt) because legal rules have complex overlapping sub-caps (e.g. 500k combined retirement pool with PVD; ThaiESG 300k capped at 30% of income).
+  2. Users lack intuitive visibility into their marginal tax bracket return (guaranteed tax ROI on investment) and cannot easily test "what-if" amounts before committing funds.
+  3. When applying simulated optimizations, changing one field could overwrite existing inputs without the ability to cleanly revert to original numbers or undo via the global undo manager.
+- **Resolution:**
+  1. Implemented `calculateTaxOptimizationRoom()` engine computing utilized and remaining legal capacity across 4 statutory categories: ThaiESG (300k / 30% cap), Retirement Bundle (500k combined ceiling with PVD), Life & Health Insurance (100k cap), and Easy E-Receipt (50k cap).
+  2. Built visual capacity progress meters with percentage fills, clear utilized/limit readouts, and remaining quota badges in `tax-calculator-base.html`.
+  3. Added an interactive What-If simulation playground with quick simulation pills (+10k, +30k, +50k, +100k, Max Room) dynamically calculating new taxable net income, tax savings, and guaranteed tax ROI percentage.
+  4. Implemented `applyCurrentSimulation()` distributing extra funds prioritized by ThaiESG -> SSF/RMF -> Insurance -> Easy E-Receipt, with full snapshot state capture for undo (`Ctrl+Z`) and dedicated revert button.
+  5. Added 4 unit tests in `tests/financial-math.test.mjs` verifying category capacity limits, income percentage capping, marginal ROI, and total room bounds.
+- **Rule:** When advising on progressive personal income tax deductions, pair remaining legal allowance meters with an interactive What-If simulator and marginal ROI badge, ensuring extra funds cascade through statutory priority buckets and original user inputs can be safely reverted.

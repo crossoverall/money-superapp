@@ -2551,4 +2551,255 @@ describe('Financial Math Verification', () => {
       }
     });
   });
+
+  describe('Tax Deduction Optimization Room & Marginal Tax Savings Engine', () => {
+    function computeTax(net) {
+      if (net <= 150000) return 0;
+      const tiers = [
+        { limit: 150000, rate: 0 },
+        { limit: 150000, rate: 0.05 },
+        { limit: 200000, rate: 0.1 },
+        { limit: 250000, rate: 0.15 },
+        { limit: 250000, rate: 0.2 },
+        { limit: 1000000, rate: 0.25 },
+        { limit: 3000000, rate: 0.3 },
+        { limit: Infinity, rate: 0.35 },
+      ];
+      let rem = net;
+      let tax = 0;
+      for (const t of tiers) {
+        if (rem <= 0) break;
+        const taxable = Math.min(rem, t.limit);
+        tax += taxable * t.rate;
+        rem -= taxable;
+      }
+      return tax;
+    }
+
+    function calculateTaxOptimizationRoom({
+      totalIncome = 0,
+      netIncome = 0,
+      pvdDeduction = 0,
+      currentFund = 0,
+      currentThaiEsg = 0,
+      currentInsurance = 0,
+      currentEasyReceipt = 0,
+    } = {}) {
+      const totInc = Math.max(0, Number(totalIncome) || 0);
+      const net = Math.max(0, Number(netIncome) || 0);
+      const pvd = Math.max(0, Number(pvdDeduction) || 0);
+      const fund = Math.max(0, Number(currentFund) || 0);
+      const esg = Math.max(0, Number(currentThaiEsg) || 0);
+      const ins = Math.max(0, Number(currentInsurance) || 0);
+      const receipt = Math.max(0, Number(currentEasyReceipt) || 0);
+
+      const brackets = [
+        { upper: 150000, lower: 0, rate: 0 },
+        { upper: 300000, lower: 150000, rate: 0.05 },
+        { upper: 500000, lower: 300000, rate: 0.1 },
+        { upper: 750000, lower: 500000, rate: 0.15 },
+        { upper: 1000000, lower: 750000, rate: 0.2 },
+        { upper: 2000000, lower: 1000000, rate: 0.25 },
+        { upper: 5000000, lower: 2000000, rate: 0.3 },
+        { upper: Infinity, lower: 5000000, rate: 0.35 },
+      ];
+
+      let curBracket = brackets[0];
+      for (const b of brackets) {
+        if (net > b.lower) {
+          curBracket = b;
+        }
+      }
+
+      // 1. ThaiESG: up to 300k, capped at 30% of total income
+      const maxEsg = Math.min(300000, totInc > 0 ? totInc * 0.3 : 300000);
+      const usedEsg = Math.min(esg, maxEsg);
+      const remEsg = Math.max(0, maxEsg - usedEsg);
+      const pctEsg = maxEsg > 0 ? (usedEsg / maxEsg) * 100 : 0;
+
+      // 2. Retirement Bundle: SSF + RMF + PVD combined max 500,000 THB
+      const usedPvd = Math.min(pvd, 500000);
+      const maxFund = Math.max(0, 500000 - usedPvd);
+      const usedFund = Math.min(fund, maxFund);
+      const usedRetirement = usedPvd + usedFund;
+      const remRetirement = Math.max(0, 500000 - usedRetirement);
+      const pctRetirement = (usedRetirement / 500000) * 100;
+
+      // 3. Life & Health Insurance: combined max 100,000 THB
+      const usedIns = Math.min(ins, 100000);
+      const remIns = Math.max(0, 100000 - usedIns);
+      const pctIns = (usedIns / 100000) * 100;
+
+      // 4. Easy E-Receipt: max 50,000 THB
+      const usedReceipt = Math.min(receipt, 50000);
+      const remReceipt = Math.max(0, 50000 - usedReceipt);
+      const pctReceipt = (usedReceipt / 50000) * 100;
+
+      const totalRemainingRoom = remEsg + remRetirement + remIns + remReceipt;
+      const currentTax = computeTax(net);
+
+      function simulateExtraInvestment(extraAmt) {
+        const extra = Math.max(0, Number(extraAmt) || 0);
+        const effectiveExtra = Math.min(extra, totalRemainingRoom);
+        const newNet = Math.max(0, net - effectiveExtra);
+        const newTax = computeTax(newNet);
+        const taxSaved = Math.max(0, currentTax - newTax);
+        const effectiveRoiPct = effectiveExtra > 0 ? (taxSaved / effectiveExtra) * 100 : 0;
+
+        let simBracket = brackets[0];
+        for (const b of brackets) {
+          if (newNet > b.lower) {
+            simBracket = b;
+          }
+        }
+
+        return {
+          extraInvested: extra,
+          effectiveExtra,
+          newNetIncome: newNet,
+          currentTax,
+          newTax,
+          taxSaved,
+          effectiveRoiPct: Math.round(effectiveRoiPct * 10) / 10,
+          newMarginalRate: simBracket.rate,
+        };
+      }
+
+      return {
+        marginalRate: curBracket.rate,
+        marginalRatePct: Math.round(curBracket.rate * 100),
+        currentTax,
+        totalRemainingRoom,
+        categories: {
+          thaiEsg: {
+            limit: maxEsg,
+            used: usedEsg,
+            remaining: remEsg,
+            pctUsed: Math.min(100, Math.round(pctEsg * 10) / 10),
+          },
+          retirement: {
+            limit: 500000,
+            used: usedRetirement,
+            pvdUsed: usedPvd,
+            fundUsed: usedFund,
+            remaining: remRetirement,
+            pctUsed: Math.min(100, Math.round(pctRetirement * 10) / 10),
+          },
+          insurance: {
+            limit: 100000,
+            used: usedIns,
+            remaining: remIns,
+            pctUsed: Math.min(100, Math.round(pctIns * 10) / 10),
+          },
+          easyReceipt: {
+            limit: 50000,
+            used: usedReceipt,
+            remaining: remReceipt,
+            pctUsed: Math.min(100, Math.round(pctReceipt * 10) / 10),
+          },
+        },
+        simulateExtraInvestment,
+      };
+    }
+
+    it('correctly calculates remaining category capacity and percentages', () => {
+      const room = calculateTaxOptimizationRoom({
+        totalIncome: 1200000,
+        netIncome: 800000,
+        pvdDeduction: 60000,
+        currentFund: 140000,
+        currentThaiEsg: 100000,
+        currentInsurance: 40000,
+        currentEasyReceipt: 20000,
+      });
+
+      // ThaiESG: max 300k (30% of 1.2M is 360k -> capped at 300k), 100k used -> 200k remaining (33.3% used)
+      assert.equal(room.categories.thaiEsg.limit, 300000);
+      assert.equal(room.categories.thaiEsg.used, 100000);
+      assert.equal(room.categories.thaiEsg.remaining, 200000);
+      assert.equal(room.categories.thaiEsg.pctUsed, 33.3);
+
+      // Retirement: PVD (60k) + Fund (140k) = 200k used out of 500k -> 300k remaining (40% used)
+      assert.equal(room.categories.retirement.limit, 500000);
+      assert.equal(room.categories.retirement.used, 200000);
+      assert.equal(room.categories.retirement.remaining, 300000);
+      assert.equal(room.categories.retirement.pctUsed, 40);
+
+      // Insurance: 40k used out of 100k -> 60k remaining (40% used)
+      assert.equal(room.categories.insurance.remaining, 60000);
+
+      // Easy E-Receipt: 20k used out of 50k -> 30k remaining (40% used)
+      assert.equal(room.categories.easyReceipt.remaining, 30000);
+
+      // Total remaining room: 200k + 300k + 60k + 30k = 590,000 THB
+      assert.equal(room.totalRemainingRoom, 590000);
+    });
+
+    it('identifies top marginal rate accurately and simulates tax ROI', () => {
+      // Net income of 800,000 THB is in the 20% bracket (750,001 - 1,000,000)
+      const room = calculateTaxOptimizationRoom({
+        totalIncome: 1200000,
+        netIncome: 800000,
+        pvdDeduction: 50000,
+        currentFund: 50000,
+        currentThaiEsg: 50000,
+      });
+
+      assert.equal(room.marginalRate, 0.2);
+      assert.equal(room.marginalRatePct, 20);
+
+      // Simulating +50,000 THB investment within the 20% bracket (from 800k down to 750k)
+      // Exactly 50,000 THB at 20% rate saves 10,000 THB in tax (20% ROI)
+      const sim50k = room.simulateExtraInvestment(50000);
+      assert.equal(sim50k.newNetIncome, 750000);
+      assert.equal(sim50k.taxSaved, 10000);
+      assert.equal(sim50k.effectiveRoiPct, 20);
+
+      // Simulating +100,000 THB investment crosses bracket from 20% into 15%:
+      // 50,000 THB at 20% = 10,000 THB saved
+      // 50,000 THB at 15% = 7,500 THB saved
+      // Total tax saved = 17,500 THB (17.5% effective ROI)
+      const sim100k = room.simulateExtraInvestment(100000);
+      assert.equal(sim100k.newNetIncome, 700000);
+      assert.equal(sim100k.taxSaved, 17500);
+      assert.equal(sim100k.effectiveRoiPct, 17.5);
+      assert.equal(sim100k.newMarginalRate, 0.15);
+    });
+
+    it('handles statutory income-percentage caps (e.g. ThaiESG 30% of low income)', () => {
+      // Low income: total income 400,000 THB -> 30% is 120,000 THB (< 300,000 THB)
+      const room = calculateTaxOptimizationRoom({
+        totalIncome: 400000,
+        netIncome: 250000,
+        currentThaiEsg: 50000,
+      });
+
+      assert.equal(room.categories.thaiEsg.limit, 120000);
+      assert.equal(room.categories.thaiEsg.used, 50000);
+      assert.equal(room.categories.thaiEsg.remaining, 70000);
+    });
+
+    it('clamps simulation when user requests more than total available deduction room', () => {
+      // Fully utilized limits
+      const room = calculateTaxOptimizationRoom({
+        totalIncome: 1000000,
+        netIncome: 500000,
+        pvdDeduction: 200000,
+        currentFund: 300000, // Retirement bundle full (500k)
+        currentThaiEsg: 300000, // ThaiESG full (300k)
+        currentInsurance: 100000, // Insurance full (100k)
+        currentEasyReceipt: 50000, // Easy receipt full (50k)
+      });
+
+      assert.equal(room.totalRemainingRoom, 0);
+      assert.equal(room.categories.retirement.remaining, 0);
+      assert.equal(room.categories.thaiEsg.remaining, 0);
+
+      // Even if user requests +50k simulation, effective extra is clamped to 0
+      const sim = room.simulateExtraInvestment(50000);
+      assert.equal(sim.effectiveExtra, 0);
+      assert.equal(sim.taxSaved, 0);
+      assert.equal(sim.effectiveRoiPct, 0);
+    });
+  });
 });
