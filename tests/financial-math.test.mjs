@@ -5483,4 +5483,152 @@ describe('Financial Math Verification', () => {
       assert.ok(fullPayoff.interestSaved > 0);
     });
   });
+
+  describe('Social Security (ประกันสังคม ม.33/39/40) Pension & Benefits Engine', () => {
+    function calculateSocialSecurityPensionAndBenefits({
+      section = '33',
+      wage = 15000,
+      contributionYears = 20,
+      section40Option = 2,
+    }) {
+      const yrs = Math.max(0, Number(contributionYears) || 0);
+      const totalMonths = Math.round(yrs * 12);
+      let effectiveWage = 0;
+      let pensionEligible = false;
+      let pensionMonthly = 0;
+      let pensionRatePct = 0;
+      let lumpSumEstimate = 0;
+
+      if (section === '33') {
+        effectiveWage = Math.min(15000, Math.max(1650, Number(wage) || 15000));
+        if (totalMonths >= 180) {
+          pensionEligible = true;
+          const extraYears = Math.floor((totalMonths - 180) / 12);
+          pensionRatePct = 20.0 + extraYears * 1.5;
+          pensionMonthly = Math.round((pensionRatePct / 100) * effectiveWage * 100) / 100;
+        } else {
+          pensionEligible = false;
+          lumpSumEstimate = Math.round(effectiveWage * 0.06 * totalMonths * 100) / 100;
+        }
+      } else if (section === '39') {
+        effectiveWage = 4800;
+        if (totalMonths >= 180) {
+          pensionEligible = true;
+          const extraYears = Math.floor((totalMonths - 180) / 12);
+          pensionRatePct = 20.0 + extraYears * 1.5;
+          pensionMonthly = Math.round((pensionRatePct / 100) * effectiveWage * 100) / 100;
+        } else {
+          pensionEligible = false;
+          lumpSumEstimate = Math.round(effectiveWage * 0.06 * totalMonths * 100) / 100;
+        }
+      } else if (section === '40') {
+        const monthlySaving = section40Option === 3 ? 200 : section40Option === 2 ? 50 : 0;
+        pensionEligible = false;
+        lumpSumEstimate = monthlySaving * totalMonths;
+        pensionMonthly = 0;
+        pensionRatePct = 0;
+      }
+
+      const unemploymentVoluntaryMonthly = section === '33' ? Math.round(effectiveWage * 0.3) : 0;
+      const unemploymentInvoluntaryMonthly = section === '33' ? Math.round(effectiveWage * 0.5) : 0;
+      const maternityLumpSum = section === '33' || section === '39' ? 15000 : 0;
+      const maternityLeaveAllowance = section === '33' ? Math.round(effectiveWage * 0.5 * (90 / 30)) : 0;
+      const childSupportMonthly = section === '33' || section === '39' ? 800 : 0;
+
+      const cumulativeAt10Yrs = Math.round(pensionMonthly * 12 * 10);
+      const cumulativeAt20Yrs = Math.round(pensionMonthly * 12 * 20);
+      const cumulativeAt30Yrs = Math.round(pensionMonthly * 12 * 30);
+
+      return {
+        section,
+        effectiveWage,
+        contributionYears: yrs,
+        contributionMonths: totalMonths,
+        pensionEligible,
+        pensionRatePct,
+        pensionMonthly,
+        lumpSumEstimate,
+        cumulativeAt10Yrs,
+        cumulativeAt20Yrs,
+        cumulativeAt30Yrs,
+        unemploymentVoluntaryMonthly,
+        unemploymentInvoluntaryMonthly,
+        maternityLumpSum,
+        maternityLeaveAllowance,
+        childSupportMonthly,
+      };
+    }
+
+    it('calculates Section 33 monthly pension accurately for 15, 20, and 30 years contribution', () => {
+      // 15 years (180 months) -> base 20%
+      const res15 = calculateSocialSecurityPensionAndBenefits({
+        section: '33',
+        wage: 25000, // wage capped at 15,000
+        contributionYears: 15,
+      });
+      assert.equal(res15.effectiveWage, 15000);
+      assert.equal(res15.pensionEligible, true);
+      assert.equal(res15.pensionRatePct, 20.0);
+      assert.equal(res15.pensionMonthly, 3000); // 20% of 15k
+
+      // 20 years (240 months) -> 20% + 5*1.5% = 27.5%
+      const res20 = calculateSocialSecurityPensionAndBenefits({
+        section: '33',
+        wage: 15000,
+        contributionYears: 20,
+      });
+      assert.equal(res20.pensionRatePct, 27.5);
+      assert.equal(res20.pensionMonthly, 4125);
+      assert.equal(res20.cumulativeAt20Yrs, 4125 * 12 * 20); // 990,000 THB
+
+      // 30 years (360 months) -> 20% + 15*1.5% = 42.5%
+      const res30 = calculateSocialSecurityPensionAndBenefits({
+        section: '33',
+        wage: 15000,
+        contributionYears: 30,
+      });
+      assert.equal(res30.pensionRatePct, 42.5);
+      assert.equal(res30.pensionMonthly, 6375);
+    });
+
+    it('calculates Section 33 lump sum (บำเหน็จ) when contributed under 15 years', () => {
+      const res10 = calculateSocialSecurityPensionAndBenefits({
+        section: '33',
+        wage: 15000,
+        contributionYears: 10,
+      });
+      assert.equal(res10.pensionEligible, false);
+      assert.equal(res10.pensionMonthly, 0);
+      assert.equal(res10.lumpSumEstimate, 15000 * 0.06 * 120); // 108,000 THB
+    });
+
+    it('calculates Section 39 fixed base and Section 40 savings correctly', () => {
+      const s39 = calculateSocialSecurityPensionAndBenefits({
+        section: '39',
+        contributionYears: 20,
+      });
+      assert.equal(s39.effectiveWage, 4800);
+      assert.equal(s39.pensionRatePct, 27.5);
+      assert.equal(s39.pensionMonthly, 1320); // 27.5% of 4,800
+
+      const s40 = calculateSocialSecurityPensionAndBenefits({
+        section: '40',
+        contributionYears: 10,
+        section40Option: 3,
+      });
+      assert.equal(s40.lumpSumEstimate, 200 * 120); // 24,000 THB
+    });
+
+    it('calculates Section 33 unemployment, maternity, and child support benefits', () => {
+      const res = calculateSocialSecurityPensionAndBenefits({
+        section: '33',
+        wage: 15000,
+        contributionYears: 5,
+      });
+      assert.equal(res.unemploymentVoluntaryMonthly, 4500); // 30% of 15k
+      assert.equal(res.unemploymentInvoluntaryMonthly, 7500); // 50% of 15k
+      assert.equal(res.maternityLumpSum, 15000);
+      assert.equal(res.childSupportMonthly, 800);
+    });
+  });
 });

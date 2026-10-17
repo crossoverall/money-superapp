@@ -484,6 +484,165 @@ document.getElementById('years').addEventListener('input', (e) => {
   }
 });
 
+function toggleSsoSimulator() {
+  const panel = document.getElementById('sso-panel-body');
+  const arrow = document.getElementById('sso-toggle-arrow');
+  const btn = document.getElementById('btn-toggle-sso');
+  if (!panel) return;
+  const isHidden = panel.style.display === 'none';
+  panel.style.display = isHidden ? 'block' : 'none';
+  if (arrow) arrow.textContent = isHidden ? '▲' : '▼';
+  if (btn) btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+  if (isHidden) {
+    calculateSsoBenefits();
+  }
+}
+
+function onSsoSectionChange() {
+  const sec = document.getElementById('ssoSectionSelect')?.value || '33';
+  const wageGroup = document.getElementById('ssoWageGroup');
+  const wageInput = document.getElementById('txtSsoWage');
+  if (sec === '39') {
+    if (wageInput) wageInput.value = 4800;
+    if (wageGroup) wageGroup.style.display = 'block';
+  } else if (sec === '40') {
+    if (wageGroup) wageGroup.style.display = 'none';
+  } else {
+    if (wageGroup) wageGroup.style.display = 'block';
+    if (wageInput && (wageInput.value === '4800' || !wageInput.value)) wageInput.value = 15000;
+  }
+  calculateSsoBenefits();
+}
+
+function calculateSocialSecurityPensionAndBenefits({
+  section = '33',
+  wage = 15000,
+  contributionYears = 20,
+  section40Option = 2,
+}) {
+  const yrs = Math.max(0, Number(contributionYears) || 0);
+  const totalMonths = Math.round(yrs * 12);
+  let effectiveWage = 0;
+  let pensionEligible = false;
+  let pensionMonthly = 0;
+  let pensionRatePct = 0;
+  let lumpSumEstimate = 0;
+
+  if (section === '33') {
+    effectiveWage = Math.min(15000, Math.max(1650, Number(wage) || 15000));
+    if (totalMonths >= 180) {
+      pensionEligible = true;
+      const extraYears = Math.floor((totalMonths - 180) / 12);
+      pensionRatePct = 20.0 + extraYears * 1.5;
+      pensionMonthly = Math.round((pensionRatePct / 100) * effectiveWage * 100) / 100;
+    } else {
+      pensionEligible = false;
+      lumpSumEstimate = Math.round(effectiveWage * 0.06 * totalMonths * 100) / 100;
+    }
+  } else if (section === '39') {
+    effectiveWage = 4800;
+    if (totalMonths >= 180) {
+      pensionEligible = true;
+      const extraYears = Math.floor((totalMonths - 180) / 12);
+      pensionRatePct = 20.0 + extraYears * 1.5;
+      pensionMonthly = Math.round((pensionRatePct / 100) * effectiveWage * 100) / 100;
+    } else {
+      pensionEligible = false;
+      lumpSumEstimate = Math.round(effectiveWage * 0.06 * totalMonths * 100) / 100;
+    }
+  } else if (section === '40') {
+    const monthlySaving = section40Option === 3 ? 200 : section40Option === 2 ? 50 : 0;
+    pensionEligible = false;
+    lumpSumEstimate = monthlySaving * totalMonths;
+    pensionMonthly = 0;
+    pensionRatePct = 0;
+  }
+
+  const unemploymentVoluntaryMonthly = section === '33' ? Math.round(effectiveWage * 0.3) : 0;
+  const unemploymentInvoluntaryMonthly = section === '33' ? Math.round(effectiveWage * 0.5) : 0;
+  const maternityLumpSum = section === '33' || section === '39' ? 15000 : 0;
+  const maternityLeaveAllowance = section === '33' ? Math.round(effectiveWage * 0.5 * (90 / 30)) : 0;
+  const childSupportMonthly = section === '33' || section === '39' ? 800 : 0;
+
+  const cumulativeAt10Yrs = Math.round(pensionMonthly * 12 * 10);
+  const cumulativeAt20Yrs = Math.round(pensionMonthly * 12 * 20);
+  const cumulativeAt30Yrs = Math.round(pensionMonthly * 12 * 30);
+
+  return {
+    section,
+    effectiveWage,
+    contributionYears: yrs,
+    contributionMonths: totalMonths,
+    pensionEligible,
+    pensionRatePct,
+    pensionMonthly,
+    lumpSumEstimate,
+    cumulativeAt10Yrs,
+    cumulativeAt20Yrs,
+    cumulativeAt30Yrs,
+    unemploymentVoluntaryMonthly,
+    unemploymentInvoluntaryMonthly,
+    maternityLumpSum,
+    maternityLeaveAllowance,
+    childSupportMonthly,
+  };
+}
+
+function calculateSsoBenefits() {
+  const sec = document.getElementById('ssoSectionSelect')?.value || '33';
+  const wage = parseFloat(document.getElementById('txtSsoWage')?.value || '15000');
+  const years = parseFloat(document.getElementById('txtSsoYears')?.value || '20');
+
+  const res = calculateSocialSecurityPensionAndBenefits({
+    section: sec,
+    wage: wage,
+    contributionYears: years,
+  });
+
+  const pensionEl = document.getElementById('valSsoPension');
+  const formulaEl = document.getElementById('valSsoPensionFormula');
+  const cumulativeEl = document.getElementById('valSsoCumulative');
+  const cumDescEl = document.getElementById('valSsoCumulativeDesc');
+  const badgeEl = document.getElementById('ssoStatutoryAllowances');
+
+  if (pensionEl) {
+    pensionEl.textContent = res.pensionEligible
+      ? `${formatMoney(res.pensionMonthly, 2)} บาท/เดือน`
+      : 'ยังไม่เข้าเกณฑ์บำนาญ (ส่ง < 15 ปี)';
+  }
+
+  if (formulaEl) {
+    if (res.pensionEligible) {
+      const extraYrs = Math.max(0, Math.floor(res.contributionYears - 15));
+      formulaEl.textContent = `อัตรา ${res.pensionRatePct.toFixed(1)}% (ฐาน 20% + เพิ่ม ${(extraYrs * 1.5).toFixed(1)}% จาก ${extraYrs} ปีส่วนเกิน)`;
+    } else {
+      formulaEl.textContent = `ส่งแล้ว ${res.contributionMonths} เดือน (ขาดอีก ${Math.max(0, 180 - res.contributionMonths)} เดือนเพื่อรับบำนาญรายเดือน)`;
+    }
+  }
+
+  if (cumulativeEl) {
+    cumulativeEl.textContent = res.pensionEligible
+      ? `${formatMoney(res.cumulativeAt20Yrs, 2)} บาท`
+      : `${formatMoney(res.lumpSumEstimate, 2)} บาท (บำเหน็จ)`;
+  }
+
+  if (cumDescEl) {
+    cumDescEl.textContent = res.pensionEligible
+      ? 'ประมาณการรับบำนาญสะสมรวม 20 ปีหลังเกษียณ'
+      : 'เงินออมชราภาพบำเหน็จก้อนเดียว (เงินสะสมผู้ประกันตน + นายจ้าง)';
+  }
+
+  if (badgeEl) {
+    if (sec === '33') {
+      badgeEl.innerHTML = `🛡️ <strong>สิทธิประโยชน์อื่นๆ ม.33:</strong> ว่างงานลาออกรับ <strong>${formatMoney(res.unemploymentVoluntaryMonthly)} บ./ด.</strong> (3 ด.) • เลิกจ้างรับ <strong>${formatMoney(res.unemploymentInvoluntaryMonthly)} บ./ด.</strong> (6 ด.) • คลอดบุตร <strong>${formatMoney(res.maternityLumpSum)} บ.</strong> + ค่าหยุดงาน <strong>${formatMoney(res.maternityLeaveAllowance)} บ.</strong> • สงเคราะห์บุตร <strong>${formatMoney(res.childSupportMonthly)} บ./ด.</strong> (จนถึง 6 ปี)`;
+    } else if (sec === '39') {
+      badgeEl.innerHTML = `🛡️ <strong>สิทธิประโยชน์อื่นๆ ม.39:</strong> รักษาพยาบาลฟรี • คลอดบุตร <strong>${formatMoney(res.maternityLumpSum)} บ.</strong> • สงเคราะห์บุตร <strong>${formatMoney(res.childSupportMonthly)} บ./ด.</strong> (จนถึง 6 ปี) • ทุพพลภาพและเสียชีวิตตามเกณฑ์`;
+    } else {
+      badgeEl.innerHTML = `🛡️ <strong>สิทธิประโยชน์อื่นๆ ม.40:</strong> เงินทดแทนการขาดรายได้เมื่อเจ็บป่วย/นอน รพ. • ค่าทำศพ • เงินออมชราภาพบำเหน็จเมื่ออายุครบ 60 ปี`;
+    }
+  }
+}
+
 // Expose functions called by HTML onclick handlers
 window.setTab = setTab;
 window.toggleSeveranceCalc = toggleSeveranceCalc;
@@ -491,6 +650,10 @@ window.applySeveranceCalc = applySeveranceCalc;
 window.calculate = calculate;
 window.exportPayoutToRemaining = exportPayoutToRemaining;
 window.reset = reset;
+window.toggleSsoSimulator = toggleSsoSimulator;
+window.onSsoSectionChange = onSsoSectionChange;
+window.calculateSsoBenefits = calculateSsoBenefits;
+window.calculateSocialSecurityPensionAndBenefits = calculateSocialSecurityPensionAndBenefits;
 
 // Restore state if available
 loadState();
