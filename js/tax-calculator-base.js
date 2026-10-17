@@ -121,6 +121,20 @@ if (LANG === 'en') {
     'lbl-tax-calendar-tip-title': 'Year-End Deduction Planning Advice',
     'lbl-tax-calendar-tip-desc':
       'Tax-deductible investments (SSF, RMF, ThaiESG, and eligible life/health insurance) must be fully executed and paid by December 31 of the tax year. Ensure you provide electronic disclosure consent to fund managers/insurers for automated Revenue Department verification.',
+    'lbl-div-credit-title': 'Thai Stock Dividend Tax Credit (Section 47 bis)',
+    'lbl-div-credit-sub': 'Simulate tax refund via Section 47 bis credit vs 10% Final Tax',
+    'lbl-div-amount': 'Annual Total Dividends Received (THB)',
+    'lbl-div-amount-sub': 'Before 10% withholding tax',
+    'lbl-cit-rate': 'Paying Company Corporate Income Tax Rate (CIT)',
+    'opt-cit-20': '20% (Standard Thai Listed Companies - 25% credit)',
+    'opt-cit-25': '25% (Concessionary / Legacy Corporate Rate - 33.33% credit)',
+    'opt-cit-15': '15% (SME / Reduced Concession Rate - 17.65% credit)',
+    'opt-cit-0': '0% (BOI Tax Exempt / Non-Creditable Distributions)',
+    'lbl-opt-final-tax': 'Option 1: 10% Final Tax (Separate)',
+    'desc-opt-final-tax': '10% deducted at source, omitted from annual tax return',
+    'lbl-opt-claim-credit': 'Option 2: Claim Tax Credit (Sec 47 bis)',
+    'desc-opt-claim-credit': 'Gross-up dividend & claim refund credit',
+    'lbl-apply-div-tax': 'Include in total annual tax computation',
   };
   Object.keys(EN).forEach((id) => {
     const el = document.getElementById(id);
@@ -278,6 +292,13 @@ function saveState() {
     mortgageDeduct: document.getElementById('mortgageDeduct').value,
     otherDeduct: document.getElementById('otherDeduct').value,
     withheldTax: document.getElementById('withheldTax') ? document.getElementById('withheldTax').value : '',
+    dividendAmount: document.getElementById('inpDividendAmount')
+      ? document.getElementById('inpDividendAmount').value
+      : '',
+    dividendCitRate: document.getElementById('selCitRate') ? document.getElementById('selCitRate').value : '0.20',
+    applyDividendToTax: document.getElementById('chkApplyDividendToTax')
+      ? document.getElementById('chkApplyDividendToTax').checked
+      : false,
     monthsBreakdown: Array.from({ length: 12 }, (_, i) =>
       document.getElementById('m-income-' + (i + 1)) ? document.getElementById('m-income-' + (i + 1)).value : '',
     ),
@@ -541,6 +562,132 @@ function importWithholdingFromPayslip() {
   }
 }
 
+function toggleDividendTaxCredit() {
+  const panel = document.getElementById('div-credit-panel-body');
+  const btn = document.getElementById('btn-toggle-dividend-credit');
+  const arrow = document.getElementById('div-credit-toggle-arrow');
+  if (!panel || !btn || !arrow) return;
+
+  const isHidden = panel.style.display === 'none' || panel.style.display === '';
+  panel.style.display = isHidden ? 'block' : 'none';
+  btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+  arrow.textContent = isHidden ? '▲' : '▼';
+  if (isHidden) {
+    updateDividendTaxCreditUI();
+  }
+}
+
+function setDividendPreset(amt) {
+  const inp = document.getElementById('inpDividendAmount');
+  if (inp) {
+    inp.value = amt;
+    updateDividendTaxCreditUI();
+  }
+}
+
+function toggleApplyDividendToTax() {
+  const chk = document.getElementById('chkApplyDividendToTax');
+  const badge = document.getElementById('badge-applied-status');
+  const isEn = LANG === 'en';
+  if (badge) {
+    if (chk && chk.checked) {
+      badge.textContent = isEn ? 'ACTIVE' : 'เปิดใช้งาน';
+      badge.style.color = 'var(--ok)';
+    } else {
+      badge.textContent = isEn ? 'OFF' : 'ปิดอยู่';
+      badge.style.color = 'var(--ink-dim)';
+    }
+  }
+  calculateTax();
+}
+
+function updateDividendTaxCreditUI() {
+  const inpAmt = document.getElementById('inpDividendAmount');
+  const selCit = document.getElementById('selCitRate');
+  const factorPreview = document.getElementById('lbl-credit-factor-preview');
+  const valFinalTax = document.getElementById('val-opt-final-tax');
+  const valClaimCredit = document.getElementById('val-opt-claim-credit');
+  const verdictBox = document.getElementById('divCreditVerdictBox');
+  const isEn = LANG === 'en';
+
+  const dividendAmt = inpAmt ? parseNum(inpAmt.value) : 0;
+  const citRate = selCit ? parseNum(selCit.value) : 0.2;
+
+  if (factorPreview) {
+    if (citRate === 0.2) factorPreview.textContent = isEn ? '25% credit (x 20/80)' : 'เครดิต 25% (x 20/80)';
+    else if (citRate === 0.25) factorPreview.textContent = isEn ? '33.33% credit (x 25/75)' : 'เครดิต 33.33% (x 25/75)';
+    else if (citRate === 0.15) factorPreview.textContent = isEn ? '17.65% credit (x 15/85)' : 'เครดิต 17.65% (x 15/85)';
+    else factorPreview.textContent = isEn ? '0% credit (BOI Exempt)' : 'เครดิต 0% (ยกเว้นภาษี BOI)';
+  }
+
+  let baseNet = parseNum(document.getElementById('netIncome')?.textContent);
+  const chkApply = document.getElementById('chkApplyDividendToTax');
+  if (chkApply && chkApply.checked && dividendAmt > 0) {
+    const factor = citRate > 0 && citRate < 1 ? citRate / (1 - citRate) : 0;
+    baseNet = Math.max(0, baseNet - Math.round(dividendAmt * (1 + factor)));
+  }
+
+  const regularWithheld = parseNum(document.getElementById('withheldTax')?.value);
+
+  const res = MoneyApp.calculateThaiDividendTaxCredit({
+    dividends: dividendAmt,
+    corporateTaxRate: citRate,
+    otherTaxableNetIncome: baseNet,
+    regularTaxWithheld: regularWithheld,
+  });
+
+  if (valFinalTax) {
+    valFinalTax.textContent = `${formatMoney(res.totalDividendWht)} ${isEn ? 'THB' : 'บาท'}`;
+  }
+
+  if (valClaimCredit) {
+    const netBal = res.scenarioClaimCredit.netPayableOrRefund;
+    if (netBal < 0) {
+      valClaimCredit.textContent = `${isEn ? 'Refund ' : 'ขอคืน '}+${formatMoney(Math.abs(netBal))} ${isEn ? 'THB' : 'บาท'}`;
+      valClaimCredit.style.color = 'var(--ok)';
+    } else if (netBal > 0) {
+      valClaimCredit.textContent = `${isEn ? 'Payable ' : 'ชำระเพิ่ม '}${formatMoney(netBal)} ${isEn ? 'THB' : 'บาท'}`;
+      valClaimCredit.style.color = 'var(--danger)';
+    } else {
+      valClaimCredit.textContent = `0 ${isEn ? 'THB' : 'บาท'}`;
+      valClaimCredit.style.color = 'var(--ink)';
+    }
+  }
+
+  if (verdictBox) {
+    if (dividendAmt <= 0) {
+      verdictBox.style.background = 'var(--panel-2)';
+      verdictBox.style.borderColor = 'var(--line)';
+      verdictBox.style.color = 'var(--ink-dim)';
+      verdictBox.innerHTML = `💡 <strong>${isEn ? 'Guidance:' : 'คำแนะนำ:'}</strong> ${isEn ? 'Enter annual dividend amount to compare Section 47 bis tax refund.' : 'กรอกจำนวนเงินปันผลเพื่อเปรียบเทียบสิทธิประโยชน์ทางภาษี'}`;
+    } else if (res.isClaimAdvantageous) {
+      verdictBox.style.background = 'var(--ok-dim)';
+      verdictBox.style.borderColor = 'var(--ok)';
+      verdictBox.style.color = 'var(--ok)';
+      verdictBox.innerHTML = `🎉 <strong>${isEn ? 'Recommended: Claim Dividend Tax Credit (Sec 47 bis)' : 'แนะนำ: ยื่นเครดิตภาษีเงินปันผล (ม.47 ทวิ)'}</strong><br>${isEn ? `Claiming tax credit yields a <strong>+${formatMoney(res.netTaxAdvantage)} THB</strong> better outcome (refund/savings) than paying 10% Final Tax!` : `การนำเงินปันผลมายื่นแบบจะได้ประโยชน์ภาษีมากกว่าเลือกหัก 10% จบ ถึง <strong>+${formatMoney(res.netTaxAdvantage)} บาท</strong>!`}`;
+    } else if (res.optimalChoice === 'final_tax') {
+      verdictBox.style.background = 'var(--warn-dim)';
+      verdictBox.style.borderColor = 'var(--warn)';
+      verdictBox.style.color = 'var(--warn)';
+      verdictBox.innerHTML = `⚠️ <strong>${isEn ? 'Recommended: Final Tax 10% (Do NOT Include)' : 'แนะนำ: เลือกหักภาษี ณ ที่จ่าย 10% จบ (Final Tax)'}</strong><br>${isEn ? `Your personal tax bracket exceeds the company CIT rate. Keeping Final Tax saves you <strong>${formatMoney(res.netTaxAdvantage)} THB</strong> compared to filing!` : `เนื่องจากฐานภาษีบุคคลของคุณสูงกว่าอัตราภาษีนิติบุคคล การเลือกหัก 10% จบจะช่วยประหยัดภาษีกว่าการนำมายื่นรวมถึง <strong>${formatMoney(res.netTaxAdvantage)} บาท</strong>`}`;
+    } else {
+      verdictBox.style.background = 'var(--panel-2)';
+      verdictBox.style.borderColor = 'var(--line)';
+      verdictBox.style.color = 'var(--ink-dim)';
+      verdictBox.innerHTML = `💡 <strong>${isEn ? 'Outcome Balanced:' : 'ผลลัพธ์เท่ากันพอดี:'}</strong> ${isEn ? 'Both options result in the exact same tax liability.' : 'ทั้งสองทางเลือกส่งผลให้ภาระภาษีรวมเท่ากันพอดี'}`;
+    }
+  }
+
+  if (chkApply && chkApply.checked) {
+    calculateTax();
+  }
+}
+
+window.toggleDividendTaxCredit = toggleDividendTaxCredit;
+window.setDividendPreset = setDividendPreset;
+window.toggleApplyDividendToTax = toggleApplyDividendToTax;
+window.updateDividendTaxCreditUI = updateDividendTaxCreditUI;
+
 function calculateTax() {
   saveState();
 
@@ -628,9 +775,32 @@ function calculateTax() {
   const mortgageDeduct = parseNum(document.getElementById('mortgageDeduct').value);
   const otherDeduct = parseNum(document.getElementById('otherDeduct').value);
 
-  // คำนวณค่าลดหย่อน
+  // Dividend Tax Credit Integration (ม.47 ทวิ แห่งประมวลรัษฎากร)
+  const chkApplyDividend = document.getElementById('chkApplyDividendToTax');
+  const inpDividend = document.getElementById('inpDividendAmount');
+  const selCit = document.getElementById('selCitRate');
+  const isDividendApplied =
+    chkApplyDividend && chkApplyDividend.checked && inpDividend && parseNum(inpDividend.value) > 0;
+
+  let dividendGrossedUp = 0;
+  let dividendCredit = 0;
+  let dividendWht = 0;
+  if (isDividendApplied) {
+    const rawDiv = parseNum(inpDividend.value);
+    const citRate = selCit ? parseNum(selCit.value) : 0.2;
+    const factor = citRate > 0 && citRate < 1 ? citRate / (1 - citRate) : 0;
+    dividendCredit = Math.round(rawDiv * factor);
+    dividendGrossedUp = rawDiv + dividendCredit;
+    dividendWht = Math.round(rawDiv * 0.1);
+  }
+
+  // คำนวณค่าลดหย่อน (Section 40(1)/(2) standard 50% max 100k cap applies to earned income)
   const expenseDeduction = Math.min(totalIncome * 0.5, 100000);
   const personalDeduction = 60000;
+
+  if (isDividendApplied) {
+    totalIncome += dividendGrossedUp;
+  }
 
   // กฎหมายภาษี: ตรวจสอบและบังคับใช้เพดานลดหย่อนตามประมวลรัษฎากร
   // 1. ดอกเบี้ยกู้บ้าน: สูงสุด 100,000 บาท
@@ -826,9 +996,10 @@ function calculateTax() {
   document.getElementById('taxAmount').innerText = formatMoney(tax);
 
   const withheldTaxVal = parseNum(document.getElementById('withheldTax')?.value);
+  const totalTaxCredits = withheldTaxVal + (isDividendApplied ? dividendWht + dividendCredit : 0);
   const refundMetrics = calculateTaxRefundOrPayable({
     calculatedTax: tax,
-    withheldTax: withheldTaxVal,
+    withheldTax: totalTaxCredits,
   });
   updateTaxRefundView(refundMetrics);
 
@@ -855,6 +1026,10 @@ function calculateTax() {
       incomeMode === 'yearly'
         ? parseNum(document.getElementById('yearlyBonus')?.value)
         : parseNum(document.getElementById('bonus')?.value),
+    isDividendApplied,
+    dividendGrossedUp,
+    dividendCredit,
+    dividendWht,
     expenseDeduction,
     personalDeduction,
     pvdDeduction,
@@ -870,7 +1045,7 @@ function calculateTax() {
     tax,
     effRate: totalIncome > 0 ? ((tax / totalIncome) * 100).toFixed(1) : '0.0',
     wf,
-    withheldTax: withheldTaxVal,
+    withheldTax: totalTaxCredits,
     refundMetrics,
   });
 }
@@ -1830,6 +2005,29 @@ function loadState() {
     if (data.otherDeduct) document.getElementById('otherDeduct').value = data.otherDeduct;
     if (data.withheldTax !== undefined && data.withheldTax !== '' && document.getElementById('withheldTax')) {
       document.getElementById('withheldTax').value = data.withheldTax;
+    }
+
+    if (
+      data.dividendAmount !== undefined &&
+      data.dividendAmount !== '' &&
+      document.getElementById('inpDividendAmount')
+    ) {
+      document.getElementById('inpDividendAmount').value = data.dividendAmount;
+    }
+    if (data.dividendCitRate && document.getElementById('selCitRate')) {
+      document.getElementById('selCitRate').value = data.dividendCitRate;
+    }
+    if (data.applyDividendToTax !== undefined && document.getElementById('chkApplyDividendToTax')) {
+      document.getElementById('chkApplyDividendToTax').checked = !!data.applyDividendToTax;
+      const badge = document.getElementById('badge-applied-status');
+      if (badge) {
+        const isEn = LANG === 'en';
+        badge.textContent = data.applyDividendToTax ? (isEn ? 'ACTIVE' : 'เปิดใช้งาน') : isEn ? 'OFF' : 'ปิดอยู่';
+        badge.style.color = data.applyDividendToTax ? 'var(--ok)' : 'var(--ink-dim)';
+      }
+    }
+    if (data.dividendAmount && typeof updateDividendTaxCreditUI === 'function') {
+      updateDividendTaxCreditUI();
     }
 
     if (data.incomeMode && (data.incomeMode === 'yearly' || data.incomeMode === 'monthly')) {

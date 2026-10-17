@@ -1128,6 +1128,173 @@
     };
   }
 
+  var THAI_PIT_TAX_BRACKETS = [
+    { limit: 150000, rate: 0 },
+    { limit: 150000, rate: 0.05 },
+    { limit: 200000, rate: 0.1 },
+    { limit: 250000, rate: 0.15 },
+    { limit: 250000, rate: 0.2 },
+    { limit: 1000000, rate: 0.25 },
+    { limit: 3000000, rate: 0.3 },
+    { limit: Infinity, rate: 0.35 },
+  ];
+
+  function computeThaiPitTax(netIncome) {
+    var remaining = Math.max(0, parseNum(netIncome));
+    var totalTax = 0;
+    var i;
+    var b;
+    var taxable;
+    for (i = 0; i < THAI_PIT_TAX_BRACKETS.length; i++) {
+      if (remaining <= 0) break;
+      b = THAI_PIT_TAX_BRACKETS[i];
+      taxable = Math.min(remaining, b.limit);
+      totalTax += taxable * b.rate;
+      remaining -= taxable;
+    }
+    return Math.round(totalTax);
+  }
+
+  /**
+   * Calculates Thai Stock Dividend Tax Credit (เครดิตภาษีเงินปันผล มาตรา 47 ทวิ)
+   *
+   * @param {Object} params
+   * @param {number|Array<Object>} [params.dividends] - Cash dividend amount or array of dividend lots
+   * @param {number} [params.corporateTaxRate=0.20] - Default corporate income tax rate (CIT, typically 0.20)
+   * @param {number} [params.otherTaxableNetIncome=0] - Taxpayer's regular net taxable income before dividends
+   * @param {number} [params.regularTaxWithheld=0] - Regular tax already withheld at source (50 Tawi)
+   * @returns {Object} Dividend tax credit metrics, scenarios, and optimal filing recommendation
+   */
+  function calculateThaiDividendTaxCredit(params) {
+    params = params || {};
+    var defaultCitRate = params.corporateTaxRate !== undefined ? parseNum(params.corporateTaxRate) : 0.2;
+    var otherTaxableNetIncome = Math.max(0, parseNum(params.otherTaxableNetIncome));
+    var regularTaxWithheld = Math.max(0, parseNum(params.regularTaxWithheld));
+
+    var lots = [];
+    var singleAmt;
+    if (Array.isArray(params.dividends)) {
+      lots = params.dividends.map(function (lot) {
+        var amt = Math.max(0, parseNum(lot.amount !== undefined ? lot.amount : lot.dividend));
+        var cit = lot.corporateTaxRate !== undefined ? parseNum(lot.corporateTaxRate) : defaultCitRate;
+        var whtRate = lot.withholdingRate !== undefined ? parseNum(lot.withholdingRate) : 0.1;
+        return {
+          name: lot.name || '',
+          amount: amt,
+          corporateTaxRate: cit,
+          withholdingRate: whtRate,
+        };
+      });
+    } else {
+      singleAmt = Math.max(0, parseNum(params.dividends !== undefined ? params.dividends : params.dividendAmount));
+      if (singleAmt > 0) {
+        lots.push({
+          name: 'Dividends',
+          amount: singleAmt,
+          corporateTaxRate: defaultCitRate,
+          withholdingRate: 0.1,
+        });
+      }
+    }
+
+    var totalDividends = 0;
+    var totalDividendWht = 0;
+    var totalTaxCredit = 0;
+    var totalGrossedUp = 0;
+    var lotsDetail = [];
+    var i;
+    var item;
+    var d;
+    var t;
+    var whtRate;
+    var wht;
+    var creditFactor;
+    var credit;
+    var grossed;
+
+    for (i = 0; i < lots.length; i++) {
+      item = lots[i];
+      d = item.amount;
+      t = item.corporateTaxRate;
+      whtRate = item.withholdingRate;
+      wht = Math.round(d * whtRate);
+
+      creditFactor = t > 0 && t < 1 ? t / (1 - t) : 0;
+      credit = Math.round(d * creditFactor);
+      grossed = d + credit;
+
+      totalDividends += d;
+      totalDividendWht += wht;
+      totalTaxCredit += credit;
+      totalGrossedUp += grossed;
+
+      lotsDetail.push({
+        name: item.name,
+        amount: d,
+        corporateTaxRate: t,
+        creditFactor: Math.round(creditFactor * 10000) / 10000,
+        taxCredit: credit,
+        grossedUp: grossed,
+        withholdingTax: wht,
+      });
+    }
+
+    var regularTaxLiability = computeThaiPitTax(otherTaxableNetIncome);
+    var regularNetPayable = regularTaxLiability - regularTaxWithheld;
+
+    var scenarioFinalTax = {
+      method: 'final_tax',
+      regularTaxLiability: regularTaxLiability,
+      regularWithheld: regularTaxWithheld,
+      dividendWithheld: totalDividendWht,
+      dividendCreditClaimed: 0,
+      totalTaxCost: regularTaxLiability + totalDividendWht,
+      netPayableOrRefund: regularNetPayable + totalDividendWht,
+    };
+
+    var combinedNetIncome = otherTaxableNetIncome + totalGrossedUp;
+    var combinedTaxLiability = computeThaiPitTax(combinedNetIncome);
+    var totalCredits = regularTaxWithheld + totalDividendWht + totalTaxCredit;
+    var combinedNetPayable = combinedTaxLiability - totalCredits;
+    var combinedTaxCost = combinedTaxLiability - totalTaxCredit;
+
+    var scenarioClaimCredit = {
+      method: 'claim_credit',
+      combinedNetIncome: combinedNetIncome,
+      combinedTaxLiability: combinedTaxLiability,
+      regularWithheld: regularTaxWithheld,
+      dividendWithheld: totalDividendWht,
+      dividendCreditClaimed: totalTaxCredit,
+      totalCredits: totalCredits,
+      totalTaxCost: combinedTaxCost,
+      netPayableOrRefund: combinedNetPayable,
+    };
+
+    var netTaxAdvantage = scenarioFinalTax.totalTaxCost - scenarioClaimCredit.totalTaxCost;
+
+    var optimalChoice = 'equivalent';
+    if (netTaxAdvantage > 0) {
+      optimalChoice = 'claim_credit';
+    } else if (netTaxAdvantage < 0) {
+      optimalChoice = 'final_tax';
+    }
+
+    return {
+      totalDividends: totalDividends,
+      totalDividendWht: totalDividendWht,
+      totalTaxCredit: totalTaxCredit,
+      totalGrossedUp: totalGrossedUp,
+      otherTaxableNetIncome: otherTaxableNetIncome,
+      combinedNetIncome: combinedNetIncome,
+      scenarioFinalTax: scenarioFinalTax,
+      scenarioClaimCredit: scenarioClaimCredit,
+      optimalChoice: optimalChoice,
+      netTaxAdvantage: Math.abs(netTaxAdvantage),
+      isClaimAdvantageous: optimalChoice === 'claim_credit',
+      lotsDetail: lotsDetail,
+    };
+  }
+
   // Auto-initialize document theme, shortcuts, and swipe navigation when running in browser
   initTheme();
   initShortcutForwarding();
@@ -1159,6 +1326,7 @@
     calculateThaiGoldMetrics: calculateThaiGoldMetrics,
     calculateThaiInheritanceAndGiftTax: calculateThaiInheritanceAndGiftTax,
     calculateRetirementThreeBuckets: calculateRetirementThreeBuckets,
+    calculateThaiDividendTaxCredit: calculateThaiDividendTaxCredit,
   };
 
   // Expose on global window object
@@ -1191,5 +1359,7 @@
       global.calculateThaiInheritanceAndGiftTax = calculateThaiInheritanceAndGiftTax;
     if (typeof global.calculateRetirementThreeBuckets === 'undefined')
       global.calculateRetirementThreeBuckets = calculateRetirementThreeBuckets;
+    if (typeof global.calculateThaiDividendTaxCredit === 'undefined')
+      global.calculateThaiDividendTaxCredit = calculateThaiDividendTaxCredit;
   }
 })(typeof window !== 'undefined' ? window : this);

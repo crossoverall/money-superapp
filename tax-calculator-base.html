@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="2.4.2">
+    <meta name="version" content="2.4.3">
     <meta name="description" content="คำนวณภาษีเงินได้บุคคลธรรมดา — ประมาณการภาษีเงินได้จากเงินเดือนและโบนัส พร้อมแสดงรายละเอียดตามขั้นบันได">
     <title>คำนวณภาษีเงินได้บุคคลธรรมดา</title>
     <link rel="stylesheet" href="css/tailwind-lite.css">
@@ -369,6 +369,85 @@
                 </p>
                 <div id="payslip-import-feedback" style="display:none; background:var(--panel); border:1px solid var(--core); color:var(--ink);" class="p-2 rounded text-[11px] font-medium items-center justify-between"></div>
             </div>
+
+            <!-- Thai Stock Dividend Tax Credit Simulator (Section 47 bis) - Roadmap Phase 60 -->
+            <div id="dividendTaxCreditCard" class="mt-4 p-3.5 rounded-xl space-y-3" style="background:var(--panel-2); border:1px solid var(--line);" role="region" aria-label="Thai Stock Dividend Tax Credit Simulator">
+                <div class="flex items-center justify-between cursor-pointer" onclick="toggleDividendTaxCredit()" id="btn-toggle-dividend-credit" role="button" tabindex="0" aria-expanded="false">
+                    <div class="flex items-center gap-2">
+                        <span class="text-base">📈</span>
+                        <div>
+                            <span class="block text-xs font-bold" style="color:var(--ink);" id="lbl-div-credit-title">เครดิตภาษีเงินปันผลหุ้นไทย (ม.47 ทวิ)</span>
+                            <span class="block text-[11px]" style="color:var(--ink-dim);" id="lbl-div-credit-sub">จำลองสิทธิ์ขอคืนภาษีเงินปันผลหุ้นไทย หรือเลือก Final Tax 10%</span>
+                        </div>
+                    </div>
+                    <span id="div-credit-toggle-arrow" style="font-size:12px; color:var(--core); font-weight:700;">▼</span>
+                </div>
+
+                <div id="div-credit-panel-body" style="display:none; border-top:1px solid var(--line); padding-top:10px;" class="space-y-3">
+                    <!-- Dividend Cash Amount & Presets -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-medium" style="color:var(--ink);" id="lbl-div-amount" for="inpDividendAmount">เงินปันผลรับรวมทั้งปี (บาท)</label>
+                            <span class="text-[10px]" style="color:var(--ink-faint);" id="lbl-div-amount-sub">ก่อนหัก ณ ที่จ่าย 10%</span>
+                        </div>
+                        <input type="number" id="inpDividendAmount" placeholder="0" min="0" step="1000" inputmode="decimal" class="w-full px-3 py-1.5 rounded-lg text-sm font-semibold" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="updateDividendTaxCreditUI()">
+                        
+                        <!-- Quick Presets -->
+                        <div class="flex gap-1.5 mt-2 flex-wrap">
+                            <button type="button" onclick="setDividendPreset(10000)" class="px-2 py-0.5 rounded text-[11px] font-semibold" style="background:var(--panel); border:1px solid var(--line); color:var(--ink-dim); cursor:pointer;">10k</button>
+                            <button type="button" onclick="setDividendPreset(50000)" class="px-2 py-0.5 rounded text-[11px] font-semibold" style="background:var(--panel); border:1px solid var(--line); color:var(--ink-dim); cursor:pointer;">50k</button>
+                            <button type="button" onclick="setDividendPreset(100000)" class="px-2 py-0.5 rounded text-[11px] font-semibold" style="background:var(--panel); border:1px solid var(--line); color:var(--ink-dim); cursor:pointer;">100k</button>
+                            <button type="button" onclick="setDividendPreset(250000)" class="px-2 py-0.5 rounded text-[11px] font-semibold" style="background:var(--panel); border:1px solid var(--line); color:var(--ink-dim); cursor:pointer;">250k</button>
+                            <button type="button" onclick="setDividendPreset(500000)" class="px-2 py-0.5 rounded text-[11px] font-semibold" style="background:var(--panel); border:1px solid var(--line); color:var(--ink-dim); cursor:pointer;">500k</button>
+                        </div>
+                    </div>
+
+                    <!-- Corporate Tax Rate Selector -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-medium" style="color:var(--ink);" id="lbl-cit-rate" for="selCitRate">อัตราภาษีเงินได้นิติบุคคลของบริษัท (CIT Rate)</label>
+                            <span class="text-[10px] font-semibold" style="color:var(--core);" id="lbl-credit-factor-preview">เครดิต 25% (x 20/80)</span>
+                        </div>
+                        <select id="selCitRate" class="w-full px-3 py-1.5 rounded-lg text-xs font-semibold" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" onchange="updateDividendTaxCreditUI()">
+                            <option value="0.20" selected id="opt-cit-20">20% (บริษัทจดทะเบียน SET / mai ทั่วไป - เครดิต 25%)</option>
+                            <option value="0.25" id="opt-cit-25">25% (อัตราภาษีนิติบุคคลเดิม / กิจการพิเศษ - เครดิต 33.33%)</option>
+                            <option value="0.15" id="opt-cit-15">15% (SME / กิจการลดหย่อนพิเศษ - เครดิต 17.65%)</option>
+                            <option value="0" id="opt-cit-0">0% (กิจการยกเว้นภาษี BOI / ไม่ได้รับเครดิตภาษี)</option>
+                        </select>
+                    </div>
+
+                    <!-- Side-by-Side Comparison Grid -->
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <!-- Option A: Final Tax -->
+                        <div class="p-2.5 rounded-lg border space-y-1.5" style="background:var(--panel); border-color:var(--line);">
+                            <div class="font-bold text-[11px]" style="color:var(--ink-dim);" id="lbl-opt-final-tax">ทางเลือก 1: หัก 10% จบ (Final Tax)</div>
+                            <div class="text-sm font-black" style="color:var(--ink);" id="val-opt-final-tax">0 บาท</div>
+                            <div class="text-[10px]" style="color:var(--ink-faint);" id="desc-opt-final-tax">หัก ณ ที่จ่าย 10% ไม่ต้องนำเงินปันผลไปยื่นรวม</div>
+                        </div>
+
+                        <!-- Option B: Claim Tax Credit -->
+                        <div class="p-2.5 rounded-lg border space-y-1.5" style="background:var(--panel); border-color:var(--line);" id="boxOptionCredit">
+                            <div class="font-bold text-[11px]" style="color:var(--core);" id="lbl-opt-claim-credit">ทางเลือก 2: ยื่นเครดิตภาษี (ม.47 ทวิ)</div>
+                            <div class="text-sm font-black" style="color:var(--core);" id="val-opt-claim-credit">0 บาท</div>
+                            <div class="text-[10px]" style="color:var(--ink-faint);" id="desc-opt-claim-credit">รวมเงินปันผล + เครดิตเพื่อขอคืนภาษี</div>
+                        </div>
+                    </div>
+
+                    <!-- Recommendation Verdict Callout -->
+                    <div id="divCreditVerdictBox" class="p-2.5 rounded-lg text-xs leading-relaxed border" style="background:var(--ok-dim); border-color:var(--ok); color:var(--ok);">
+                        💡 <strong>คำแนะนำ:</strong> กรอกจำนวนเงินปันผลเพื่อเปรียบเทียบสิทธิประโยชน์ทางภาษี
+                    </div>
+
+                    <!-- Integration Toggle: Include in main tax calculation -->
+                    <div class="flex items-center justify-between p-2 rounded-lg border text-xs" style="background:var(--panel); border-color:var(--line);">
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" id="chkApplyDividendToTax" onchange="toggleApplyDividendToTax()" style="accent-color:var(--core); width:16px; height:16px; cursor:pointer;">
+                            <label for="chkApplyDividendToTax" class="font-semibold cursor-pointer" style="color:var(--ink);" id="lbl-apply-div-tax">นำไปคำนวณในแบบภาษีรวมทันที</label>
+                        </div>
+                        <span class="text-[10px] font-bold" style="color:var(--ink-dim);" id="badge-applied-status">ปิดอยู่</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <hr class="my-6 border-gray-200">
@@ -611,7 +690,7 @@
                     <span id="lbl-reset-tax">ล้างข้อมูล</span>
                 </button>
             </div>
-            <p class="text-xs text-gray-400">v2.4.2</p>
+            <p class="text-xs text-gray-400">v2.4.3</p>
         </div>
     </div>
 

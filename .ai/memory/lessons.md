@@ -792,3 +792,37 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
   3. Integrated interactive `#inheritance-tax-card` in `tax-calculator.html` with preset pills, heir count scaling, and statutory compliance guidance (150-day filing deadline, 5-year installment rules).
   4. Added test suite (`tests/inheritance-tax.test.mjs`) and smoke tests (**246 tests passing, 0 Biome errors**).
 - **Rule:** In Thai estate planning, calculate tax at the per-heir level (not aggregate estate), account for 100% spouse exemption, and leverage phased multi-year lifetime gifting (20M/yr family allowance) to legally minimize or eliminate inheritance tax liabilities.
+
+### 2026-10-17: Retirement 3-Bucket Cash Flow Allocation & Statutory Social Security Offset
+
+- **Date & Context:** 2026-10-17, implementing Retirement 3-Bucket Cash Flow & SSO Drawdown Simulator in `dashboard.html` (`v2.4.2`).
+- **Problem:**
+  1. Retirees and FIRE planners often face Sequence of Returns Risk (SRR) during early retirement if forced to liquidate growth equities during market drawdowns.
+  2. Traditional flat withdrawal models fail to integrate Thai statutory guaranteed safety nets—such as Section 33/39 Social Security monthly pensions (typically 3,000–5,000+ THB/month) and elderly living allowances (600–1,000 THB/month)—which directly offset living expenses and significantly reduce required portfolio drawdowns.
+- **Resolution:**
+  1. Built `MoneyApp.calculateRetirementThreeBuckets(params)` implementing Harold Evensky's time-segmented 3-bucket architecture:
+     - **Bucket 1 (Cash / Liquid Buffer):** 1–2 years of net living expenses in money market/high-yield savings.
+     - **Bucket 2 (Fixed Income / Bonds):** 3–7 years in government/corporate bonds to generate stable yield and refill Bucket 1.
+     - **Bucket 3 (Growth Equities / Global Assets):** Residual accumulated wealth invested long-term (8+ years horizon) with zero pressure to liquidate in bear markets.
+  2. Factored in net annual drawdown after guaranteed income offset ($\text{Net Drawdown} = \max(0, \text{Living Expenses} - \text{Guaranteed Income})$).
+  3. Calculated bear market runway years buffer ($(\text{Bucket 1} + \text{Bucket 2}) / \text{Net Drawdown}$), warning users if defensive cushion is underfunded.
+  4. Added test suite (`tests/three-bucket-retirement.test.mjs`) and smoke tests (**252 tests passing, 0 Biome errors**).
+- **Rule:** When designing retirement drawdown plans, always subtract statutory guaranteed income (SSO pension + elderly allowance) from gross expenses first to determine true portfolio withdrawal pressure, and allocate 5–8 years into defensive cash/bonds (Buckets 1 & 2) to neutralize sequence of returns risk.
+
+### 2026-10-17: Thai Stock Dividend Tax Credit Optimization (ม.47 ทวิ แห่งประมวลรัษฎากร)
+
+- **Date & Context:** 2026-10-17, implementing Thai Stock Dividend Tax Credit Calculator in `tax-calculator-base.html` (`v2.4.3`).
+- **Problem:**
+  1. Thai individual equity investors receiving stock dividends (Section 40(4)(b)) face a critical filing decision: either accept a 10% Withholding Tax as a Final Tax (หักภาษี ณ ที่จ่าย 10% จบ), or gross up the dividend and claim corporate tax credit under Section 47 bis of the Revenue Code.
+  2. Under Thai statutory law, claiming dividend credit is an **all-or-none** rule: taxpayers cannot cherry-pick advantageous dividend receipts; they must include ALL dividends received in that tax year or none.
+  3. Investors in lower personal income tax brackets (0%, 5%, 10%, 15%) frequently forfeit tens or hundreds of thousands of baht in statutory tax refunds because they assume the 10% withholding is optimal. Conversely, investors in high tax brackets (25%, 30%, 35%) accidentally increase their tax liability if they file without comparing.
+- **Resolution:**
+  1. Implemented `MoneyApp.calculateThaiDividendTaxCredit(params)`:
+     - Multi-tier corporate income tax credit factor: $\text{Credit Factor} = \frac{t}{1 - t}$, yielding 25% credit for 20% CIT, 33.33% for 25% CIT, 17.65% for 15% CIT, and 0% for BOI-exempt dividends.
+     - Grossed-up assessable income: $D \times (1 + \text{factor})$.
+     - Dual-scenario evaluation: Scenario A (10% Final Tax) vs Scenario B (Full Claim under Section 47 bis).
+     - Net tax advantage calculation identifying the optimal strategy with zero ambiguity.
+  2. Integrated `#dividendTaxCreditCard` in `tax-calculator-base.html` with collapsible panel, quick preset pills, live comparative analysis cards, and "Apply to Total Tax Return" toggle.
+  3. Connected credits directly into Form P.N.D. 90 annual tax waterfall, deducting both 10% WHT and corporate credit from annual tax liability.
+  4. Added test suite (`tests/dividend-tax-credit.test.mjs`) with 5 comprehensive unit tests and smoke tests (**258 tests passing, 0 Biome errors**).
+- **Rule:** For Thai stock dividends, evaluate the marginal tax threshold against the corporate tax rate: taxpayers with marginal rates $\le 15\%$ should always claim Section 47 bis credit for refunds, while taxpayers with marginal rates $\ge 25\%$ should retain the 10% Final Tax to avoid higher tax liabilities.

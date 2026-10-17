@@ -307,6 +307,27 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(dashContent.includes('id="bar-bucket-2"'), 'dashboard.html must define #bar-bucket-2');
       assert.ok(dashContent.includes('id="bar-bucket-3"'), 'dashboard.html must define #bar-bucket-3');
     });
+
+    it('verifies tax-calculator-base.html declares Dividend Tax Credit panel with inputs and controls', () => {
+      const taxContent = fs.readFileSync(path.join(ROOT_DIR, 'tax-calculator-base.html'), 'utf8');
+      assert.ok(
+        taxContent.includes('id="dividendTaxCreditCard"'),
+        'tax-calculator-base.html must define #dividendTaxCreditCard',
+      );
+      assert.ok(
+        taxContent.includes('id="inpDividendAmount"'),
+        'tax-calculator-base.html must define #inpDividendAmount',
+      );
+      assert.ok(taxContent.includes('id="selCitRate"'), 'tax-calculator-base.html must define #selCitRate');
+      assert.ok(
+        taxContent.includes('id="chkApplyDividendToTax"'),
+        'tax-calculator-base.html must define #chkApplyDividendToTax',
+      );
+      assert.ok(
+        taxContent.includes('id="divCreditVerdictBox"'),
+        'tax-calculator-base.html must define #divCreditVerdictBox',
+      );
+    });
   });
 
   describe('Bilingual Localization Structural Symmetry', () => {
