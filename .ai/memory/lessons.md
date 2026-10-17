@@ -341,3 +341,15 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
      - Minimum-Only baseline: High-contrast amber dashed stroke (`4,4`, width 1.8, opacity 0.8) displaying the default cost of inaction.
   3. Added a dynamic payoff delta badge summarizing time and interest variance between Snowball and Avalanche based on actual extra payments.
 - **Rule:** When comparing multi-trajectory financial curves, normalize axes to the union of all trajectories, highlight the user's active choice with filled gradients and milestone markers, and render counterfactuals with distinct dashed strokes.
+
+### 2026-10-17: Cash Flow Waterfall Stream & Deficit Coordinate Normalization
+
+- **Date & Context:** 2026-10-17, implementing interactive Cash Flow Waterfall Stream diagram in `remaining-money.html` and `js/remaining-money.js` (`v2.0.3`).
+- **Problem:**
+  1. A simple stacked horizontal bar failed to show the step-down sequence of how gross income gets depleted across deductions, living expenses, and savings before reaching net remaining surplus or deficit.
+  2. When living expenses and deductions exceed income (deficit), simple proportions clip or distort, failing to clearly show how far below zero the household budget drops.
+- **Resolution:**
+  1. Built a closed-loop SVG step-down waterfall engine: Gross Inflow $\to$ Statutory Deductions $\to$ Living Expenses $\to$ Monthly Savings $\to$ Net Surplus/Deficit, connecting consecutive stages with dashed bridge lines at matching balance levels.
+  2. Normalized vertical coordinates across both positive and negative ranges: `valMax = Math.max(income, totalOutflow, 1)` and `valMin = Math.min(0, remaining)`. When `valMin < 0`, a prominent dashed zero baseline is rendered with deficit bars extending downward into crimson territory.
+  3. Clamped minimum bar height safely (`drawY = Math.min(yTop, height - padding.bottom - barHeight)`) preventing SVG out-of-bounds overflow on zero-delta items.
+- **Rule:** For waterfall charts that support deficit scenarios, always include zero in the domain (`valMin = Math.min(0, net)`), render an explicit zero baseline, and clamp minimum-height bars so they do not breach the plot's bottom padding.

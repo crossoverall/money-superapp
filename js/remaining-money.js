@@ -48,6 +48,9 @@ const EN = {
   lblPrint: 'Print / PDF',
   lblUndo: 'Undo',
   lblCashflowTitle: 'Cashflow Allocation',
+  lblCfViewWaterfall: 'Waterfall Stream',
+  lblCfViewBar: 'Proportions Bar',
+  lblCfIncome: 'Gross Income:',
   lblCfDeductions: 'Statutory (Tax/SSO/PVD):',
   lblCfExpenses: 'Living Expenses:',
   lblCfSavings: 'Savings:',
@@ -257,6 +260,12 @@ if (LANG === 'en') {
   if (lblUB) lblUB.textContent = EN.lblUndo;
   const cfT = document.getElementById('lblCashflowTitle');
   if (cfT) cfT.textContent = EN.lblCashflowTitle;
+  const cfVwW = document.getElementById('lblCfViewWaterfall');
+  if (cfVwW) cfVwW.textContent = EN.lblCfViewWaterfall;
+  const cfVwB = document.getElementById('lblCfViewBar');
+  if (cfVwB) cfVwB.textContent = EN.lblCfViewBar;
+  const cfI = document.getElementById('lblCfIncome');
+  if (cfI) cfI.textContent = EN.lblCfIncome;
   const cfD = document.getElementById('lblCfDeductions');
   if (cfD) cfD.textContent = EN.lblCfDeductions;
   const cfE = document.getElementById('lblCfExpenses');
@@ -1421,7 +1430,7 @@ function compute() {
   updateCashflowVisual(totalIncome, totalExpense, totalSavings, remaining);
 }
 
-// ── Visual Cashflow Allocation Bar ─────────────────────────────────────────
+// ── Visual Cashflow Allocation Bar & Waterfall ─────────────────────────────
 function updateCashflowVisual(totalIncome, totalExpense, totalSavings, remaining) {
   const panel = document.getElementById('cashflowPanel');
   if (!panel) return;
@@ -1440,6 +1449,7 @@ function updateCashflowVisual(totalIncome, totalExpense, totalSavings, remaining
   const isEN = LANG === 'en';
   const base = Math.max(totalIncome, deductions + generalExpenses + totalSavings, 0.0001);
 
+  // 1. Proportions Bar segments
   const segDeductions = document.getElementById('cfSegDeductions');
   const segExpenses = document.getElementById('cfSegExpenses');
   const segSavings = document.getElementById('cfSegSavings');
@@ -1451,24 +1461,33 @@ function updateCashflowVisual(totalIncome, totalExpense, totalSavings, remaining
   const pctSavings = hasData ? ((totalSavings / base) * 100).toFixed(1) : '0';
   const pctRemaining = hasData && remaining > 0 ? ((remaining / base) * 100).toFixed(1) : '0';
 
-  if (segDeductions) segDeductions.style.width = pctDeductions + '%';
-  if (segExpenses) segExpenses.style.width = pctExpenses + '%';
-  if (segSavings) segSavings.style.width = pctSavings + '%';
-  if (segRemaining) segRemaining.style.width = pctRemaining + '%';
+  if (segDeductions) segDeductions.style.width = `${pctDeductions}%`;
+  if (segExpenses) segExpenses.style.width = `${pctExpenses}%`;
+  if (segSavings) segSavings.style.width = `${pctSavings}%`;
+  if (segRemaining) segRemaining.style.width = `${pctRemaining}%`;
 
+  // 2. Legend values
+  const valIncome = document.getElementById('cfValIncome');
   const valDeductions = document.getElementById('cfValDeductions');
   const valExpenses = document.getElementById('cfValExpenses');
   const valSavings = document.getElementById('cfValSavings');
   const valRemaining = document.getElementById('cfValRemaining');
 
   const incBase = totalIncome > 0 ? totalIncome : deductions + generalExpenses + totalSavings || 1;
-  const incPct = (v) => (totalIncome > 0 || v > 0 ? ((v / incBase) * 100).toFixed(1) + '%' : '0%');
+  const incPct = (v) => (totalIncome > 0 || v > 0 ? `${((v / incBase) * 100).toFixed(1)}%` : '0%');
 
+  if (valIncome) valIncome.textContent = `${fmtCurrency(totalIncome)} (100%)`;
   if (valDeductions) valDeductions.textContent = `${fmtCurrency(deductions)} (${incPct(deductions)})`;
   if (valExpenses) valExpenses.textContent = `${fmtCurrency(generalExpenses)} (${incPct(generalExpenses)})`;
   if (valSavings) valSavings.textContent = `${fmtCurrency(totalSavings)} (${incPct(totalSavings)})`;
   if (valRemaining) valRemaining.textContent = `${fmtCurrency(remaining)} (${incPct(remaining)})`;
 
+  const legendDotRemaining = document.getElementById('cfLegendDotRemaining');
+  if (legendDotRemaining) {
+    legendDotRemaining.style.background = remaining > 0 ? '#059669' : remaining === 0 ? '#64748b' : '#dc2626';
+  }
+
+  // 3. Cashflow Surplus / Deficit Badge
   const badge = document.getElementById('cashflowSurplusBadge');
   if (badge) {
     if (remaining > 0) {
@@ -1485,7 +1504,205 @@ function updateCashflowVisual(totalIncome, totalExpense, totalSavings, remaining
       badge.style.color = '#dc2626';
     }
   }
+
+  // 4. Render SVG Waterfall
+  renderCashflowWaterfall(totalIncome, deductions, generalExpenses, totalSavings, remaining);
 }
+
+/**
+ * Render interactive SVG Cashflow Waterfall Diagram
+ * Gross Inflow -> Deductions -> Expenses -> Savings -> Net Remaining Surplus/Deficit
+ */
+function renderCashflowWaterfall(totalIncome, deductions, generalExpenses, totalSavings, remaining) {
+  const svg = document.getElementById('svgCashflowWaterfall');
+  if (!svg) return;
+
+  const isEN = LANG === 'en';
+  const hasData = totalIncome > 0 || deductions > 0 || generalExpenses > 0 || totalSavings > 0;
+  if (!hasData) {
+    const msg = isEN
+      ? 'Enter income and expenses to visualize cashflow waterfall'
+      : 'ระบุรายได้และค่าใช้จ่ายเพื่อดูกระแสเงินสดสายธารน้ำตก';
+    svg.innerHTML = `<text x="300" y="115" text-anchor="middle" fill="#94a3b8" font-size="13" font-family="inherit">${msg}</text>`;
+    return;
+  }
+
+  const steps = [
+    {
+      id: 'income',
+      name: isEN ? 'Gross Income' : 'รายได้รวม',
+      sub: isEN ? 'Inflow' : 'รับเข้า',
+      start: 0,
+      end: totalIncome,
+      delta: totalIncome,
+      type: 'inflow',
+      color: '#10b981',
+    },
+    {
+      id: 'deductions',
+      name: isEN ? 'Deductions' : 'หักกฎหมาย',
+      sub: isEN ? 'Tax/SSO/PVD' : 'ภาษี/SSO/PVD',
+      start: totalIncome,
+      end: totalIncome - deductions,
+      delta: -deductions,
+      type: 'outflow',
+      color: '#8b5cf6',
+    },
+    {
+      id: 'expenses',
+      name: isEN ? 'Expenses' : 'ค่าใช้จ่าย',
+      sub: isEN ? 'Living cost' : 'ค่าใช้จ่ายทั่วไป',
+      start: totalIncome - deductions,
+      end: totalIncome - deductions - generalExpenses,
+      delta: -generalExpenses,
+      type: 'outflow',
+      color: '#f43f5e',
+    },
+    {
+      id: 'savings',
+      name: isEN ? 'Savings' : 'เงินออม',
+      sub: isEN ? 'Invest/Fund' : 'ออม/ลงทุน',
+      start: totalIncome - deductions - generalExpenses,
+      end: remaining,
+      delta: -totalSavings,
+      type: 'outflow',
+      color: '#0284c7',
+    },
+    {
+      id: 'remaining',
+      name: remaining >= 0 ? (isEN ? 'Net Surplus' : 'คงเหลือสุทธิ') : isEN ? 'Deficit' : 'ขาดดุล (ติดลบ)',
+      sub: remaining >= 0 ? (isEN ? 'Investable' : 'ส่วนเกินลงทุน') : isEN ? 'Negative' : 'เงินไม่พอ',
+      start: 0,
+      end: remaining,
+      delta: remaining,
+      type: 'net',
+      color: remaining > 0 ? '#059669' : remaining === 0 ? '#64748b' : '#dc2626',
+    },
+  ];
+
+  const valMax = Math.max(totalIncome, deductions + generalExpenses + totalSavings, 1);
+  const valMin = Math.min(0, remaining);
+  const valRange = Math.max(valMax - valMin, 1);
+
+  const width = 600;
+  const height = 230;
+  const padding = { top: 32, right: 25, bottom: 42, left: 60 };
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+
+  const mapY = (v) => padding.top + plotHeight - ((v - valMin) / valRange) * plotHeight;
+  const zeroY = mapY(0);
+
+  let svgHtml = '';
+
+  // 1. Gridlines
+  const gridSteps = 4;
+  for (let i = 0; i <= gridSteps; i++) {
+    const ratio = i / gridSteps;
+    const v = valMin + ratio * valRange;
+    const y = mapY(v);
+    svgHtml += `<line x1="${padding.left}" y1="${y.toFixed(1)}" x2="${width - padding.right}" y2="${y.toFixed(1)}" stroke="var(--line, rgba(148,163,184,0.22))" stroke-width="1" stroke-dasharray="3,3" />`;
+
+    let lbl = '';
+    const absV = Math.abs(v);
+    if (absV >= 1000000) lbl = `${(v / 1000000).toFixed(1)}M`;
+    else if (absV >= 1000) lbl = `${(v / 1000).toFixed(0)}K`;
+    else lbl = Math.round(v).toString();
+
+    svgHtml += `<text x="${padding.left - 8}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" fill="var(--ink-faint, #94a3b8)" font-size="10" font-family="inherit">${lbl}</text>`;
+  }
+
+  // 2. Zero Baseline (if valMin < 0, render prominent line)
+  if (valMin < 0) {
+    svgHtml += `<line x1="${padding.left}" y1="${zeroY.toFixed(1)}" x2="${width - padding.right}" y2="${zeroY.toFixed(1)}" stroke="var(--ink-faint, #64748b)" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.8" />`;
+  }
+
+  // 3. Connectors & Bars
+  const colWidth = plotWidth / steps.length;
+  const barWidth = 54;
+
+  steps.forEach((step, idx) => {
+    const cx = padding.left + (idx + 0.5) * colWidth;
+    const bx = cx - barWidth / 2;
+    const yTop = mapY(Math.max(step.start, step.end));
+    const yBottom = mapY(Math.min(step.start, step.end));
+    const rawHeight = Math.abs(yBottom - yTop);
+    const barHeight = rawHeight === 0 ? 2 : Math.max(2, rawHeight);
+    const drawY = Math.min(yTop, height - padding.bottom - barHeight);
+
+    // Connecting bridge line to next step
+    if (idx < steps.length - 1) {
+      const nextCx = padding.left + (idx + 1.5) * colWidth;
+      const nextBx = nextCx - barWidth / 2;
+      const bridgeLevel = idx === 3 ? remaining : step.end;
+      const bridgeY = mapY(bridgeLevel);
+      svgHtml += `<line x1="${(bx + barWidth).toFixed(1)}" y1="${bridgeY.toFixed(1)}" x2="${nextBx.toFixed(1)}" y2="${bridgeY.toFixed(1)}" stroke="var(--line, rgba(148,163,184,0.45))" stroke-width="1.5" stroke-dasharray="3,3" />`;
+    }
+
+    // Bar Rect
+    const incBase = totalIncome > 0 ? totalIncome : valMax;
+    const pctVal = Math.abs((step.delta / incBase) * 100);
+    const tip = `${step.name}: ${step.delta >= 0 ? '+' : ''}${fmtCurrency(step.delta)} (${pctVal.toFixed(1)}%)`;
+    svgHtml += `
+      <g class="waterfall-bar" style="cursor:pointer;">
+        <rect x="${bx.toFixed(1)}" y="${drawY.toFixed(1)}" width="${barWidth}" height="${barHeight.toFixed(1)}" rx="4" fill="${step.color}" opacity="0.9">
+          <title>${tip}</title>
+        </rect>
+      </g>
+    `;
+
+    // Value label above/below bar
+    const pctStr = pctVal > 0 ? `${pctVal.toFixed(0)}%` : '0%';
+    const valSign = step.delta > 0 ? '+' : step.delta < 0 ? '-' : '';
+    const absAmt = Math.abs(step.delta);
+    let shortAmt = '';
+    if (absAmt >= 1000000) shortAmt = `${(absAmt / 1000000).toFixed(1)}M`;
+    else if (absAmt >= 1000) shortAmt = `${(absAmt / 1000).toFixed(0)}K`;
+    else shortAmt = Math.round(absAmt).toString();
+
+    const lblY = step.delta < 0 && step.type === 'net' ? drawY + barHeight + 13 : drawY - 6;
+    svgHtml += `<text x="${cx.toFixed(1)}" y="${lblY.toFixed(1)}" text-anchor="middle" fill="var(--ink, #1e293b)" font-size="10.5" font-weight="700" font-family="inherit">${valSign}${shortAmt} <tspan font-weight="400" fill="var(--ink-dim, #64748b)" font-size="9.5">(${pctStr})</tspan></text>`;
+
+    // Category X-axis labels
+    svgHtml += `<text x="${cx.toFixed(1)}" y="${(height - padding.bottom + 16).toFixed(1)}" text-anchor="middle" fill="var(--ink, #334155)" font-size="11" font-weight="600" font-family="inherit">${step.name}</text>`;
+    svgHtml += `<text x="${cx.toFixed(1)}" y="${(height - padding.bottom + 29).toFixed(1)}" text-anchor="middle" fill="var(--ink-dim, #94a3b8)" font-size="9" font-family="inherit">${step.sub}</text>`;
+  });
+
+  svg.innerHTML = svgHtml;
+}
+
+// ── Cashflow View Mode Toggle (Waterfall vs Bar) ───────────────────────────
+const btnCfWaterfall = document.getElementById('btnCfViewWaterfall');
+const btnCfBar = document.getElementById('btnCfViewBar');
+const cfWaterfallContainer = document.getElementById('cashflowWaterfallContainer');
+const cfBarContainer = document.getElementById('cashflowBarContainer');
+
+function setCashflowView(view) {
+  const isWf = view === 'waterfall';
+  if (btnCfWaterfall) btnCfWaterfall.classList.toggle('active', isWf);
+  if (btnCfBar) btnCfBar.classList.toggle('active', !isWf);
+  if (cfWaterfallContainer) cfWaterfallContainer.style.display = isWf ? 'block' : 'none';
+  if (cfBarContainer) cfBarContainer.style.display = isWf ? 'none' : 'flex';
+  try {
+    localStorage.setItem('moneySuperapp.cashflowView', view);
+  } catch (_e) {}
+}
+
+if (btnCfWaterfall) {
+  btnCfWaterfall.addEventListener('click', () => setCashflowView('waterfall'));
+}
+if (btnCfBar) {
+  btnCfBar.addEventListener('click', () => setCashflowView('bar'));
+}
+
+const savedCfView = (() => {
+  try {
+    return localStorage.getItem('moneySuperapp.cashflowView') || 'waterfall';
+  } catch (_e) {
+    return 'waterfall';
+  }
+})();
+setCashflowView(savedCfView);
 
 function onToggleRunway(checked) {
   state.showEmergencyRunway = !!checked;

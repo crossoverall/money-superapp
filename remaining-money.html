@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.0.2">
+  <meta name="version" content="2.0.3">
   <title>คำนวณเงินคงเหลือ</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -236,6 +236,35 @@
     .cf-seg:hover {
       filter: brightness(1.12);
     }
+    .btn-cf-view {
+      padding: 3px 9px;
+      font-size: 11px;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: transparent;
+      color: var(--ink-dim);
+      transition: all 0.2s ease;
+    }
+    .btn-cf-view.active {
+      background: var(--panel);
+      color: var(--ink);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .cashflow-waterfall-wrap {
+      width: 100%;
+      margin-bottom: 12px;
+      border-radius: 10px;
+      background: var(--panel-2, rgba(248,250,252,0.5));
+      border: 1px solid var(--line);
+      padding: 8px 6px 4px;
+      box-sizing: border-box;
+      overflow-x: auto;
+    }
+    .waterfall-bar:hover rect {
+      filter: brightness(1.12);
+    }
     .cashflow-legend {
       display: flex;
       flex-wrap: wrap;
@@ -325,19 +354,38 @@
     </div>
   </div>
 
-  <!-- Visual Cashflow Allocation Bar -->
+  <!-- Visual Cashflow Allocation Bar & Waterfall -->
   <div class="cashflow-panel" id="cashflowPanel">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-      <span style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-dim);" id="lblCashflowTitle">สัดส่วนกระแสเงินสด (Cashflow Allocation)</span>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-dim);" id="lblCashflowTitle">สัดส่วนกระแสเงินสด (Cashflow Allocation)</span>
+        <div class="view-toggle-group" style="display:inline-flex; background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:2px;">
+          <button type="button" id="btnCfViewWaterfall" class="btn-cf-view active" title="Waterfall Stream">🌊 <span id="lblCfViewWaterfall">น้ำตก (Waterfall)</span></button>
+          <button type="button" id="btnCfViewBar" class="btn-cf-view" title="Proportion Bar">📊 <span id="lblCfViewBar">แถบสัดส่วน (Bar)</span></button>
+        </div>
+      </div>
       <span id="cashflowSurplusBadge" style="font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px;"></span>
     </div>
-    <div class="cashflow-bar-container">
+
+    <!-- 1. Interactive Waterfall Stream Diagram -->
+    <div id="cashflowWaterfallContainer" class="cashflow-waterfall-wrap">
+      <svg id="svgCashflowWaterfall" viewBox="0 0 600 230" style="width:100%; height:auto; display:block; min-width:380px;"></svg>
+    </div>
+
+    <!-- 2. Proportions Stacked Bar -->
+    <div id="cashflowBarContainer" class="cashflow-bar-container" style="display:none;">
       <div id="cfSegDeductions" class="cf-seg" style="background:#8b5cf6; width:0%;" title="หักตามกฎหมาย (ภาษี/SSO/PVD)"></div>
       <div id="cfSegExpenses" class="cf-seg" style="background:#f43f5e; width:0%;" title="ค่าใช้จ่ายทั่วไป"></div>
       <div id="cfSegSavings" class="cf-seg" style="background:#0284c7; width:0%;" title="เงินออม"></div>
       <div id="cfSegRemaining" class="cf-seg" style="background:#10b981; width:0%;" title="คงเหลือลงทุน"></div>
     </div>
+
     <div class="cashflow-legend">
+      <div class="cf-legend-item">
+        <span class="cf-legend-dot" style="background:#10b981;"></span>
+        <span id="lblCfIncome">รายได้รวม:</span>
+        <b id="cfValIncome" style="color:var(--ink);">0 บาท (100%)</b>
+      </div>
       <div class="cf-legend-item">
         <span class="cf-legend-dot" style="background:#8b5cf6;"></span>
         <span id="lblCfDeductions">หักตามกฎหมาย:</span>
@@ -354,7 +402,7 @@
         <b id="cfValSavings" style="color:var(--ink);">0 บาท (0%)</b>
       </div>
       <div class="cf-legend-item">
-        <span class="cf-legend-dot" style="background:#10b981;"></span>
+        <span class="cf-legend-dot" id="cfLegendDotRemaining" style="background:#059669;"></span>
         <span id="lblCfRemaining">คงเหลือลงทุน:</span>
         <b id="cfValRemaining" style="color:var(--ink);">0 บาท (0%)</b>
       </div>
@@ -446,7 +494,7 @@
       <button class="reset-btn" id="resetBtn" style="color:var(--ink-faint);">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v2.0.2</p>
+  <p class="version-tag">v2.0.3</p>
 
   <!-- Import Preview Modal -->
   <div id="importModal" role="dialog" aria-modal="true" aria-labelledby="importModalTitle" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; display:none; align-items:center; justify-content:center; backdrop-filter:blur(2px);" onclick="if(event.target===this)closeImportModal()">

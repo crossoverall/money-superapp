@@ -470,6 +470,41 @@ describe('Financial Math Verification', () => {
       };
     }
 
+    function computeCashflowWaterfallSteps(income, deductions, expenses, savings) {
+      const remaining = income - deductions - expenses - savings;
+      const steps = [
+        { id: 'income', name: 'Gross Income', start: 0, end: income, delta: income, type: 'inflow' },
+        {
+          id: 'deductions',
+          name: 'Deductions',
+          start: income,
+          end: income - deductions,
+          delta: -deductions,
+          type: 'outflow',
+        },
+        {
+          id: 'expenses',
+          name: 'Living Expenses',
+          start: income - deductions,
+          end: income - deductions - expenses,
+          delta: -expenses,
+          type: 'outflow',
+        },
+        {
+          id: 'savings',
+          name: 'Savings & Invest',
+          start: income - deductions - expenses,
+          end: remaining,
+          delta: -savings,
+          type: 'outflow',
+        },
+        { id: 'remaining', name: 'Net Cashflow', start: 0, end: remaining, delta: remaining, type: 'net' },
+      ];
+      const valMax = Math.max(income, deductions + expenses + savings, 1);
+      const valMin = Math.min(0, remaining);
+      return { steps, remaining, isDeficit: remaining < 0, valMax, valMin };
+    }
+
     it('calculates correct proportional shares for surplus cashflow', () => {
       const res = computeCashflowShares(100000, 10000, 40000, 20000);
       assert.equal(res.pctDeductions, 10);
@@ -486,6 +521,73 @@ describe('Financial Math Verification', () => {
       assert.equal(res.isDeficit, true);
       assert.equal(res.pctRemaining, 0);
       assert.equal(Math.round(res.pctDeductions + res.pctExpenses), 100);
+    });
+
+    it('computeCashflowWaterfallSteps calculates closed-loop waterfall stages from gross income to net surplus', () => {
+      const wf = computeCashflowWaterfallSteps(60000, 4000, 32000, 8000);
+      assert.equal(wf.remaining, 16000);
+      assert.equal(wf.isDeficit, false);
+      assert.equal(wf.valMin, 0);
+      assert.equal(wf.valMax, 60000);
+      assert.equal(wf.steps.length, 5);
+
+      // Verify strict step-down progression
+      assert.equal(wf.steps[0].end, wf.steps[1].start); // 60,000 -> 60,000
+      assert.equal(wf.steps[1].end, 56000); // 60,000 - 4,000
+      assert.equal(wf.steps[1].end, wf.steps[2].start); // 56,000 -> 56,000
+      assert.equal(wf.steps[2].end, 24000); // 56,000 - 32,000
+      assert.equal(wf.steps[2].end, wf.steps[3].start); // 24,000 -> 24,000
+      assert.equal(wf.steps[3].end, 16000); // 24,000 - 8,000
+      assert.equal(wf.steps[3].end, wf.steps[4].end); // Final outflow ends at remaining balance (16,000)
+      assert.equal(wf.steps[4].start, 0);
+    });
+
+    it('handles deficit correctly in waterfall with negative remaining balance and zero-crossing bounds', () => {
+      const wf = computeCashflowWaterfallSteps(40000, 3000, 42000, 5000);
+      assert.equal(wf.remaining, -10000);
+      assert.equal(wf.isDeficit, true);
+      assert.equal(wf.valMin, -10000);
+      assert.equal(wf.valMax, 50000); // Deductions + Expenses + Savings = 50,000
+      assert.equal(wf.steps[4].delta, -10000);
+      assert.equal(wf.steps[4].end, -10000);
+    });
+
+    it('maps all waterfall bar coordinates safely within SVG canvas bounds without NaN or overflow', () => {
+      const testCases = [
+        { inc: 100000, ded: 8000, exp: 45000, sav: 20000 }, // Normal surplus
+        { inc: 30000, ded: 2500, exp: 35000, sav: 4000 }, // Deficit
+        { inc: 50000, ded: 0, exp: 50000, sav: 0 }, // Exactly balanced
+      ];
+
+      const width = 600;
+      const height = 230;
+      const padding = { top: 32, right: 25, bottom: 42, left: 60 };
+      const plotWidth = width - padding.left - padding.right;
+      const plotHeight = height - padding.top - padding.bottom;
+
+      testCases.forEach((tc) => {
+        const wf = computeCashflowWaterfallSteps(tc.inc, tc.ded, tc.exp, tc.sav);
+        const valRange = Math.max(wf.valMax - wf.valMin, 1);
+        const mapY = (v) => padding.top + plotHeight - ((v - wf.valMin) / valRange) * plotHeight;
+        const colWidth = plotWidth / wf.steps.length;
+        const barWidth = 54;
+
+        wf.steps.forEach((step, idx) => {
+          const cx = padding.left + (idx + 0.5) * colWidth;
+          const bx = cx - barWidth / 2;
+          const yTop = mapY(Math.max(step.start, step.end));
+          const yBottom = mapY(Math.min(step.start, step.end));
+          const rawHeight = Math.abs(yBottom - yTop);
+          const barHeight = rawHeight === 0 ? 2 : Math.max(2, rawHeight);
+          const drawY = Math.min(yTop, height - padding.bottom - barHeight);
+
+          assert.ok(!Number.isNaN(bx) && Number.isFinite(bx));
+          assert.ok(!Number.isNaN(drawY) && Number.isFinite(drawY));
+          assert.ok(!Number.isNaN(barHeight) && Number.isFinite(barHeight));
+          assert.ok(bx >= padding.left - 1e-4 && bx + barWidth <= width - padding.right + 1e-4);
+          assert.ok(drawY >= padding.top - 1e-4 && drawY + barHeight <= height - padding.bottom + 1e-4);
+        });
+      });
     });
   });
 
