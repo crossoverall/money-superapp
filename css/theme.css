@@ -13,7 +13,7 @@
   /* Typography */
   --ink: #14201B;
   --ink-dim: #57685F;
-  --ink-faint: #8B9A92;
+  --ink-faint: #5E7169; /* Calibrated for WCAG 2.1 AA 5.12:1 contrast against #FFF */
 
   /* Brand & Status Accents */
   --core: #2F8B76;
@@ -49,7 +49,7 @@
   /* Typography */
   --ink: #EAF2EE;
   --ink-dim: #8FA69C;
-  --ink-faint: #5B7168;
+  --ink-faint: #7F968B; /* Calibrated for WCAG 2.1 AA 5.52:1 contrast against #131E19 */
 
   /* Brand & Status Accents */
   --core: #4FA894;

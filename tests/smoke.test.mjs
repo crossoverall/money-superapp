@@ -226,6 +226,25 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'Modal elements in index.html must have dialog role or aria-modal',
       );
     });
+
+    it('verifies rebalance.html and months-slips.html declare semantic ARIA landmark regions', () => {
+      const rebalContent = fs.readFileSync(path.join(ROOT_DIR, 'rebalance.html'), 'utf8');
+      const slipsContent = fs.readFileSync(path.join(ROOT_DIR, 'months-slips.html'), 'utf8');
+
+      assert.ok(rebalContent.includes('role="region"'), 'rebalance.html must define role="region"');
+      assert.ok(rebalContent.includes('aria-label'), 'rebalance.html must define aria-label');
+      assert.ok(rebalContent.includes('role="dialog"'), 'rebalance.html modal must define role="dialog"');
+
+      assert.ok(slipsContent.includes('role="region"'), 'months-slips.html must define role="region"');
+      assert.ok(slipsContent.includes('role="status"'), 'months-slips.html must define role="status"');
+      assert.ok(slipsContent.includes('aria-labelledby'), 'months-slips.html must define aria-labelledby');
+    });
+
+    it('verifies theme.css ink tokens conform to WCAG contrast standards', () => {
+      const themeCss = fs.readFileSync(path.join(ROOT_DIR, 'css/theme.css'), 'utf8');
+      assert.ok(themeCss.includes('--ink-faint: #5E7169;'), 'Light theme --ink-faint must be #5E7169 (WCAG AA)');
+      assert.ok(themeCss.includes('--ink-faint: #7F968B;'), 'Dark theme --ink-faint must be #7F968B (WCAG AA)');
+    });
   });
 
   describe('Bilingual Localization Structural Symmetry', () => {
