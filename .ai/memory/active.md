@@ -1,5 +1,5 @@
 ---
-task_id: "FEAT-GOALS-MILESTONES-01"
+task_id: "FEAT-TAX-WATERFALL-01"
 status: "completed"
 current_stage: "release"
 complexity: "level_2"
@@ -7,46 +7,52 @@ iteration_count: 0
 pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Feature / Task Specification: Financial Goals & Milestones Tracker (Phase 8 Item 3.1)
+### Feature / Task Specification: Interactive Tax Bracket Waterfall Visualization (Phase 9 Item 3.2)
 
 #### 1. Goal & Scope Limits
-- **Objective:** Add an interactive Financial Goals & Milestones tracker in `dashboard.html` empowering users to define, track, and celebrate essential financial targets (Emergency Runway, Net Worth Milestone, and Debt Freedom Countdown) directly connected to their live financial data.
+- **Objective:** Upgrade the static numeric tax bracket breakdown in `tax-calculator-base.html` into an interactive, visual **Tax Bracket Waterfall Bar** with per-tier progress indicators, marginal headroom cues, and instant tax savings context.
 - **Target Files (<= 5 files):**
-  1. `dashboard.html` (Goals UI panel, configuration modal, real-time progress calculations, localization)
-  2. `tests/financial-math.test.mjs` (Unit tests for goal percentage clamping, milestone calculations, and boundary safety)
+  1. `tax-calculator-base.html` (Waterfall visual bar, per-tier fill indicators, room to next bracket alert, localization)
+  2. `tests/financial-math.test.mjs` (Unit tests for tier allocation breakdown, headroom calculations, and marginal tax tier math)
   3. `.ai/memory/active.md`
 - **Explicit Out of Scope:**
-  - Remote cloud synchronization (strictly 100% client-side privacy per ADR-001).
-  - External charting libraries (zero-dependency vanilla SVG/CSS bars).
+  - Third-party chart libraries (D3, Chart.js).
+  - External server or cloud components (100% offline client-side per ADR-001).
 
 #### 2. Architecture & Decision Alignment
-- **ADR-001 (Zero-Build Static PWA / Privacy):** 100% offline, persistent in `localStorage.getItem('moneySuperapp.financialGoals.v1')`.
-- **ADR-002 (Iframe Isolation):** Self-contained in `dashboard.html`, reading aggregated live data from other calculators.
-- **Visual Design:** Uses project theme tokens (`--panel`, `--panel-2`, `--line`, `--ink`, `--ok`, `--blue`, `--purple`), accessible ARIA attributes, responsive layout.
+- **ADR-001 (Zero-Build Static PWA / Privacy):** 100% offline, calculated entirely in client browser.
+- **ADR-002 (Iframe Isolation):** Self-contained within `tax-calculator-base.html`.
+- **Visual Design:** Uses project color hierarchy:
+  - 0% Exempt: Emerald (`#10b981`)
+  - 5% Tier: Cyan (`#06b6d4`)
+  - 10% Tier: Blue (`#3b82f6`)
+  - 15% Tier: Indigo (`#6366f1`)
+  - 20% Tier: Purple (`#8b5cf6`)
+  - 25% Tier: Amber (`#f59e0b`)
+  - 30% Tier: Orange (`#f97316`)
+  - 35% Tier: Red (`#ef4444`)
 
 #### 3. Step-by-Step Implementation Summary
-1. **Interactive Goals Panel in `dashboard.html`:**
-   - Positioned prominently below Key Financial Indicators.
-   - 🛡️ **Emergency Reserve Runway Goal**: Current runway vs target (e.g. 3.5 / 6.0 months - 58%), current reserve vs target buffer in THB.
-   - 💎 **Net Worth Milestone**: Current Net Worth vs Milestone target (e.g. ฿450,000 / ฿1,000,000 - 45%).
-   - 🚀 **Debt Freedom Goal**: Countdown of remaining debt balance towards 0 THB with payoff timeline and debt-free celebration badge when balance is 0.
-2. **Goal Configuration Modal (`#goalsModal`):**
-   - Clean pop-up dialog with quick preset pills:
-     - Emergency Runway: `3 mos`, `6 mos`, `12 mos`.
-     - Net Worth Milestone: `100K`, `500K`, `1M`, `5M`, `10M`.
-   - Number inputs with `inputmode="decimal"` for custom values.
-   - Instant save, defaults reset, and live UI refresh.
-3. **Bilingual Localization:**
-   - Full Thai and English translations for all labels, progress tooltips, preset buttons, and modal dialog.
-4. **Verification & Tests:**
-   - Added unit test suite `Financial Goals & Milestones Progress` in `tests/financial-math.test.mjs`.
-   - 36 automated unit tests pass in 70ms.
+1. **Segmented Waterfall Bar (`#waterfallBarContainer`):**
+   - Visual proportional bar displaying each active bracket's taxable portion relative to total net taxable income with accessible tooltips.
+2. **Headroom & Next Bracket Alert (`#bracketHeadroomBanner`):**
+   - Informs users of remaining room in current bracket before exceeding into higher rate: e.g. "💡 เหลือเงินได้อีก **฿X** ในขั้น **Y%** ก่อนก้าวขึ้นสู่ขั้น **Z%**".
+   - Celebrates tax-exempt income (0-150k THB) with green alert banner.
+3. **Tier-by-Tier Breakdown Cards (`#taxBreakdown`):**
+   - Color-coded rate badges, taxable amount, mini progress fill bar, and tax generated in that tier.
+4. **Effective Tax Rate (`#txt-effective-tax-rate`):**
+   - Displays real effective tax rate percentage relative to total annual income.
+5. **Bilingual Localization:**
+   - Full Thai and English translations for labels, headroom prompts, and bracket rate badges.
+6. **Verification & Tests:**
+   - Unit tests added in `tests/financial-math.test.mjs` (39 total tests passing).
    - Biome linter passes with 0 errors.
-   - Bumped to `v1.9.1` via `node scripts/bump.mjs patch`.
+   - Bumped to `v1.9.2` via `node scripts/bump.mjs patch`.
 
 #### 4. Acceptance Criteria
-- [x] Financial Goals & Milestones panel rendered with real-time progress bars in `dashboard.html`.
-- [x] Users can customize Emergency Reserve Runway and Net Worth targets via modal settings with quick presets.
-- [x] Targets are safely persisted offline in `moneySuperapp.financialGoals.v1`.
-- [x] Complete bilingual support (TH / EN) and keyboard accessibility (`Escape` key modal dismissal).
-- [x] Automated unit test suite expanded to 36 tests with 100% pass rate.
+- [x] Segmented Tax Bracket Waterfall bar renders smoothly with proportional tier colors.
+- [x] Marginal headroom alert displays room before next tax bracket.
+- [x] Per-tier cards render with individual progress fill bars and tax contributions.
+- [x] Effective tax rate displayed dynamically.
+- [x] Full bilingual support (TH / EN).
+- [x] 39/39 automated unit tests pass and Biome check passes cleanly.

@@ -425,4 +425,120 @@ describe('Financial Math Verification', () => {
       assert.equal(res.isDebtFree, false);
     });
   });
+
+  describe('Tax Bracket Waterfall Allocation & Headroom', () => {
+    function computeTaxWaterfall(netIncome) {
+      const brackets = [
+        { limit: 150000, rate: 0, color: '#10b981', labelTh: '0 - 150,000', labelEn: '0 - 150,000' },
+        { limit: 150000, rate: 0.05, color: '#06b6d4', labelTh: '150,001 - 300,000', labelEn: '150,001 - 300,000' },
+        { limit: 200000, rate: 0.1, color: '#3b82f6', labelTh: '300,001 - 500,000', labelEn: '300,001 - 500,000' },
+        { limit: 250000, rate: 0.15, color: '#6366f1', labelTh: '500,001 - 750,000', labelEn: '500,001 - 750,000' },
+        { limit: 250000, rate: 0.2, color: '#8b5cf6', labelTh: '750,001 - 1,000,000', labelEn: '750,001 - 1,000,000' },
+        {
+          limit: 1000000,
+          rate: 0.25,
+          color: '#f59e0b',
+          labelTh: '1,000,001 - 2,000,000',
+          labelEn: '1,000,001 - 2,000,000',
+        },
+        {
+          limit: 3000000,
+          rate: 0.3,
+          color: '#f97316',
+          labelTh: '2,000,001 - 5,000,000',
+          labelEn: '2,000,001 - 5,000,000',
+        },
+        { limit: Infinity, rate: 0.35, color: '#ef4444', labelTh: '5,000,001 ขึ้นไป', labelEn: 'Over 5,000,000' },
+      ];
+
+      let remaining = Math.max(0, netIncome);
+      let totalTax = 0;
+      const tiers = [];
+      let topMarginalRate = 0;
+      let headroom = 0;
+      let nextBracketRate = 0;
+
+      for (let i = 0; i < brackets.length; i++) {
+        const b = brackets[i];
+        if (remaining <= 0 && tiers.length > 0) break;
+
+        const taxable = Math.min(remaining, b.limit);
+        const tax = taxable * b.rate;
+        totalTax += tax;
+        remaining -= taxable;
+
+        const isFull = taxable === b.limit;
+        const pctOfTier = b.limit === Infinity ? 100 : Math.min(100, Math.round((taxable / b.limit) * 100));
+        const pctOfNet = netIncome > 0 ? (taxable / netIncome) * 100 : 0;
+
+        topMarginalRate = Math.round(b.rate * 100);
+        headroom = b.limit === Infinity ? Infinity : Math.max(0, b.limit - taxable);
+        nextBracketRate = i + 1 < brackets.length ? Math.round(brackets[i + 1].rate * 100) : 35;
+
+        tiers.push({
+          index: i,
+          rate: b.rate,
+          ratePct: Math.round(b.rate * 100),
+          labelTh: b.labelTh,
+          labelEn: b.labelEn,
+          color: b.color,
+          limit: b.limit,
+          taxable,
+          tax,
+          isFull,
+          pctOfTier,
+          pctOfNet,
+          headroom,
+        });
+      }
+
+      return {
+        netIncome,
+        totalTax,
+        topMarginalRate,
+        headroom,
+        nextBracketRate,
+        tiers,
+      };
+    }
+
+    it('allocates 0 THB net income into exempt tier with full headroom', () => {
+      const wf = computeTaxWaterfall(0);
+      assert.equal(wf.totalTax, 0);
+      assert.equal(wf.topMarginalRate, 0);
+      assert.equal(wf.headroom, 150000);
+      assert.equal(wf.tiers.length, 1);
+      assert.equal(wf.tiers[0].taxable, 0);
+    });
+
+    it('calculates correct multi-tier waterfall and marginal headroom', () => {
+      // 250,000 THB net income:
+      // Tier 0 (0%): 150,000 THB full, 0 tax
+      // Tier 1 (5%): 100,000 THB, 5,000 tax, 50,000 headroom
+      const wf = computeTaxWaterfall(250000);
+      assert.equal(wf.totalTax, 5000);
+      assert.equal(wf.topMarginalRate, 5);
+      assert.equal(wf.headroom, 50000);
+      assert.equal(wf.nextBracketRate, 10);
+      assert.equal(wf.tiers.length, 2);
+      assert.equal(wf.tiers[0].isFull, true);
+      assert.equal(wf.tiers[1].isFull, false);
+      assert.equal(wf.tiers[1].taxable, 100000);
+      assert.equal(wf.tiers[1].tax, 5000);
+    });
+
+    it('detects bracket ceiling saturation and highest 35% tier infinity headroom', () => {
+      // 1,000,000 THB net income: exactly fills 20% bracket (headroom = 0)
+      const wf1m = computeTaxWaterfall(1000000);
+      assert.equal(wf1m.totalTax, 115000);
+      assert.equal(wf1m.topMarginalRate, 20);
+      assert.equal(wf1m.headroom, 0);
+      assert.equal(wf1m.nextBracketRate, 25);
+
+      // 6,000,000 THB net income: top 35% tier
+      const wf6m = computeTaxWaterfall(6000000);
+      assert.equal(wf6m.topMarginalRate, 35);
+      assert.equal(wf6m.headroom, Infinity);
+    });
+  });
 });

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="1.9.1">
+    <meta name="version" content="1.9.2">
     <meta name="description" content="คำนวณภาษีเงินได้บุคคลธรรมดา — ประมาณการภาษีเงินได้จากเงินเดือนและโบนัส พร้อมแสดงรายละเอียดตามขั้นบันได">
     <title>คำนวณภาษีเงินได้บุคคลธรรมดา</title>
     <link rel="stylesheet" href="css/tailwind-lite.css">
@@ -368,8 +368,19 @@
         </div>
 
         <div class="mt-4">
-            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2" id="lbl-breakdownTitle">รายละเอียดภาษีตามขั้นบันได</p>
-            <div id="taxBreakdown" class="space-y-1 text-xs text-gray-600"></div>
+            <div class="flex items-center justify-between mb-2">
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide" id="lbl-breakdownTitle">รายละเอียดภาษีตามขั้นบันได (Waterfall)</p>
+                <span id="txt-effective-tax-rate" class="text-xs font-bold text-gray-500"></span>
+            </div>
+
+            <!-- Segmented Waterfall Bar -->
+            <div id="waterfallBarContainer" class="w-full h-3 rounded-full overflow-hidden flex bg-gray-100 mb-2.5 border border-gray-200" role="progressbar" aria-label="Tax bracket distribution"></div>
+
+            <!-- Headroom Alert Banner -->
+            <div id="bracketHeadroomBanner" class="p-2.5 rounded-lg text-xs mb-3 border flex items-center justify-between" style="display:none;"></div>
+
+            <!-- Detailed Tiers List -->
+            <div id="taxBreakdown" class="space-y-2 text-xs text-gray-600"></div>
         </div>
 
         <!-- Tax Optimization Advisor (SSF/RMF/Thai ESG Smart Suggestions) -->
@@ -410,7 +421,7 @@
                     <span id="lbl-reset-tax">ล้างข้อมูล</span>
                 </button>
             </div>
-            <p class="text-xs text-gray-400">v1.9.1</p>
+            <p class="text-xs text-gray-400">v1.9.2</p>
         </div>
     </div>
 
@@ -458,7 +469,7 @@
                 'lbl-moreDeduct': 'Additional deductions:',
                 'lbl-netIncome': 'Net taxable income:',
                 'lbl-taxAmount': 'Estimated tax payable',
-                'lbl-breakdownTitle': 'Tax breakdown by bracket',
+                'lbl-breakdownTitle': 'Tax breakdown by bracket (Waterfall)',
                 'txt-advisor-title': 'Tax Optimization Advisor',
                 'btn-advisor-drop': '🎯 Drop 1 Bracket',
                 'btn-advisor-max': '🌟 Maximize Deductions',
@@ -618,6 +629,69 @@
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
             } catch(e){}
+        }
+
+        function computeTaxWaterfall(netIncome) {
+            const brackets = [
+                { limit: 150000, rate: 0,    color: '#10b981', labelTh: '0 - 150,000',             labelEn: '0 - 150,000' },
+                { limit: 150000, rate: 0.05, color: '#06b6d4', labelTh: '150,001 - 300,000',       labelEn: '150,001 - 300,000' },
+                { limit: 200000, rate: 0.10, color: '#3b82f6', labelTh: '300,001 - 500,000',       labelEn: '300,001 - 500,000' },
+                { limit: 250000, rate: 0.15, color: '#6366f1', labelTh: '500,001 - 750,000',       labelEn: '500,001 - 750,000' },
+                { limit: 250000, rate: 0.20, color: '#8b5cf6', labelTh: '750,001 - 1,000,000',     labelEn: '750,001 - 1,000,000' },
+                { limit: 1000000, rate: 0.25, color: '#f59e0b', labelTh: '1,000,001 - 2,000,000',  labelEn: '1,000,001 - 2,000,000' },
+                { limit: 3000000, rate: 0.30, color: '#f97316', labelTh: '2,000,001 - 5,000,000',  labelEn: '2,000,001 - 5,000,000' },
+                { limit: Infinity, rate: 0.35, color: '#ef4444', labelTh: '5,000,001 ขึ้นไป',      labelEn: 'Over 5,000,000' }
+            ];
+
+            let remaining = Math.max(0, netIncome);
+            let totalTax = 0;
+            const tiers = [];
+            let topMarginalRate = 0;
+            let headroom = 0;
+            let nextBracketRate = 0;
+
+            for (let i = 0; i < brackets.length; i++) {
+                const b = brackets[i];
+                if (remaining <= 0 && tiers.length > 0) break;
+
+                const taxable = Math.min(remaining, b.limit);
+                const tax = taxable * b.rate;
+                totalTax += tax;
+                remaining -= taxable;
+
+                const isFull = taxable === b.limit;
+                const pctOfTier = b.limit === Infinity ? 100 : Math.min(100, Math.round((taxable / b.limit) * 100));
+                const pctOfNet = netIncome > 0 ? (taxable / netIncome) * 100 : 0;
+
+                topMarginalRate = Math.round(b.rate * 100);
+                headroom = b.limit === Infinity ? Infinity : Math.max(0, b.limit - taxable);
+                nextBracketRate = i + 1 < brackets.length ? Math.round(brackets[i + 1].rate * 100) : 35;
+
+                tiers.push({
+                    index: i,
+                    rate: b.rate,
+                    ratePct: Math.round(b.rate * 100),
+                    labelTh: b.labelTh,
+                    labelEn: b.labelEn,
+                    color: b.color,
+                    limit: b.limit,
+                    taxable,
+                    tax,
+                    isFull,
+                    pctOfTier,
+                    pctOfNet,
+                    headroom
+                });
+            }
+
+            return {
+                netIncome,
+                totalTax,
+                topMarginalRate,
+                headroom,
+                nextBracketRate,
+                tiers
+            };
         }
 
         function calculateTax() {
@@ -784,37 +858,82 @@
             let netIncome = totalIncome - totalDeductions;
             if (netIncome < 0) netIncome = 0;
 
-            // ตารางอัตราภาษี (ขั้นบันได)
-            const brackets = [
-                { limit: 150000, rate: 0,    labelTh: '0 - 150,000',             labelEn: '0 - 150,000' },
-                { limit: 150000, rate: 0.05, labelTh: '150,001 - 300,000',       labelEn: '150,001 - 300,000' },
-                { limit: 200000, rate: 0.10, labelTh: '300,001 - 500,000',       labelEn: '300,001 - 500,000' },
-                { limit: 250000, rate: 0.15, labelTh: '500,001 - 750,000',       labelEn: '500,001 - 750,000' },
-                { limit: 250000, rate: 0.20, labelTh: '750,001 - 1,000,000',     labelEn: '750,001 - 1,000,000' },
-                { limit: 1000000, rate: 0.25, labelTh: '1,000,001 - 2,000,000',  labelEn: '1,000,001 - 2,000,000' },
-                { limit: 3000000, rate: 0.30, labelTh: '2,000,001 - 5,000,000',  labelEn: '2,000,001 - 5,000,000' },
-                { limit: Infinity, rate: 0.35, labelTh: '5,000,001 ขึ้นไป',      labelEn: 'Over 5,000,000' }
-            ];
+            const wf = computeTaxWaterfall(netIncome);
+            const tax = wf.totalTax;
+            const isEn = LANG === 'en';
 
-            let tax = 0;
-            let remainingIncome = netIncome;
-            const breakdown = [];
-
-            for (let i = 0; i < brackets.length; i++) {
-                if (remainingIncome <= 0) break;
-
-                const taxableAtThisBracket = Math.min(remainingIncome, brackets[i].limit);
-                const taxAtThisBracket = taxableAtThisBracket * brackets[i].rate;
-                tax += taxAtThisBracket;
-                remainingIncome -= taxableAtThisBracket;
-                breakdown.push({ bracket: brackets[i], taxable: taxableAtThisBracket, tax: taxAtThisBracket });
+            // 1. Effective Tax Rate
+            const effEl = document.getElementById('txt-effective-tax-rate');
+            if (effEl) {
+                const effRate = totalIncome > 0 ? ((tax / totalIncome) * 100).toFixed(1) : '0.0';
+                effEl.textContent = `${isEn ? 'Effective rate: ' : 'อัตราภาษีเฉลี่ย: '}${effRate}%`;
             }
 
+            // 2. Segmented Waterfall Bar
+            const barEl = document.getElementById('waterfallBarContainer');
+            if (barEl) {
+                if (netIncome <= 0) {
+                    barEl.innerHTML = `<div class="h-full w-full bg-emerald-500 flex items-center justify-center text-[10px] text-white font-medium">${isEn ? 'Tax Exempt (0 THB)' : 'ยกเว้นภาษี (0 บาท)'}</div>`;
+                } else {
+                    barEl.innerHTML = wf.tiers.map(t => {
+                        const width = t.pctOfNet.toFixed(1);
+                        if (t.taxable <= 0) return '';
+                        const title = `${t.ratePct}%: ${formatMoney(t.taxable)} ${unit} (ภาษี ${formatMoney(t.tax)} ${unit})`;
+                        return `<div style="width:${width}%; background:${t.color};" class="h-full transition-all duration-300 relative" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}"></div>`;
+                    }).join('');
+                }
+            }
+
+            // 3. Headroom Banner
+            const headroomEl = document.getElementById('bracketHeadroomBanner');
+            if (headroomEl) {
+                headroomEl.style.display = 'flex';
+                if (netIncome <= 150000) {
+                    headroomEl.className = 'p-2.5 rounded-lg text-xs mb-3 border border-emerald-200 bg-emerald-50 text-emerald-800 flex items-center justify-between';
+                    const remExempt = Math.max(0, 150000 - netIncome);
+                    headroomEl.innerHTML = `<span>🎉 ${isEn ? 'Net income is within the tax-exempt bracket (0-150k THB).' : 'เงินได้สุทธิอยู่ในเกณฑ์ยกเว้นภาษี (0 - 150,000 บาท)'} ${remExempt > 0 ? (isEn ? `(${formatMoney(remExempt)} THB room remaining)` : `(เหลือโควตายกเว้นอีก ${formatMoney(remExempt)} บาท)`) : ''}</span>`;
+                } else if (wf.topMarginalRate === 35) {
+                    headroomEl.className = 'p-2.5 rounded-lg text-xs mb-3 border border-rose-200 bg-rose-50 text-rose-800 flex items-center justify-between';
+                    headroomEl.innerHTML = `<span>🔥 ${isEn ? 'Income has reached the highest bracket (35%).' : 'เงินได้อยู่ในขั้นบันไดสูงสุด (35%)'}</span>`;
+                } else if (wf.headroom === 0) {
+                    headroomEl.className = 'p-2.5 rounded-lg text-xs mb-3 border border-amber-200 bg-amber-50 text-amber-800 flex items-center justify-between';
+                    headroomEl.innerHTML = `<span>⚠️ ${isEn ? `Maxed out the ${wf.topMarginalRate}% tier. Excess income enters ${wf.nextBracketRate}%.` : `เงินได้เต็มเพดานขั้น ${wf.topMarginalRate}% พอดี เงินได้ส่วนเพิ่มจะเริ่มเสียที่ ${wf.nextBracketRate}%`}</span>`;
+                } else {
+                    headroomEl.className = 'p-2.5 rounded-lg text-xs mb-3 border border-blue-200 bg-blue-50 text-blue-800 flex items-center justify-between';
+                    headroomEl.innerHTML = `<span>💡 ${isEn ? `<strong>${formatMoney(wf.headroom)} ${unit}</strong> headroom left at <strong>${wf.topMarginalRate}%</strong> before stepping into <strong>${wf.nextBracketRate}%</strong>` : `เหลือเงินได้อีก <strong>${formatMoney(wf.headroom)} ${unit}</strong> ในขั้น <strong>${wf.topMarginalRate}%</strong> ก่อนก้าวขึ้นสู่ขั้น <strong>${wf.nextBracketRate}%</strong>`}</span>`;
+                }
+            }
+
+            // 4. Detailed Tiers Cards
             const breakdownEl = document.getElementById('taxBreakdown');
-            breakdownEl.innerHTML = breakdown.map(b => {
-                const label = LANG === 'en' ? b.bracket.labelEn : b.bracket.labelTh;
-                return `<div class="flex justify-between"><span>${label} (${(b.bracket.rate * 100).toFixed(0)}%)</span><span class="font-medium">${formatMoney(b.tax)} ${unit}</span></div>`;
-            }).join('');
+            if (breakdownEl) {
+                if (netIncome <= 0) {
+                    breakdownEl.innerHTML = `<div class="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-center font-medium">${isEn ? '🎉 No taxable net income — 0 THB tax payable' : '🎉 ไม่มีเงินได้สุทธิที่ต้องเสียภาษี — ภาษี 0 บาท'}</div>`;
+                } else {
+                    breakdownEl.innerHTML = wf.tiers.map(t => {
+                        const label = isEn ? t.labelEn : t.labelTh;
+                        const isExempt = t.rate === 0;
+                        const rateBadge = isExempt ? (isEn ? 'Exempt' : 'ยกเว้น') : `${t.ratePct}%`;
+                        return `
+                        <div class="p-2.5 rounded-lg border border-gray-100 bg-gray-50/80 hover:bg-gray-50 transition-colors">
+                            <div class="flex justify-between items-center mb-1">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold text-white shadow-xs" style="background:${t.color}">${rateBadge}</span>
+                                    <span class="font-medium text-gray-700">${label}</span>
+                                </div>
+                                <span class="font-bold ${t.tax > 0 ? 'text-gray-900' : 'text-emerald-600'}">${formatMoney(t.tax)} ${unit}</span>
+                            </div>
+                            <div class="w-full h-1.5 rounded-full bg-gray-200 overflow-hidden my-1.5">
+                                <div class="h-full rounded-full transition-all duration-300" style="width:${t.pctOfTier}%; background:${t.color}"></div>
+                            </div>
+                            <div class="flex justify-between text-[11px] text-gray-500">
+                                <span>${isEn ? 'Taxable: ' : 'เงินได้ในขั้น: '}${formatMoney(t.taxable)} ${unit}</span>
+                                <span>${t.isFull ? (isEn ? 'Full' : 'เต็มขั้น') : (t.limit === Infinity ? '' : (isEn ? `Room: ${formatMoney(t.headroom)}` : `เหลืออีก: ${formatMoney(t.headroom)}`))}</span>
+                            </div>
+                        </div>`;
+                    }).join('');
+                }
+            }
 
             // แสดงผลลัพธ์
             document.getElementById('totalIncome').innerText = formatMoney(totalIncome) + ' ' + unit;
