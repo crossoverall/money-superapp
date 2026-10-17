@@ -50,6 +50,16 @@ if (LANG === 'en') {
     'lbl-opt-rmf-total-lbl': 'Total retained net wealth:',
     'lbl-opt-note':
       '💡 <strong>Recommendation:</strong> Rolling over PVD into an RMF for PVD within 30 days keeps 100% of PVD funds tax-exempt, compounding tax-free until age 55 for tax-exempt withdrawals.',
+    'lbl-sso-title': '🏥 Social Security Benefits &amp; Pension Simulator',
+    'lbl-sso-subtitle': 'Section 33 (Regular Employee), Section 39 (Voluntary), Section 40 (Freelance)',
+    'lbl-sso-sec': 'Section (มาตรา)',
+    'opt-sso-33': 'Sec. 33 (Regular Employee)',
+    'opt-sso-39': 'Sec. 39 (Voluntary Insured)',
+    'opt-sso-40': 'Sec. 40 (Freelance / Self-employed)',
+    'lbl-sso-wage': 'Avg. wage over last 60 months (THB)',
+    'lbl-sso-years': 'Contribution period (Years)',
+    'lbl-sso-res-pension': 'Lifetime Monthly Pension:',
+    'lbl-sso-res-lump': 'Lump-sum (if < 15 yrs) / 20-Year Total:',
   };
   Object.keys(EN).forEach((id) => {
     const el = document.getElementById(id);
@@ -605,40 +615,58 @@ function calculateSsoBenefits() {
   const cumDescEl = document.getElementById('valSsoCumulativeDesc');
   const badgeEl = document.getElementById('ssoStatutoryAllowances');
 
+  const isEn = LANG === 'en';
+
   if (pensionEl) {
     pensionEl.textContent = res.pensionEligible
-      ? `${formatMoney(res.pensionMonthly, 2)} บาท/เดือน`
-      : 'ยังไม่เข้าเกณฑ์บำนาญ (ส่ง < 15 ปี)';
+      ? `${formatMoney(res.pensionMonthly, 2)} ${isEn ? 'THB/month' : 'บาท/เดือน'}`
+      : isEn
+        ? 'Not eligible for monthly pension (< 15 years contributed)'
+        : 'ยังไม่เข้าเกณฑ์บำนาญ (ส่ง < 15 ปี)';
   }
 
   if (formulaEl) {
     if (res.pensionEligible) {
       const extraYrs = Math.max(0, Math.floor(res.contributionYears - 15));
-      formulaEl.textContent = `อัตรา ${res.pensionRatePct.toFixed(1)}% (ฐาน 20% + เพิ่ม ${(extraYrs * 1.5).toFixed(1)}% จาก ${extraYrs} ปีส่วนเกิน)`;
+      formulaEl.textContent = isEn
+        ? `Rate ${res.pensionRatePct.toFixed(1)}% (Base 20% + ${(extraYrs * 1.5).toFixed(1)}% from ${extraYrs} extra years)`
+        : `อัตรา ${res.pensionRatePct.toFixed(1)}% (ฐาน 20% + เพิ่ม ${(extraYrs * 1.5).toFixed(1)}% จาก ${extraYrs} ปีส่วนเกิน)`;
     } else {
-      formulaEl.textContent = `ส่งแล้ว ${res.contributionMonths} เดือน (ขาดอีก ${Math.max(0, 180 - res.contributionMonths)} เดือนเพื่อรับบำนาญรายเดือน)`;
+      formulaEl.textContent = isEn
+        ? `Contributed ${res.contributionMonths} months (${Math.max(0, 180 - res.contributionMonths)} months remaining for monthly pension)`
+        : `ส่งแล้ว ${res.contributionMonths} เดือน (ขาดอีก ${Math.max(0, 180 - res.contributionMonths)} เดือนเพื่อรับบำนาญรายเดือน)`;
     }
   }
 
   if (cumulativeEl) {
     cumulativeEl.textContent = res.pensionEligible
-      ? `${formatMoney(res.cumulativeAt20Yrs, 2)} บาท`
-      : `${formatMoney(res.lumpSumEstimate, 2)} บาท (บำเหน็จ)`;
+      ? `${formatMoney(res.cumulativeAt20Yrs, 2)} ${isEn ? 'THB' : 'บาท'}`
+      : `${formatMoney(res.lumpSumEstimate, 2)} ${isEn ? 'THB (Lump Sum)' : 'บาท (บำเหน็จ)'}`;
   }
 
   if (cumDescEl) {
     cumDescEl.textContent = res.pensionEligible
-      ? 'ประมาณการรับบำนาญสะสมรวม 20 ปีหลังเกษียณ'
-      : 'เงินออมชราภาพบำเหน็จก้อนเดียว (เงินสะสมผู้ประกันตน + นายจ้าง)';
+      ? isEn
+        ? 'Estimated 20-year cumulative pension payout after retirement'
+        : 'ประมาณการรับบำนาญสะสมรวม 20 ปีหลังเกษียณ'
+      : isEn
+        ? 'One-time lump-sum retirement refund (Employee + Employer contributions)'
+        : 'เงินออมชราภาพบำเหน็จก้อนเดียว (เงินสะสมผู้ประกันตน + นายจ้าง)';
   }
 
   if (badgeEl) {
     if (sec === '33') {
-      badgeEl.innerHTML = `🛡️ <strong>สิทธิประโยชน์อื่นๆ ม.33:</strong> ว่างงานลาออกรับ <strong>${formatMoney(res.unemploymentVoluntaryMonthly)} บ./ด.</strong> (3 ด.) • เลิกจ้างรับ <strong>${formatMoney(res.unemploymentInvoluntaryMonthly)} บ./ด.</strong> (6 ด.) • คลอดบุตร <strong>${formatMoney(res.maternityLumpSum)} บ.</strong> + ค่าหยุดงาน <strong>${formatMoney(res.maternityLeaveAllowance)} บ.</strong> • สงเคราะห์บุตร <strong>${formatMoney(res.childSupportMonthly)} บ./ด.</strong> (จนถึง 6 ปี)`;
+      badgeEl.innerHTML = isEn
+        ? `🛡️ <strong>Other Sec. 33 Statutory Benefits:</strong> Voluntary resignation <strong>${formatMoney(res.unemploymentVoluntaryMonthly)} THB/mo</strong> (3 mos) • Layoff <strong>${formatMoney(res.unemploymentInvoluntaryMonthly)} THB/mo</strong> (6 mos) • Maternity <strong>${formatMoney(res.maternityLumpSum)} THB</strong> + leave allowance <strong>${formatMoney(res.maternityLeaveAllowance)} THB</strong> • Child support <strong>${formatMoney(res.childSupportMonthly)} THB/mo</strong> (up to age 6)`
+        : `🛡️ <strong>สิทธิประโยชน์อื่นๆ ม.33:</strong> ว่างงานลาออกรับ <strong>${formatMoney(res.unemploymentVoluntaryMonthly)} บ./ด.</strong> (3 ด.) • เลิกจ้างรับ <strong>${formatMoney(res.unemploymentInvoluntaryMonthly)} บ./ด.</strong> (6 ด.) • คลอดบุตร <strong>${formatMoney(res.maternityLumpSum)} บ.</strong> + ค่าหยุดงาน <strong>${formatMoney(res.maternityLeaveAllowance)} บ.</strong> • สงเคราะห์บุตร <strong>${formatMoney(res.childSupportMonthly)} บ./ด.</strong> (จนถึง 6 ปี)`;
     } else if (sec === '39') {
-      badgeEl.innerHTML = `🛡️ <strong>สิทธิประโยชน์อื่นๆ ม.39:</strong> รักษาพยาบาลฟรี • คลอดบุตร <strong>${formatMoney(res.maternityLumpSum)} บ.</strong> • สงเคราะห์บุตร <strong>${formatMoney(res.childSupportMonthly)} บ./ด.</strong> (จนถึง 6 ปี) • ทุพพลภาพและเสียชีวิตตามเกณฑ์`;
+      badgeEl.innerHTML = isEn
+        ? `🛡️ <strong>Other Sec. 39 Statutory Benefits:</strong> Free healthcare • Maternity <strong>${formatMoney(res.maternityLumpSum)} THB</strong> • Child support <strong>${formatMoney(res.childSupportMonthly)} THB/mo</strong> (up to age 6) • Disability and death benefits per regulations`
+        : `🛡️ <strong>สิทธิประโยชน์อื่นๆ ม.39:</strong> รักษาพยาบาลฟรี • คลอดบุตร <strong>${formatMoney(res.maternityLumpSum)} บ.</strong> • สงเคราะห์บุตร <strong>${formatMoney(res.childSupportMonthly)} บ./ด.</strong> (จนถึง 6 ปี) • ทุพพลภาพและเสียชีวิตตามเกณฑ์`;
     } else {
-      badgeEl.innerHTML = `🛡️ <strong>สิทธิประโยชน์อื่นๆ ม.40:</strong> เงินทดแทนการขาดรายได้เมื่อเจ็บป่วย/นอน รพ. • ค่าทำศพ • เงินออมชราภาพบำเหน็จเมื่ออายุครบ 60 ปี`;
+      badgeEl.innerHTML = isEn
+        ? `🛡️ <strong>Other Sec. 40 Statutory Benefits:</strong> Sickness/hospitalization income compensation • Funeral allowance • Old-age lump-sum payout at age 60`
+        : `🛡️ <strong>สิทธิประโยชน์อื่นๆ ม.40:</strong> เงินทดแทนการขาดรายได้เมื่อเจ็บป่วย/นอน รพ. • ค่าทำศพ • เงินออมชราภาพบำเหน็จเมื่ออายุครบ 60 ปี`;
     }
   }
 }

@@ -282,5 +282,27 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         );
       });
     }
+
+    it('verifies tax-calculator.js EN dictionary covers all Social Security simulator elements', () => {
+      const filePath = path.join(ROOT_DIR, 'js/tax-calculator.js');
+      const content = fs.readFileSync(filePath, 'utf8');
+
+      const ssoKeys = [
+        'lbl-sso-title',
+        'lbl-sso-subtitle',
+        'lbl-sso-sec',
+        'opt-sso-33',
+        'opt-sso-39',
+        'opt-sso-40',
+        'lbl-sso-wage',
+        'lbl-sso-years',
+        'lbl-sso-res-pension',
+        'lbl-sso-res-lump',
+      ];
+
+      for (const key of ssoKeys) {
+        assert.ok(content.includes(`'${key}':`), `tax-calculator.js EN must define translation for ${key}`);
+      }
+    });
   });
 });

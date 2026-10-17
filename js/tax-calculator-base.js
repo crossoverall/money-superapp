@@ -721,7 +721,7 @@ function calculateTax() {
         .map((t) => {
           const width = t.pctOfNet.toFixed(1);
           if (t.taxable <= 0) return '';
-          const title = `${t.ratePct}%: ${formatMoney(t.taxable)} ${unit} (ภาษี ${formatMoney(t.tax)} ${unit})`;
+          const title = `${t.ratePct}%: ${formatMoney(t.taxable)} ${unit} (${isEn ? 'Tax ' : 'ภาษี '}${formatMoney(t.tax)} ${unit})`;
           return `<div style="width:${width}%; background:${t.color};" class="h-full transition-all duration-300 relative" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}"></div>`;
         })
         .join('');
