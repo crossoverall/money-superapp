@@ -100,6 +100,34 @@ const translations = {
     subPillarWealth: 'ความก้าวหน้าสู่เป้าหมายเกษียณ',
     pillarTax: '🧾 ประสิทธิภาพการลดหย่อนภาษี (Tax Efficiency)',
     subPillarTax: 'การใช้สิทธิประโยชน์ทางภาษี',
+    insPanelTitle: '🛡️ ความคุ้มครองและการประกันชีวิต (Life Insurance Adequacy)',
+    insProfileTitle: '📋 สมมติฐานความต้องการความคุ้มครอง (Capital Needs Assumptions)',
+    insSyncBtn: 'ดึงข้อมูลอัตโนมัติ',
+    insDebtLabel: 'ภาระหนี้สินที่ต้องปิด (Debt):',
+    insDebtSub: 'บ้าน/รถ/บัตร',
+    insExpensesLabel: 'ค่าใช้จ่ายครอบครัวต่อปี (Expenses/yr):',
+    insExpensesSub: 'รายเดือน x 12',
+    insSupportYearsLabel: 'ระยะเวลาส่งเสียเลี้ยงดู (Support Years):',
+    insChildLabel: 'กองทุนการศึกษาบุตร (Child Fund):',
+    insChildSub: 'ค่าเล่าเรียน/เป้าหมาย',
+    insEmergencyLabel: 'เงินสำรองฉุกเฉิน/จัดการศพ (Final Expenses):',
+    insEmergencySub: 'ค่าใช้จ่ายช่วงเปลี่ยนผ่าน',
+    insLiquidLabel: 'สินทรัพย์สภาพคล่องที่มี (Liquid Assets):',
+    insLiquidSub: 'เงินสด + พอร์ต',
+    insExistingLabel: 'ทุนประกันชีวิตเดิมที่มี (Existing Coverage):',
+    insExistingSub: 'กรมธรรม์เดิมรวม',
+    insMeterTitle: 'อัตราความคุ้มครองที่ครอบคลุม (Protection Adequacy):',
+    cardInsNeeds: 'ทุนประกันที่จำเป็น',
+    cardInsResources: 'ทรัพยากรที่มีอยู่เดิม',
+    cardInsGap: 'ช่องว่างความคุ้มครอง',
+    subInsNeeds: 'หนี้สิน + ค่าครองชีพ',
+    subInsResources: 'สินทรัพย์ + ประกันเดิม',
+    subInsAdequate: 'ครอบคลุมเพียงพอ',
+    subInsShortfall: 'ขาดความคุ้มครอง',
+    subInsSurplus: 'มีส่วนเกินความคุ้มครอง',
+    insHlvTitle: 'มุมมองมูลค่าชีวิตมนุษย์ (Human Life Value - HLV):',
+    insTaxTitle: '🧾 สิทธิประโยชน์ลดหย่อนภาษี (PIT Deduction)',
+    insGotoTaxBtn: 'วางแผนภาษี ➔',
   },
   en: {
     title: 'Financial Dashboard',
@@ -202,6 +230,34 @@ const translations = {
     subPillarWealth: 'Progress toward retirement target',
     pillarTax: '🧾 Tax Deduction Efficiency',
     subPillarTax: 'Utilization of tax optimization allowances',
+    insPanelTitle: '🛡️ Life Insurance Adequacy & Protection Gap',
+    insProfileTitle: '📋 Capital Needs Analysis Assumptions',
+    insSyncBtn: 'Auto Sync Data',
+    insDebtLabel: 'Outstanding Debt Clearance (Debt):',
+    insDebtSub: 'Mortgage/Auto/Cards',
+    insExpensesLabel: 'Annual Living Expenses (Expenses/yr):',
+    insExpensesSub: 'Monthly exp x 12',
+    insSupportYearsLabel: 'Support Duration (Support Years):',
+    insChildLabel: 'Children Education Fund (Child Fund):',
+    insChildSub: 'College / milestones',
+    insEmergencyLabel: 'Emergency & Final Expenses:',
+    insEmergencySub: 'Transition cushion',
+    insLiquidLabel: 'Current Liquid Assets (Liquid Assets):',
+    insLiquidSub: 'Cash + Portfolio',
+    insExistingLabel: 'Existing Life Coverage (Existing Coverage):',
+    insExistingSub: 'Current sum assured',
+    insMeterTitle: 'Protection Adequacy Ratio:',
+    cardInsNeeds: 'Total Capital Needed',
+    cardInsResources: 'Existing Resources',
+    cardInsGap: 'Protection Gap',
+    subInsNeeds: 'Debt + living expenses',
+    subInsResources: 'Liquid assets + insurance',
+    subInsAdequate: 'Adequately Covered',
+    subInsShortfall: 'Coverage Shortfall',
+    subInsSurplus: 'Coverage Surplus',
+    insHlvTitle: 'Human Life Value (HLV) Perspective:',
+    insTaxTitle: '🧾 Tax Deduction Opportunity (PIT)',
+    insGotoTaxBtn: 'Tax Planning ➔',
   },
 };
 
@@ -291,6 +347,31 @@ function applyLocalization() {
     'lbl-mc-p10-title': t.lblMcP10Title,
     'lbl-mc-p50-title': t.lblMcP50Title,
     'lbl-mc-p90-title': t.lblMcP90Title,
+    'lbl-ins-title': t.insPanelTitle,
+    'lbl-ins-profile-title': t.insProfileTitle,
+    lblSyncInsurance: t.insSyncBtn,
+    'lbl-ins-debt': t.insDebtLabel,
+    'lbl-ins-debt-sub': t.insDebtSub,
+    'lbl-ins-expenses': t.insExpensesLabel,
+    'lbl-ins-expenses-sub': t.insExpensesSub,
+    'lbl-ins-support-years': t.insSupportYearsLabel,
+    'lbl-ins-child': t.insChildLabel,
+    'lbl-ins-child-sub': t.insChildSub,
+    'lbl-ins-emergency': t.insEmergencyLabel,
+    'lbl-ins-emergency-sub': t.insEmergencySub,
+    'lbl-ins-liquid': t.insLiquidLabel,
+    'lbl-ins-liquid-sub': t.insLiquidSub,
+    'lbl-ins-existing': t.insExistingLabel,
+    'lbl-ins-existing-sub': t.insExistingSub,
+    'lbl-ins-meter-title': t.insMeterTitle,
+    'lbl-card-ins-needs': t.cardInsNeeds,
+    'lbl-card-ins-resources': t.cardInsResources,
+    'lbl-card-ins-gap': t.cardInsGap,
+    'sub-ins-needs-breakdown': t.subInsNeeds,
+    'sub-ins-resources-breakdown': t.subInsResources,
+    'lbl-ins-hlv-title': t.insHlvTitle,
+    'lbl-ins-tax-title': t.insTaxTitle,
+    'btn-ins-goto-tax': t.insGotoTaxBtn,
   };
 
   const mcExplEl = document.getElementById('lbl-mc-expl');
@@ -319,6 +400,17 @@ function applyLocalization() {
   if (btnHor20) btnHor20.textContent = LANG === 'en' ? '20 Yrs' : '20 ปี';
   const btnHor30 = document.getElementById('btnHorPreset30');
   if (btnHor30) btnHor30.textContent = LANG === 'en' ? '30 Yrs' : '30 ปี';
+
+  const btnIns3 = document.getElementById('btnInsYear3');
+  if (btnIns3) btnIns3.textContent = LANG === 'en' ? '3 Yrs' : '3 ปี';
+  const btnIns5 = document.getElementById('btnInsYear5');
+  if (btnIns5) btnIns5.textContent = LANG === 'en' ? '5 Yrs' : '5 ปี';
+  const btnIns10 = document.getElementById('btnInsYear10');
+  if (btnIns10) btnIns10.textContent = LANG === 'en' ? '10 Yrs' : '10 ปี';
+  const btnIns15 = document.getElementById('btnInsYear15');
+  if (btnIns15) btnIns15.textContent = LANG === 'en' ? '15 Yrs' : '15 ปี';
+  const btnIns20 = document.getElementById('btnInsYear20');
+  if (btnIns20) btnIns20.textContent = LANG === 'en' ? '20 Yrs' : '20 ปี';
 }
 
 applyLocalization();
@@ -491,6 +583,7 @@ function gatherFinancialProfile() {
     topMarginalRate,
     estimatedTax,
     debtFreeText,
+    annualIncome: monthlyIncome * 12,
   };
 }
 
@@ -876,6 +969,290 @@ function renderNetWorthComposition(p, t) {
       badgeSolvency.style.color = 'var(--danger)';
       badgeSolvency.style.borderColor = 'var(--danger)';
       badgeSolvency.textContent = t.solvencyCaution || 'หนี้สินสูง';
+    }
+  }
+}
+
+// --- Life Insurance Adequacy & Family Protection Gap Engine ---
+const INSURANCE_STORAGE_KEY = 'moneySuperapp.insuranceAdequacy.v1';
+
+let insuranceAdequacyState = {
+  debtClearance: null,
+  monthlyExpenses: null,
+  supportYears: 10,
+  childEducation: 0,
+  emergencyCushion: 200000,
+  liquidAssets: null,
+  existingCoverage: 0,
+};
+
+function initInsuranceAdequacy() {
+  try {
+    const raw = localStorage.getItem(INSURANCE_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        insuranceAdequacyState = { ...insuranceAdequacyState, ...parsed };
+      }
+    }
+  } catch (_e) {}
+
+  const p = gatherFinancialProfile();
+
+  const debtInput = document.getElementById('inpInsDebt');
+  const expensesInput = document.getElementById('inpInsExpenses');
+  const supportYearsInput = document.getElementById('inpInsSupportYears');
+  const childInput = document.getElementById('inpInsChild');
+  const emergencyInput = document.getElementById('inpInsEmergency');
+  const liquidInput = document.getElementById('inpInsLiquid');
+  const existingInput = document.getElementById('inpInsExisting');
+
+  if (debtInput) {
+    debtInput.value =
+      insuranceAdequacyState.debtClearance !== null ? insuranceAdequacyState.debtClearance : p.totalDebt;
+  }
+
+  if (expensesInput) {
+    expensesInput.value =
+      insuranceAdequacyState.monthlyExpenses !== null
+        ? insuranceAdequacyState.monthlyExpenses
+        : Math.round(p.monthlyExpense * 12);
+  }
+
+  if (supportYearsInput) {
+    supportYearsInput.value = insuranceAdequacyState.supportYears || 10;
+  }
+
+  if (childInput) {
+    childInput.value = insuranceAdequacyState.childEducation || '';
+  }
+
+  if (emergencyInput) {
+    emergencyInput.value =
+      insuranceAdequacyState.emergencyCushion !== undefined ? insuranceAdequacyState.emergencyCushion : 200000;
+  }
+
+  if (liquidInput) {
+    liquidInput.value =
+      insuranceAdequacyState.liquidAssets !== null
+        ? insuranceAdequacyState.liquidAssets
+        : Math.round(p.portfolioVal + p.emergencyReserve);
+  }
+
+  if (existingInput) {
+    existingInput.value = insuranceAdequacyState.existingCoverage || '';
+  }
+
+  updateInsuranceSupportPills(insuranceAdequacyState.supportYears || 10);
+  updateInsuranceAdequacy();
+}
+
+function syncInsuranceFromTools() {
+  const p = gatherFinancialProfile();
+  const debtInput = document.getElementById('inpInsDebt');
+  const expensesInput = document.getElementById('inpInsExpenses');
+  const liquidInput = document.getElementById('inpInsLiquid');
+
+  if (debtInput) debtInput.value = p.totalDebt;
+  if (expensesInput) expensesInput.value = Math.round(p.monthlyExpense * 12);
+  if (liquidInput) liquidInput.value = Math.round(p.portfolioVal + p.emergencyReserve);
+
+  updateInsuranceAdequacy();
+}
+
+function setInsuranceSupportYears(years) {
+  const input = document.getElementById('inpInsSupportYears');
+  if (input) {
+    input.value = years;
+    updateInsuranceAdequacy();
+  }
+}
+
+function updateInsuranceSupportPills(activeYears) {
+  const pills = [
+    { el: document.getElementById('btnInsYear3'), yr: 3 },
+    { el: document.getElementById('btnInsYear5'), yr: 5 },
+    { el: document.getElementById('btnInsYear10'), yr: 10 },
+    { el: document.getElementById('btnInsYear15'), yr: 15 },
+    { el: document.getElementById('btnInsYear20'), yr: 20 },
+  ];
+  pills.forEach(({ el, yr }) => {
+    if (el) {
+      if (yr === activeYears) {
+        el.classList.add('active');
+      } else {
+        el.classList.remove('active');
+      }
+    }
+  });
+}
+
+function updateInsuranceAdequacy() {
+  const debtInput = document.getElementById('inpInsDebt');
+  const expensesInput = document.getElementById('inpInsExpenses');
+  const supportYearsInput = document.getElementById('inpInsSupportYears');
+  const childInput = document.getElementById('inpInsChild');
+  const emergencyInput = document.getElementById('inpInsEmergency');
+  const liquidInput = document.getElementById('inpInsLiquid');
+  const existingInput = document.getElementById('inpInsExisting');
+
+  const p = gatherFinancialProfile();
+
+  const debtClearance = debtInput ? parseNum(debtInput.value) : 0;
+  const annualExpenses = expensesInput ? parseNum(expensesInput.value) : 0;
+  const monthlyExpenses = annualExpenses / 12;
+  const supportYears = supportYearsInput ? parseNum(supportYearsInput.value) : 10;
+  const childEducation = childInput ? parseNum(childInput.value) : 0;
+  const emergencyCushion = emergencyInput ? parseNum(emergencyInput.value) : 0;
+  const liquidAssets = liquidInput ? parseNum(liquidInput.value) : 0;
+  const existingCoverage = existingInput ? parseNum(existingInput.value) : 0;
+
+  insuranceAdequacyState = {
+    debtClearance,
+    monthlyExpenses: annualExpenses,
+    supportYears,
+    childEducation,
+    emergencyCushion,
+    liquidAssets,
+    existingCoverage,
+  };
+  try {
+    localStorage.setItem(INSURANCE_STORAGE_KEY, JSON.stringify(insuranceAdequacyState));
+  } catch (_e) {}
+
+  const yrDisplay = document.getElementById('valInsSupportYearsDisplay');
+  if (yrDisplay) {
+    yrDisplay.textContent = `${supportYears} ${LANG === 'en' ? 'Yrs' : 'ปี'}`;
+  }
+  updateInsuranceSupportPills(supportYears);
+
+  const calc = MoneyApp.calculateInsuranceAdequacy({
+    debtClearance,
+    monthlyExpenses,
+    supportYears,
+    childEducation,
+    emergencyCushion,
+    liquidAssets,
+    existingCoverage,
+    annualIncome: p.annualIncome || p.monthlyIncome * 12,
+    marginalTaxRate: p.topMarginalRate,
+  });
+
+  const pctDisplay = document.getElementById('txt-ins-adequacy-pct');
+  const progressBar = document.getElementById('bar-ins-adequacy');
+  const badgeStatus = document.getElementById('badge-ins-status');
+
+  const displayPct = Math.min(100, Math.round(calc.adequacyRatio));
+  if (pctDisplay) {
+    pctDisplay.textContent = `${calc.adequacyRatio.toFixed(1)}%`;
+  }
+
+  if (progressBar) {
+    progressBar.style.width = `${displayPct}%`;
+    if (calc.status === 'severe_shortfall') {
+      progressBar.style.background = 'var(--danger)';
+    } else if (calc.status === 'shortfall') {
+      progressBar.style.background = 'var(--warn)';
+    } else {
+      progressBar.style.background = 'var(--ok)';
+    }
+  }
+
+  if (badgeStatus) {
+    if (calc.status === 'severe_shortfall') {
+      badgeStatus.style.background = 'var(--danger-dim, rgba(239,68,68,0.12))';
+      badgeStatus.style.color = 'var(--danger)';
+      badgeStatus.style.borderColor = 'var(--danger)';
+      badgeStatus.textContent =
+        LANG === 'en'
+          ? `⚠️ Shortfall -${formatMoney(calc.protectionGap)} THB`
+          : `⚠️ ขาด -${formatMoney(calc.protectionGap)} บาท`;
+    } else if (calc.status === 'shortfall') {
+      badgeStatus.style.background = 'var(--warn-dim)';
+      badgeStatus.style.color = 'var(--warn)';
+      badgeStatus.style.borderColor = 'var(--warn)';
+      badgeStatus.textContent =
+        LANG === 'en' ? `⚠️ Covered ${calc.adequacyRatio.toFixed(0)}%` : `⚠️ ครอบคลุม ${calc.adequacyRatio.toFixed(0)}%`;
+    } else if (calc.status === 'optimal') {
+      badgeStatus.style.background = 'var(--ok-dim)';
+      badgeStatus.style.color = 'var(--ok)';
+      badgeStatus.style.borderColor = 'var(--ok)';
+      badgeStatus.textContent = LANG === 'en' ? '✅ Adequately Protected' : '✅ คุ้มครองเพียงพอ';
+    } else {
+      badgeStatus.style.background = 'var(--ok-dim)';
+      badgeStatus.style.color = 'var(--ok)';
+      badgeStatus.style.borderColor = 'var(--ok)';
+      badgeStatus.textContent =
+        LANG === 'en' ? `🎉 Surplus +${formatMoney(calc.surplus)} THB` : `🎉 ส่วนเกิน +${formatMoney(calc.surplus)} บาท`;
+    }
+  }
+
+  const resNote = document.getElementById('txt-ins-resources-note');
+  const needsNote = document.getElementById('txt-ins-needs-note');
+  if (resNote) {
+    resNote.textContent = `${LANG === 'en' ? 'Resources: ' : 'ทรัพยากรที่มี: '}${formatMoney(calc.totalExistingResources)} ${unit}`;
+  }
+  if (needsNote) {
+    needsNote.textContent = `${LANG === 'en' ? 'Total Needs: ' : 'ความต้องการทุนประกัน: '}${formatMoney(calc.totalCapitalNeeds)} ${unit}`;
+  }
+
+  const valNeeds = document.getElementById('val-ins-total-needs');
+  const valResources = document.getElementById('val-ins-total-resources');
+  const valGap = document.getElementById('val-ins-gap');
+  const subGap = document.getElementById('sub-ins-gap-status');
+
+  if (valNeeds) valNeeds.textContent = `${formatMoney(calc.totalCapitalNeeds)} ${unit}`;
+  if (valResources) valResources.textContent = `${formatMoney(calc.totalExistingResources)} ${unit}`;
+
+  if (valGap && subGap) {
+    if (calc.protectionGap > 0) {
+      valGap.textContent = `-${formatMoney(calc.protectionGap)} ${unit}`;
+      valGap.style.color = calc.status === 'severe_shortfall' ? 'var(--danger)' : 'var(--warn)';
+      subGap.textContent = LANG === 'en' ? 'Coverage Shortfall' : 'ขาดความคุ้มครอง';
+      subGap.style.color = calc.status === 'severe_shortfall' ? 'var(--danger)' : 'var(--warn)';
+    } else {
+      valGap.textContent = calc.surplus > 0 ? `+${formatMoney(calc.surplus)} ${unit}` : `0 ${unit}`;
+      valGap.style.color = 'var(--ok)';
+      subGap.textContent =
+        calc.surplus > 0
+          ? LANG === 'en'
+            ? 'Surplus Protection'
+            : 'มีส่วนเกินความคุ้มครอง'
+          : LANG === 'en'
+            ? 'Adequately Covered'
+            : 'ครอบคลุมเพียงพอ';
+      subGap.style.color = 'var(--ok)';
+    }
+  }
+
+  const hlvContent = document.getElementById('txt-ins-hlv-content');
+  if (hlvContent) {
+    const annualInc = p.annualIncome || p.monthlyIncome * 12;
+    if (calc.hlvBenchmark > 0) {
+      hlvContent.textContent =
+        LANG === 'en'
+          ? `Standard rule-of-thumb (7x annual income of ${formatMoney(annualInc)} THB) suggests life coverage of ~${formatMoney(calc.hlvBenchmark)} THB.`
+          : `เกณฑ์มาตรฐาน 7 เท่าของรายได้ต่อปี (${formatMoney(annualInc)} บาท) แนะนำทุนประกันประมาณ ${formatMoney(calc.hlvBenchmark)} บาท`;
+    } else {
+      hlvContent.textContent =
+        LANG === 'en'
+          ? 'Enter monthly income in Remaining Money tool to view Human Life Value multiplier recommendation.'
+          : 'บันทึกรายได้ในเครื่องมือ Remaining Money เพื่อประเมินมูลค่าชีวิตมนุษย์ (HLV)';
+    }
+  }
+
+  const taxDesc = document.getElementById('txt-ins-tax-desc');
+  if (taxDesc) {
+    if (calc.protectionGap > 0 && p.topMarginalRate > 0) {
+      taxDesc.innerHTML =
+        LANG === 'en'
+          ? `Under Section 47(1)(d), life insurance premiums are deductible up to 100,000 THB/yr. With your <strong>${p.topMarginalRate}%</strong> tax bracket, closing this gap can yield an estimated tax refund of up to <strong>${formatMoney(calc.potentialTaxSavings)} THB/year</strong>.`
+          : `ตาม ม.47(1)(ง) เบี้ยประกันชีวิตทั่วไปหักลดหย่อนได้สูงสุด 100,000 บาท/ปี — ที่ฐานภาษี <strong>${p.topMarginalRate}%</strong> ของคุณ การทำประกันคุ้มครองความเสี่ยงนี้จะช่วยประหยัดภาษีคืนได้สูงสุดประมาณ <strong>${formatMoney(calc.potentialTaxSavings)} บาท/ปี</strong>`;
+    } else {
+      taxDesc.innerHTML =
+        LANG === 'en'
+          ? 'Life insurance premiums qualify for up to 100,000 THB statutory personal income tax deduction under Revenue Code Section 47(1)(d).'
+          : 'เบี้ยประกันชีวิตทั่วไปสามารถนำมาหักลดหย่อนภาษีเงินได้บุคคลธรรมดาได้สูงสุด 100,000 บาท/ปี ตามมาตรา 47(1)(ง)';
     }
   }
 }
@@ -2333,6 +2710,7 @@ function hideChartTooltip() {
 // Initialize
 renderDashboardKPIs();
 renderFinancialGoals();
+initInsuranceAdequacy();
 renderSnapshotsTable();
 renderChart();
 updateStorageQuotaDisplay();
@@ -2341,6 +2719,7 @@ function refreshDashboard() {
   applyLocalization();
   renderDashboardKPIs();
   renderFinancialGoals();
+  updateInsuranceAdequacy();
   renderSnapshotsTable();
   renderChart();
   updateStorageQuotaDisplay();

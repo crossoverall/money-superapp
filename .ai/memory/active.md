@@ -1,5 +1,5 @@
 ---
-task_id: "SUPERWAVE-PHASE-56"
+task_id: "SUPERWAVE-PHASE-57"
 status: "in_progress"
 current_stage: "planner"
 complexity: "level_2"
@@ -7,20 +7,20 @@ iteration_count: 0
 pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Completed in Phase 55 (v2.3.8):
-- **Design System Re-alignment & Theme Harmonization:**
-  1. Semantic tokens added in `css/theme.css`: `--surface`, `--surface-2`, `--card-bg`, `--accent`, `--accent-hover`, `--label`.
-  2. Eliminated all rogue Tailwind colors (`indigo-*`, `dark:bg-slate-*`, `focus:ring-blue-500`, `bg-blue-50`, `text-blue-800`, `text-blue-600`, `border-blue-200`) across `tax-calculator-base.html`, `months-slips.html`, `tax-calculator.html`, `js/tax-calculator-base.js`, and `js/months-slips.js`.
-  3. Mapped all results cards, tax refund badges, headroom banners, deduction progress meters, and payslip buttons directly to theme CSS variables.
-  4. Added automated regression assertions to `tests/smoke.test.mjs` verifying 0 rogue classes remain.
-  5. 222 tests passing, 0 failing, 0 Biome errors.
+### Completed in Phase 56 (v2.3.9):
+- **Life Insurance Adequacy & Family Protection Gap Calculator:**
+  1. Pure calculation engine `calculateInsuranceAdequacy(params)` implemented in `js/shared.js` and exposed on `MoneyApp`.
+  2. Built interactive Capital Needs Analysis & Human Life Value (HLV $7\times$ income) panel (`panelInsuranceAdequacy`) in `dashboard.html`.
+  3. Integrated automatic pre-hydration from `moneySuperapp.debtCalculator.state.v1` and `remainingMoneyCalculator.state.v1`.
+  4. Added PIT Section 47(1)(d) statutory life insurance tax deduction benefit estimator (up to 100,000 THB) linked to `tax-calculator-base.html`.
+  5. 230 tests passing across 68 suites, 0 Biome errors, 100% TH/EN localization symmetry.
 
-### Active Task: Phase 56 (v2.3.9) — Life Insurance Adequacy & Family Protection Gap Calculator
-- **Goal:** Build the Human Life Value (HLV) & Capital Needs Analysis engine:
-  1. Add dedicated Life Insurance Adequacy calculator panel to `dashboard.html` / `js/dashboard.js`.
-  2. Formula: $\text{Required Protection} = \text{Debt Clearance} + (\text{Monthly Living Expenses} \times 12 \times \text{Years to Support}) + \text{Emergency Fund Cushion} - \text{Current Liquid Assets} - \text{Existing Life Policy Coverage}$.
-  3. Pre-populate debt clearance automatically from `debtCalculator.state.v1` and living expenses from `remaining-money`.
-  4. Provide bridge link to `tax-calculator-base.html` statutory PIT life (100,000 THB) & health (25,000 THB) insurance deduction caps.
-  5. Full bilingual (TH/EN) support and dark mode theme alignment.
-- **Verification:** Native Node tests (`tests/insurance-adequacy.test.mjs`) + Biome lint.
+### Active Task: Phase 57 (v2.4.0) — Thai Gold Bar & Jewelry DCA P/L & Baht Weight Calculator
+- **Goal:** Implement dedicated Thai Gold physical bullion & jewelry weight conversion and DCA profit/loss calculator in `rebalance.html` / `js/rebalance.js`:
+  1. Unit conversion: 1 บาททองคำ = 15.244g (แท่ง 96.5%), 15.16g (รูปพรรณ 96.5%), 1 สลึง = 3.811g.
+  2. Block fee (ค่ากำเหน็จ/ค่าบล็อก) deduction and Gold Traders Association (สมาคมค้าทองคำ) bid-ask spread simulator.
+  3. Weighted average cost basis tracking and unrealized/realized P/L calculation.
+  4. Compliance guidance: Thai Revenue Code exemption for individual physical gold capital gains tax.
+- **Verification:** Native Node tests (`tests/gold-calculator.test.mjs`) + Biome lint.
 - **Invariants:** 100% offline-first PWA, zero runtime CDNs, zero telemetry, zero build step (ADR-001).
+

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.3.8">
+  <meta name="version" content="2.3.9">
   <title>ภาพรวมการเงิน</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -101,6 +101,9 @@
     .deflator-pill { background: var(--panel); border: 1px solid var(--line); color: var(--ink-faint); border-radius: 12px; padding: 1px 7px; font-size: 10px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; }
     .deflator-pill:hover { border-color: var(--blue); color: var(--ink); }
     .deflator-pill.active { background: rgba(37,99,235,0.12); border-color: var(--blue); color: var(--blue); font-weight: 700; }
+    .ins-pill { background: var(--panel); border: 1px solid var(--line); color: var(--ink-faint); border-radius: 12px; padding: 1px 7px; font-size: 10px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; }
+    .ins-pill:hover { border-color: var(--core); color: var(--ink); }
+    .ins-pill.active { background: var(--ok-dim); border-color: var(--ok); color: var(--ok); font-weight: 700; }
 
     .chart-container { width: 100%; height: 200px; margin-top: 10px; position: relative; }
     #svgChart { width:100%; height:100%; overflow:visible; }
@@ -457,6 +460,147 @@
     </div>
   </div>
 
+  <!-- Life Insurance Adequacy & Family Protection Gap Calculator -->
+  <div class="panel" role="region" aria-label="Life Insurance Adequacy &amp; Family Protection Gap" id="panelInsuranceAdequacy">
+    <div class="panel-title" id="lbl-ins-panel-title">
+      <span id="lbl-ins-title">🛡️ ความคุ้มครองและการประกันชีวิต (Life Insurance Adequacy)</span>
+      <span id="badge-ins-status" style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--ok-dim); color:var(--ok); border:1px solid var(--ok);">ครอบคลุม 100%</span>
+    </div>
+
+    <!-- Inputs & Assumptions Container -->
+    <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-size:11px;">
+        <span style="font-weight:700; color:var(--ink);" id="lbl-ins-profile-title">📋 สมมติฐานความต้องการความคุ้มครอง (Capital Needs Assumptions)</span>
+        <button type="button" class="action-btn" onclick="syncInsuranceFromTools()" style="padding:2px 8px; font-size:10px;" id="btnSyncInsurance">
+          🔄 <span id="lblSyncInsurance">ดึงข้อมูลอัตโนมัติ</span>
+        </button>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; font-size:11px;">
+        <!-- Outstanding Debts to Clear -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label for="inpInsDebt" style="font-weight:600; color:var(--ink);" id="lbl-ins-debt">ภาระหนี้สินที่ต้องปิด (Debt):</label>
+            <span style="font-size:9.5px; color:var(--ink-faint);" id="lbl-ins-debt-sub">บ้าน/รถ/บัตร</span>
+          </div>
+          <input type="number" id="inpInsDebt" min="0" step="10000" inputmode="decimal" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateInsuranceAdequacy()">
+        </div>
+
+        <!-- Annual Living Expenses -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label for="inpInsExpenses" style="font-weight:600; color:var(--ink);" id="lbl-ins-expenses">ค่าใช้จ่ายครอบครัวต่อปี (Expenses/yr):</label>
+            <span style="font-size:9.5px; color:var(--ink-faint);" id="lbl-ins-expenses-sub">รายเดือน x 12</span>
+          </div>
+          <input type="number" id="inpInsExpenses" min="0" step="10000" inputmode="decimal" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateInsuranceAdequacy()">
+        </div>
+
+        <!-- Support Horizon Years -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label for="inpInsSupportYears" style="font-weight:600; color:var(--ink);" id="lbl-ins-support-years">ระยะเวลาส่งเสียเลี้ยงดู (Support Years):</label>
+            <span id="valInsSupportYearsDisplay" style="font-weight:700; color:var(--core);">10 ปี</span>
+          </div>
+          <input type="range" id="inpInsSupportYears" min="1" max="25" step="1" value="10" style="width:100%;" oninput="updateInsuranceAdequacy()">
+          <div style="display:flex; gap:4px; margin-top:4px; flex-wrap:wrap;">
+            <button type="button" class="ins-pill" onclick="setInsuranceSupportYears(3)" id="btnInsYear3">3 ปี</button>
+            <button type="button" class="ins-pill" onclick="setInsuranceSupportYears(5)" id="btnInsYear5">5 ปี</button>
+            <button type="button" class="ins-pill active" onclick="setInsuranceSupportYears(10)" id="btnInsYear10">10 ปี</button>
+            <button type="button" class="ins-pill" onclick="setInsuranceSupportYears(15)" id="btnInsYear15">15 ปี</button>
+            <button type="button" class="ins-pill" onclick="setInsuranceSupportYears(20)" id="btnInsYear20">20 ปี</button>
+          </div>
+        </div>
+
+        <!-- Child Education & Future Fund -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label for="inpInsChild" style="font-weight:600; color:var(--ink);" id="lbl-ins-child">กองทุนการศึกษาบุตร (Child Fund):</label>
+            <span style="font-size:9.5px; color:var(--ink-faint);" id="lbl-ins-child-sub">ค่าเล่าเรียน/เป้าหมาย</span>
+          </div>
+          <input type="number" id="inpInsChild" min="0" step="50000" placeholder="0" inputmode="decimal" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateInsuranceAdequacy()">
+        </div>
+
+        <!-- Emergency Cushion & Final Expenses -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label for="inpInsEmergency" style="font-weight:600; color:var(--ink);" id="lbl-ins-emergency">เงินสำรองฉุกเฉิน/จัดการศพ (Final Expenses):</label>
+            <span style="font-size:9.5px; color:var(--ink-faint);" id="lbl-ins-emergency-sub">ค่าใช้จ่ายช่วงเปลี่ยนผ่าน</span>
+          </div>
+          <input type="number" id="inpInsEmergency" min="0" step="50000" placeholder="200000" inputmode="decimal" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateInsuranceAdequacy()">
+        </div>
+
+        <!-- Current Liquid Assets -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label for="inpInsLiquid" style="font-weight:600; color:var(--ink);" id="lbl-ins-liquid">สินทรัพย์สภาพคล่องที่มี (Liquid Assets):</label>
+            <span style="font-size:9.5px; color:var(--ink-faint);" id="lbl-ins-liquid-sub">เงินสด + พอร์ต</span>
+          </div>
+          <input type="number" id="inpInsLiquid" min="0" step="10000" inputmode="decimal" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateInsuranceAdequacy()">
+        </div>
+
+        <!-- Existing Life Insurance Coverage -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label for="inpInsExisting" style="font-weight:600; color:var(--ink);" id="lbl-ins-existing">ทุนประกันชีวิตเดิมที่มี (Existing Coverage):</label>
+            <span style="font-size:9.5px; color:var(--ink-faint);" id="lbl-ins-existing-sub">กรมธรรม์เดิมรวม</span>
+          </div>
+          <input type="number" id="inpInsExisting" min="0" step="50000" placeholder="0" inputmode="decimal" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateInsuranceAdequacy()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Visual Adequacy Meter -->
+    <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px; margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:11px;">
+        <span style="font-weight:600; color:var(--ink);" id="lbl-ins-meter-title">อัตราความคุ้มครองที่ครอบคลุม (Protection Adequacy):</span>
+        <span id="txt-ins-adequacy-pct" style="font-weight:700; color:var(--ok);">100%</span>
+      </div>
+      <div style="height:8px; background:var(--line); border-radius:999px; overflow:hidden;">
+        <div id="bar-ins-adequacy" style="height:100%; width:100%; background:var(--ok); border-radius:999px; transition:width 0.4s ease, background 0.4s ease;"></div>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:10px; color:var(--ink-faint);">
+        <span id="txt-ins-resources-note">ทรัพยากรที่มี: 0 บาท</span>
+        <span id="txt-ins-needs-note">ความต้องการทุนประกัน: 0 บาท</span>
+      </div>
+    </div>
+
+    <!-- Key Metrics Cards Grid -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:8px; margin-bottom:12px; font-size:11px;">
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
+        <span style="color:var(--ink-faint); display:block; margin-bottom:2px;" id="lbl-card-ins-needs">ทุนประกันที่จำเป็น</span>
+        <span id="val-ins-total-needs" style="font-size:14px; font-weight:800; color:var(--ink);">0 บาท</span>
+        <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="sub-ins-needs-breakdown">หนี้สิน + ค่าครองชีพ</div>
+      </div>
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
+        <span style="color:var(--ink-faint); display:block; margin-bottom:2px;" id="lbl-card-ins-resources">ทรัพยากรที่มีอยู่เดิม</span>
+        <span id="val-ins-total-resources" style="font-size:14px; font-weight:800; color:var(--ok);">0 บาท</span>
+        <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="sub-ins-resources-breakdown">สินทรัพย์ + ประกันเดิม</div>
+      </div>
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
+        <span style="color:var(--ink-faint); display:block; margin-bottom:2px;" id="lbl-card-ins-gap">ช่องว่างความคุ้มครอง</span>
+        <span id="val-ins-gap" style="font-size:14px; font-weight:800; color:var(--ok);">0 บาท</span>
+        <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="sub-ins-gap-status">ครอบคลุมเพียงพอ</div>
+      </div>
+    </div>
+
+    <!-- Human Life Value Benchmark Callout -->
+    <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:8px 12px; margin-bottom:10px; font-size:11px; color:var(--ink-dim); line-height:1.45;" id="box-ins-hlv">
+      💡 <strong id="lbl-ins-hlv-title">มุมมองมูลค่าชีวิตมนุษย์ (Human Life Value - HLV):</strong>
+      <span id="txt-ins-hlv-content">เกณฑ์มาตรฐาน 7 เท่าของรายได้ต่อปี แนะนำทุนประกันประมาณ 0 บาท</span>
+    </div>
+
+    <!-- Statutory PIT Life Insurance Deduction Benefit Callout -->
+    <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;" id="box-ins-tax-benefit">
+      <div style="flex:1; min-width:210px; font-size:11px; color:var(--ink-dim); line-height:1.45;">
+        <div style="font-weight:700; color:var(--core); margin-bottom:2px;" id="lbl-ins-tax-title">🧾 สิทธิประโยชน์ลดหย่อนภาษี (PIT Deduction)</div>
+        <div id="txt-ins-tax-desc">เบี้ยประกันชีวิตนำไปลดหย่อนภาษีได้สูงสุด 100,000 บาท/ปี (ม.47(1)(ง)) — ช่วยประหยัดภาษีได้ตามฐานอัตราของคุณ</div>
+      </div>
+      <button type="button" class="action-btn" onclick="window.parent.postMessage({action:'switchToTab', target:'tax-calculator-base'},'*')" style="background:var(--ok-dim); border-color:var(--ok); color:var(--ok); font-weight:700; font-size:11px; padding:6px 12px; white-space:nowrap;">
+        <span id="btn-ins-goto-tax">วางแผนภาษี ➔</span>
+      </button>
+    </div>
+  </div>
+
   <!-- Net Worth Real-Value Inflation Deflator & Purchasing Power Projection Engine -->
   <div class="panel" role="region" aria-label="Inflation Deflator &amp; Real Purchasing Power Engine" id="panelInflationDeflator">
     <div class="panel-title" id="lbl-deflator-panel-title">
@@ -751,7 +895,7 @@
     </div>
   </div>
 
-  <p class="version-tag">Money Superapp v2.3.8</p>
+  <p class="version-tag">Money Superapp v2.3.9</p>
 
 <script src="js/shared.js"></script>
 <script src="js/dashboard.js"></script>

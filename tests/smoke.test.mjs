@@ -270,6 +270,24 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'months-slips.html must not contain focus:ring-blue-500',
       );
     });
+
+    it('verifies dashboard.html declares Life Insurance Adequacy panel with semantic ARIA region and inputs', () => {
+      const dashContent = fs.readFileSync(path.join(ROOT_DIR, 'dashboard.html'), 'utf8');
+      assert.ok(
+        dashContent.includes('id="panelInsuranceAdequacy"'),
+        'dashboard.html must define #panelInsuranceAdequacy',
+      );
+      assert.ok(
+        dashContent.includes('aria-label="Life Insurance Adequacy &amp; Family Protection Gap"'),
+        'dashboard.html must define semantic aria-label on insurance adequacy panel',
+      );
+      assert.ok(dashContent.includes('id="inpInsDebt"'), 'dashboard.html must define #inpInsDebt');
+      assert.ok(dashContent.includes('id="inpInsExpenses"'), 'dashboard.html must define #inpInsExpenses');
+      assert.ok(dashContent.includes('id="inpInsSupportYears"'), 'dashboard.html must define #inpInsSupportYears');
+      assert.ok(dashContent.includes('id="inpInsLiquid"'), 'dashboard.html must define #inpInsLiquid');
+      assert.ok(dashContent.includes('id="inpInsExisting"'), 'dashboard.html must define #inpInsExisting');
+      assert.ok(dashContent.includes('id="bar-ins-adequacy"'), 'dashboard.html must define #bar-ins-adequacy');
+    });
   });
 
   describe('Bilingual Localization Structural Symmetry', () => {

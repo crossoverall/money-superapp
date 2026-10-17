@@ -15,6 +15,17 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-17: Life Insurance Adequacy & Family Protection Gap Analysis (v2.3.9)
+
+- **Date & Context:** 2026-10-17, during implementation of Life Insurance Adequacy & Family Protection Gap Calculator in `dashboard.html` / `js/dashboard.js` (`v2.3.9`).
+- **Problem:** Users had forward projections for net worth accumulation and FIRE retirement, but zero quantitative insight into family downside protection and capital needs shortfall in the event of untimely demise or disability. Moreover, statutory Thai Personal Income Tax Section 47(1)(d) insurance deductions were decoupled from actual protection gaps.
+- **Root Cause:** Wealth tools often focus exclusively on asset accumulation while omitting risk management, leading to under-insured families where outstanding debts and living expenses would wipe out dependent financial security.
+- **Solution & Rule:**
+  1. Implement pure financial math engine `calculateInsuranceAdequacy(params)` in `js/shared.js`, computing $\text{Total Needs} = \text{Debt} + (\text{Monthly Expenses} \times 12 \times \text{Years}) + \text{Child Fund} + \text{Emergency Cushion}$ and $\text{Gap} = \max(0, \text{Total Needs} - \text{Liquid Assets} - \text{Existing Coverage})$.
+  2. Provide dual perspectives: Capital Needs Analysis alongside the classic Human Life Value (HLV: $7\times$ annual net income) benchmark.
+  3. Bridge protection gaps directly to statutory PIT tax incentives: estimate annual tax refund ($\min(\text{Gap} \times 1.5\%, 100000) \times \text{Marginal Bracket}$) and provide one-click navigation to `tax-calculator-base.html`.
+  4. Auto-populate inputs from live calculator stores (`moneySuperapp.debtCalculator.state.v1`, `remainingMoneyCalculator.state.v1`) with full bilingual (TH/EN) symmetry and unit test coverage in `tests/insurance-adequacy.test.mjs`.
+
 ### 2026-10-17: Design System Re-alignment & Sub-Page Theme Harmonization (v2.3.8)
 
 - **Date & Context:** 2026-10-17, during design audit and sub-page theme synchronization across `tax-calculator-base.html`, `months-slips.html`, and `tax-calculator.html` (`v2.3.8`).
