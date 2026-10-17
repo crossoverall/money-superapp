@@ -4076,4 +4076,156 @@ describe('Financial Math Verification', () => {
       );
     });
   });
+
+  describe('Multi-Year Personal Income Tax Scenario Comparator & Bracket Creep Engine', () => {
+    function computeStandardPit(totalIncome, otherDeductions = 0) {
+      const gross = Math.max(0, Number(totalIncome) || 0);
+      const expenseDed = Math.min(gross * 0.5, 100000);
+      const personalDed = 60000;
+      const totalDed = expenseDed + personalDed + Math.max(0, Number(otherDeductions) || 0);
+      const netTaxable = Math.max(0, gross - totalDed);
+
+      const brackets = [
+        { max: 150000, rate: 0 },
+        { max: 300000, rate: 0.05 },
+        { max: 500000, rate: 0.1 },
+        { max: 750000, rate: 0.15 },
+        { max: 1000000, rate: 0.2 },
+        { max: 2000000, rate: 0.25 },
+        { max: 5000000, rate: 0.3 },
+        { max: Infinity, rate: 0.35 },
+      ];
+
+      let tax = 0;
+      let prev = 0;
+      let topMarginalRate = 0;
+
+      for (const b of brackets) {
+        if (netTaxable > prev) {
+          const taxableInBracket = Math.min(netTaxable - prev, b.max - prev);
+          tax += taxableInBracket * b.rate;
+          if (taxableInBracket > 0 && b.rate > 0) {
+            topMarginalRate = Math.round(b.rate * 100);
+          }
+          prev = b.max;
+        } else {
+          break;
+        }
+      }
+
+      const effectiveRate = gross > 0 ? (tax / gross) * 100 : 0;
+      const takeHome = gross - tax;
+
+      return {
+        gross,
+        totalDed,
+        netTaxable,
+        tax,
+        effectiveRate: Math.round(effectiveRate * 100) / 100,
+        topMarginalRate,
+        takeHome,
+      };
+    }
+
+    function compareTaxScenarios({
+      baseIncome,
+      baseDeductions = 0,
+      scenarioIncome,
+      scenarioDeductions = 0,
+      inflationPct = 0,
+    }) {
+      const base = computeStandardPit(baseIncome, baseDeductions);
+      const scenario = computeStandardPit(scenarioIncome, scenarioDeductions);
+
+      const incomeDelta = scenario.gross - base.gross;
+      const taxDelta = scenario.tax - base.tax;
+      const takeHomeDelta = scenario.takeHome - base.takeHome;
+      const marginalTaxOnDelta = incomeDelta > 0 ? Math.round((taxDelta / incomeDelta) * 100 * 100) / 100 : 0;
+      const effectiveRateDelta = Math.round((scenario.effectiveRate - base.effectiveRate) * 100) / 100;
+      const bracketShift = scenario.topMarginalRate !== base.topMarginalRate;
+
+      const inflFactor = 1 + Math.max(0, Number(inflationPct) || 0) / 100;
+      const realTakeHome = Math.round(scenario.takeHome / inflFactor);
+      const realTakeHomeDelta = realTakeHome - base.takeHome;
+      const bracketCreepLoss = scenario.gross >= base.gross && realTakeHomeDelta < 0 && inflationPct > 0;
+
+      return {
+        base,
+        scenario,
+        delta: {
+          incomeDelta,
+          taxDelta,
+          takeHomeDelta,
+          marginalTaxOnDelta,
+          effectiveRateDelta,
+          bracketShift,
+        },
+        bracketCreep: {
+          inflationPct,
+          realTakeHome,
+          realTakeHomeDelta,
+          bracketCreepLoss,
+        },
+      };
+    }
+
+    it('accurately compares standard salary raise scenarios and computes marginal tax on raise', () => {
+      const res = compareTaxScenarios({
+        baseIncome: 600000,
+        baseDeductions: 0,
+        scenarioIncome: 750000,
+        scenarioDeductions: 0,
+      });
+
+      assert.equal(res.delta.incomeDelta, 150000);
+      assert.ok(res.delta.taxDelta > 0);
+      assert.equal(res.delta.takeHomeDelta, 150000 - res.delta.taxDelta);
+      // Net taxable was 440k (in 10% bracket), rises to 590k (steps into 15% bracket)
+      assert.equal(res.delta.bracketShift, true);
+      assert.ok(res.delta.marginalTaxOnDelta >= 10);
+    });
+
+    it('identifies bracket creep loss when inflation outpaces nominal after-tax raise', () => {
+      const res = compareTaxScenarios({
+        baseIncome: 400000,
+        baseDeductions: 0,
+        scenarioIncome: 416000, // +4% nominal raise
+        scenarioDeductions: 0,
+        inflationPct: 5, // 5% inflation
+      });
+
+      assert.equal(res.delta.incomeDelta, 16000);
+      assert.ok(res.delta.taxDelta > 0);
+      assert.equal(res.bracketCreep.bracketCreepLoss, true);
+      assert.ok(res.bracketCreep.realTakeHomeDelta < 0);
+    });
+
+    it('measures tax savings delta from additional tax deductions accurately', () => {
+      const res = compareTaxScenarios({
+        baseIncome: 800000,
+        baseDeductions: 0,
+        scenarioIncome: 800000,
+        scenarioDeductions: 100000, // Extra ThaiESG
+      });
+
+      assert.equal(res.delta.incomeDelta, 0);
+      assert.ok(res.delta.taxDelta < 0); // Negative tax delta = savings!
+      assert.ok(res.delta.takeHomeDelta > 0); // Net take-home increases by tax savings!
+      assert.equal(res.delta.takeHomeDelta, Math.abs(res.delta.taxDelta));
+    });
+
+    it('handles zero income and negative inputs gracefully without NaN', () => {
+      const res = compareTaxScenarios({
+        baseIncome: 0,
+        scenarioIncome: 0,
+      });
+
+      assert.equal(res.base.tax, 0);
+      assert.equal(res.scenario.tax, 0);
+      assert.equal(res.delta.incomeDelta, 0);
+      assert.equal(res.delta.taxDelta, 0);
+      assert.equal(res.delta.marginalTaxOnDelta, 0);
+      assert.equal(Number.isNaN(res.delta.effectiveRateDelta), false);
+    });
+  });
 });

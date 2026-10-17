@@ -564,3 +564,18 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
   3. Integrated a 4th view mode (`🔀 สายธาร (Sankey)`) into the `.cashflow-view-switcher` toolbar with full `localStorage` persistence, responsive SVG scaling (`viewBox="0 0 600 240"`), and automatic deficit overspending warnings (`remaining < 0`).
   4. Added 4 unit tests in `tests/financial-math.test.mjs` verifying ribbon path syntax, 3-stage flow conservation, zero deductions/income edge cases, and deficit state detection (**131 automated unit tests passing, 0 Biome linter errors**).
 - **Rule:** When implementing client-side Sankey flow visualizers without heavy 3rd-party graph libraries (ADR-001), use a 3-stage vertical slice solver with cubic Bézier ribbon paths, enforce strict node height conservation ($H_{\text{source}} = \sum H_{\text{dest}}$), and gracefully render negative net cash flow as a dedicated deficit indicator.
+
+
+### 2026-10-17: Multi-Year Personal Income Tax Scenario Comparator & Bracket Inflation Stress-Tester
+
+- **Date & Context:** 2026-10-17, implementing Tax Scenario Comparator & Inflation Bracket Creep Engine in `tax-calculator-base.html` (`v2.1.8`).
+- **Problem:**
+  1. Taxpayers exploring job offers, salary raises, or additional tax-saving investments lacked a side-by-side comparison to see marginal tax impact on raises vs effective tax rate shift.
+  2. Taxpayers frequently suffer from "Bracket Creep" during inflationary periods, where a nominal salary increase matches inflation on paper, but pushes taxable income into a higher statutory tax bracket, resulting in a net decrease in real purchasing power.
+- **Resolution:**
+  1. Built an interactive **Scenario A vs Scenario B Comparator** in `tax-calculator-base.html` with one-click current state replication (`copyCurrentToScenarioB()`).
+  2. Built `compareTaxScenarios()` calculating delta income, delta tax, marginal tax on the raise, effective tax rate change, and real purchasing power:
+     $$\text{Real Take-Home} = \frac{\text{Scenario Take-Home}}{1 + \text{Inflation Rate} / 100}$$
+  3. Added dynamic **Bracket Creep Alert** flagging scenarios where inflation exceeds nominal net returns, and real purchasing power declines despite a higher nominal salary.
+  4. Added 4 unit tests in `tests/financial-math.test.mjs` verifying standard raise marginal rates, bracket creep losses, extra deduction tax savings, and zero-state stability (**135 automated unit tests passing, 0 Biome linter errors**).
+- **Rule:** When presenting tax scenarios for salary raises or annual bonuses, always calculate both nominal take-home delta and inflation-adjusted real purchasing power to expose bracket creep where nominal income gains are eroded by progressive tax brackets.

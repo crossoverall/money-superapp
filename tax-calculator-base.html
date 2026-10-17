@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="2.1.7">
+    <meta name="version" content="2.1.8">
     <meta name="description" content="คำนวณภาษีเงินได้บุคคลธรรมดา — ประมาณการภาษีเงินได้จากเงินเดือนและโบนัส พร้อมแสดงรายละเอียดตามขั้นบันได">
     <title>คำนวณภาษีเงินได้บุคคลธรรมดา</title>
     <link rel="stylesheet" href="css/tailwind-lite.css">
@@ -505,6 +505,47 @@
             </div>
         </div>
 
+        <!-- Tax Scenario Comparator & Bracket Inflation Stress-Tester -->
+        <div class="mt-4 no-print">
+            <button type="button" id="btn-toggle-scenario-compare" onclick="toggleTaxScenarioComparator()" class="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2">
+                <span id="lbl-toggle-scenario">⚖️ เปรียบเทียบ Scenario ภาษี & ทดสอบเงินเฟ้อ (Bracket Creep)</span>
+            </button>
+            <div id="taxScenarioComparePanel" class="mt-3 p-4 bg-white rounded-xl shadow-md border border-gray-200 text-xs space-y-3" style="display:none;">
+                <div class="flex justify-between items-center border-b pb-2">
+                    <span class="font-bold text-gray-800 flex items-center gap-1.5" id="lbl-compare-header">
+                        <span>📊</span> <span>เปรียบเทียบ Scenario A (ปัจจุบัน) vs Scenario B (เปรียบเทียบ)</span>
+                    </span>
+                    <button type="button" onclick="copyCurrentToScenarioB()" class="py-1 px-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded text-[11px] transition-all">
+                        📋 คัดลอกค่าปัจจุบันไป B
+                    </button>
+                </div>
+
+                <!-- Scenario B Inputs Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-gray-600 font-medium mb-1" id="lbl-scen-income">รายได้รวม B (บาท/ปี):</label>
+                        <input type="number" id="scenIncome" class="w-full p-2 border rounded-lg text-xs" placeholder="เช่น 600000" oninput="runTaxScenarioComparison()">
+                    </div>
+                    <div>
+                        <label class="block text-gray-600 font-medium mb-1" id="lbl-scen-ded">ลดหย่อนอื่นๆ B (บาท/ปี):</label>
+                        <input type="number" id="scenDeductions" class="w-full p-2 border rounded-lg text-xs" placeholder="เช่น 100000" oninput="runTaxScenarioComparison()">
+                    </div>
+                    <div>
+                        <label class="block text-gray-600 font-medium mb-1" id="lbl-scen-infl">อัตราเงินเฟ้อ / Inflation (%):</label>
+                        <input type="number" id="scenInflation" class="w-full p-2 border rounded-lg text-xs" placeholder="เช่น 4" value="0" oninput="runTaxScenarioComparison()">
+                    </div>
+                </div>
+
+                <!-- Comparison Verdict Cards -->
+                <div id="scenCompareResults" class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-center">
+                    <!-- Populated by runTaxScenarioComparison -->
+                </div>
+
+                <!-- Bracket Creep & Real Purchasing Power Callout -->
+                <div id="scenBracketCreepCallout" class="p-2.5 rounded-lg border text-[11px] leading-relaxed" style="display:none;"></div>
+            </div>
+        </div>
+
         <div class="flex justify-between items-center mt-4 pt-3 border-t border-gray-200">
             <div class="flex items-center gap-2 flex-wrap">
                 <button type="button" onclick="undoTaxChange()" id="btn-undo-tax" class="py-1.5 px-3 md-btn-outlined text-xs font-semibold rounded-lg flex items-center gap-1.5 no-print" style="display:none; color:var(--core); border:1px solid var(--line); cursor:pointer;" title="เลิกทำ / Undo (Ctrl+Z)">
@@ -520,7 +561,7 @@
                     <span id="lbl-reset-tax">ล้างข้อมูล</span>
                 </button>
             </div>
-            <p class="text-xs text-gray-400">v2.1.7</p>
+            <p class="text-xs text-gray-400">v2.1.8</p>
         </div>
     </div>
 
@@ -2068,6 +2109,110 @@
             advisorState.isApplied = false;
             calculateTax();
             updateUndoUI();
+        }
+
+        function toggleTaxScenarioComparator() {
+            const panel = document.getElementById('taxScenarioComparePanel');
+            if (!panel) return;
+            const isHidden = panel.style.display === 'none';
+            panel.style.display = isHidden ? 'block' : 'none';
+            if (isHidden) {
+                const scenIncInput = document.getElementById('scenIncome');
+                if (scenIncInput && !scenIncInput.value) {
+                    copyCurrentToScenarioB();
+                } else {
+                    runTaxScenarioComparison();
+                }
+            }
+        }
+
+        function copyCurrentToScenarioB() {
+            const totInc = parseNum(document.getElementById('totalIncome')?.innerText || 0);
+            const netInc = parseNum(document.getElementById('netIncome')?.innerText || 0);
+            const standardDed = Math.min(totInc * 0.5, 100000) + 60000;
+            const otherDed = Math.max(0, totInc - standardDed - netInc);
+
+            const scenInc = document.getElementById('scenIncome');
+            const scenDed = document.getElementById('scenDeductions');
+            if (scenInc) scenInc.value = totInc > 0 ? Math.round(totInc) : '';
+            if (scenDed) scenDed.value = otherDed > 0 ? Math.round(otherDed) : '';
+            runTaxScenarioComparison();
+        }
+
+        function runTaxScenarioComparison() {
+            const resultsBox = document.getElementById('scenCompareResults');
+            const calloutBox = document.getElementById('scenBracketCreepCallout');
+            if (!resultsBox) return;
+
+            const baseIncome = parseNum(document.getElementById('totalIncome')?.innerText || 0);
+            const baseTax = parseNum(document.getElementById('taxAmount')?.innerText || 0);
+            const baseTakeHome = Math.max(0, baseIncome - baseTax);
+            const baseEffectiveRate = baseIncome > 0 ? (baseTax / baseIncome) * 100 : 0;
+
+            const scenIncomeVal = parseNum(document.getElementById('scenIncome')?.value || 0);
+            const scenDedVal = parseNum(document.getElementById('scenDeductions')?.value || 0);
+            const scenInflVal = parseNum(document.getElementById('scenInflation')?.value || 0);
+
+            const scenExpDed = Math.min(scenIncomeVal * 0.5, 100000);
+            const scenPersonalDed = 60000;
+            const scenTotalDed = scenExpDed + scenPersonalDed + scenDedVal;
+            const scenNetTaxable = Math.max(0, scenIncomeVal - scenTotalDed);
+            const scenTax = computeTaxForNet(scenNetTaxable);
+            const scenTakeHome = Math.max(0, scenIncomeVal - scenTax);
+            const scenEffectiveRate = scenIncomeVal > 0 ? (scenTax / scenIncomeVal) * 100 : 0;
+
+            const incomeDelta = scenIncomeVal - baseIncome;
+            const taxDelta = scenTax - baseTax;
+            const takeHomeDelta = scenTakeHome - baseTakeHome;
+            const isEn = LANG === 'en';
+            const unit = isEn ? 'THB' : 'บาท';
+
+            const inflFactor = 1 + (Math.max(0, scenInflVal) / 100);
+            const realTakeHome = Math.round(scenTakeHome / inflFactor);
+            const realTakeHomeDelta = realTakeHome - baseTakeHome;
+            const hasBracketCreep = scenIncomeVal >= baseIncome && realTakeHomeDelta < 0 && scenInflVal > 0;
+
+            const signStr = (n) => (n > 0 ? `+${formatMoney(n)}` : n < 0 ? `-${formatMoney(Math.abs(n))}` : '0');
+            const taxSignColor = taxDelta > 0 ? 'text-red-600' : taxDelta < 0 ? 'text-emerald-600' : 'text-gray-600';
+            const thSignColor = takeHomeDelta > 0 ? 'text-emerald-600' : takeHomeDelta < 0 ? 'text-red-600' : 'text-gray-600';
+
+            resultsBox.innerHTML = `
+                <div class="p-2.5 rounded-lg bg-gray-50 border border-gray-200">
+                    <div class="text-[10px] text-gray-500">${isEn ? 'Scenario B Income' : 'รายได้รวม B'}</div>
+                    <div class="font-bold text-gray-800 text-xs mt-0.5">${formatMoney(scenIncomeVal)} ${unit}</div>
+                    <div class="text-[10px] ${incomeDelta >= 0 ? 'text-emerald-600' : 'text-red-500'} font-semibold mt-0.5">${signStr(incomeDelta)}</div>
+                </div>
+                <div class="p-2.5 rounded-lg bg-gray-50 border border-gray-200">
+                    <div class="text-[10px] text-gray-500">${isEn ? 'Scenario B Tax' : 'ภาษีที่ต้องจ่าย B'}</div>
+                    <div class="font-bold text-gray-800 text-xs mt-0.5">${formatMoney(scenTax)} ${unit}</div>
+                    <div class="text-[10px] ${taxSignColor} font-semibold mt-0.5">${taxDelta > 0 ? '+' : ''}${formatMoney(taxDelta)} (${(scenEffectiveRate - baseEffectiveRate).toFixed(1)}%)</div>
+                </div>
+                <div class="p-2.5 rounded-lg bg-gray-50 border border-gray-200">
+                    <div class="text-[10px] text-gray-500">${isEn ? 'Net Take-Home B' : 'เงินได้สุทธิเข้ากระเป๋า B'}</div>
+                    <div class="font-bold text-gray-800 text-xs mt-0.5">${formatMoney(scenTakeHome)} ${unit}</div>
+                    <div class="text-[10px] ${thSignColor} font-semibold mt-0.5">${signStr(takeHomeDelta)}</div>
+                </div>
+                <div class="p-2.5 rounded-lg bg-gray-50 border border-gray-200">
+                    <div class="text-[10px] text-gray-500">${isEn ? 'Effective Rate' : 'อัตราภาษีเฉลี่ย'}</div>
+                    <div class="font-bold text-gray-800 text-xs mt-0.5">${scenEffectiveRate.toFixed(2)}%</div>
+                    <div class="text-[10px] text-gray-500 font-semibold mt-0.5">Base: ${baseEffectiveRate.toFixed(2)}%</div>
+                </div>
+            `;
+
+            if (calloutBox) {
+                if (scenInflVal > 0) {
+                    calloutBox.style.display = 'block';
+                    if (hasBracketCreep) {
+                        calloutBox.className = 'p-2.5 rounded-lg border border-red-200 bg-red-50 text-[11px] text-red-800 leading-relaxed';
+                        calloutBox.innerHTML = `⚠️ <strong>${isEn ? 'Bracket Creep Alert!' : 'เตือนภัยเงินเฟ้อ & ขั้นบันไดภาษี (Bracket Creep)!'}</strong> ${isEn ? `Even though nominal income increased, after ${scenInflVal}% inflation and higher tax bracket deductions, your real purchasing power decreases by <strong>${formatMoney(Math.abs(realTakeHomeDelta))} ${unit}/year</strong> (Real Take-Home: ${formatMoney(realTakeHome)} ${unit}).` : `แม้รายได้ตัวเลขจะเพิ่มขึ้น แต่เมื่อหักภาษีในขั้นที่สูงขึ้นร่วมกับเงินเฟ้อ ${scenInflVal}% กำลังซื้อที่แท้จริงของคุณลดลง <strong>${formatMoney(Math.abs(realTakeHomeDelta))} ${unit}/ปี</strong> (เหลือมูลค่าแท้จริง ${formatMoney(realTakeHome)} ${unit})`}`;
+                    } else {
+                        calloutBox.className = 'p-2.5 rounded-lg border border-emerald-200 bg-emerald-50 text-[11px] text-emerald-800 leading-relaxed';
+                        calloutBox.innerHTML = `✅ <strong>${isEn ? 'Real Purchasing Power Protected:' : 'กำลังซื้อที่แท้จริงยังคงเพิ่มขึ้น:'}</strong> ${isEn ? `After ${scenInflVal}% inflation, your real take-home purchasing power is <strong>${formatMoney(realTakeHome)} ${unit}</strong> (${signStr(realTakeHomeDelta)} vs baseline).` : `เมื่อหักเงินเฟ้อ ${scenInflVal}% แล้ว มูลค่าเงินได้สุทธิที่แท้จริงอยู่ที่ <strong>${formatMoney(realTakeHome)} ${unit}</strong> (${signStr(realTakeHomeDelta)} เมื่อเทียบกับฐานเดิม)`}`;
+                    }
+                } else {
+                    calloutBox.style.display = 'none';
+                }
+            }
         }
 
         function copyTaxSummary() {
