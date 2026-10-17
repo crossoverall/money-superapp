@@ -300,3 +300,13 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
   2. Implemented `MoneyApp.safeJsonParse(key, fallback)` which safely intercepts `localStorage` and `JSON.parse` failures, warning to console and returning default state.
   3. Replaced `var` inside `if`/`try` blocks with block-scoped declarations or declared them at function roots to satisfy Biome rules.
 - **Rule:** Never use raw `JSON.parse(localStorage.getItem(...))` in client tools; always route through `MoneyApp.safeJsonParse`. For destructive actions (clearing data, deleting items, or importing backups), always push snapshots to `undoMgr` beforehand.
+
+### 2026-10-17: Half-Sum Portfolio Tracking Error Index & Buy-Only DCA Drift Convergence
+
+- **Date & Context:** 2026-10-17, implementing Portfolio Drift & Allocation Deviation Visualizer (`v2.0.0`).
+- **Problem:** Investors needed an objective, aggregate metric representing portfolio misallocation (drift) across all assets and tiers before and after monthly top-up injections, without resorting to asset liquidation.
+- **Resolution:**
+  1. Utilized the Half-Sum Tracking Error Index: $\text{Tracking Error} = \frac{1}{2} \sum_{i} |\text{Current\%}_i - \text{Target\%}_i|$. This measures the exact percentage of the portfolio that must be realigned to achieve target allocations (bounded between 0% and 100%).
+  2. For hierarchical 2-tier structures (Buckets -> Assets), the global target allocation is derived via normalized weight tree multiplication: $\text{Target\%} = \frac{W_b}{\sum W} \times \frac{w_a}{\sum w_b} \times 100\%$.
+  3. In buy-only DCA water-filling algorithms, the monthly cash top-up is routed strictly to lagging/underweight assets. Mathematically, this guarantees $\text{Post-Tracking Error} \le \text{Pre-Tracking Error}$, providing real-time verification of portfolio convergence.
+- **Rule:** When displaying aggregate portfolio drift, use the normalized half-sum index and show both Pre-DCA and Post-DCA metrics to give users immediate feedback on how their monthly budget corrects allocation imbalances.

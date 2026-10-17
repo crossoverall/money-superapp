@@ -9,6 +9,9 @@ const EN = {
   lblDonutTitle: 'Current Portfolio Value',
   lblMinTrade: 'Min Trade Threshold:',
   lblMinTradeDesc: 'THB (warn if calculated trade is below this)',
+  lblDriftTitle: 'Portfolio Drift & Tracking Error',
+  lblPreDrift: 'Pre-DCA Tracking Error',
+  lblPostDrift: 'Post-DCA Tracking Error',
   howto:
     '<b>How it works</b> — The total budget is split by Core/Ballast/Satellite weights first. Within each group, the system tops up whichever asset lags its target weight the most. Anything already over target gets nothing this month (= 0), and its share goes to the laggards instead — nothing is ever sold.<br><br><b>Monthly routine</b> — Before buying each month, update every "Current value" with the real price, then check the new results.<br><br><b>Tip</b> — In "Current value" or the total budget, type <code>+10000</code> or <code>-5000</code> then press Enter/click away to add/subtract from the existing value without doing the math yourself.',
   lblRefreshPrices: 'Refresh Prices',
@@ -37,6 +40,9 @@ if (LANG === 'en') {
     'lblDonutTitle',
     'lblMinTrade',
     'lblMinTradeDesc',
+    'lblDriftTitle',
+    'lblPreDrift',
+    'lblPostDrift',
     'lblRefreshPrices',
     'lblAutoRefresh',
     'lblSettingsBtn',
@@ -1130,6 +1136,187 @@ function renderDonutChart() {
   }
 }
 
+function calculatePortfolioDrift(buckets, totalBudget = 0, tradeOrders = {}) {
+  const activeBuckets = (buckets || []).filter((b) => b.enabled !== false);
+  const totalBucketWeight = activeBuckets.reduce((sum, b) => sum + (b.weight || 0), 0) || 1;
+
+  let totalVal = 0;
+  const flatAssets = [];
+
+  for (const b of activeBuckets) {
+    const normBucketWeight = (b.weight || 0) / totalBucketWeight;
+    const activeAssets = (b.assets || []).filter((a) => a.enabled !== false);
+    const totalAssetWeightInBucket = activeAssets.reduce((sum, a) => sum + (a.weight || 0), 0) || 1;
+
+    for (const a of activeAssets) {
+      const normAssetWeightInBucket = (a.weight || 0) / totalAssetWeightInBucket;
+      const targetPct = normBucketWeight * normAssetWeightInBucket * 100;
+      const val = Math.max(0, a.value || 0);
+      totalVal += val;
+
+      const buyAmt = Math.max(0, (tradeOrders && (tradeOrders[a.id || a.name] ?? tradeOrders[a.name])) || 0);
+
+      flatAssets.push({
+        id: a.id || a.name,
+        name: a.name,
+        bucketId: b.id,
+        val,
+        buyAmt,
+        targetPct,
+      });
+    }
+  }
+
+  const postTotalVal = totalVal + totalBudget;
+  let totalPreAbsDrift = 0;
+  let totalPostAbsDrift = 0;
+
+  const analyzedAssets = flatAssets.map((a) => {
+    const currPct = totalVal > 0 ? (a.val / totalVal) * 100 : 0;
+    const preDrift = currPct - a.targetPct;
+    totalPreAbsDrift += Math.abs(preDrift);
+
+    const postVal = a.val + a.buyAmt;
+    const postPct = postTotalVal > 0 ? (postVal / postTotalVal) * 100 : a.targetPct;
+    const postDrift = postPct - a.targetPct;
+    totalPostAbsDrift += Math.abs(postDrift);
+
+    let status = 'aligned';
+    if (preDrift > 1.5) status = 'overweight';
+    else if (preDrift < -1.5) status = 'underweight';
+
+    return {
+      name: a.name,
+      val: a.val,
+      buyAmt: a.buyAmt,
+      currPct: parseFloat(currPct.toFixed(1)),
+      targetPct: parseFloat(a.targetPct.toFixed(1)),
+      preDrift: parseFloat(preDrift.toFixed(1)),
+      postPct: parseFloat(postPct.toFixed(1)),
+      postDrift: parseFloat(postDrift.toFixed(1)),
+      status,
+    };
+  });
+
+  const preTrackingError = parseFloat((totalPreAbsDrift / 2).toFixed(1));
+  const postTrackingError = parseFloat((totalPostAbsDrift / 2).toFixed(1));
+
+  let reductionPct = 0;
+  if (preTrackingError > 0) {
+    reductionPct = parseFloat((((preTrackingError - postTrackingError) / preTrackingError) * 100).toFixed(1));
+  }
+
+  return {
+    totalVal,
+    postTotalVal,
+    preTrackingError,
+    postTrackingError,
+    reductionPct: Math.max(0, reductionPct),
+    assets: analyzedAssets,
+  };
+}
+
+function updatePortfolioDriftUI(tradeOrders = {}) {
+  const container = document.getElementById('portfolioDriftContainer');
+  if (!container) return;
+
+  const totalBudget = state.totalBudget || 0;
+  const driftData = calculatePortfolioDrift(state.buckets, totalBudget, tradeOrders);
+
+  if (driftData.totalVal <= 0 || driftData.assets.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = 'block';
+
+  const valPreEl = document.getElementById('valPreDrift');
+  const barPreEl = document.getElementById('barPreDrift');
+  const valPostEl = document.getElementById('valPostDrift');
+  const barPostEl = document.getElementById('barPostDrift');
+  const badgeEl = document.getElementById('badgePortfolioHealth');
+  const txtReductionEl = document.getElementById('txtDriftReduction');
+  const extremesEl = document.getElementById('driftExtremesContainer');
+
+  const preErr = driftData.preTrackingError;
+  const postErr = driftData.postTrackingError;
+
+  if (valPreEl) valPreEl.textContent = `${preErr.toFixed(1)}%`;
+  if (barPreEl) {
+    barPreEl.style.width = `${Math.min(100, preErr * 5)}%`;
+    barPreEl.style.background = preErr <= 2 ? 'var(--ok)' : preErr <= 5 ? 'var(--warn)' : 'var(--bad)';
+  }
+
+  if (valPostEl) valPostEl.textContent = `${postErr.toFixed(1)}%`;
+  if (barPostEl) {
+    barPostEl.style.width = `${Math.min(100, postErr * 5)}%`;
+    barPostEl.style.background = postErr <= 2 ? 'var(--ok)' : postErr <= 5 ? 'var(--warn)' : 'var(--bad)';
+  }
+
+  if (badgeEl) {
+    if (preErr <= 2) {
+      badgeEl.textContent = LANG === 'en' ? '✓ Well-Balanced' : '✓ สมดุลดี';
+      badgeEl.style.background = 'var(--ok-dim)';
+      badgeEl.style.color = 'var(--ok)';
+    } else if (preErr <= 5) {
+      badgeEl.textContent = LANG === 'en' ? '⚠️ Mild Drift' : '⚠️ เบี่ยงเบนเล็กน้อย';
+      badgeEl.style.background = 'rgba(217, 119, 6, 0.15)';
+      badgeEl.style.color = 'var(--warn)';
+    } else {
+      badgeEl.textContent = LANG === 'en' ? '🚨 High Drift' : '🚨 เบี่ยงเบนสูง';
+      badgeEl.style.background = 'rgba(220, 38, 38, 0.15)';
+      badgeEl.style.color = 'var(--bad)';
+    }
+  }
+
+  if (txtReductionEl) {
+    if (totalBudget > 0) {
+      if (driftData.reductionPct > 0) {
+        txtReductionEl.textContent =
+          LANG === 'en'
+            ? `DCA reduces tracking error by ${driftData.reductionPct.toFixed(1)}%`
+            : `การเติมเงินช่วยลดความเบี่ยงเบนลง ${driftData.reductionPct.toFixed(1)}%`;
+        txtReductionEl.style.color = 'var(--ok)';
+      } else {
+        txtReductionEl.textContent = LANG === 'en' ? 'Allocations steady after DCA' : 'สัดส่วนคงที่หลังเติมเงิน';
+        txtReductionEl.style.color = 'var(--ink-dim)';
+      }
+    } else {
+      txtReductionEl.textContent =
+        LANG === 'en' ? 'Enter budget to project drift reduction' : 'ระบุงบลงทุนเพื่อดูผลลัพธ์การลดความเบี่ยงเบน';
+      txtReductionEl.style.color = 'var(--ink-dim)';
+    }
+  }
+
+  if (extremesEl) {
+    extremesEl.innerHTML = '';
+    const sorted = [...driftData.assets].sort((a, b) => b.preDrift - a.preDrift);
+    const over = sorted.filter((a) => a.preDrift > 1.5);
+    const under = sorted.filter((a) => a.preDrift < -1.5).reverse();
+
+    const chips = [];
+    over.slice(0, 2).forEach((a) => {
+      chips.push(
+        `<span style="background:rgba(217,119,6,0.12); color:var(--warn); border:1px solid rgba(217,119,6,0.25); border-radius:6px; padding:2px 7px; font-size:10.5px; display:inline-flex; align-items:center; gap:4px;">` +
+          `<strong>${escapeAttr(a.name)}</strong>: +${a.preDrift.toFixed(1)}% 🔼 (${LANG === 'en' ? 'target' : 'เป้า'} ${a.targetPct.toFixed(1)}%)` +
+          `</span>`,
+      );
+    });
+    under.slice(0, 2).forEach((a) => {
+      chips.push(
+        `<span style="background:rgba(37,99,235,0.12); color:#2563eb; border:1px solid rgba(37,99,235,0.25); border-radius:6px; padding:2px 7px; font-size:10.5px; display:inline-flex; align-items:center; gap:4px;">` +
+          `<strong>${escapeAttr(a.name)}</strong>: ${a.preDrift.toFixed(1)}% 🔽 (${LANG === 'en' ? 'target' : 'เป้า'} ${a.targetPct.toFixed(1)}%)` +
+          `</span>`,
+      );
+    });
+
+    if (chips.length > 0) {
+      extremesEl.innerHTML = chips.join('');
+    } else {
+      extremesEl.innerHTML = `<span style="color:var(--ok); font-size:11px;">✓ ${LANG === 'en' ? 'All active assets are within target tolerance (±1.5%)' : 'สินทรัพย์ทั้งหมดอยู่ในกรอบเป้าหมาย (±1.5%)'}</span>`;
+    }
+  }
+}
+
 function compute() {
   const totalBudget = state.totalBudget || 0;
   renderSplit();
@@ -1142,6 +1329,7 @@ function compute() {
     0,
   );
   const bucketBudgets = allocateBuckets(totalBudget);
+  const tradeOrders = {};
 
   state.buckets.forEach((bucket, bi) => {
     const isBucketExcluded = bucket.enabled === false;
@@ -1184,6 +1372,9 @@ function compute() {
     bucket.assets.forEach((a, i) => {
       const isExcluded = isBucketExcluded || a.enabled === false;
       const add = isExcluded ? 0 : x[i];
+      if (!isExcluded) {
+        tradeOrders[a.id || a.name] = add;
+      }
       const newValue = isExcluded ? a.value : a.value + add;
       const newPct = !isExcluded && newTotal > 0 ? (newValue / newTotal) * 100 : 0;
       // Only count as "capped" if the asset is active and the bucket has budget
@@ -1266,6 +1457,7 @@ function compute() {
     }
   });
 
+  updatePortfolioDriftUI(tradeOrders);
   saveState();
 }
 

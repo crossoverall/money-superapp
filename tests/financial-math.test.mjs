@@ -1223,4 +1223,197 @@ describe('Financial Math Verification', () => {
       assert.equal(report.computation.topMarginalRate, 0);
     });
   });
+
+  describe('Portfolio Drift & Allocation Deviation Mathematical Engine', () => {
+    function calculatePortfolioDrift(buckets, totalBudget = 0, tradeOrders = {}) {
+      const activeBuckets = (buckets || []).filter((b) => b.enabled !== false);
+      const totalBucketWeight = activeBuckets.reduce((sum, b) => sum + (b.weight || 0), 0) || 1;
+
+      let totalVal = 0;
+      const flatAssets = [];
+
+      for (const b of activeBuckets) {
+        const normBucketWeight = (b.weight || 0) / totalBucketWeight;
+        const activeAssets = (b.assets || []).filter((a) => a.enabled !== false);
+        const totalAssetWeightInBucket = activeAssets.reduce((sum, a) => sum + (a.weight || 0), 0) || 1;
+
+        for (const a of activeAssets) {
+          const normAssetWeightInBucket = (a.weight || 0) / totalAssetWeightInBucket;
+          const targetPct = normBucketWeight * normAssetWeightInBucket * 100;
+          const val = Math.max(0, a.value || 0);
+          totalVal += val;
+
+          const buyAmt = Math.max(0, tradeOrders[a.id || a.name] || 0);
+
+          flatAssets.push({
+            id: a.id || a.name,
+            name: a.name,
+            bucketId: b.id,
+            val,
+            buyAmt,
+            targetPct,
+          });
+        }
+      }
+
+      const postTotalVal = totalVal + totalBudget;
+      let totalPreAbsDrift = 0;
+      let totalPostAbsDrift = 0;
+
+      const analyzedAssets = flatAssets.map((a) => {
+        const currPct = totalVal > 0 ? (a.val / totalVal) * 100 : 0;
+        const preDrift = currPct - a.targetPct;
+        totalPreAbsDrift += Math.abs(preDrift);
+
+        const postVal = a.val + a.buyAmt;
+        const postPct = postTotalVal > 0 ? (postVal / postTotalVal) * 100 : a.targetPct;
+        const postDrift = postPct - a.targetPct;
+        totalPostAbsDrift += Math.abs(postDrift);
+
+        let status = 'aligned';
+        if (preDrift > 1.5) status = 'overweight';
+        else if (preDrift < -1.5) status = 'underweight';
+
+        return {
+          name: a.name,
+          val: a.val,
+          buyAmt: a.buyAmt,
+          currPct: parseFloat(currPct.toFixed(1)),
+          targetPct: parseFloat(a.targetPct.toFixed(1)),
+          preDrift: parseFloat(preDrift.toFixed(1)),
+          postPct: parseFloat(postPct.toFixed(1)),
+          postDrift: parseFloat(postDrift.toFixed(1)),
+          status,
+        };
+      });
+
+      // Half-sum turnover/drift index
+      const preTrackingError = parseFloat((totalPreAbsDrift / 2).toFixed(1));
+      const postTrackingError = parseFloat((totalPostAbsDrift / 2).toFixed(1));
+
+      let reductionPct = 0;
+      if (preTrackingError > 0) {
+        reductionPct = parseFloat((((preTrackingError - postTrackingError) / preTrackingError) * 100).toFixed(1));
+      }
+
+      return {
+        totalVal,
+        postTotalVal,
+        preTrackingError,
+        postTrackingError,
+        reductionPct: Math.max(0, reductionPct),
+        assets: analyzedAssets,
+      };
+    }
+
+    it('reports zero tracking error and aligned status for a perfectly balanced portfolio', () => {
+      const balanced = [
+        {
+          id: 'core',
+          weight: 60,
+          enabled: true,
+          assets: [{ id: 'a1', name: 'Global Equity', value: 60000, weight: 100, enabled: true }],
+        },
+        {
+          id: 'ballast',
+          weight: 40,
+          enabled: true,
+          assets: [{ id: 'a2', name: 'Gov Bonds', value: 40000, weight: 100, enabled: true }],
+        },
+      ];
+
+      const res = calculatePortfolioDrift(balanced, 0, {});
+      assert.equal(res.totalVal, 100000);
+      assert.equal(res.preTrackingError, 0);
+      assert.equal(res.postTrackingError, 0);
+      assert.equal(res.reductionPct, 0);
+      assert.equal(res.assets[0].status, 'aligned');
+      assert.equal(res.assets[1].status, 'aligned');
+    });
+
+    it('accurately detects overweight and underweight assets and proves DCA drift reduction', () => {
+      // Portfolio with 100,000 THB total. Target is 50/50.
+      // Asset A is 70,000 (70% vs 50% target = +20% overweight)
+      // Asset B is 30,000 (30% vs 50% target = -20% underweight)
+      const drifted = [
+        {
+          id: 'core',
+          weight: 50,
+          enabled: true,
+          assets: [{ id: 'a1', name: 'Asset A', value: 70000, weight: 100, enabled: true }],
+        },
+        {
+          id: 'ballast',
+          weight: 50,
+          enabled: true,
+          assets: [{ id: 'a2', name: 'Asset B', value: 30000, weight: 100, enabled: true }],
+        },
+      ];
+
+      // Top up 20,000 THB exclusively into underweight Asset B
+      const tradeOrders = { a1: 0, a2: 20000 };
+      const res = calculatePortfolioDrift(drifted, 20000, tradeOrders);
+
+      assert.equal(res.preTrackingError, 20.0);
+      assert.equal(res.assets[0].status, 'overweight');
+      assert.equal(res.assets[0].preDrift, 20.0);
+      assert.equal(res.assets[1].status, 'underweight');
+      assert.equal(res.assets[1].preDrift, -20.0);
+
+      // Post-DCA: Total = 120k. A = 70k (58.3%), B = 50k (41.7%). Drift narrowed to 8.3%
+      assert.equal(res.postTrackingError, 8.3);
+      assert.ok(res.postTrackingError < res.preTrackingError);
+      // Reduction = (20 - 8.3)/20 * 100 = 58.5%
+      assert.equal(res.reductionPct, 58.5);
+    });
+
+    it('correctly handles multi-asset 3-tier weighting trees and zero portfolio edge cases', () => {
+      const threeTiers = [
+        {
+          id: 'core',
+          weight: 60,
+          enabled: true,
+          assets: [
+            { id: 'c1', name: 'US ETF', value: 30000, weight: 50, enabled: true }, // target 30%
+            { id: 'c2', name: 'World ETF', value: 30000, weight: 50, enabled: true }, // target 30%
+          ],
+        },
+        {
+          id: 'ballast',
+          weight: 30,
+          enabled: true,
+          assets: [{ id: 'b1', name: 'Thai Bond', value: 30000, weight: 100, enabled: true }], // target 30%
+        },
+        {
+          id: 'satellite',
+          weight: 10,
+          enabled: true,
+          assets: [{ id: 's1', name: 'Gold', value: 10000, weight: 100, enabled: true }], // target 10%
+        },
+      ];
+
+      const res = calculatePortfolioDrift(threeTiers, 0, {});
+      assert.equal(res.totalVal, 100000);
+      assert.equal(res.assets.length, 4);
+      assert.equal(res.assets[0].targetPct, 30.0);
+      assert.equal(res.assets[1].targetPct, 30.0);
+      assert.equal(res.assets[2].targetPct, 30.0);
+      assert.equal(res.assets[3].targetPct, 10.0);
+      assert.equal(res.preTrackingError, 0);
+
+      // Zero-portfolio initialization edge case
+      const emptyTiers = [
+        {
+          id: 'core',
+          weight: 100,
+          enabled: true,
+          assets: [{ id: 'c1', name: 'ETF', value: 0, weight: 100, enabled: true }],
+        },
+      ];
+      const emptyRes = calculatePortfolioDrift(emptyTiers, 50000, { c1: 50000 });
+      assert.equal(emptyRes.totalVal, 0);
+      assert.equal(emptyRes.postTotalVal, 50000);
+      assert.equal(emptyRes.postTrackingError, 0);
+    });
+  });
 });

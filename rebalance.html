@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="1.9.9">
+<meta name="version" content="2.0.0">
 <title>คำนวณการเติมเงินรายเดือน</title>
 <link rel="stylesheet" href="css/theme.css">
 <style>
@@ -363,6 +363,43 @@
         <span style="color:var(--ink-faint); font-size:11px;" id="lblMinTradeDesc">บาท (เตือนหากคำนวณได้ต่ำกว่านี้)</span>
       </div>
     </div>
+
+    <!-- Portfolio Drift & Convergence Tracker (Roadmap Item 3.2) -->
+    <div id="portfolioDriftContainer" style="display:none; margin-top:12px; padding-top:12px; border-top:1px dashed var(--line);">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="font-size:12px; font-weight:700; color:var(--ink);" id="lblDriftTitle">ความเบี่ยงเบนพอร์ต (Portfolio Drift)</span>
+          <span id="badgePortfolioHealth" style="background:var(--ok-dim); color:var(--ok); border-radius:9999px; padding:2px 8px; font-size:10px; font-weight:700;">✓ สมดุลดี</span>
+        </div>
+        <div style="font-size:11px; color:var(--ink-dim);" id="txtDriftReduction">การเติมเงินช่วยลดความเบี่ยงเบนลง 0%</div>
+      </div>
+
+      <!-- Drift Progress Bar Comparison -->
+      <div style="display:flex; flex-direction:column; gap:6px; font-size:11px;">
+        <div>
+          <div style="display:flex; justify-content:space-between; color:var(--ink-dim); margin-bottom:2px;">
+            <span id="lblPreDrift">ก่อนเติมเงิน (Pre-DCA Tracking Error)</span>
+            <strong id="valPreDrift" style="color:var(--ink);">0.0%</strong>
+          </div>
+          <div style="width:100%; height:6px; background:var(--panel-2); border-radius:3px; overflow:hidden;">
+            <div id="barPreDrift" style="width:0%; height:100%; background:var(--warn); transition:width 0.3s ease;"></div>
+          </div>
+        </div>
+
+        <div>
+          <div style="display:flex; justify-content:space-between; color:var(--ink-dim); margin-bottom:2px;">
+            <span id="lblPostDrift">หลังเติมเงินเดือนนี้ (Post-DCA Tracking Error)</span>
+            <strong id="valPostDrift" style="color:var(--ok);">0.0%</strong>
+          </div>
+          <div style="width:100%; height:6px; background:var(--panel-2); border-radius:3px; overflow:hidden;">
+            <div id="barPostDrift" style="width:0%; height:100%; background:var(--ok); transition:width 0.3s ease;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Max Drift Extremes Chips -->
+      <div id="driftExtremesContainer" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; font-size:11px;"></div>
+    </div>
   </div>
 
   <div id="bucketsContainer"></div>
@@ -384,7 +421,7 @@
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v1.9.9</p>
+  <p class="version-tag">v2.0.0</p>
 
 <script src="js/shared.js"></script>
 <script src="js/rebalance.js"></script>
