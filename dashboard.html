@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.0.8">
+  <meta name="version" content="2.0.9">
   <title>ภาพรวมการเงิน</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -293,6 +293,89 @@
     </div>
   </div>
 
+  <div class="panel" role="region" aria-label="Asset Allocation & Net Worth Composition">
+    <div class="panel-title" id="lbl-composition-panel-title">
+      <span id="lbl-composition-title">⚖️ โครงสร้างความมั่งคั่งและสินทรัพย์ (Net Worth Composition)</span>
+      <span id="badge-solvency-status" style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--ok-dim); color:var(--ok); border:1px solid var(--ok);">มั่นคงสูง</span>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <!-- Donut Chart & Breakdown Details -->
+      <div style="display:flex; align-items:center; justify-content:space-around; flex-wrap:wrap; gap:16px;">
+        <!-- SVG Donut Chart with central Net Worth text -->
+        <div style="position:relative; width:160px; height:160px; flex-shrink:0;">
+          <svg id="svgCompositionDonut" viewBox="0 0 160 160" width="160" height="160" style="transform:rotate(-90deg); border-radius:50%;" role="img" aria-label="Asset Allocation Donut Chart">
+            <title id="svgDonutTitle">Asset Allocation</title>
+            <!-- Base track -->
+            <circle cx="80" cy="80" r="60" fill="transparent" stroke="var(--line)" stroke-width="20" opacity="0.3" />
+            <!-- Cash arc (Emerald) -->
+            <circle id="donutSegCash" cx="80" cy="80" r="60" fill="transparent" stroke="var(--ok)" stroke-width="20" stroke-dasharray="0 376.99" stroke-dashoffset="0" style="transition:stroke-dasharray 0.5s ease, stroke-dashoffset 0.5s ease;" />
+            <!-- Investment arc (Blue/Core) -->
+            <circle id="donutSegInvest" cx="80" cy="80" r="60" fill="transparent" stroke="var(--core)" stroke-width="20" stroke-dasharray="0 376.99" stroke-dashoffset="0" style="transition:stroke-dasharray 0.5s ease, stroke-dashoffset 0.5s ease;" />
+          </svg>
+          <div style="position:absolute; top:0; left:0; width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; pointer-events:none;">
+            <span style="font-size:10px; color:var(--ink-faint); font-weight:600;" id="lbl-donut-center-title">Net Worth</span>
+            <span id="donutCenterNetWorth" style="font-size:12px; font-weight:800; color:var(--ink); padding:0 4px; word-break:break-word;">0</span>
+          </div>
+        </div>
+
+        <!-- Metric breakdown & Shares -->
+        <div style="flex:1; min-width:200px; display:flex; flex-direction:column; gap:8px;">
+          <!-- Cash item -->
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:var(--panel-2); border-radius:8px; border:1px solid var(--line);">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="width:10px; height:10px; border-radius:50%; background:var(--ok); display:inline-block;"></span>
+              <span style="font-size:11px; font-weight:600; color:var(--ink);" id="lbl-comp-cash">เงินสด &amp; สำรองฉุกเฉิน</span>
+            </div>
+            <div style="text-align:right;">
+              <span id="val-comp-cash" style="font-size:11px; font-weight:700; color:var(--ink);">0 บาท</span>
+              <span id="pct-comp-cash" style="font-size:10px; color:var(--ink-faint); margin-left:4px;">(0%)</span>
+            </div>
+          </div>
+
+          <!-- Investment item -->
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:var(--panel-2); border-radius:8px; border:1px solid var(--line);">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="width:10px; height:10px; border-radius:50%; background:var(--core); display:inline-block;"></span>
+              <span style="font-size:11px; font-weight:600; color:var(--ink);" id="lbl-comp-invest">พอร์ตการลงทุน</span>
+            </div>
+            <div style="text-align:right;">
+              <span id="val-comp-invest" style="font-size:11px; font-weight:700; color:var(--ink);">0 บาท</span>
+              <span id="pct-comp-invest" style="font-size:10px; color:var(--ink-faint); margin-left:4px;">(0%)</span>
+            </div>
+          </div>
+
+          <!-- Debt / Liabilities item -->
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:var(--panel-2); border-radius:8px; border:1px solid var(--line);">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="width:10px; height:10px; border-radius:50%; background:var(--danger); display:inline-block;"></span>
+              <span style="font-size:11px; font-weight:600; color:var(--ink);" id="lbl-comp-debt">ภาระหนี้สินรวม</span>
+            </div>
+            <div style="text-align:right;">
+              <span id="val-comp-debt" style="font-size:11px; font-weight:700; color:var(--danger);">0 บาท</span>
+              <span id="pct-comp-debt" style="font-size:10px; color:var(--ink-faint); margin-left:4px;">(0%)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Financial Health & Solvency Bar -->
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:11px;">
+          <span style="font-weight:600; color:var(--ink);" id="lbl-solvency-title">อัตราส่วนความมั่งคั่งสุทธิ (Solvency Ratio)</span>
+          <span id="txt-solvency-pct" style="font-weight:700; color:var(--ok);">100%</span>
+        </div>
+        <div style="height:6px; background:var(--line); border-radius:999px; overflow:hidden;">
+          <div id="bar-solvency" style="height:100%; width:100%; background:var(--ok); border-radius:999px; transition:width 0.4s ease;"></div>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:10px; color:var(--ink-faint);">
+          <span id="txt-gross-assets">สินทรัพย์รวม: 0 บาท</span>
+          <span id="txt-debt-ratio">หนี้สินต่อสินทรัพย์ (D/A): 0%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="panel" role="region" aria-label="Growth Trends">
     <div class="panel-title" id="lbl-chart-title">
       <span id="lbl-chart-title-txt">แนวโน้มการเติบโต (Trends)</span>
@@ -415,7 +498,7 @@
     </div>
   </div>
 
-  <p class="version-tag">Money Superapp v2.0.8</p>
+  <p class="version-tag">Money Superapp v2.0.9</p>
 
 <script src="js/shared.js"></script>
 <script>
@@ -479,7 +562,19 @@
             lblRestoreArchive: 'กู้คืนคลัง',
             archiveSuccess: (n) => `✓ ย้ายข้อมูลประวัติเก่า ${n} รายการไปจัดเก็บในคลัง IndexedDB สำเร็จ`,
             restoreSuccess: (n) => `✓ กู้คืนประวัติจากคลัง ${n} รายการเรียบร้อยแล้ว`,
-            archiveEmpty: 'ไม่มีประวัติที่เก่ากว่า 1 ปีให้จัดเก็บ'
+            archiveEmpty: 'ไม่มีประวัติที่เก่ากว่า 1 ปีให้จัดเก็บ',
+            compTitle: '⚖️ โครงสร้างความมั่งคั่งและสินทรัพย์ (Net Worth Composition)',
+            compCash: 'เงินสด & สำรองฉุกเฉิน',
+            compInvest: 'พอร์ตการลงทุน',
+            compDebt: 'ภาระหนี้สินรวม',
+            solvencyTitle: 'อัตราส่วนความมั่งคั่งสุทธิ (Solvency Ratio)',
+            solvencyHealthy: 'มั่นคงสูง',
+            solvencyModerate: 'ปานกลาง',
+            solvencyCaution: 'หนี้สินสูง',
+            solvencyDebtFree: 'ปลอดหนี้ 100% 🎉',
+            grossAssetsLabel: 'สินทรัพย์รวม: ',
+            debtRatioLabel: 'หนี้สินต่อสินทรัพย์ (D/A): ',
+            donutCenterNetWorth: 'Net Worth'
         },
         en: {
             title: 'Financial Dashboard',
@@ -540,7 +635,19 @@
             lblRestoreArchive: 'Restore Archive',
             archiveSuccess: (n) => `✓ Archived ${n} historical snapshots to IndexedDB storage`,
             restoreSuccess: (n) => `✓ Restored ${n} snapshots from archive`,
-            archiveEmpty: 'No snapshots older than 12 months to archive'
+            archiveEmpty: 'No snapshots older than 12 months to archive',
+            compTitle: '⚖️ Net Worth & Asset Composition',
+            compCash: 'Cash & Emergency Fund',
+            compInvest: 'Investment Portfolio',
+            compDebt: 'Total Liabilities & Debt',
+            solvencyTitle: 'Solvency Ratio (Net Worth / Assets)',
+            solvencyHealthy: 'Highly Solvent',
+            solvencyModerate: 'Moderate Leverage',
+            solvencyCaution: 'High Leverage',
+            solvencyDebtFree: '100% Debt-Free 🎉',
+            grossAssetsLabel: 'Gross Assets: ',
+            debtRatioLabel: 'Debt-to-Asset (D/A): ',
+            donutCenterNetWorth: 'Net Worth'
         }
     };
 
@@ -597,6 +704,12 @@
             'lbl-print-doc-sub': t.printDocSub,
             'lblArchiveSnapshots': t.lblArchiveSnapshots,
             'lblRestoreArchive': t.lblRestoreArchive,
+            'lbl-composition-title': t.compTitle,
+            'lbl-comp-cash': t.compCash,
+            'lbl-comp-invest': t.compInvest,
+            'lbl-comp-debt': t.compDebt,
+            'lbl-solvency-title': t.solvencyTitle,
+            'lbl-donut-center-title': t.donutCenterNetWorth
         };
 
         Object.keys(textMapping).forEach(id => {
@@ -787,6 +900,106 @@
         if (document.getElementById('qc-rebal-sub')) document.getElementById('qc-rebal-sub').textContent = `${(LANG === 'en' ? 'Portfolio: ' : 'พอร์ต: ')}${formatMoney(p.portfolioVal)} ${unit}`;
         if (document.getElementById('qc-rem-sub')) document.getElementById('qc-rem-sub').textContent = `${(LANG === 'en' ? 'Investable: ' : 'คงเหลือลงทุน: ')}${formatMoney(p.monthlyInvest)} ${unit}`;
         if (document.getElementById('qc-debt-sub')) document.getElementById('qc-debt-sub').textContent = `${(LANG === 'en' ? 'Debt: ' : 'ยอดหนี้: ')}${formatMoney(p.totalDebt)} ${unit}`;
+
+        renderNetWorthComposition(p, t);
+    }
+
+    function renderNetWorthComposition(p, t) {
+        const c = Math.max(0, p.emergencyReserve || 0);
+        const inv = Math.max(0, p.portfolioVal || 0);
+        const d = Math.max(0, p.totalDebt || 0);
+        const grossAssets = c + inv;
+        const nw = p.netWorth;
+
+        let cashPct = 0;
+        let investPct = 0;
+        let debtRatio = 0;
+        let solvencyRatio = 100;
+
+        if (grossAssets > 0) {
+            cashPct = (c / grossAssets) * 100;
+            investPct = (inv / grossAssets) * 100;
+            debtRatio = (d / grossAssets) * 100;
+            solvencyRatio = (nw / grossAssets) * 100;
+        } else if (d > 0) {
+            debtRatio = 100;
+            solvencyRatio = -100;
+        }
+
+        // DOM elements
+        const donutCash = document.getElementById('donutSegCash');
+        const donutInvest = document.getElementById('donutSegInvest');
+        const donutCenter = document.getElementById('donutCenterNetWorth');
+        const badgeSolvency = document.getElementById('badge-solvency-status');
+        const valCash = document.getElementById('val-comp-cash');
+        const pctCash = document.getElementById('pct-comp-cash');
+        const valInvest = document.getElementById('val-comp-invest');
+        const pctInvest = document.getElementById('pct-comp-invest');
+        const valDebt = document.getElementById('val-comp-debt');
+        const pctDebt = document.getElementById('pct-comp-debt');
+        const txtSolvency = document.getElementById('txt-solvency-pct');
+        const barSolvency = document.getElementById('bar-solvency');
+        const txtGross = document.getElementById('txt-gross-assets');
+        const txtDebtRatio = document.getElementById('txt-debt-ratio');
+
+        if (donutCenter) donutCenter.textContent = formatMoney(nw) + ' ' + unit;
+        if (valCash) valCash.textContent = formatMoney(c) + ' ' + unit;
+        if (pctCash) pctCash.textContent = `(${cashPct.toFixed(1)}%)`;
+        if (valInvest) valInvest.textContent = formatMoney(inv) + ' ' + unit;
+        if (pctInvest) pctInvest.textContent = `(${investPct.toFixed(1)}%)`;
+        if (valDebt) valDebt.textContent = formatMoney(d) + ' ' + unit;
+        if (pctDebt) pctDebt.textContent = grossAssets > 0 ? `(${debtRatio.toFixed(1)}% ${LANG === 'en' ? 'of assets' : 'ของสินทรัพย์'})` : '';
+
+        // SVG Donut calculation (r=60, C=2*PI*60 ≈ 376.99)
+        const C = 2 * Math.PI * 60;
+        if (donutCash && donutInvest) {
+            if (grossAssets > 0) {
+                const segCash = (cashPct / 100) * C;
+                const segInvest = (investPct / 100) * C;
+                donutCash.setAttribute('stroke-dasharray', `${segCash.toFixed(2)} ${(C - segCash).toFixed(2)}`);
+                donutCash.setAttribute('stroke-dashoffset', '0');
+                donutInvest.setAttribute('stroke-dasharray', `${segInvest.toFixed(2)} ${(C - segInvest).toFixed(2)}`);
+                donutInvest.setAttribute('stroke-dashoffset', String(-segCash.toFixed(2)));
+            } else {
+                donutCash.setAttribute('stroke-dasharray', `0 ${C.toFixed(2)}`);
+                donutInvest.setAttribute('stroke-dasharray', `0 ${C.toFixed(2)}`);
+            }
+        }
+
+        // Solvency health status badge & progress bar
+        const clampedSolvency = Math.max(0, Math.min(100, solvencyRatio));
+        if (barSolvency) barSolvency.style.width = `${clampedSolvency.toFixed(1)}%`;
+        if (txtSolvency) txtSolvency.textContent = `${solvencyRatio.toFixed(1)}%`;
+        if (txtGross) txtGross.textContent = (t.grossAssetsLabel || 'สินทรัพย์รวม: ') + formatMoney(grossAssets) + ' ' + unit;
+        if (txtDebtRatio) {
+            txtDebtRatio.textContent = d <= 0
+                ? (LANG === 'en' ? 'Debt-to-Asset (D/A): 0% (Debt-Free)' : 'หนี้สินต่อสินทรัพย์ (D/A): 0% (ปลอดหนี้)')
+                : (t.debtRatioLabel || 'หนี้สินต่อสินทรัพย์ (D/A): ') + `${debtRatio.toFixed(1)}%`;
+        }
+
+        if (badgeSolvency) {
+            if (d <= 0) {
+                badgeSolvency.style.background = 'var(--ok-dim)';
+                badgeSolvency.style.color = 'var(--ok)';
+                badgeSolvency.style.borderColor = 'var(--ok)';
+                badgeSolvency.textContent = t.solvencyDebtFree || 'ปลอดหนี้ 100% 🎉';
+            } else if (solvencyRatio >= 80) {
+                badgeSolvency.style.background = 'var(--ok-dim)';
+                badgeSolvency.style.color = 'var(--ok)';
+                badgeSolvency.style.borderColor = 'var(--ok)';
+                badgeSolvency.textContent = t.solvencyHealthy || 'มั่นคงสูง';
+            } else if (solvencyRatio >= 50) {
+                badgeSolvency.style.background = 'var(--blue-dim)';
+                badgeSolvency.style.color = 'var(--blue)';
+                badgeSolvency.style.borderColor = 'var(--blue)';
+                badgeSolvency.textContent = t.solvencyModerate || 'ปานกลาง';
+            } else {
+                badgeSolvency.style.background = 'var(--danger-dim)';
+                badgeSolvency.style.color = 'var(--danger)';
+                badgeSolvency.style.borderColor = 'var(--danger)';
+                badgeSolvency.textContent = t.solvencyCaution || 'หนี้สินสูง';
+            }
+        }
     }
 
     // --- Financial Goals & Milestones ---

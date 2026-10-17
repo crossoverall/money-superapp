@@ -419,3 +419,17 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
   3. Extended SVG trajectory rendering to include `simBaseline.months` in coordinate scaling, plot a dashed slate comparative baseline path, and display an interactive purple gift marker (`🎁 +${amount}`) at the exact injection point.
   4. Synchronized windfall inputs on page load (`syncWindfallInputs()`), undo operations (`undoMgr.onUndo`), and state resets (`resetDefaults()`).
 - **Rule:** When simulating one-off financial capital injections (windfalls/bonuses), always run comparative dual simulations (with and without windfall) to compute marginal savings, ensure surplus capital cascades properly through the prioritization strategy without negative balances, and render the comparative baseline trajectory on chart overlays.
+
+### 2026-10-17: Asset Allocation & Net Worth Composition Donut / Solvency Ratio Engine
+
+- **Date & Context:** 2026-10-17, implementing Asset Allocation & Net Worth Composition Donut / Solvency Ratio Visualizer in `dashboard.html` (`v2.0.9`).
+- **Problem:**
+  1. The master dashboard aggregated net worth as a single scalar KPI without visualizing how assets (liquid cash vs investment portfolio) and liabilities (debt) interact.
+  2. Users lacked visibility into structural solvency ($NW / A$) and debt leverage ($D / A$), making it difficult to judge whether wealth expansion was accompanied by excessive debt exposure.
+  3. Drawing complex SVG charts typically invites hefty external charting libraries, violating ADR-001 (zero-build, zero-CDN privacy architecture).
+- **Resolution:**
+  1. Built a zero-dependency SVG donut chart using standard `<circle>` elements with geometric `stroke-dasharray` and `stroke-dashoffset` calculated from cash and investment proportions relative to gross assets ($A = C + I$).
+  2. Implemented solvency ratio calculation ($NW / A \times 100\%$) and debt-to-asset leverage ($D / A \times 100\%$) alongside dynamic health badges (`ปลอดหนี้ 100% 🎉` / `มั่นคงสูง` / `ปานกลาง` / `หนี้สินสูง`).
+  3. Guarded zero gross asset edge cases ($A = 0$) and negative net worth ($NW < 0$) without generating `NaN`, `-0`, or division-by-zero layout bugs.
+  4. Added 5 unit tests verifying composition ratios and arc offsets across healthy, leveraged, debt-free, and zero-asset scenarios in `tests/financial-math.test.mjs`.
+- **Rule:** When presenting holistic net worth, pair scalar balances with an asset-mix donut and solvency/leverage ratio ($NW / A$ and $D / A$) using native SVG dasharray circles to maintain 100% client-side privacy without external libraries.

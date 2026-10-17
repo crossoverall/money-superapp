@@ -2234,4 +2234,119 @@ describe('Financial Math Verification', () => {
       assert.equal(valAfter, null);
     });
   });
+
+  describe('Net Worth Composition, Asset Allocation & Solvency Engine', () => {
+    function calculateNetWorthComposition({ cash = 0, investments = 0, debt = 0 } = {}) {
+      const c = Math.max(0, Number(cash) || 0);
+      const inv = Math.max(0, Number(investments) || 0);
+      const d = Math.max(0, Number(debt) || 0);
+
+      const grossAssets = c + inv;
+      const netWorth = grossAssets - d;
+
+      let cashPct = 0;
+      let investPct = 0;
+      let debtToAssetRatio = 0;
+      let solvencyRatio = 100;
+
+      if (grossAssets > 0) {
+        cashPct = (c / grossAssets) * 100;
+        investPct = (inv / grossAssets) * 100;
+        debtToAssetRatio = (d / grossAssets) * 100;
+        solvencyRatio = (netWorth / grossAssets) * 100;
+      } else if (d > 0) {
+        debtToAssetRatio = Infinity;
+        solvencyRatio = -Infinity;
+      }
+
+      let solvencyStatus = 'debt_free';
+      if (d > 0) {
+        if (solvencyRatio >= 80) {
+          solvencyStatus = 'healthy';
+        } else if (solvencyRatio >= 50) {
+          solvencyStatus = 'moderate';
+        } else {
+          solvencyStatus = 'caution';
+        }
+      }
+
+      // Circumference for r=65
+      const r = 65;
+      const circ = 2 * Math.PI * r;
+      const cashArc = (cashPct / 100) * circ;
+      const investArc = (investPct / 100) * circ;
+
+      return {
+        cash: c,
+        investments: inv,
+        debt: d,
+        grossAssets,
+        netWorth,
+        cashPct,
+        investPct,
+        debtToAssetRatio,
+        solvencyRatio,
+        solvencyStatus,
+        donut: {
+          radius: r,
+          circumference: circ,
+          cashStrokeDash: `${cashArc.toFixed(2)} ${(circ - cashArc).toFixed(2)}`,
+          cashOffset: 0,
+          investStrokeDash: `${investArc.toFixed(2)} ${(circ - investArc).toFixed(2)}`,
+          investOffset: -cashArc,
+        },
+      };
+    }
+
+    it('calculates balanced composition for standard liquid cash and portfolio with zero debt', () => {
+      const comp = calculateNetWorthComposition({ cash: 300000, investments: 700000, debt: 0 });
+      assert.equal(comp.grossAssets, 1000000);
+      assert.equal(comp.netWorth, 1000000);
+      assert.equal(comp.cashPct, 30);
+      assert.equal(comp.investPct, 70);
+      assert.equal(comp.debtToAssetRatio, 0);
+      assert.equal(comp.solvencyRatio, 100);
+      assert.equal(comp.solvencyStatus, 'debt_free');
+    });
+
+    it('calculates solvency and leverage ratios accurately with active debt', () => {
+      const comp = calculateNetWorthComposition({ cash: 200000, investments: 800000, debt: 250000 });
+      assert.equal(comp.grossAssets, 1000000);
+      assert.equal(comp.netWorth, 750000);
+      assert.equal(comp.debtToAssetRatio, 25);
+      assert.equal(comp.solvencyRatio, 75);
+      assert.equal(comp.solvencyStatus, 'moderate'); // 50 <= solvency < 80
+    });
+
+    it('identifies highly leveraged or negative net worth status safely', () => {
+      const comp = calculateNetWorthComposition({ cash: 50000, investments: 50000, debt: 150000 });
+      assert.equal(comp.grossAssets, 100000);
+      assert.equal(comp.netWorth, -50000);
+      assert.equal(comp.debtToAssetRatio, 150);
+      assert.equal(comp.solvencyRatio, -50);
+      assert.equal(comp.solvencyStatus, 'caution');
+    });
+
+    it('handles zero assets and edge cases without NaN or division by zero', () => {
+      const emptyComp = calculateNetWorthComposition({ cash: 0, investments: 0, debt: 0 });
+      assert.equal(emptyComp.grossAssets, 0);
+      assert.equal(emptyComp.netWorth, 0);
+      assert.equal(emptyComp.solvencyRatio, 100);
+      assert.equal(emptyComp.debtToAssetRatio, 0);
+      assert.equal(emptyComp.solvencyStatus, 'debt_free');
+
+      const debtOnlyComp = calculateNetWorthComposition({ cash: 0, investments: 0, debt: 50000 });
+      assert.equal(debtOnlyComp.grossAssets, 0);
+      assert.equal(debtOnlyComp.netWorth, -50000);
+      assert.equal(debtOnlyComp.solvencyStatus, 'caution');
+    });
+
+    it('generates consistent SVG circle stroke-dasharray and stroke-dashoffset values', () => {
+      const comp = calculateNetWorthComposition({ cash: 500000, investments: 500000, debt: 0 });
+      const halfCirc = (comp.donut.circumference / 2).toFixed(2);
+      assert.equal(comp.donut.cashStrokeDash, `${halfCirc} ${halfCirc}`);
+      assert.equal(comp.donut.cashOffset, 0);
+      assert.equal(comp.donut.investOffset, -(comp.donut.circumference / 2));
+    });
+  });
 });
