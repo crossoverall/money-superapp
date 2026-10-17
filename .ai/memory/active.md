@@ -1,5 +1,5 @@
 ---
-task_id: "FEAT-ENCRYPTED-BACKUP-VAULT-01"
+task_id: "FEAT-PVD-RMF-OPTIMIZER-01"
 status: "in_progress"
 current_stage: "coder"
 complexity: "level_2"
@@ -7,15 +7,12 @@ iteration_count: 0
 pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Active Task: AES-GCM Encrypted Offline Backup Vault (.superapp.vault) (Phase 41 / v2.2.4)
-- **Goal:** Provide military-grade, 100% offline client-side encrypted backup & restore using standard W3C Web Cryptography API (`crypto.subtle`).
-- **Cryptographic Specifications:**
-  - Key Derivation: PBKDF2 (SHA-256, 100,000 iterations, 16-byte cryptographically secure random salt).
-  - Cipher: AES-GCM (256-bit key, 12-byte random IV, AEAD authenticated integrity).
-  - File Format: `.superapp.vault` envelope containing format version, creation timestamp, Base64 salt, Base64 IV, and Base64 ciphertext.
-- **Workflow & UI:**
-  - In `index.html` Settings modal: Export button for `.superapp.vault` with passphrase confirmation modal.
-  - File import handler auto-detects `.vault` format and prompts for decryption passphrase.
-  - Automated unit tests in `tests/financial-math.test.mjs` verifying encryption, decryption, tampered payload rejection, and wrong password protection.
+### Active Task: Section 48(5) Retirement Lump-Sum vs Transfer-to-RMF Tax Optimization Engine (Phase 42 / v2.2.5)
+- **Goal:** Empower Thai employees facing termination/resignation with $\ge 5$ years tenure and age $< 55$ to compare taking a cash lump sum vs transferring their Provident Fund (PVD) to an RMF for PVD.
+- **Specifications:**
+  - Option A (Full Lump Sum): Calculate Section 48(5) tax on statutory severance excess + taxable PVD using 7,000 THB/yr deduction + 50% deduction and progressive rates.
+  - Option B (Transfer to RMF): PVD is 100% tax-exempt. Section 48(5) tax applies only to severance excess.
+  - Tax Savings Analysis: Displays immediate tax saved, immediate cash payout, and wealth retained in RMF.
+  - Bilingual UI (Thai / English) in `tax-calculator.html`.
+  - Comprehensive unit tests in `tests/financial-math.test.mjs`.
 - **Compliance:** 100% offline-first PWA, zero runtime CDNs, zero telemetry, zero build step (ADR-001).
-

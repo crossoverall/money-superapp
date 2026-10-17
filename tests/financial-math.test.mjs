@@ -4970,4 +4970,199 @@ describe('Financial Math Verification', () => {
       assert.ok(neg.compositeScore >= 0 && neg.compositeScore <= 100);
     });
   });
+
+  describe('Section 48(5) PVD Lump-Sum vs Transfer-to-RMF Tax Optimization Engine', () => {
+    function progressiveTax48_5(income) {
+      if (income <= 0) return 0;
+      if (income <= 300000) return income * 0.05;
+      if (income <= 500000) return 300000 * 0.05 + (income - 300000) * 0.1;
+      if (income <= 750000) return 300000 * 0.05 + 200000 * 0.1 + (income - 500000) * 0.15;
+      if (income <= 1000000) return 300000 * 0.05 + 200000 * 0.1 + 250000 * 0.15 + (income - 750000) * 0.2;
+      if (income <= 2000000)
+        return 300000 * 0.05 + 200000 * 0.1 + 250000 * 0.15 + 250000 * 0.2 + (income - 1000000) * 0.25;
+      if (income <= 5000000)
+        return 300000 * 0.05 + 200000 * 0.1 + 250000 * 0.15 + 250000 * 0.2 + 1000000 * 0.25 + (income - 2000000) * 0.3;
+      return (
+        300000 * 0.05 +
+        200000 * 0.1 +
+        250000 * 0.15 +
+        250000 * 0.2 +
+        1000000 * 0.25 +
+        3000000 * 0.3 +
+        (income - 5000000) * 0.35
+      );
+    }
+
+    function calculatePvdRmfRolloverOptimization({
+      severanceLegal = 0,
+      severanceExtra = 0,
+      pvdEmpContrib = 0,
+      pvdEmpReturn = 0,
+      pvdEmrContrib = 0,
+      pvdEmrReturn = 0,
+      years = 0,
+    } = {}) {
+      const safeYears = Math.max(0, years || 0);
+      const safeSevLegal = Math.max(0, severanceLegal || 0);
+      const safeSevExtra = Math.max(0, severanceExtra || 0);
+      const safeEmpContrib = Math.max(0, pvdEmpContrib || 0);
+      const safeEmpReturn = Math.max(0, pvdEmpReturn || 0);
+      const safeEmrContrib = Math.max(0, pvdEmrContrib || 0);
+      const safeEmrReturn = Math.max(0, pvdEmrReturn || 0);
+
+      const legalExcess = Math.max(0, safeSevLegal - 600000);
+      const totalSeveranceExcess = legalExcess + safeSevExtra;
+      const pvdTaxable = safeEmpReturn + safeEmrContrib + safeEmrReturn;
+      const pvdTotal = safeEmpContrib + pvdTaxable;
+      const totalGrossPayout = safeSevLegal + safeSevExtra + pvdTotal;
+
+      const isEligibleSec48 = safeYears >= 5;
+
+      let lumpTaxable = 0;
+      let lumpTax = 0;
+      if (isEligibleSec48) {
+        lumpTaxable = Math.max(0, (totalSeveranceExcess + pvdTaxable - 7000 * safeYears) * 0.5);
+        lumpTax = progressiveTax48_5(lumpTaxable);
+      } else {
+        lumpTaxable = totalSeveranceExcess + pvdTaxable;
+        lumpTax = computeThaiTax(lumpTaxable);
+      }
+      const lumpNetCash = Math.max(0, totalGrossPayout - lumpTax);
+
+      let rmfTaxable = 0;
+      let rmfTax = 0;
+      if (isEligibleSec48) {
+        rmfTaxable = Math.max(0, (totalSeveranceExcess - 7000 * safeYears) * 0.5);
+        rmfTax = progressiveTax48_5(rmfTaxable);
+      } else {
+        rmfTaxable = totalSeveranceExcess;
+        rmfTax = computeThaiTax(rmfTaxable);
+      }
+      const rmfImmediateCash = Math.max(0, safeSevLegal + safeSevExtra - rmfTax);
+      const rmfInvested = pvdTotal;
+      const rmfTotalWealth = rmfImmediateCash + rmfInvested;
+
+      const taxSaved = Math.max(0, lumpTax - rmfTax);
+      const taxSavingsPct = lumpTax > 0 ? Math.round((taxSaved / lumpTax) * 1000) / 10 : 0;
+
+      let recommendation = 'rmf';
+      if (taxSaved <= 0) {
+        recommendation = pvdTotal > 0 ? 'neutral' : 'no_pvd';
+      }
+
+      return {
+        isEligibleSec48,
+        pvdTaxable,
+        pvdTotal,
+        totalSeveranceExcess,
+        lumpSumOption: {
+          taxableAmount: lumpTaxable,
+          tax: lumpTax,
+          netCash: lumpNetCash,
+        },
+        rmfRolloverOption: {
+          taxableAmount: rmfTaxable,
+          tax: rmfTax,
+          netCashImmediate: rmfImmediateCash,
+          rmfInvested,
+          totalRetainedWealth: rmfTotalWealth,
+        },
+        taxSaved,
+        taxSavingsPct,
+        recommendation,
+      };
+    }
+
+    it('calculates substantial tax savings when transferring PVD to RMF with 10 years tenure and 500k taxable PVD', () => {
+      // 10 years service, Statutory Severance 300,000 (exempt), Extra Severance 0
+      // PVD: Emp contrib 300k, Emp return 100k, Emr contrib 300k, Emr return 100k -> PVD Taxable = 500,000, PVD Total = 800,000
+      // Lump Sum: (500,000 - 70,000) * 0.5 = 215,000 taxable base -> 215,000 * 5% = 10,750 THB tax.
+      // RMF Rollover: 0 severance excess -> 0 taxable base -> 0 tax.
+      // Immediate Tax Saved = 10,750 THB.
+      const res = calculatePvdRmfRolloverOptimization({
+        severanceLegal: 300000,
+        severanceExtra: 0,
+        pvdEmpContrib: 300000,
+        pvdEmpReturn: 100000,
+        pvdEmrContrib: 300000,
+        pvdEmrReturn: 100000,
+        years: 10,
+      });
+
+      assert.equal(res.isEligibleSec48, true);
+      assert.equal(res.pvdTaxable, 500000);
+      assert.equal(res.pvdTotal, 800000);
+      assert.equal(res.lumpSumOption.taxableAmount, 215000);
+      assert.equal(res.lumpSumOption.tax, 10750);
+      assert.equal(res.lumpSumOption.netCash, 1100000 - 10750); // 1,089,250
+      assert.equal(res.rmfRolloverOption.taxableAmount, 0);
+      assert.equal(res.rmfRolloverOption.tax, 0);
+      assert.equal(res.rmfRolloverOption.netCashImmediate, 300000);
+      assert.equal(res.rmfRolloverOption.rmfInvested, 800000);
+      assert.equal(res.rmfRolloverOption.totalRetainedWealth, 1100000);
+      assert.equal(res.taxSaved, 10750);
+      assert.equal(res.taxSavingsPct, 100);
+      assert.equal(res.recommendation, 'rmf');
+    });
+
+    it('calculates marginal tax reduction when statutory severance exceeds 600,000 exemption', () => {
+      // 10 years service, Severance Legal 1,000,000 (excess = 400,000)
+      // Taxable PVD = 500,000
+      // Lump sum: (400,000 + 500,000 - 70,000) * 0.5 = 415,000 taxable base
+      //           Tax = 300,000 * 0.05 + 115,000 * 0.10 = 15,000 + 11,500 = 26,500 THB.
+      // RMF Rollover: (400,000 - 70,000) * 0.5 = 165,000 taxable base
+      //           Tax = 165,000 * 0.05 = 8,250 THB.
+      // Tax Saved = 26,500 - 8,250 = 18,250 THB.
+      const res = calculatePvdRmfRolloverOptimization({
+        severanceLegal: 1000000,
+        severanceExtra: 0,
+        pvdEmpContrib: 200000,
+        pvdEmpReturn: 100000,
+        pvdEmrContrib: 250000,
+        pvdEmrReturn: 150000,
+        years: 10,
+      });
+
+      assert.equal(res.lumpSumOption.taxableAmount, 415000);
+      assert.equal(res.lumpSumOption.tax, 26500);
+      assert.equal(res.rmfRolloverOption.taxableAmount, 165000);
+      assert.equal(res.rmfRolloverOption.tax, 8250);
+      assert.equal(res.taxSaved, 18250);
+      assert.ok(res.taxSavingsPct > 0);
+      assert.equal(res.recommendation, 'rmf');
+    });
+
+    it('returns neutral recommendation when tax is zero under both options due to high tenure deductions', () => {
+      // 20 years service (deduction = 140,000), Taxable PVD = 100,000, Severance excess = 0
+      // 100,000 - 140,000 < 0 -> taxable base = 0 for both!
+      const res = calculatePvdRmfRolloverOptimization({
+        severanceLegal: 200000,
+        severanceExtra: 0,
+        pvdEmpContrib: 50000,
+        pvdEmpReturn: 20000,
+        pvdEmrContrib: 50000,
+        pvdEmrReturn: 30000,
+        years: 20,
+      });
+
+      assert.equal(res.lumpSumOption.tax, 0);
+      assert.equal(res.rmfRolloverOption.tax, 0);
+      assert.equal(res.taxSaved, 0);
+      assert.equal(res.recommendation, 'neutral');
+    });
+
+    it('handles zero PVD, negative values, and zero tenure gracefully', () => {
+      const zero = calculatePvdRmfRolloverOptimization({});
+      assert.equal(zero.taxSaved, 0);
+      assert.equal(zero.recommendation, 'no_pvd');
+
+      const neg = calculatePvdRmfRolloverOptimization({
+        severanceLegal: -1000,
+        pvdEmpContrib: -500,
+        years: -3,
+      });
+      assert.equal(neg.taxSaved, 0);
+      assert.equal(Number.isNaN(neg.taxSaved), false);
+    });
+  });
 });

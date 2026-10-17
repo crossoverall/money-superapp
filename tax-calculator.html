@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="version" content="2.2.4">
+  <meta name="version" content="2.2.5">
   <meta name="description" content="คำนวณภาษีเงินชดเชยและเงินสะสมกองทุนสำรองเลี้ยงชีพ (PVD) — ครอบคลุมสมาชิกไม่เกิน 5 ปี, 5 ปีขึ้นไปอายุไม่ถึง 55, และ 5 ปีขึ้นไปอายุ 55 ปีขึ้นไป">
   <title>คำนวณภาษีเงินชดเชย + PVD</title>
   <link rel="stylesheet" href="css/theme.css">
@@ -504,12 +504,63 @@
         </span>
         <span class="result-value" id="res-net" style="color: var(--ok); font-size: 1.25rem; font-weight: 700;"></span>
       </div>
+
+      <!-- PVD to RMF Rollover Tax Optimizer (Active in Tab 1) -->
+      <div id="rmf-optimizer-card" style="display: none; margin-top: 14px; padding: 14px; background: var(--surface-2); border: 1px solid var(--accent); border-radius: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+          <div>
+            <div style="font-size: 0.88rem; font-weight: 700; color: var(--ink);" id="lbl-rmf-opt-title">
+              🔄 เปรียบเทียบ: รับเงินก้อน vs โอนเข้า RMF
+            </div>
+            <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-rmf-opt-subtitle">
+              กลยุทธ์ประหยัดภาษีเมื่ออายุงาน ≥ 5 ปี และอายุ &lt; 55 ปี
+            </div>
+          </div>
+          <span id="opt-savings-badge" class="result-value exempt-badge" style="font-size: 0.75rem; background: var(--ok); color: #fff; padding: 3px 8px; border-radius: 99px;">
+            ประหยัดภาษี 0 บาท
+          </span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+          <!-- Option A: Full Lump Sum -->
+          <div style="background: var(--card-bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px;">
+            <div style="font-size: 0.78rem; font-weight: 700; color: var(--danger); margin-bottom: 6px;" id="lbl-opt-lump-title">
+              ทางเลือก A: รับเงินก้อน
+            </div>
+            <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-opt-lump-tax-lbl">ภาษี ม.48(5):</div>
+            <div style="font-size: 0.95rem; font-weight: 700; color: var(--danger); margin-bottom: 6px;" id="opt-lump-tax">0.00 บาท</div>
+            
+            <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-opt-lump-net-lbl">เงินสดรับสุทธิทันที:</div>
+            <div style="font-size: 0.95rem; font-weight: 700; color: var(--ink);" id="opt-lump-net">0.00 บาท</div>
+          </div>
+
+          <!-- Option B: Rollover to RMF -->
+          <div style="background: var(--card-bg); border: 1px solid var(--ok); border-radius: 8px; padding: 10px;">
+            <div style="font-size: 0.78rem; font-weight: 700; color: var(--ok); margin-bottom: 6px;" id="lbl-opt-rmf-title">
+              ทางเลือก B: โอนเข้า RMF
+            </div>
+            <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-opt-rmf-tax-lbl">ภาษี ม.48(5) (ชดเชย):</div>
+            <div style="font-size: 0.95rem; font-weight: 700; color: var(--ok); margin-bottom: 6px;" id="opt-rmf-tax">0.00 บาท</div>
+
+            <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-opt-rmf-invested-lbl">ยอดสะสมลงทุนต่อใน RMF:</div>
+            <div style="font-size: 0.95rem; font-weight: 700; color: var(--accent); margin-bottom: 6px;" id="opt-rmf-invested">0.00 บาท</div>
+
+            <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-opt-rmf-total-lbl">รวมความมั่งคั่งสุทธิ:</div>
+            <div style="font-size: 0.95rem; font-weight: 700; color: var(--ok);" id="opt-rmf-total">0.00 บาท</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 10px; font-size: 0.72rem; line-height: 1.45; color: var(--ink-dim); background: var(--card-bg); border-radius: 6px; padding: 8px;" id="lbl-opt-note">
+          💡 <strong>ข้อแนะนำ:</strong> การโอนย้าย PVD เข้ากองทุน RMF for PVD ภายใน 30 วันหลังสิ้นสุดสภาพพนักงาน ทำให้ยอด PVD ทั้งหมดได้รับยกเว้นภาษีทันที และคงสถานะการลงทุนต่อเนื่องจนถึงอายุ 55 ปีบริบูรณ์เพื่อถอนออกโดยปลอดภาษี 100%
+        </div>
+      </div>
+
       <button type="button" class="calc-btn" id="btn-export-to-remaining" onclick="exportPayoutToRemaining()" style="background: var(--core); margin-top: 10px; width: 100%;">
         📤 <span id="lbl-export-remaining">ส่งยอดสุทธินี้ไปยัง เงินคงเหลือ (Remaining Money)</span>
       </button>
       <button class="reset-btn" onclick="reset()" id="btn-reset">ล้างข้อมูล</button>
     </div>
-    <p style="text-align:center;font-size:0.72rem;color:#94a3b8;margin-top:16px;">v2.2.4</p>
+    <p style="text-align:center;font-size:0.72rem;color:#94a3b8;margin-top:16px;">v2.2.5</p>
   </div>
 
   <script src="js/shared.js"></script>
@@ -552,6 +603,16 @@
         'lbl-res-net': 'Net payout after tax',
         'tip-net': '= Total severance + Total PVD − Tax payable',
         'lbl-export-remaining': 'Export Net Payout to Remaining Money',
+        'lbl-rmf-opt-title': '🔄 Compare: Cash Lump-Sum vs Transfer to RMF',
+        'lbl-rmf-opt-subtitle': 'Tax optimization for PVD members ≥ 5 yrs and age < 55',
+        'lbl-opt-lump-title': 'Option A: Take Full Lump Sum',
+        'lbl-opt-lump-tax-lbl': 'Tax payable (Sec. 48(5)):',
+        'lbl-opt-lump-net-lbl': 'Immediate net cash:',
+        'lbl-opt-rmf-title': 'Option B: Transfer PVD to RMF',
+        'lbl-opt-rmf-tax-lbl': 'Tax payable (severance only):',
+        'lbl-opt-rmf-invested-lbl': 'Retained in RMF for growth:',
+        'lbl-opt-rmf-total-lbl': 'Total retained net wealth:',
+        'lbl-opt-note': '💡 <strong>Recommendation:</strong> Rolling over PVD into an RMF for PVD within 30 days keeps 100% of PVD funds tax-exempt, compounding tax-free until age 55 for tax-exempt withdrawals.',
       };
       Object.keys(EN).forEach(id => {
         const el = document.getElementById(id);
@@ -618,6 +679,8 @@
       });
 
       document.getElementById('results').classList.remove('show');
+      const rmfOptEl = document.getElementById('rmf-optimizer-card');
+      if (rmfOptEl) rmfOptEl.style.display = 'none';
       document.getElementById('errorMsg').style.display = 'none';
     }
 
@@ -838,6 +901,34 @@
       currentNetPayout = netPayout;
       document.getElementById('res-net').textContent = fmt(netPayout);
 
+      const rmfOptEl = document.getElementById('rmf-optimizer-card');
+      if (activeTab === 1 && pvdTaxable > 0) {
+        const lumpTax = tax;
+        const lumpNet = netPayout;
+        const rmfTaxable = Math.max(0, (totalExcess - 7000 * years) * 0.5);
+        const rmfTax = progressiveTax48_5(rmfTaxable);
+        const rmfInvested = pvdEmpContrib + pvdTaxable;
+        const rmfImmediateCash = Math.max(0, (severanceLegal + severanceExtra) - rmfTax);
+        const rmfTotalWealth = rmfImmediateCash + rmfInvested;
+        const taxSaved = Math.max(0, lumpTax - rmfTax);
+
+        document.getElementById('opt-lump-tax').textContent = fmt(lumpTax);
+        document.getElementById('opt-lump-net').textContent = fmt(lumpNet);
+        document.getElementById('opt-rmf-tax').textContent = fmt(rmfTax);
+        document.getElementById('opt-rmf-invested').textContent = fmt(rmfInvested);
+        document.getElementById('opt-rmf-total').textContent = fmt(rmfTotalWealth);
+
+        const badgeEl = document.getElementById('opt-savings-badge');
+        if (taxSaved > 0) {
+          badgeEl.textContent = (LANG === 'en' ? 'Save ' : 'ประหยัดภาษี ') + fmt(taxSaved);
+        } else {
+          badgeEl.textContent = LANG === 'en' ? 'Equal Tax' : 'ภาษีเท่ากัน';
+        }
+        if (rmfOptEl) rmfOptEl.style.display = 'block';
+      } else if (rmfOptEl) {
+        rmfOptEl.style.display = 'none';
+      }
+
       document.getElementById('results').classList.add('show');
     }
 
@@ -865,6 +956,8 @@
       inputIds.forEach(id => document.getElementById(id).value = '');
       try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
       document.getElementById('results').classList.remove('show');
+      const rmfOptEl = document.getElementById('rmf-optimizer-card');
+      if (rmfOptEl) rmfOptEl.style.display = 'none';
       document.getElementById('errorMsg').style.display = 'none';
     }
 
