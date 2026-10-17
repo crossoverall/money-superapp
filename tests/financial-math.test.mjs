@@ -5631,4 +5631,90 @@ describe('Financial Math Verification', () => {
       assert.equal(res.childSupportMonthly, 800);
     });
   });
+
+  describe('Car Loan Flat vs Effective Interest Rate Comparator Engine', () => {
+    function calculateCarLoanFlatVsEffective({ loanAmount = 600000, flatRatePct = 2.5, termMonths = 48, vatPct = 7 }) {
+      const p = Math.max(0, Number(loanAmount) || 0);
+      const flatR = Math.max(0, Number(flatRatePct) || 0) / 100;
+      const n = Math.max(1, Math.round(Number(termMonths) || 48));
+      const years = n / 12;
+
+      const totalFlatInterest = Math.round(p * flatR * years * 100) / 100;
+      const totalPrincipalAndInterest = p + totalFlatInterest;
+      const monthlyPaymentExVat = Math.round((totalPrincipalAndInterest / n) * 100) / 100;
+      const vatMonthly = Math.round(monthlyPaymentExVat * (vatPct / 100) * 100) / 100;
+      const monthlyPaymentIncVat = Math.round((monthlyPaymentExVat + vatMonthly) * 100) / 100;
+
+      let effectiveApr = 0;
+      if (p > 0 && totalFlatInterest > 0) {
+        let low = 0;
+        let high = 1.0;
+        for (let iter = 0; iter < 50; iter++) {
+          const mid = (low + high) / 2;
+          const pv = mid === 0 ? monthlyPaymentExVat * n : (monthlyPaymentExVat * (1 - Math.pow(1 + mid, -n))) / mid;
+          if (pv > p) {
+            low = mid;
+          } else {
+            high = mid;
+          }
+        }
+        const rMonthly = (low + high) / 2;
+        effectiveApr = Math.round(rMonthly * 12 * 100 * 100) / 100;
+      }
+
+      const rateMultiplier = flatR > 0 ? Math.round((effectiveApr / (flatR * 100)) * 100) / 100 : 1;
+
+      return {
+        loanAmount: p,
+        flatRatePct,
+        effectiveApr,
+        termMonths: n,
+        totalFlatInterest,
+        monthlyPaymentExVat,
+        monthlyPaymentIncVat,
+        rateMultiplier,
+      };
+    }
+
+    it('accurately reveals true effective APR for 600k 4-year car loan at 2.5% flat rate', () => {
+      const res = calculateCarLoanFlatVsEffective({
+        loanAmount: 600000,
+        flatRatePct: 2.5,
+        termMonths: 48,
+        vatPct: 7,
+      });
+
+      assert.equal(res.totalFlatInterest, 60000);
+      assert.equal(res.monthlyPaymentExVat, 13750);
+      assert.equal(res.monthlyPaymentIncVat, 14712.5);
+      // Effective APR is 4.75% (approx 1.90x multiplier)
+      assert.ok(res.effectiveApr >= 4.65 && res.effectiveApr <= 4.8, `Expected ~4.75%, got ${res.effectiveApr}%`);
+      assert.ok(res.rateMultiplier >= 1.85 && res.rateMultiplier <= 1.95);
+    });
+
+    it('handles zero loan amount and zero flat rate safely without NaN', () => {
+      const zero = calculateCarLoanFlatVsEffective({
+        loanAmount: 0,
+        flatRatePct: 0,
+        termMonths: 48,
+      });
+
+      assert.equal(zero.totalFlatInterest, 0);
+      assert.equal(zero.effectiveApr, 0);
+      assert.equal(zero.monthlyPaymentExVat, 0);
+    });
+
+    it('validates 5-year 800k car loan at 3.0% flat rate', () => {
+      const res = calculateCarLoanFlatVsEffective({
+        loanAmount: 800000,
+        flatRatePct: 3.0,
+        termMonths: 60,
+        vatPct: 7,
+      });
+
+      assert.equal(res.totalFlatInterest, 120000); // 800k * 3% * 5 = 120k
+      assert.equal(res.monthlyPaymentExVat, 15333.33);
+      assert.ok(res.effectiveApr > 5.5 && res.effectiveApr < 5.8);
+    });
+  });
 });

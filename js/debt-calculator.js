@@ -77,6 +77,14 @@ const translations = {
     resPrepayHorizon: 'ระยะเวลาผ่อนใหม่',
     resPrepaySaved: 'ประหยัดดอกเบี้ย',
     resPrepayPmt: 'ค่างวดต่อเดือน',
+    carLoanTitle: '🚗 เปรียบเทียบดอกเบี้ยคงที่ vs ลดต้นลดดอก สินเชื่อรถยนต์ (Car Loan Flat vs Effective Rate)',
+    enableCarLoan: 'เปิดใช้งาน',
+    carAmount: 'ยอดจัดสินเชื่อรถยนต์ (บาท)',
+    carFlatRate: 'ดอกเบี้ยคงที่ Flat Rate (% ต่อปี)',
+    carTerm: 'ระยะเวลาผ่อน (เดือน)',
+    resCarApr: 'อัตราดอกเบี้ยแท้จริง (Effective APR)',
+    resCarPmt: 'ค่างวดต่อเดือน (รวม VAT 7%)',
+    resCarInterest: 'ดอกเบี้ยรวมตลอดสัญญา',
   },
   en: {
     title: 'Debt Payoff Calculator',
@@ -158,6 +166,14 @@ const translations = {
     resPrepayHorizon: 'New Payoff Horizon',
     resPrepaySaved: 'Interest Saved',
     resPrepayPmt: 'New Monthly Payment',
+    carLoanTitle: '🚗 Car Loan Flat vs Effective Rate Comparator',
+    enableCarLoan: 'Enable',
+    carAmount: 'Car Loan Principal (THB)',
+    carFlatRate: 'Flat Interest Rate (% per year)',
+    carTerm: 'Repayment Term (Months)',
+    resCarApr: 'True Effective APR',
+    resCarPmt: 'Monthly Payment (incl. 7% VAT)',
+    resCarInterest: 'Total Interest Paid',
   },
 };
 
@@ -243,6 +259,14 @@ if (LANG === 'en') {
     'lbl-res-prepay-horizon': t.resPrepayHorizon,
     'lbl-res-prepay-saved': t.resPrepaySaved,
     'lbl-res-prepay-pmt': t.resPrepayPmt,
+    'lbl-car-loan-title': t.carLoanTitle,
+    'lbl-enable-car-loan': t.enableCarLoan,
+    'lbl-car-amount': t.carAmount,
+    'lbl-car-flat-rate': t.carFlatRate,
+    'lbl-car-term': t.carTerm,
+    'lbl-res-car-apr': t.resCarApr,
+    'lbl-res-car-pmt': t.resCarPmt,
+    'lbl-res-car-interest': t.resCarInterest,
   };
   for (let id in map) {
     const el = document.getElementById(id);
@@ -268,6 +292,10 @@ const defaultState = {
   prepayExtraMonthly: 5000,
   prepayLumpSum: 0,
   prepayStrategy: 'reduce_term',
+  carLoanEnabled: false,
+  carLoanAmount: 600000,
+  carFlatRate: 2.5,
+  carLoanTerm: 48,
   debts: [
     { id: 1, name: LANG === 'en' ? 'Credit Card A' : 'บัตรเครดิต KBank', balance: 45000, rate: 16, minPayment: 2500 },
     { id: 2, name: LANG === 'en' ? 'Personal Loan' : 'สินเชื่อส่วนบุคคล', balance: 120000, rate: 18, minPayment: 4200 },
@@ -326,6 +354,19 @@ function syncPrepayInputs() {
   if (box) box.style.display = state.prepayEnabled ? 'block' : 'none';
 }
 
+function syncCarLoanInputs() {
+  const chk = document.getElementById('chkEnableCarLoan');
+  const amt = document.getElementById('txtCarLoanAmount');
+  const rate = document.getElementById('txtCarFlatRate');
+  const term = document.getElementById('txtCarLoanTerm');
+  const box = document.getElementById('carLoanInputsContainer');
+  if (chk) chk.checked = Boolean(state.carLoanEnabled);
+  if (amt) amt.value = state.carLoanAmount ?? 600000;
+  if (rate) rate.value = state.carFlatRate ?? 2.5;
+  if (term) term.value = state.carLoanTerm ?? 48;
+  if (box) box.style.display = state.carLoanEnabled ? 'block' : 'none';
+}
+
 const undoMgr = MoneyApp.createUndoManager({
   maxDepth: 15,
   enableShortcuts: true,
@@ -335,9 +376,11 @@ const undoMgr = MoneyApp.createUndoManager({
     syncWindfallInputs();
     syncRefinanceInputs();
     syncPrepayInputs();
+    syncCarLoanInputs();
     renderTable();
     setStrategy(state.strategy);
     computePrepay();
+    computeCarLoan();
     saveState();
     updateUndoUI();
   },
@@ -1391,9 +1434,11 @@ function resetDefaults() {
   syncWindfallInputs();
   syncRefinanceInputs();
   syncPrepayInputs();
+  syncCarLoanInputs();
   renderTable();
   setStrategy(state.strategy);
   computePrepay();
+  computeCarLoan();
   saveState();
   updateUndoUI();
 }
@@ -1619,12 +1664,127 @@ function computePrepay() {
   }
 }
 
+function calculateCarLoanFlatVsEffective({ loanAmount = 600000, flatRatePct = 2.5, termMonths = 48, vatPct = 7 }) {
+  const p = Math.max(0, Number(loanAmount) || 0);
+  const flatR = Math.max(0, Number(flatRatePct) || 0) / 100;
+  const n = Math.max(1, Math.round(Number(termMonths) || 48));
+  const years = n / 12;
+
+  const totalFlatInterest = Math.round(p * flatR * years * 100) / 100;
+  const totalPrincipalAndInterest = p + totalFlatInterest;
+  const monthlyPaymentExVat = Math.round((totalPrincipalAndInterest / n) * 100) / 100;
+  const vatMonthly = Math.round(monthlyPaymentExVat * (vatPct / 100) * 100) / 100;
+  const monthlyPaymentIncVat = Math.round((monthlyPaymentExVat + vatMonthly) * 100) / 100;
+
+  let effectiveApr = 0;
+  if (p > 0 && totalFlatInterest > 0) {
+    let low = 0;
+    let high = 1.0;
+    for (let iter = 0; iter < 50; iter++) {
+      const mid = (low + high) / 2;
+      const pv = mid === 0 ? monthlyPaymentExVat * n : (monthlyPaymentExVat * (1 - Math.pow(1 + mid, -n))) / mid;
+      if (pv > p) {
+        low = mid;
+      } else {
+        high = mid;
+      }
+    }
+    const rMonthly = (low + high) / 2;
+    effectiveApr = Math.round(rMonthly * 12 * 100 * 100) / 100;
+  }
+
+  const rateMultiplier = flatR > 0 ? Math.round((effectiveApr / (flatR * 100)) * 100) / 100 : 1;
+
+  return {
+    loanAmount: p,
+    flatRatePct,
+    effectiveApr,
+    termMonths: n,
+    totalFlatInterest,
+    monthlyPaymentExVat,
+    monthlyPaymentIncVat,
+    rateMultiplier,
+  };
+}
+
+function onToggleCarLoan(enabled) {
+  undoMgr.push(state);
+  state.carLoanEnabled = Boolean(enabled);
+  const box = document.getElementById('carLoanInputsContainer');
+  if (box) box.style.display = state.carLoanEnabled ? 'block' : 'none';
+  computeCarLoan();
+  saveState();
+  updateUndoUI();
+}
+
+function onCarLoanChange() {
+  const amt = Number(document.getElementById('txtCarLoanAmount')?.value) || 0;
+  const rate = Number(document.getElementById('txtCarFlatRate')?.value) || 0;
+  const term = Number(document.getElementById('txtCarLoanTerm')?.value) || 48;
+
+  state.carLoanAmount = amt;
+  state.carFlatRate = rate;
+  state.carLoanTerm = term;
+
+  computeCarLoan();
+  saveState();
+}
+
+function computeCarLoan() {
+  const container = document.getElementById('carLoanInputsContainer');
+  if (!container || !state.carLoanEnabled) return;
+
+  const result = calculateCarLoanFlatVsEffective({
+    loanAmount: state.carLoanAmount,
+    flatRatePct: state.carFlatRate,
+    termMonths: state.carLoanTerm,
+    vatPct: 7,
+  });
+
+  const aprEl = document.getElementById('valCarEffectiveApr');
+  const multEl = document.getElementById('valCarMultiplier');
+  const pmtEl = document.getElementById('valCarPayment');
+  const interestEl = document.getElementById('valCarTotalInterest');
+  const noteEl = document.getElementById('carLoanConsumerNote');
+
+  if (aprEl) {
+    aprEl.textContent = `${result.effectiveApr.toFixed(2)}% / ${LANG === 'en' ? 'year' : 'ปี'}`;
+  }
+  if (multEl) {
+    const isEn = LANG === 'en';
+    multEl.textContent = isEn
+      ? `~${result.rateMultiplier.toFixed(2)}x of Flat Rate`
+      : `สูงกว่า Flat Rate ~${result.rateMultiplier.toFixed(2)} เท่า`;
+  }
+  if (pmtEl) {
+    const isEn = LANG === 'en';
+    const unitText = isEn ? 'THB/mo' : 'บาท/ด.';
+    const exVatText = isEn ? 'excl. VAT' : 'ก่อน VAT';
+    pmtEl.textContent = `${formatMoney(result.monthlyPaymentIncVat)} ${unitText} (${exVatText} ${formatMoney(result.monthlyPaymentExVat)})`;
+  }
+  if (interestEl) {
+    interestEl.textContent = `${formatMoney(result.totalFlatInterest)} ${LANG === 'en' ? 'THB' : 'บาท'}`;
+  }
+  if (noteEl) {
+    const isEn = LANG === 'en';
+    if (isEn) {
+      noteEl.innerHTML = `🛡️ <strong>OCPB Consumer Protection Rules (eff. Jan 2023):</strong> Statutory interest caps: New cars &le; 10% APR, Used cars &le; 15% APR | <strong>Early Payoff Discounts:</strong> Pay off within &le; 1/3 term: &ge; 60% discount on unearned interest; 1/3&ndash;2/3 term: &ge; 70% discount; &gt; 2/3 term: 100% discount.`;
+    } else {
+      noteEl.innerHTML = `🛡️ <strong>สิทธิผู้บริโภคตามประกาศ สคบ. (มีผล ม.ค. 2566):</strong> เพดานดอกเบี้ยแท้จริง (Effective APR): รถใหม่ไม่เกิน 10% / รถมือสองไม่เกิน 15% ต่อปี | <strong>หากปิดบัญชีก่อนกำหนด</strong> ได้รับส่วนลดดอกเบี้ยที่ยังไม่ถึงกำหนด: จ่ายไม่เกิน 1/3 ของสัญญา ลด &ge; 60%, เกิน 1/3 ถึง 2/3 ลด &ge; 70%, เกิน 2/3 ลด 100% (คำนวณแบบลดต้นลดดอกแท้จริง)`;
+    }
+  }
+}
+
 // Global exports for HTML handlers
 window.onTogglePrepay = onTogglePrepay;
 window.onPrepayChange = onPrepayChange;
 window.calculateStandardMonthlyPayment = calculateStandardMonthlyPayment;
 window.calculateLoanPrepayment = calculateLoanPrepayment;
 window.computePrepay = computePrepay;
+window.onToggleCarLoan = onToggleCarLoan;
+window.onCarLoanChange = onCarLoanChange;
+window.calculateCarLoanFlatVsEffective = calculateCarLoanFlatVsEffective;
+window.computeCarLoan = computeCarLoan;
 
 // Initialize
 loadState();
@@ -1632,6 +1792,8 @@ document.getElementById('txtExtraPayment').value = state.extraPayment;
 syncWindfallInputs();
 syncRefinanceInputs();
 syncPrepayInputs();
+syncCarLoanInputs();
 renderTable();
 setStrategy(state.strategy);
 computePrepay();
+computeCarLoan();
