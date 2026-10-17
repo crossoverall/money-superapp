@@ -824,5 +824,21 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
      - Net tax advantage calculation identifying the optimal strategy with zero ambiguity.
   2. Integrated `#dividendTaxCreditCard` in `tax-calculator-base.html` with collapsible panel, quick preset pills, live comparative analysis cards, and "Apply to Total Tax Return" toggle.
   3. Connected credits directly into Form P.N.D. 90 annual tax waterfall, deducting both 10% WHT and corporate credit from annual tax liability.
-  4. Added test suite (`tests/dividend-tax-credit.test.mjs`) with 5 comprehensive unit tests and smoke tests (**258 tests passing, 0 Biome errors**).
 - **Rule:** For Thai stock dividends, evaluate the marginal tax threshold against the corporate tax rate: taxpayers with marginal rates $\le 15\%$ should always claim Section 47 bis credit for refunds, while taxpayers with marginal rates $\ge 25\%$ should retain the 10% Final Tax to avoid higher tax liabilities.
+
+### 2026-10-17: Thai Land & Building Tax Act B.E. 2562 (ภาษีที่ดินและสิ่งปลูกสร้าง)
+
+- **Date & Context:** 2026-10-17, implementing Thai Land & Building Tax Calculator in `tax-calculator.html` (`v2.4.4`).
+- **Problem:**
+  1. Property owners, real estate investors, and heirs in Thailand often misunderstand the 4 statutory categories under the Land & Building Tax Act B.E. 2562 (พ.ร.บ. ภาษีที่ดินและสิ่งปลูกสร้าง พ.ศ. 2562):
+     - Agricultural: 50M THB individual statutory exemption per local district.
+     - Primary Residence (Land + House): 50M THB exemption if owner's name is in the house registration (ทะเบียนบ้าน).
+     - Primary Building Only: 10M THB exemption on leased or family land.
+     - Secondary Home / Investment Condo: Taxed from the very first baht (no exemption).
+     - Vacant Land: Subject to punitive escalation (+0.3% every 3 consecutive years of non-use, capped at 3.0%).
+  2. Taxpayers often do not know that tax liabilities of 3,000 THB or more can be paid in 3 equal monthly installments without any statutory interest penalty.
+- **Resolution:**
+  1. Built `MoneyApp.calculateThaiLandAndBuildingTax(params)` implementing exact progressive brackets for all 4 categories and vacant land penalty escalation.
+  2. Integrated `#land-building-tax-card` in `tax-calculator.html` with preset appraisal buttons, vacant land penalty toggle, progressive tier breakdown accordion, and 3-month installment calculation banner.
+  3. Added comprehensive test suite (`tests/land-building-tax.test.mjs`) and smoke test assertions (**266 tests passing, 0 Biome errors**).
+- **Rule:** When modeling Thai real estate taxation, base calculations strictly on official Treasury Department appraisal values (not market transactions), check house registration status for 50M/10M residential exemptions, and enforce the 3-year +0.3% penalty progression on vacant parcels up to the 3.0% legal cap.

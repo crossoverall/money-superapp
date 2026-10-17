@@ -328,6 +328,21 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'tax-calculator-base.html must define #divCreditVerdictBox',
       );
     });
+
+    it('verifies tax-calculator.html declares Land & Building Tax card with controls', () => {
+      const taxContent = fs.readFileSync(path.join(ROOT_DIR, 'tax-calculator.html'), 'utf8');
+      assert.ok(
+        taxContent.includes('id="land-building-tax-card"'),
+        'tax-calculator.html must define #land-building-tax-card',
+      );
+      assert.ok(taxContent.includes('id="selLandCategory"'), 'tax-calculator.html must define #selLandCategory');
+      assert.ok(
+        taxContent.includes('id="txtLandAppraisalValue"'),
+        'tax-calculator.html must define #txtLandAppraisalValue',
+      );
+      assert.ok(taxContent.includes('id="valLandTotalTax"'), 'tax-calculator.html must define #valLandTotalTax');
+      assert.ok(taxContent.includes('id="boxLandInstallment"'), 'tax-calculator.html must define #boxLandInstallment');
+    });
   });
 
   describe('Bilingual Localization Structural Symmetry', () => {

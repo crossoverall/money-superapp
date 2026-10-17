@@ -91,6 +91,28 @@ if (LANG === 'en') {
     lblInherLawTitle: 'Statutory Legal Reference:',
     txtInherLawDesc:
       'The Inheritance Tax Act B.E. 2558 exempts the first 100M THB per heir. Excess is taxed at 5% for parents/children or 10% for others. Spouses are 100% exempt. Form P.M.1 must be filed within 150 days.',
+    'lbl-land-title': '🏡 Thai Land &amp; Building Tax Simulator',
+    'lbl-land-subtitle': 'Land &amp; Building Tax Act B.E. 2562 (Appraisal Value Based)',
+    lblLandCategory: 'Land / Building Usage Category',
+    optLandResPrimary: 'Primary Residence (Land & House with name in registry - Exempt 50M)',
+    optLandResBldg: 'Primary Building Only (House with name in registry on leased land - Exempt 10M)',
+    optLandResSecondary: 'Secondary Residence / Investment Condo (Taxed from 1st Baht)',
+    optLandAgri: 'Agricultural (Individual owner exempt first 50M THB)',
+    optLandComm: 'Commercial / Industrial / Other (0.3% - 0.7%)',
+    optLandVacant: 'Vacant / Unused Land (+0.3% penalty every 3 yrs)',
+    lblLandAppraisal: 'Treasury Dept Appraisal Value (THB)',
+    lblVacantYears: 'Consecutive Years Left Vacant (Years)',
+    txtVacantRule:
+      '* If left vacant for 3+ consecutive years, tax increases by +0.3% every 3 years up to a maximum 3.0% cap',
+    lblCardLandTaxableBase: 'Taxable Base Amount:',
+    lblCardLandTotalTax: 'Annual Land & Building Tax:',
+    lblLandInstallmentTitle: '💳 3-Month Installment Option (0% Interest):',
+    txtLandInstallmentDesc:
+      'Tax liabilities >= 3,000 THB can be paid in 3 equal monthly installments (April, May, June)',
+    lblLandTiersHeader: 'Statutory Progressive Brackets Breakdown:',
+    lblLandLawTitle: 'Statutory Legal Reference:',
+    txtLandLawDesc:
+      'Administered by Local Admin Orgs (BMA, Pattaya, Municipalities, SAO) based on Treasury Dept appraisal value (not market price). Tax notices (P.D.S. 6/7) issued Feb–Mar, payment due April 30 annually.',
   };
   Object.keys(EN).forEach((id) => {
     const el = document.getElementById(id);
@@ -891,6 +913,185 @@ function initInheritanceTaxCard() {
   }
 }
 
+// ==========================================
+// Thai Land & Building Tax Simulator (Phase 61)
+// ==========================================
+
+const LAND_STORAGE_KEY = 'moneySuperapp.landBuildingTax.state.v1';
+
+let landState = {
+  landCategory: 'residential_primary',
+  appraisalValue: 5000000,
+  vacantConsecutiveYears: 0,
+  isExpanded: false,
+};
+
+function toggleLandTaxCard() {
+  const panel = document.getElementById('land-panel-body');
+  const arrow = document.getElementById('land-toggle-arrow');
+  const btn = document.getElementById('btn-toggle-land');
+  if (!panel || !arrow) return;
+
+  const willShow = panel.style.display === 'none';
+  panel.style.display = willShow ? 'block' : 'none';
+  arrow.textContent = willShow ? '▲' : '▼';
+  if (btn) btn.setAttribute('aria-expanded', willShow ? 'true' : 'false');
+  landState.isExpanded = willShow;
+  saveLandState();
+  if (willShow) {
+    updateLandTaxUI();
+  }
+}
+
+function setLandPreset(val) {
+  const inp = document.getElementById('txtLandAppraisalValue');
+  if (inp) {
+    inp.value = val;
+    updateLandTaxUI();
+  }
+}
+
+function loadLandState() {
+  try {
+    const saved = MoneyApp.safeJsonParse(LAND_STORAGE_KEY, null);
+    if (saved && typeof saved === 'object') {
+      landState = Object.assign({}, landState, saved);
+    }
+  } catch (_e) {}
+}
+
+function saveLandState() {
+  try {
+    localStorage.setItem(LAND_STORAGE_KEY, JSON.stringify(landState));
+  } catch (_e) {}
+}
+
+function updateLandTaxUI() {
+  const catEl = document.getElementById('selLandCategory');
+  const valEl = document.getElementById('txtLandAppraisalValue');
+  const vacantRow = document.getElementById('rowVacantYears');
+  const vacantYrsEl = document.getElementById('txtVacantYears');
+  const badgeExempt = document.getElementById('badgeLandExemption');
+  const badgeVacant = document.getElementById('badgeVacantSurcharge');
+
+  const valTaxableBaseEl = document.getElementById('valLandTaxableBase');
+  const valExemptSummaryEl = document.getElementById('valLandExemptSummary');
+  const valTotalTaxEl = document.getElementById('valLandTotalTax');
+  const valEffectiveRateEl = document.getElementById('valLandEffectiveRate');
+  const boxInstallment = document.getElementById('boxLandInstallment');
+  const valInstallmentMonthly = document.getElementById('valLandInstallmentMonthly');
+  const tiersListEl = document.getElementById('landTaxTiersList');
+
+  const isEn = LANG === 'en';
+  const unitStr = isEn ? 'THB' : 'บาท';
+
+  const category = catEl ? catEl.value : landState.landCategory;
+  const appraisal = valEl ? parseNum(valEl.value) : landState.appraisalValue;
+  const vacantYears = vacantYrsEl ? parseNum(vacantYrsEl.value) : landState.vacantConsecutiveYears;
+
+  landState.landCategory = category;
+  landState.appraisalValue = appraisal;
+  landState.vacantConsecutiveYears = vacantYears;
+
+  if (vacantRow) {
+    vacantRow.style.display = category === 'vacant' ? 'block' : 'none';
+  }
+
+  const res = MoneyApp.calculateThaiLandAndBuildingTax({
+    landCategory: category,
+    appraisalValue: appraisal,
+    vacantConsecutiveYears: vacantYears,
+  });
+
+  if (badgeExempt) {
+    if (res.exemptionAmount > 0) {
+      badgeExempt.style.display = 'inline-block';
+      badgeExempt.textContent = isEn
+        ? `Exempt first ${formatMoney(res.exemptionAmount)} THB`
+        : `ยกเว้น ${formatMoney(res.exemptionAmount)} บาท`;
+    } else {
+      badgeExempt.style.display = 'inline-block';
+      badgeExempt.textContent = isEn ? 'No Exemption (0 THB)' : 'ไม่มีสิทธิยกเว้น';
+      badgeExempt.style.color = 'var(--ink-dim)';
+      badgeExempt.style.borderColor = 'var(--line)';
+    }
+  }
+
+  if (badgeVacant && category === 'vacant') {
+    if (vacantYears >= 3) {
+      const periods = Math.floor(vacantYears / 3);
+      const surcharge = periods * 0.3;
+      badgeVacant.textContent = isEn
+        ? `+${surcharge.toFixed(1)}% Vacant Penalty`
+        : `+${surcharge.toFixed(1)}% โทษรกร้าง`;
+      badgeVacant.style.color = 'var(--danger)';
+    } else {
+      badgeVacant.textContent = isEn ? 'Standard Rate' : 'อัตราปกติ';
+      badgeVacant.style.color = 'var(--ok)';
+    }
+  }
+
+  if (valTaxableBaseEl) valTaxableBaseEl.textContent = `${formatMoney(res.taxableBase, 2)} ${unitStr}`;
+  if (valExemptSummaryEl) {
+    valExemptSummaryEl.textContent = isEn
+      ? `Exemption: ${formatMoney(res.exemptionAmount, 2)} ${unitStr}`
+      : `ยกเว้น: ${formatMoney(res.exemptionAmount, 2)} บาท`;
+  }
+  if (valTotalTaxEl) {
+    valTotalTaxEl.textContent = `${formatMoney(res.totalTax, 2)} ${unitStr}`;
+    valTotalTaxEl.style.color = res.totalTax > 0 ? 'var(--accent)' : 'var(--ok)';
+  }
+  if (valEffectiveRateEl) {
+    valEffectiveRateEl.textContent = isEn
+      ? `Effective rate: ${res.effectiveRatePct.toFixed(3)}%`
+      : `อัตราเฉลี่ย: ${res.effectiveRatePct.toFixed(3)}%`;
+  }
+
+  if (boxInstallment && valInstallmentMonthly) {
+    if (res.canInstallment) {
+      boxInstallment.style.display = 'block';
+      valInstallmentMonthly.textContent = `${formatMoney(res.installmentMonthly, 2)} ${unitStr}/${isEn ? 'mo' : 'งวด'}`;
+    } else {
+      boxInstallment.style.display = 'none';
+    }
+  }
+
+  if (tiersListEl) {
+    if (res.tiers && res.tiers.length > 0) {
+      tiersListEl.innerHTML = res.tiers
+        .map((tier) => {
+          const label = isEn ? tier.labelEn : tier.labelTh;
+          return `<div style="display:flex; justify-content:space-between; align-items:center; padding:3px 0; border-bottom:1px dashed var(--line);">
+            <span style="color:var(--ink-dim);">${label} (${formatMoney(tier.taxableInTier, 0)} ${unitStr}):</span>
+            <span style="font-weight:600; color:var(--ink);">${formatMoney(tier.taxInTier, 2)} ${unitStr}</span>
+          </div>`;
+        })
+        .join('');
+    } else {
+      tiersListEl.innerHTML = `<div style="color:var(--ok); font-weight:600;">${isEn ? '🎉 100% Tax Exempt — 0.00 THB' : '🎉 ได้รับยกเว้นภาษีทั้งจำนวน — 0.00 บาท'}</div>`;
+    }
+  }
+
+  saveLandState();
+}
+
+function initLandTaxCard() {
+  loadLandState();
+  const catEl = document.getElementById('selLandCategory');
+  const valEl = document.getElementById('txtLandAppraisalValue');
+  const vacantYrsEl = document.getElementById('txtVacantYears');
+
+  if (catEl && landState.landCategory) catEl.value = landState.landCategory;
+  if (valEl && landState.appraisalValue != null) valEl.value = landState.appraisalValue;
+  if (vacantYrsEl && landState.vacantConsecutiveYears != null) vacantYrsEl.value = landState.vacantConsecutiveYears;
+
+  if (landState.isExpanded) {
+    toggleLandTaxCard();
+  } else {
+    updateLandTaxUI();
+  }
+}
+
 // Expose functions called by HTML onclick handlers
 window.setTab = setTab;
 window.toggleSeveranceCalc = toggleSeveranceCalc;
@@ -906,7 +1107,11 @@ window.toggleInheritanceTaxCard = toggleInheritanceTaxCard;
 window.setInherSubTab = setInherSubTab;
 window.setEstatePreset = setEstatePreset;
 window.updateInheritanceTaxUI = updateInheritanceTaxUI;
+window.toggleLandTaxCard = toggleLandTaxCard;
+window.setLandPreset = setLandPreset;
+window.updateLandTaxUI = updateLandTaxUI;
 
 // Restore state if available
 loadState();
 initInheritanceTaxCard();
+initLandTaxCard();
