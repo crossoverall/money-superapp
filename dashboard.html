@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.3.4">
+  <meta name="version" content="2.3.5">
   <title>ภาพรวมการเงิน</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -219,11 +219,15 @@
       </div>
     </div>
     
-    <div style="margin-top:16px; border-top:1px dashed var(--line); padding-top:12px; display:flex; justify-content:space-between; align-items:center;">
+    <div style="margin-top:16px; border-top:1px dashed var(--line); padding-top:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
       <div>
         <div style="font-size:11px; color:var(--ink-faint); font-weight:600;" id="lbl-tax-bracket">ฐานภาษีปัจจุบัน</div>
         <div style="font-size:14px; font-weight:700; color:var(--warn);" id="kpi-tax-bracket-val">0%</div>
       </div>
+      <a href="tax-calculator-base.html" id="kpi-tax-deadline-link" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:var(--panel-2); border:1px solid var(--line); font-size:11px; color:var(--ink); transition:all 0.15s ease;" title="ดูปฏิทินภาษี / View Tax Calendar">
+        <span>🗓️</span>
+        <span id="kpi-tax-deadline-text">-</span>
+      </a>
       <div style="text-align:right;">
         <div style="font-size:11px; color:var(--ink-faint); font-weight:600;" id="lbl-tax-pay-label">ประมาณการภาษีที่ต้องจ่าย</div>
         <div style="font-size:14px; font-weight:700; color:var(--danger);" id="kpi-tax-amount">0 บาท</div>
@@ -747,7 +751,7 @@
     </div>
   </div>
 
-  <p class="version-tag">Money Superapp v2.3.4</p>
+  <p class="version-tag">Money Superapp v2.3.5</p>
 
 <script src="js/shared.js"></script>
 <script src="js/dashboard.js"></script>

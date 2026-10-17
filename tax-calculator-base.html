@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="2.3.4">
+    <meta name="version" content="2.3.5">
     <meta name="description" content="คำนวณภาษีเงินได้บุคคลธรรมดา — ประมาณการภาษีเงินได้จากเงินเดือนและโบนัส พร้อมแสดงรายละเอียดตามขั้นบันได">
     <title>คำนวณภาษีเงินได้บุคคลธรรมดา</title>
     <link rel="stylesheet" href="css/tailwind-lite.css">
@@ -546,6 +546,50 @@
             </div>
         </div>
 
+        <!-- Thai Tax Planning Calendar & Deadline Compliance Tracker (Roadmap Phase 52) -->
+        <div class="mt-4 no-print">
+            <button type="button" id="btn-toggle-tax-calendar" onclick="toggleTaxCalendar()" class="w-full py-2.5 px-4 text-white text-xs font-semibold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2" style="background:var(--core);">
+                <span id="lbl-toggle-tax-calendar">🗓️ ปฏิทินภาษี & วันครบกำหนด (Thai Tax Planning Calendar & Deadlines)</span>
+            </button>
+            <div id="taxCalendarPanel" class="mt-3 p-4 rounded-xl shadow-md border text-xs space-y-3" style="display:none; background:var(--panel); border-color:var(--line);">
+                <div class="flex justify-between items-center border-b pb-2" style="border-color:var(--line);">
+                    <span class="font-bold flex items-center gap-1.5" style="color:var(--ink);" id="lbl-tax-calendar-header">
+                        <span>🗓️</span> <span>กำหนดการยื่นแบบและชำระภาษีสำคัญ (Statutory Tax Deadlines)</span>
+                    </span>
+                    <button type="button" onclick="resetTaxCalendarChecklist()" class="py-1 px-2.5 font-medium rounded text-[11px] transition-all" style="background:var(--panel-2); color:var(--ink-faint); border:1px solid var(--line); cursor:pointer;">
+                        <span id="lbl-reset-tax-calendar">↺ รีเซ็ตเช็คลิสต์</span>
+                    </button>
+                </div>
+
+                <!-- Next Deadline Urgency Banner -->
+                <div id="taxCalendarNextBanner" class="p-3 rounded-lg border flex items-center justify-between flex-wrap gap-2" style="background:var(--panel-2); border-color:var(--core);">
+                    <div class="flex items-center gap-2">
+                        <span style="font-size:20px;">⏳</span>
+                        <div>
+                            <div class="font-semibold" style="color:var(--ink);" id="lbl-next-deadline-title">วันครบกำหนดที่ใกล้ที่สุด:</div>
+                            <div class="text-[11px]" style="color:var(--ink-dim);" id="val-next-deadline-desc">-</div>
+                        </div>
+                    </div>
+                    <span id="val-next-deadline-badge" class="px-3 py-1 rounded-full font-bold text-xs" style="background:var(--core); color:#fff;">- วัน</span>
+                </div>
+
+                <!-- Statutory Milestones Grid -->
+                <div id="taxCalendarMilestonesList" class="space-y-2.5 pt-1">
+                    <!-- Populated dynamically by renderTaxCalendar() -->
+                </div>
+
+                <!-- Year-End Tax Deduction Checklist Callout -->
+                <div class="p-3 rounded-lg border text-[11px] leading-relaxed" style="background:rgba(16, 185, 129, 0.08); border-color:var(--ok); color:var(--ink);">
+                    <div class="font-bold flex items-center gap-1.5 mb-1" style="color:var(--ok);">
+                        <span>💡</span> <span id="lbl-tax-calendar-tip-title">ข้อแนะนำการวางแผนลดหย่อนภาษี</span>
+                    </div>
+                    <div id="lbl-tax-calendar-tip-desc">
+                        การลงทุนลดหย่อนภาษี (SSF, RMF, ThaiESG และเบี้ยประกันชีวิต/สุขภาพ) ต้องดำเนินการและชำระเงินให้แล้วเสร็จภายใน <strong>31 ธ.ค.</strong> ของปีภาษีนั้นๆ พร้อมทั้งกดยินยอมให้ บลจ./บริษัทประกัน ส่งข้อมูลให้กรมสรรพากรผ่านระบบ e-Donation / Data Transfer
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="flex justify-between items-center mt-4 pt-3 border-t border-gray-200">
             <div class="flex items-center gap-2 flex-wrap">
                 <button type="button" onclick="undoTaxChange()" id="btn-undo-tax" class="py-1.5 px-3 md-btn-outlined text-xs font-semibold rounded-lg flex items-center gap-1.5 no-print" style="display:none; color:var(--core); border:1px solid var(--line); cursor:pointer;" title="เลิกทำ / Undo (Ctrl+Z)">
@@ -561,7 +605,7 @@
                     <span id="lbl-reset-tax">ล้างข้อมูล</span>
                 </button>
             </div>
-            <p class="text-xs text-gray-400">v2.3.4</p>
+            <p class="text-xs text-gray-400">v2.3.5</p>
         </div>
     </div>
 

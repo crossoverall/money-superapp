@@ -518,6 +518,19 @@ function renderDashboardKPIs() {
   if (document.getElementById('kpi-tax-amount'))
     document.getElementById('kpi-tax-amount').textContent = formatMoney(p.estimatedTax) + ' ' + unit;
 
+  const deadlineEl = document.getElementById('kpi-tax-deadline-text');
+  if (deadlineEl && typeof MoneyApp.calculateThaiTaxDeadlines === 'function') {
+    const deadlines = MoneyApp.calculateThaiTaxDeadlines();
+    if (deadlines && deadlines.nextDeadline) {
+      const next = deadlines.nextDeadline;
+      const isEn = LANG === 'en';
+      const days = next.daysRemaining;
+      deadlineEl.textContent = isEn
+        ? `${next.badgeEn}: ${days === 0 ? 'Today' : days + 'd left'}`
+        : `${next.badgeTh}: ${days === 0 ? 'วันนี้' : 'อีก ' + days + ' วัน'}`;
+    }
+  }
+
   if (document.getElementById('kpi-networth-badge'))
     document.getElementById('kpi-networth-badge').textContent = p.netWorth >= 0 ? t.statusHealthy : t.statusCaution;
 

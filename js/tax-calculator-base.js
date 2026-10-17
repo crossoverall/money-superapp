@@ -114,6 +114,13 @@ if (LANG === 'en') {
     'lbl-scen-income': 'Scenario B Gross Income (THB/yr):',
     'lbl-scen-ded': 'Scenario B Other Deductions (THB/yr):',
     'lbl-scen-infl': 'Annual Inflation Rate (%):',
+    'lbl-toggle-tax-calendar': '🗓️ Tax Planning Calendar & Deadlines (ภ.ง.ด.90/91/94)',
+    'lbl-tax-calendar-header': 'Statutory Tax Deadlines & Compliance Checklist',
+    'lbl-reset-tax-calendar': '↺ Reset Checklist',
+    'lbl-next-deadline-title': 'Upcoming Statutory Deadline:',
+    'lbl-tax-calendar-tip-title': 'Year-End Deduction Planning Advice',
+    'lbl-tax-calendar-tip-desc':
+      'Tax-deductible investments (SSF, RMF, ThaiESG, and eligible life/health insurance) must be fully executed and paid by December 31 of the tax year. Ensure you provide electronic disclosure consent to fund managers/insurers for automated Revenue Department verification.',
   };
   Object.keys(EN).forEach((id) => {
     const el = document.getElementById(id);
@@ -1810,4 +1817,139 @@ function loadState() {
   } catch (_e) {}
 }
 
+const TAX_CALENDAR_STORAGE_KEY = 'moneySuperapp.taxCalendar.state.v1';
+
+function getTaxCalendarState() {
+  return MoneyApp.safeJsonParse(TAX_CALENDAR_STORAGE_KEY, { checked: {} });
+}
+
+function saveTaxCalendarState(calState) {
+  try {
+    localStorage.setItem(TAX_CALENDAR_STORAGE_KEY, JSON.stringify(calState));
+  } catch (_e) {}
+}
+
+function toggleTaxCalendar() {
+  const panel = document.getElementById('taxCalendarPanel');
+  if (!panel) return;
+  const isHidden = panel.style.display === 'none';
+  panel.style.display = isHidden ? 'block' : 'none';
+  if (isHidden) {
+    renderTaxCalendar();
+  }
+}
+
+function toggleCalendarItem(id, isChecked) {
+  const calState = getTaxCalendarState();
+  if (!calState.checked) calState.checked = {};
+  calState.checked[id] = Boolean(isChecked);
+  saveTaxCalendarState(calState);
+  renderTaxCalendar();
+}
+
+function resetTaxCalendarChecklist() {
+  const isEn = LANG === 'en';
+  const msg = isEn ? 'Reset tax calendar checklist items?' : 'รีเซ็ตรายการเช็คลิสต์ปฏิทินภาษีทั้งหมดหรือไม่?';
+  if (!confirm(msg)) return;
+  saveTaxCalendarState({ checked: {} });
+  renderTaxCalendar();
+}
+
+function renderTaxCalendar() {
+  if (typeof MoneyApp.calculateThaiTaxDeadlines !== 'function') return;
+
+  const { nextDeadline, deadlines } = MoneyApp.calculateThaiTaxDeadlines();
+  const calState = getTaxCalendarState();
+  const checkedMap = calState.checked || {};
+  const isEn = LANG === 'en';
+
+  const titleEl = document.getElementById('lbl-next-deadline-title');
+  const descEl = document.getElementById('val-next-deadline-desc');
+  const badgeEl = document.getElementById('val-next-deadline-badge');
+
+  if (nextDeadline && descEl && badgeEl) {
+    const name = isEn ? nextDeadline.titleEn : nextDeadline.titleTh;
+    const dateStr = isEn
+      ? `${nextDeadline.targetDateEn}, ${nextDeadline.targetYear}`
+      : `${nextDeadline.targetDateTh} ${nextDeadline.targetYear + 543}`;
+    const days = nextDeadline.daysRemaining;
+
+    if (titleEl) {
+      titleEl.textContent = isEn ? 'Upcoming Statutory Deadline:' : 'วันครบกำหนดที่ใกล้ที่สุด:';
+    }
+    descEl.textContent = `${name} (${dateStr})`;
+
+    if (days === 0) {
+      badgeEl.textContent = isEn ? 'Today!' : 'วันนี้วันสุดท้าย!';
+      badgeEl.style.background = 'var(--alert)';
+    } else if (days <= 7) {
+      badgeEl.textContent = isEn ? `${days} days left (Urgent)` : `เหลือ ${days} วัน (ด่วน)`;
+      badgeEl.style.background = 'var(--alert)';
+    } else if (days <= 30) {
+      badgeEl.textContent = isEn ? `${days} days left` : `เหลืออีก ${days} วัน`;
+      badgeEl.style.background = 'var(--warn)';
+    } else {
+      badgeEl.textContent = isEn ? `${days} days left` : `เหลืออีก ${days} วัน`;
+      badgeEl.style.background = 'var(--core)';
+    }
+  }
+
+  const listEl = document.getElementById('taxCalendarMilestonesList');
+  if (!listEl) return;
+
+  let html = '';
+  deadlines.forEach((item) => {
+    const isChecked = Boolean(checkedMap[item.id]);
+    const name = isEn ? item.titleEn : item.titleTh;
+    const desc = isEn ? item.descEn : item.descTh;
+    const audience = isEn ? item.audienceEn : item.audienceTh;
+    const dateStr = isEn ? `${item.targetDateEn}, ${item.targetYear}` : `${item.targetDateTh} ${item.targetYear + 543}`;
+    const days = item.daysRemaining;
+
+    let countdownBadgeHtml = '';
+    if (isChecked) {
+      countdownBadgeHtml = `<span style="font-size:10px; font-weight:700; color:var(--ok); background:rgba(16, 185, 129, 0.12); padding:2px 8px; border-radius:999px;">✓ ${isEn ? 'Completed' : 'ดำเนินการแล้ว'}</span>`;
+    } else if (days === 0) {
+      countdownBadgeHtml = `<span style="font-size:10px; font-weight:700; color:var(--alert); background:rgba(239, 68, 68, 0.12); padding:2px 8px; border-radius:999px;">🔥 ${isEn ? 'Today' : 'วันนี้'}</span>`;
+    } else if (days <= 7) {
+      countdownBadgeHtml = `<span style="font-size:10px; font-weight:700; color:var(--alert); background:rgba(239, 68, 68, 0.12); padding:2px 8px; border-radius:999px;">⚠️ ${days} ${isEn ? 'days left' : 'วันสุดท้าย'}</span>`;
+    } else {
+      countdownBadgeHtml = `<span style="font-size:10px; font-weight:600; color:var(--ink-faint); background:var(--panel-2); padding:2px 8px; border-radius:999px;">⏳ ${days} ${isEn ? 'days' : 'วัน'}</span>`;
+    }
+
+    const itemStyle = isChecked
+      ? 'opacity:0.65; background:var(--panel-2); border:1px solid var(--line);'
+      : 'background:var(--panel); border:1px solid var(--line);';
+    const textStyle = isChecked ? 'text-decoration:line-through;' : '';
+
+    html += `
+      <div style="padding:10px 12px; border-radius:8px; display:flex; gap:10px; align-items:flex-start; transition:all 0.15s ease; ${itemStyle}">
+        <input type="checkbox" id="chk-cal-${MoneyApp.escapeAttr(item.id)}" ${isChecked ? 'checked' : ''} onchange="toggleCalendarItem('${MoneyApp.escapeAttr(item.id)}', this.checked)" style="margin-top:3px; cursor:pointer;" aria-label="${MoneyApp.escapeAttr(name)}">
+        <div style="flex:1;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+            <div style="font-weight:700; color:var(--ink); ${textStyle}">${MoneyApp.escapeHtml(name)}</div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:10px; font-weight:600; padding:1px 6px; border-radius:4px; background:var(--panel-2); border:1px solid var(--line); color:var(--ink-faint);">${MoneyApp.escapeHtml(dateStr)}</span>
+              ${countdownBadgeHtml}
+            </div>
+          </div>
+          <div style="font-size:11px; color:var(--ink-dim); margin-top:2px;">${MoneyApp.escapeHtml(desc)}</div>
+          <div style="font-size:10px; color:var(--ink-faint); margin-top:3px;">
+            <span>👥 <strong>${isEn ? 'Audience:' : 'กลุ่มเป้าหมาย:'}</strong> ${MoneyApp.escapeHtml(audience)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  listEl.innerHTML = html;
+}
+
+// Global window exports
+window.toggleTaxCalendar = toggleTaxCalendar;
+window.toggleCalendarItem = toggleCalendarItem;
+window.resetTaxCalendarChecklist = resetTaxCalendarChecklist;
+window.renderTaxCalendar = renderTaxCalendar;
+
 loadState();
+renderTaxCalendar();

@@ -5717,4 +5717,127 @@ describe('Financial Math Verification', () => {
       assert.ok(res.effectiveApr > 5.5 && res.effectiveApr < 5.8);
     });
   });
+
+  describe('Thai Tax Planning Calendar & Deadline Compliance Engine', () => {
+    function calculateThaiTaxDeadlines(refDate = new Date()) {
+      const current = new Date(refDate);
+      const currentYear = current.getFullYear();
+      const startOfDay = new Date(current.getFullYear(), current.getMonth(), current.getDate());
+
+      const events = [
+        {
+          id: 'pnd90_paper',
+          titleTh: 'ยื่นแบบ ภ.ง.ด.90/91 (แบบกระดาษ)',
+          titleEn: 'P.N.D. 90/91 Filing (Paper Form)',
+          month: 3,
+          day: 31,
+          category: 'annual_pit',
+          isOnline: false,
+        },
+        {
+          id: 'pnd90_online',
+          titleTh: 'ยื่นแบบ ภ.ง.ด.90/91 (ออนไลน์ e-Filing)',
+          titleEn: 'P.N.D. 90/91 e-Filing (Online)',
+          month: 4,
+          day: 8,
+          category: 'annual_pit',
+          isOnline: true,
+        },
+        {
+          id: 'land_tax',
+          titleTh: 'ชำระภาษีที่ดินและสิ่งปลูกสร้าง',
+          titleEn: 'Land & Building Tax Payment',
+          month: 4,
+          day: 30,
+          category: 'property_tax',
+          isOnline: false,
+        },
+        {
+          id: 'pnd94_paper',
+          titleTh: 'ยื่นแบบ ภ.ง.ด.94 ครึ่งปี (แบบกระดาษ)',
+          titleEn: 'P.N.D. 94 Mid-Year Filing (Paper Form)',
+          month: 9,
+          day: 30,
+          category: 'midyear_pit',
+          isOnline: false,
+        },
+        {
+          id: 'pnd94_online',
+          titleTh: 'ยื่นแบบ ภ.ง.ด.94 ครึ่งปี (ออนไลน์ e-Filing)',
+          titleEn: 'P.N.D. 94 Mid-Year e-Filing (Online)',
+          month: 10,
+          day: 8,
+          category: 'midyear_pit',
+          isOnline: true,
+        },
+        {
+          id: 'deduction_window',
+          titleTh: 'วันสุดท้ายการลงทุนลดหย่อนภาษี (SSF/RMF/ThaiESG/ประกัน)',
+          titleEn: 'Year-End Tax Deduction Investment Window',
+          month: 12,
+          day: 31,
+          category: 'investment_deduction',
+          isOnline: true,
+        },
+      ];
+
+      const computedEvents = events.map((ev) => {
+        let targetYear = currentYear;
+        let targetDate = new Date(targetYear, ev.month - 1, ev.day);
+        if (targetDate < startOfDay) {
+          targetYear += 1;
+          targetDate = new Date(targetYear, ev.month - 1, ev.day);
+        }
+        const diffMs = targetDate.getTime() - startOfDay.getTime();
+        const daysRemaining = Math.round(diffMs / (1000 * 60 * 60 * 24));
+        return {
+          ...ev,
+          targetYear,
+          targetDate,
+          daysRemaining,
+          isPassedThisYear: targetDate.getFullYear() > currentYear,
+        };
+      });
+
+      computedEvents.sort((a, b) => a.daysRemaining - b.daysRemaining);
+
+      return {
+        referenceDate: current,
+        nextDeadline: computedEvents[0],
+        deadlines: computedEvents,
+      };
+    }
+
+    it('correctly calculates days remaining to PND 90/91 paper deadline in January', () => {
+      const cal = calculateThaiTaxDeadlines(new Date(2025, 0, 15)); // Jan 15, 2025
+      assert.equal(cal.nextDeadline.id, 'pnd90_paper');
+      // Jan 15 to Mar 31: 16 (Jan) + 28 (Feb 2025 non-leap) + 31 (Mar) = 75 days
+      assert.equal(cal.nextDeadline.daysRemaining, 75);
+    });
+
+    it('transitions to e-Filing deadline after paper deadline passes on April 1', () => {
+      const cal = calculateThaiTaxDeadlines(new Date(2025, 3, 1)); // Apr 1, 2025
+      assert.equal(cal.nextDeadline.id, 'pnd90_online');
+      assert.equal(cal.nextDeadline.daysRemaining, 7); // Apr 1 to Apr 8 = 7 days
+    });
+
+    it('detects mid-year PND 94 as next statutory target in May', () => {
+      const cal = calculateThaiTaxDeadlines(new Date(2025, 4, 1)); // May 1, 2025
+      assert.equal(cal.nextDeadline.id, 'pnd94_paper');
+      assert.ok(cal.nextDeadline.daysRemaining > 100);
+    });
+
+    it('targets year-end deduction investment window on October 15', () => {
+      const cal = calculateThaiTaxDeadlines(new Date(2025, 9, 15)); // Oct 15, 2025
+      assert.equal(cal.nextDeadline.id, 'deduction_window');
+      // Oct 15 to Dec 31: 16 (Oct) + 30 (Nov) + 31 (Dec) = 77 days
+      assert.equal(cal.nextDeadline.daysRemaining, 77);
+    });
+
+    it('handles same-day countdown at zero days gracefully on December 31', () => {
+      const cal = calculateThaiTaxDeadlines(new Date(2025, 11, 31)); // Dec 31, 2025
+      assert.equal(cal.nextDeadline.id, 'deduction_window');
+      assert.equal(cal.nextDeadline.daysRemaining, 0);
+    });
+  });
 });

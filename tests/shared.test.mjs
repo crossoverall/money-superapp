@@ -491,4 +491,25 @@ describe('MoneyApp Shared Core Module', () => {
       assert.equal(res.length, 0);
     });
   });
+
+  describe('MoneyApp.calculateThaiTaxDeadlines', () => {
+    const { MoneyApp } = createEnvironment();
+
+    it('is exported on MoneyApp and returns structured statutory deadlines', () => {
+      assert.equal(typeof MoneyApp.calculateThaiTaxDeadlines, 'function');
+      const res = MoneyApp.calculateThaiTaxDeadlines(new Date(2025, 1, 1)); // Feb 1, 2025
+      assert.ok(res);
+      assert.ok(res.nextDeadline);
+      assert.equal(res.deadlines.length, 6);
+      assert.equal(res.nextDeadline.id, 'pnd90_paper');
+    });
+
+    it('exports TAX_DEADLINE_MILESTONES with Thai and English titles', () => {
+      assert.ok(Array.isArray(MoneyApp.TAX_DEADLINE_MILESTONES));
+      assert.equal(MoneyApp.TAX_DEADLINE_MILESTONES.length, 6);
+      MoneyApp.TAX_DEADLINE_MILESTONES.forEach((m) => {
+        assert.ok(m.id && m.titleTh && m.titleEn && m.targetDateTh && m.targetDateEn);
+      });
+    });
+  });
 });
