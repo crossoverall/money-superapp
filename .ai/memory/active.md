@@ -1,64 +1,64 @@
 ---
-task_id: "FEAT-SLIP-STREAM-01"
-status: "planning"
+task_id: "FEAT-TAX-OPTIMIZER-01"
+status: "in_progress"
 current_stage: "approval_gate"
 complexity: "level_2"
 iteration_count: 0
 pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Completed Feature: Asset Allocation & Net Worth Composition Donut / Solvency Ratio Visualizer (Phase 26 / v2.0.9)
-- **Status:** Completed & Verified (95 automated tests passing, 0 linter errors).
+### Completed Feature: Annual Net Take-Home Pay & Bonus Distribution Stream Visualizer (Phase 27 / v2.1.0)
+- **Status:** Completed & Verified (99 automated tests passing, 0 linter errors).
 - **Summary:**
-  1. Built a zero-dependency SVG donut chart using native `<circle>` elements with geometric `stroke-dasharray` and `stroke-dashoffset` representing Liquid Cash vs Invested Portfolio proportions.
-  2. Integrated cross-tool data synthesis across `remaining-money.html` (Cash & Emergency Fund), `rebalance.html` (Portfolio), and `debt-calculator.html` (Liabilities).
-  3. Implemented dynamic solvency ratio ($NW / A \times 100\%$) and debt-to-asset leverage ($D / A \times 100\%$) with contextual health status badges (`ปลอดหนี้ 100% 🎉`, `มั่นคงสูง`, `ปานกลาง`, `หนี้สินสูง`).
-  4. Added 5 automated unit tests in `tests/financial-math.test.mjs` verifying solvency and leverage ratios, debt-free edge cases, and zero-asset bounds.
+  1. Built pure SVG 12-month stacked column stream visualizer in `months-slips.html` modeling base salary, allowances, SSO, PVD, Thai PIT withholding, and bonus disbursement spikes.
+  2. Implemented customizable bonus payout month selector (`#bonusMonth`) with persistence in `localStorage`.
+  3. Interactive hover tooltips with dynamic boundary clamping preventing horizontal overflow on mobile viewports.
+  4. Added bilingual Thai/English localization and total annual net take-home pay KPI badge.
+  5. Added 4 automated unit tests in `tests/financial-math.test.mjs` verifying stream array generation, fiscal year payouts, tax reconciliation, and SVG coordinate bounds.
 
 ---
 
-### Proposed Feature Specification: Annual Net Take-Home Pay & Bonus Distribution Stream Visualizer (Phase 27 / Roadmap Item 3.2)
+### Proposed Feature Specification: Tax Deduction Optimization Room & Marginal Tax Savings Simulator (Phase 28 / Roadmap Item 3.2)
 
 #### 1. Goal & Scope Limits
-- **Objective:** Add an interactive SVG Annual Net Take-Home Pay & Bonus Distribution Stream Visualizer to [`months-slips.html`](file:///home/l2okii/Document/money-superapp/months-slips.html).
+- **Objective:** Add an interactive **Tax Deduction Optimization Room & Marginal Tax Savings Simulator** to [`tax-calculator-base.html`](file:///home/l2okii/Document/money-superapp/tax-calculator-base.html) and [`tests/financial-math.test.mjs`](file:///home/l2okii/Document/money-superapp/tests/financial-math.test.mjs).
 - **Key Capabilities & Benefits:**
-  1. **12-Month Cashflow Trajectory (Jan - Dec):**
-     - Models month-by-month cashflow with base salary, fixed allowances, monthly deductions (SSO, PVD, withholding tax), and highlight spikes during the user-selected bonus payout month.
-  2. **Interactive Stacked SVG Column / Stream Chart:**
-     - Pure SVG stacked bars for each month (Jan..Dec) displaying:
-       - 🟢 **Net Take-Home Pay** (Green `--ok`)
-       - 🔵 **PVD Savings Contribution** (Blue `--core`)
-       - 🟡 **Social Security (SSO)** (Amber `--warn`)
-       - 🔴 **Withholding Tax** (Rose `--danger`)
-       - 🎁 **Bonus Spike** (Purple `--purple` on bonus payout month)
-  3. **Bonus Month Selector & Annual Cash Flow Insight:**
-     - Allows users to select bonus payout month (e.g. Dec, Mar, or None) and instantly observe annual take-home distribution, identifying cash surplus peaks for DCA or lump-sum debt payoff planning.
+  1. **Unused Deduction Capacity Meters (Remaining Allowance Room):**
+     - Computes and visualizes remaining legal deduction room across key Thai tax-saving categories:
+       - **ThaiESG:** Up to 300,000 THB (capped at 30% of income).
+       - **Retirement Savings Bundle (SSF + RMF + PVD + GPF):** Combined ceiling of 500,000 THB (subject to individual sub-caps like SSF 200,000 THB / 30% and RMF 30%).
+       - **Life & Health Insurance:** Combined 100,000 THB ceiling (Health ins. sub-cap 25,000 THB).
+       - **Easy E-Receipt / Shopping:** Up to 50,000 THB.
+  2. **Marginal Tax Rate & ROI Visualizer:**
+     - Displays the user's current marginal tax bracket (e.g. 10%, 15%, 20%, 25%, 30%, 35%).
+     - Calculates the immediate guaranteed tax return on investment (ROI): e.g., "At your 20% marginal bracket, investing 50,000 THB in ThaiESG immediately saves 10,000 THB in tax (20% instant return)!"
+  3. **Interactive Deduction Slider / "What-If" Simulator:**
+     - A quick slider or preset buttons (+10k, +30k, +50k, +100k) showing in real-time how additional investments reduce total tax payable and move the taxpayer closer to a lower bracket.
   4. **Zero External Dependencies (ADR-001):**
-     - Pure zero-build SVG coordinate mapping with responsive viewBox.
+     - Pure client-side calculation using native DOM and SVG progress meters.
   5. **Bilingual Localization (TH/EN):**
-     - Complete Thai and English support for months, legends, and stream tooltips.
-- **Target Files (<= 5 files, ~150-180 lines total):**
-  1. `months-slips.html` (SVG stream chart container, bonus month selector, render function)
-  2. `tests/financial-math.test.mjs` (unit tests validating 12-month payroll stream allocation and tax distribution)
+     - Seamless bilingual support for all category badges, tooltips, and savings callouts.
+- **Target Files (<= 5 files, ~160-190 lines total):**
+  1. `tax-calculator-base.html` (Optimization panel, capacity meters, what-if simulator)
+  2. `tests/financial-math.test.mjs` (unit tests validating remaining capacity calculations, marginal tax rate detection, and simulated savings)
   3. `.ai/memory/active.md`
 - **Explicit Out of Scope:**
-  - Automated company payroll integrations or non-standard progressive tax schemes outside Thai revenue code.
+  - Automated tax e-filing submission to the Thai Revenue Department portal.
 
 #### 2. Architecture & Decision Alignment
-- **ADR-001 (Zero-Build Static PWA / Privacy):** 100% client-side private, offline-first.
-- **Design Tokens:** Inherits CSS variables from `css/theme.css`.
+- **ADR-001 (Zero-Build Static PWA / Privacy):** 100% client-side calculation; zero external network requests.
+- **Design Tokens:** Follows CSS styling variables from `css/theme.css`.
 
 #### 3. Step-by-Step Implementation Plan
-1. **Mathematical Verification (`tests/financial-math.test.mjs`):**
-   - Unit tests verifying 12-month net take-home array generation, bonus month injection, annual tax proration, and SVG column coordinates.
-2. **UI & SVG Rendering Engine (`months-slips.html`):**
-   - Add annual distribution stream card with SVG stacked bars, bonus month picker, and interactive tooltips.
-   - Integrate with `calc()` in `months-slips.html`.
+1. **Mathematical Engine Verification (`tests/financial-math.test.mjs`):**
+   - Unit tests validating `calculateTaxDeductionRoom()`: category remaining caps, combined 500k retirement bundle cap, marginal bracket determination, and delta tax reduction calculation.
+2. **UI & Capacity Meters (`tax-calculator-base.html`):**
+   - Add "Tax Optimization & Savings Room" (`#tax-optimization-card`) below the calculation summary.
+   - Add category capacity visual bars (ThaiESG, Retirement Bundle, Insurance).
+   - Add Marginal Tax Savings callout with interactive +10k / +50k simulation buttons.
 3. **Verification & Quality Gate:**
-   - Run `npm test` (verify 95+ passing tests).
+   - Run `npm test` (verify 100+ passing tests).
    - Run `npm run lint` (0 errors).
 4. **Release & Bump:**
    - Log lessons in `.ai/memory/lessons.md`.
-   - Bump version to `v2.1.0` via `node scripts/bump.mjs minor`.
-
-
+   - Bump version to `v2.1.1` via `node scripts/bump.mjs patch`.

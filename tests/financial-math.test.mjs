@@ -2349,4 +2349,206 @@ describe('Financial Math Verification', () => {
       assert.equal(comp.donut.investOffset, -(comp.donut.circumference / 2));
     });
   });
+
+  describe('Annual Net Take-Home Pay & Bonus Distribution Stream Engine', () => {
+    function calculateAnnualPayrollStream({
+      salary = 0,
+      allowance = 0,
+      bonus = 0,
+      pvdPercent = 0,
+      ssoCapVal = 875,
+      bonusMonth = 12,
+    } = {}) {
+      const sal = Math.max(0, Number(salary) || 0);
+      const allow = Math.max(0, Number(allowance) || 0);
+      const bon = Math.max(0, Number(bonus) || 0);
+      const pvdPct = Math.max(0, Number(pvdPercent) || 0);
+      const ssoCap = Math.max(0, Number(ssoCapVal) || 875);
+      const bMonth = Number(bonusMonth) || 12;
+
+      const monthlyEarnings = sal + allow;
+      const sso = Math.min(sal * 0.05, ssoCap);
+      const pvd = sal * (pvdPct / 100);
+
+      const annualIncome = monthlyEarnings * 12 + bon;
+      const annualSso = sso * 12;
+      const annualPvd = pvd * 12;
+
+      const expenseDeduction = Math.min(annualIncome * 0.5, 100000);
+      const personalDeduction = 60000;
+      let netAnnualTaxable = annualIncome - (expenseDeduction + personalDeduction + annualSso + annualPvd);
+      if (netAnnualTaxable < 0) netAnnualTaxable = 0;
+
+      const brackets = [
+        { limit: 150000, rate: 0 },
+        { limit: 150000, rate: 0.05 },
+        { limit: 200000, rate: 0.1 },
+        { limit: 250000, rate: 0.15 },
+        { limit: 250000, rate: 0.2 },
+        { limit: 1000000, rate: 0.25 },
+        { limit: 3000000, rate: 0.3 },
+        { limit: Infinity, rate: 0.35 },
+      ];
+
+      let annualTax = 0;
+      let rem = netAnnualTaxable;
+      for (const b of brackets) {
+        if (rem <= 0) break;
+        const taxInBracket = Math.min(rem, b.limit);
+        annualTax += taxInBracket * b.rate;
+        rem -= taxInBracket;
+      }
+
+      const monthlyTax = annualTax / 12;
+      const regularDeductions = sso + pvd + monthlyTax;
+      const regularNet = monthlyEarnings - regularDeductions;
+
+      const stream = [];
+      let totalAnnualNet = 0;
+      let maxMonthlyGross = 0;
+
+      for (let m = 1; m <= 12; m++) {
+        const isBonus = m === bMonth && bon > 0;
+        const bonusAmt = isBonus ? bon : 0;
+        const gross = monthlyEarnings + bonusAmt;
+        const net = isBonus ? regularNet + bon : regularNet;
+
+        totalAnnualNet += net;
+        if (gross > maxMonthlyGross) maxMonthlyGross = gross;
+
+        stream.push({
+          month: m,
+          gross,
+          net,
+          sso,
+          pvd,
+          tax: monthlyTax,
+          bonus: bonusAmt,
+          isBonus,
+        });
+      }
+
+      const chartH = 140;
+      const paddingBottom = 25;
+      const spacing = 48;
+
+      const coordinates = stream.map((item, idx) => {
+        const x = 20 + idx * spacing;
+        const scale = maxMonthlyGross > 0 ? (item.gross / maxMonthlyGross) * chartH : 0;
+        const yBase = 180 - paddingBottom;
+        const colY = yBase - scale;
+        const netH = maxMonthlyGross > 0 ? (item.net / maxMonthlyGross) * chartH : 0;
+        const bonusH = maxMonthlyGross > 0 && item.bonus > 0 ? (item.bonus / maxMonthlyGross) * chartH : 0;
+        return {
+          month: item.month,
+          x,
+          colY,
+          colHeight: scale,
+          netHeight: netH,
+          bonusHeight: bonusH,
+        };
+      });
+
+      return {
+        annualIncome,
+        annualTax,
+        annualSso,
+        annualPvd,
+        netAnnualTaxable,
+        monthlyTax,
+        regularNet,
+        totalAnnualNet,
+        stream,
+        coordinates,
+      };
+    }
+
+    it('calculates 12-month stream with December bonus payout month correctly', () => {
+      const res = calculateAnnualPayrollStream({
+        salary: 50000,
+        allowance: 5000,
+        bonus: 100000,
+        pvdPercent: 5,
+        ssoCapVal: 875,
+        bonusMonth: 12,
+      });
+
+      assert.equal(res.stream.length, 12);
+      assert.equal(res.annualIncome, 760000); // (55000 * 12) + 100000
+      assert.equal(res.stream[11].isBonus, true); // December is index 11
+      assert.equal(res.stream[11].bonus, 100000);
+      assert.equal(res.stream[0].isBonus, false);
+      assert.equal(res.stream[0].bonus, 0);
+
+      // Prove net pay in bonus month equals regular net + bonus
+      assert.equal(res.stream[11].net, res.regularNet + 100000);
+      assert.equal(Math.round(res.totalAnnualNet), Math.round(res.regularNet * 12 + 100000));
+    });
+
+    it('handles zero bonus or custom bonus month safely without negative values', () => {
+      const zeroBonus = calculateAnnualPayrollStream({
+        salary: 30000,
+        allowance: 0,
+        bonus: 0,
+        pvdPercent: 3,
+        ssoCapVal: 750,
+        bonusMonth: 12,
+      });
+
+      assert.equal(zeroBonus.annualIncome, 360000);
+      assert.equal(
+        zeroBonus.stream.every((s) => !s.isBonus && s.bonus === 0),
+        true,
+      );
+      assert.equal(
+        zeroBonus.stream.every((s) => s.net > 0 && s.net === zeroBonus.regularNet),
+        true,
+      );
+
+      // Custom March bonus month (Fiscal year)
+      const marchBonus = calculateAnnualPayrollStream({
+        salary: 40000,
+        allowance: 2000,
+        bonus: 80000,
+        pvdPercent: 5,
+        ssoCapVal: 875,
+        bonusMonth: 3,
+      });
+      assert.equal(marchBonus.stream[2].isBonus, true); // Month 3 is index 2
+      assert.equal(marchBonus.stream[11].isBonus, false);
+    });
+
+    it('proves total annual net equals exact sum of all 12 monthly nets', () => {
+      const res = calculateAnnualPayrollStream({
+        salary: 75000,
+        allowance: 10000,
+        bonus: 250000,
+        pvdPercent: 10,
+        ssoCapVal: 1150,
+        bonusMonth: 12,
+      });
+
+      const summedNet = res.stream.reduce((acc, m) => acc + m.net, 0);
+      assert.equal(Math.round(summedNet), Math.round(res.totalAnnualNet));
+    });
+
+    it('generates scaled SVG column coordinates without NaN or overflow', () => {
+      const res = calculateAnnualPayrollStream({
+        salary: 60000,
+        allowance: 5000,
+        bonus: 120000,
+        pvdPercent: 6,
+        ssoCapVal: 875,
+        bonusMonth: 12,
+      });
+
+      assert.equal(res.coordinates.length, 12);
+      for (const coord of res.coordinates) {
+        assert.ok(!Number.isNaN(coord.x) && coord.x >= 0 && coord.x <= 600);
+        assert.ok(!Number.isNaN(coord.colY) && coord.colY >= 0 && coord.colY <= 180);
+        assert.ok(!Number.isNaN(coord.colHeight) && coord.colHeight > 0);
+        assert.ok(!Number.isNaN(coord.netHeight) && coord.netHeight > 0);
+      }
+    });
+  });
 });

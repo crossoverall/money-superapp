@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="2.0.9">
+    <meta name="version" content="2.1.0">
     <meta name="description" content="จำลองสลิปเงินเดือนรวมโบนัส — คำนวณรายได้ ภาษี เงินสมทบประกันสังคม และกองทุนสำรองเลี้ยงชีพ per เดือน">
     <title>จำลองสลิปเงินเดือน (รวมโบนัส)</title>
     <link rel="stylesheet" href="css/tailwind-lite.css">
@@ -137,6 +137,18 @@
                     <input type="number" id="bonus" placeholder="เช่น 100000" inputmode="decimal" class="w-full px-4 py-2 bg-green-50 border border-green-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none transition-all font-medium" oninput="calculateSlip()">
                 </div>
                 <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-bonus-month">เดือนที่จ่ายโบนัส (Bonus Payout Month)</label>
+                    <select id="bonusMonth" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all text-sm font-medium" onchange="calculateSlip()">
+                        <option value="12" id="opt-bm-12" selected>ธันวาคม (สิ้นปี / Dec)</option>
+                        <option value="1" id="opt-bm-1">มกราคม (Jan)</option>
+                        <option value="2" id="opt-bm-2">กุมภาพันธ์ (Feb)</option>
+                        <option value="3" id="opt-bm-3">มีนาคม (Mar - สิ้นปีงบประมาณ)</option>
+                        <option value="4" id="opt-bm-4">เมษายน (Apr)</option>
+                        <option value="6" id="opt-bm-6">มิถุนายน (กลางปี / Jun)</option>
+                        <option value="0" id="opt-bm-0">ไม่มี / เฉลี่ยเท่ากันทุกเดือน</option>
+                    </select>
+                </div>
+                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-pvd">กองทุนสำรองเลี้ยงชีพ หักกี่ %</label>
                     <input type="number" id="pvd" placeholder="เช่น 15" inputmode="decimal" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all font-medium" oninput="calculateSlip()">
                     <p class="text-xs text-gray-500 mt-1" id="lbl-pvd-note">* หักจากฐานเงินเดือนพื้นฐานเท่านั้น</p>
@@ -238,12 +250,63 @@
                         <button onclick="window.print()" id="btn-print-slip" class="py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all flex items-center gap-1.5">
                             <span id="lbl-print-slip">🖨️ พิมพ์ / บันทึก PDF</span>
                         </button>
-                        <p class="text-xs text-gray-400 ml-auto">v2.0.9</p>
+                        <p class="text-xs text-gray-400 ml-auto">v2.1.0</p>
                     </div>
                 </div>
             </div>
         </div>
 
+    </div>
+
+    <!-- 12-Month Cashflow Trajectory & Distribution Stream -->
+    <div class="w-full bg-white rounded-xl shadow-lg p-5 border border-gray-200 mt-6 mb-6 no-print">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <div>
+                <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5" id="lbl-stream-title">
+                    📅 กราฟการกระจายรายรับสุทธิ 12 เดือน (Annual Net Cashflow Stream)
+                </h3>
+                <p class="text-xs text-gray-500 mt-0.5" id="lbl-stream-sub">
+                    แสดงสัดส่วนเงินได้สุทธิ, ภาษี, ประกันสังคม, กองทุนสำรองเลี้ยงชีพ และโบนัสในแต่ละเดือน
+                </p>
+            </div>
+            <div class="flex items-center gap-2">
+                <span id="badge-total-annual-net" class="py-1 px-3 bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold rounded-lg">
+                    รับสุทธิทั้งปี: 0 บาท
+                </span>
+            </div>
+        </div>
+
+        <!-- SVG Column Stream Chart -->
+        <div style="position:relative; width:100%; overflow-x:auto;">
+            <svg id="svgStreamChart" viewBox="0 0 600 180" style="width:100%; min-width:480px; height:180px;" role="img" aria-label="12-Month Net Pay Distribution Chart">
+                <title id="svgStreamTitle">12-Month Payroll Distribution</title>
+            </svg>
+            <div id="streamTooltip" class="absolute pointer-events-none opacity-0 bg-gray-900 text-white text-xs rounded-lg py-1.5 px-3 transition-opacity shadow-lg z-10" style="white-space:nowrap; display:none;"></div>
+        </div>
+
+        <!-- Chart Legend -->
+        <div class="flex flex-wrap items-center justify-center gap-4 mt-3 pt-3 border-t border-gray-100 text-xs text-gray-600">
+            <div class="flex items-center gap-1.5">
+                <span style="width:10px; height:10px; border-radius:2px; background:var(--ok, #10b981);" class="inline-block"></span>
+                <span id="leg-stream-net">เงินได้สุทธิ (Net Pay)</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <span style="width:10px; height:10px; border-radius:2px; background:var(--purple, #8b5cf6);" class="inline-block"></span>
+                <span id="leg-stream-bonus">โบนัสพิเศษ (Bonus)</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <span style="width:10px; height:10px; border-radius:2px; background:var(--core, #3b82f6);" class="inline-block"></span>
+                <span id="leg-stream-pvd">PVD</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <span style="width:10px; height:10px; border-radius:2px; background:var(--warn, #f59e0b);" class="inline-block"></span>
+                <span id="leg-stream-sso">ประกันสังคม (SSO)</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <span style="width:10px; height:10px; border-radius:2px; background:var(--danger, #ef4444);" class="inline-block"></span>
+                <span id="leg-stream-tax">ภาษี (Tax)</span>
+            </div>
+        </div>
     </div>
 
     <!-- Job Scenario Comparison Panel (At Bottom) -->
@@ -315,6 +378,21 @@
                 'lblCompareTitle': '📊 Compare Scenario A vs B',
                 'lblScenarioA': 'Scenario A',
                 'lblScenarioB': 'Scenario B',
+                'lbl-bonus-month': 'Bonus payout month',
+                'opt-bm-12': 'December (Year-end / Dec)',
+                'opt-bm-1': 'January (Jan)',
+                'opt-bm-2': 'February (Feb)',
+                'opt-bm-3': 'March (Mar - Fiscal Year-end)',
+                'opt-bm-4': 'April (Apr)',
+                'opt-bm-6': 'June (Mid-year / Jun)',
+                'opt-bm-0': 'None / Evenly divided',
+                'lbl-stream-title': '📅 12-Month Net Cashflow &amp; Bonus Stream',
+                'lbl-stream-sub': 'Monthly visual breakdown of Net Pay, Tax, Social Security, PVD, and Bonus payout',
+                'leg-stream-net': 'Net Pay',
+                'leg-stream-bonus': 'Bonus Spike',
+                'leg-stream-pvd': 'PVD',
+                'leg-stream-sso': 'SSO',
+                'leg-stream-tax': 'Tax',
             };
             Object.keys(EN).forEach(id => {
                 const el = document.getElementById(id);
@@ -339,12 +417,15 @@
                 allowance: document.getElementById('allowance').value,
                 bonus: document.getElementById('bonus').value,
                 pvd: document.getElementById('pvd').value,
-                ssoCap: document.getElementById('ssoCap').value
+                ssoCap: document.getElementById('ssoCap').value,
+                bonusMonth: document.getElementById('bonusMonth') ? document.getElementById('bonusMonth').value : '12'
             };
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
             } catch(e){}
         }
+
+        let currentStreamData = null;
 
         function calculateSlip() {
             const salary = parseNum(document.getElementById('salary').value);
@@ -352,6 +433,7 @@
             const bonus = parseNum(document.getElementById('bonus').value);
             const pvdPercent = parseNum(document.getElementById('pvd').value);
             const ssoCapVal = parseNum(document.getElementById('ssoCap').value) || 875;
+            const bonusMonthVal = document.getElementById('bonusMonth') ? parseInt(document.getElementById('bonusMonth').value, 10) : 12;
 
             saveState();
 
@@ -429,6 +511,41 @@
             document.getElementById('ytd-tax').innerText = fmt(annualTax);
             document.getElementById('ytd-pvd').innerText = fmt(annualPvd);
             document.getElementById('ytd-taxable').innerText = fmt(netAnnualIncome);
+
+            // คำนวณกราฟกระแสเงินสด 12 เดือน (12-Month Stream Data)
+            const stream = [];
+            let totalAnnualNet = 0;
+            let maxMonthlyGross = 0;
+
+            for (let m = 1; m <= 12; m++) {
+                const isBonus = (m === bonusMonthVal && bonus > 0);
+                const bonusAmt = isBonus ? bonus : 0;
+                const gross = monthlyEarnings + bonusAmt;
+                const net = isBonus ? (netPayout + bonus) : netPayout;
+
+                totalAnnualNet += net;
+                if (gross > maxMonthlyGross) maxMonthlyGross = gross;
+
+                stream.push({
+                    month: m,
+                    gross,
+                    net,
+                    regularNet: netPayout,
+                    sso,
+                    pvd,
+                    tax: monthlyTax,
+                    bonus: bonusAmt,
+                    isBonus
+                });
+            }
+
+            currentStreamData = {
+                stream,
+                maxMonthlyGross,
+                totalAnnualNet
+            };
+
+            renderStreamChart(currentStreamData);
         }
 
         function copySlipSummary() {
@@ -476,6 +593,132 @@
             }
         }
 
+        function renderStreamChart(streamData) {
+            const svg = document.getElementById('svgStreamChart');
+            if (!svg) return;
+
+            const { stream, maxMonthlyGross, totalAnnualNet } = streamData;
+            const badge = document.getElementById('badge-total-annual-net');
+            const unit = LANG === 'en' ? 'THB' : 'บาท';
+            if (badge) {
+                badge.textContent = (LANG === 'en' ? 'Annual Net Pay: ' : 'รับสุทธิทั้งปี: ') + formatMoney(totalAnnualNet) + ' ' + unit;
+            }
+
+            if (!stream || stream.length === 0 || maxMonthlyGross <= 0) {
+                svg.innerHTML = `<text x="300" y="90" text-anchor="middle" fill="#94a3b8" font-size="12" font-family="inherit">${LANG === 'en' ? 'Enter salary to view 12-month cashflow stream' : 'กรอกเงินเดือนเพื่อดูแนวโน้มรายรับสุทธิ 12 เดือน'}</text>`;
+                return;
+            }
+
+            const enMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const thMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+
+            const chartH = 120;
+            const baseY = 145;
+            const colWidth = 26;
+            const spacing = 46;
+            const startX = 24;
+
+            let svgHtml = '';
+
+            // Draw baseline
+            svgHtml += `<line x1="16" y1="${baseY}" x2="584" y2="${baseY}" stroke="var(--line, #e2e8f0)" stroke-width="1.5" />`;
+
+            stream.forEach((item, idx) => {
+                const x = startX + idx * spacing;
+                const mLabel = LANG === 'en' ? enMonths[idx] : thMonths[idx];
+
+                // Heights
+                const netH = maxMonthlyGross > 0 ? (item.regularNet / maxMonthlyGross) * chartH : 0;
+                const bonusH = (maxMonthlyGross > 0 && item.bonus > 0) ? (item.bonus / maxMonthlyGross) * chartH : 0;
+                const pvdH = maxMonthlyGross > 0 ? (item.pvd / maxMonthlyGross) * chartH : 0;
+                const ssoH = maxMonthlyGross > 0 ? (item.sso / maxMonthlyGross) * chartH : 0;
+                const taxH = maxMonthlyGross > 0 ? (item.tax / maxMonthlyGross) * chartH : 0;
+
+                let curY = baseY;
+
+                // 1. Regular Net Pay (Bottom bar, Emerald)
+                const netY = curY - netH;
+                svgHtml += `<rect x="${x}" y="${netY.toFixed(1)}" width="${colWidth}" height="${netH.toFixed(1)}" fill="var(--ok, #10b981)" rx="2" style="cursor:pointer;" onmouseover="showStreamTip(event, ${idx})" onmouseout="hideStreamTip()"></rect>`;
+                curY = netY;
+
+                // 2. Bonus if present (Purple)
+                if (bonusH > 0) {
+                    const bonY = curY - bonusH;
+                    svgHtml += `<rect x="${x}" y="${bonY.toFixed(1)}" width="${colWidth}" height="${bonusH.toFixed(1)}" fill="var(--purple, #8b5cf6)" rx="2" style="cursor:pointer;" onmouseover="showStreamTip(event, ${idx})" onmouseout="hideStreamTip()"></rect>`;
+                    svgHtml += `<text x="${(x + colWidth / 2).toFixed(1)}" y="${(bonY - 5).toFixed(1)}" fill="var(--purple, #8b5cf6)" font-size="10" font-weight="bold" text-anchor="middle" font-family="inherit">🎁</text>`;
+                    curY = bonY;
+                }
+
+                // 3. PVD (Blue)
+                if (pvdH > 0) {
+                    const pvdY = curY - pvdH;
+                    svgHtml += `<rect x="${x}" y="${pvdY.toFixed(1)}" width="${colWidth}" height="${pvdH.toFixed(1)}" fill="var(--core, #3b82f6)" opacity="0.85" rx="1" style="cursor:pointer;" onmouseover="showStreamTip(event, ${idx})" onmouseout="hideStreamTip()"></rect>`;
+                    curY = pvdY;
+                }
+
+                // 4. SSO (Amber)
+                if (ssoH > 0) {
+                    const ssoY = curY - ssoH;
+                    svgHtml += `<rect x="${x}" y="${ssoY.toFixed(1)}" width="${colWidth}" height="${ssoH.toFixed(1)}" fill="var(--warn, #f59e0b)" opacity="0.85" rx="1" style="cursor:pointer;" onmouseover="showStreamTip(event, ${idx})" onmouseout="hideStreamTip()"></rect>`;
+                    curY = ssoY;
+                }
+
+                // 5. Tax (Rose)
+                if (taxH > 0) {
+                    const taxY = curY - taxH;
+                    svgHtml += `<rect x="${x}" y="${taxY.toFixed(1)}" width="${colWidth}" height="${taxH.toFixed(1)}" fill="var(--danger, #ef4444)" opacity="0.85" rx="1" style="cursor:pointer;" onmouseover="showStreamTip(event, ${idx})" onmouseout="hideStreamTip()"></rect>`;
+                    curY = taxY;
+                }
+
+                // Month text below baseline
+                const isSelectedBonusMonth = item.isBonus;
+                const fontColor = isSelectedBonusMonth ? 'var(--purple, #8b5cf6)' : 'var(--ink-faint, #64748b)';
+                const fontWeight = isSelectedBonusMonth ? 'bold' : 'normal';
+                svgHtml += `<text x="${(x + colWidth / 2).toFixed(1)}" y="${baseY + 16}" fill="${fontColor}" font-weight="${fontWeight}" font-size="11" text-anchor="middle" font-family="inherit">${mLabel}</text>`;
+            });
+
+            svg.innerHTML = svgHtml;
+        }
+
+        function showStreamTip(e, monthIdx) {
+            const tip = document.getElementById('streamTooltip');
+            if (!tip || !currentStreamData || !currentStreamData.stream[monthIdx]) return;
+            const item = currentStreamData.stream[monthIdx];
+            const enMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            const thMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+            const mName = LANG === 'en' ? enMonths[monthIdx] : thMonths[monthIdx];
+            const unit = LANG === 'en' ? 'THB' : 'บาท';
+
+            let html = `<div class="font-bold mb-1">${mName}</div>`;
+            html += `<div class="flex justify-between gap-3 text-emerald-400"><span>${LANG === 'en' ? 'Net Take-Home:' : 'เงินได้สุทธิ:'}</span><span class="font-bold">${formatMoney(item.net)} ${unit}</span></div>`;
+            if (item.bonus > 0) {
+                html += `<div class="flex justify-between gap-3 text-purple-300"><span>${LANG === 'en' ? '🎁 Bonus Included:' : '🎁 โบนัส:'}</span><span class="font-bold">+${formatMoney(item.bonus)} ${unit}</span></div>`;
+            }
+            html += `<div class="flex justify-between gap-3 text-blue-300"><span>PVD:</span><span>-${formatMoney(item.pvd)} ${unit}</span></div>`;
+            html += `<div class="flex justify-between gap-3 text-amber-300"><span>SSO:</span><span>-${formatMoney(item.sso)} ${unit}</span></div>`;
+            html += `<div class="flex justify-between gap-3 text-red-300"><span>Tax:</span><span>-${formatMoney(item.tax)} ${unit}</span></div>`;
+            html += `<div class="flex justify-between gap-3 border-t border-gray-700 pt-1 mt-1 text-gray-300"><span>${LANG === 'en' ? 'Gross Total:' : 'รายได้รวม:'}</span><span class="font-bold">${formatMoney(item.gross)} ${unit}</span></div>`;
+
+            tip.innerHTML = html;
+            tip.style.display = 'block';
+            tip.style.opacity = '1';
+
+            const container = tip.parentElement;
+            const rect = container.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            tip.style.left = `${Math.min(rect.width - 200, Math.max(10, x - 80))}px`;
+            tip.style.top = `${Math.max(10, y - 120)}px`;
+        }
+
+        function hideStreamTip() {
+            const tip = document.getElementById('streamTooltip');
+            if (tip) {
+                tip.style.opacity = '0';
+                tip.style.display = 'none';
+            }
+        }
+
         function loadState() {
             try {
                 const raw = localStorage.getItem(STORAGE_KEY);
@@ -486,16 +729,16 @@
                 const bonus = data?.bonus || '';
                 const pvd = data?.pvd || '';
                 const ssoCap = data?.ssoCap || '875';
+                const bonusMonth = data?.bonusMonth ?? '12';
 
                 if (salary !== '') document.getElementById('salary').value = salary;
                 if (allowance !== '') document.getElementById('allowance').value = allowance;
                 if (bonus !== '') document.getElementById('bonus').value = bonus;
                 if (pvd !== '') document.getElementById('pvd').value = pvd;
                 if (ssoCap !== '') document.getElementById('ssoCap').value = ssoCap;
+                if (document.getElementById('bonusMonth')) document.getElementById('bonusMonth').value = bonusMonth;
 
-                if (parseFloat(document.getElementById('salary').value) > 0) {
-                    calculateSlip();
-                }
+                calculateSlip();
             } catch(e){}
         }
 

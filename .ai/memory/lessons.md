@@ -433,3 +433,18 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
   3. Guarded zero gross asset edge cases ($A = 0$) and negative net worth ($NW < 0$) without generating `NaN`, `-0`, or division-by-zero layout bugs.
   4. Added 5 unit tests verifying composition ratios and arc offsets across healthy, leveraged, debt-free, and zero-asset scenarios in `tests/financial-math.test.mjs`.
 - **Rule:** When presenting holistic net worth, pair scalar balances with an asset-mix donut and solvency/leverage ratio ($NW / A$ and $D / A$) using native SVG dasharray circles to maintain 100% client-side privacy without external libraries.
+
+### 2026-10-17: Annual Net Take-Home Pay & Bonus Distribution Stream Visualizer
+
+- **Date & Context:** 2026-10-17, implementing 12-Month Net Take-Home Pay & Bonus Distribution Stream Visualizer in `months-slips.html` (`v2.1.0`).
+- **Problem:**
+  1. Thai payslip calculations are typically computed as isolated monthly static snapshots. Users could not easily visualize how annual bonuses, progressive PIT brackets, Provident Fund (PVD), and Social Security (SSO) distribute throughout the calendar/fiscal year.
+  2. Bonuses are paid in specific months (commonly December or custom fiscal months like March or April), causing major net cashflow spikes that impact personal budgeting and tax withholding planning.
+  3. SVG bar charts with stacked segments (Net Pay, Bonus, PVD, SSO, Tax) require coordinate precision and clean mobile-friendly tooltips without layout overflow.
+- **Resolution:**
+  1. Created `calculateAnnualPayrollStream()` engine that calculates 12-month payroll streams with customizable bonus disbursement months, accounting for progressive Thai Personal Income Tax (PIT) withholding, Social Security caps, and PVD deductions.
+  2. Implemented a zero-dependency SVG stacked column chart in `months-slips.html` with color-coded segments: Emerald for regular net take-home, Purple for bonus surge, Blue for PVD, Amber for SSO, and Rose for Tax.
+  3. Added interactive hover tooltips that clamp coordinates dynamically within the SVG container width (`Math.min(rect.width - 200, Math.max(10, x - 80))`), preventing horizontal overflow on mobile viewports.
+  4. Added prominent Total Annual Net Take-Home Pay KPI badge with full bilingual Thai/English localization and state persistence in `localStorage`.
+  5. Added 4 comprehensive automated unit tests in `tests/financial-math.test.mjs` verifying 12-month stream allocation, December and custom fiscal-year bonus payout months, total annual net reconciliation, and SVG coordinate bounds.
+- **Rule:** When calculating payroll slips, complement the single-month snapshot with a 12-month stacked net cashflow stream that highlights annual bonus distribution and full-year net take-home pay, ensuring stacked SVG columns correctly scale to the peak monthly gross income.
