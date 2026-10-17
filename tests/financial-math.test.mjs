@@ -66,6 +66,84 @@ function computeSection48Tax(grossIncome, tenureYears) {
 }
 
 /**
+ * Tax Bracket Waterfall Allocation Engine
+ */
+function computeTaxWaterfall(netIncome) {
+  const brackets = [
+    { limit: 150000, rate: 0, color: '#10b981', labelTh: '0 - 150,000', labelEn: '0 - 150,000' },
+    { limit: 150000, rate: 0.05, color: '#06b6d4', labelTh: '150,001 - 300,000', labelEn: '150,001 - 300,000' },
+    { limit: 200000, rate: 0.1, color: '#3b82f6', labelTh: '300,001 - 500,000', labelEn: '300,001 - 500,000' },
+    { limit: 250000, rate: 0.15, color: '#6366f1', labelTh: '500,001 - 750,000', labelEn: '500,001 - 750,000' },
+    { limit: 250000, rate: 0.2, color: '#8b5cf6', labelTh: '750,001 - 1,000,000', labelEn: '750,001 - 1,000,000' },
+    {
+      limit: 1000000,
+      rate: 0.25,
+      color: '#f59e0b',
+      labelTh: '1,000,001 - 2,000,000',
+      labelEn: '1,000,001 - 2,000,000',
+    },
+    {
+      limit: 3000000,
+      rate: 0.3,
+      color: '#f97316',
+      labelTh: '2,000,001 - 5,000,000',
+      labelEn: '2,000,001 - 5,000,000',
+    },
+    { limit: Infinity, rate: 0.35, color: '#ef4444', labelTh: '5,000,001 ขึ้นไป', labelEn: 'Over 5,000,000' },
+  ];
+
+  let remaining = Math.max(0, netIncome);
+  let totalTax = 0;
+  const tiers = [];
+  let topMarginalRate = 0;
+  let headroom = 0;
+  let nextBracketRate = 0;
+
+  for (let i = 0; i < brackets.length; i++) {
+    const b = brackets[i];
+    if (remaining <= 0 && tiers.length > 0) break;
+
+    const taxable = Math.min(remaining, b.limit);
+    const tax = taxable * b.rate;
+    totalTax += tax;
+    remaining -= taxable;
+
+    const isFull = taxable === b.limit;
+    const pctOfTier = b.limit === Infinity ? 100 : Math.min(100, Math.round((taxable / b.limit) * 100));
+    const pctOfNet = netIncome > 0 ? (taxable / netIncome) * 100 : 0;
+
+    topMarginalRate = Math.round(b.rate * 100);
+    headroom = b.limit === Infinity ? Infinity : Math.max(0, b.limit - taxable);
+    nextBracketRate = i + 1 < brackets.length ? Math.round(brackets[i + 1].rate * 100) : 35;
+
+    tiers.push({
+      index: i,
+      rate: b.rate,
+      ratePct: Math.round(b.rate * 100),
+      labelTh: b.labelTh,
+      labelEn: b.labelEn,
+      color: b.color,
+      limit: b.limit,
+      taxable,
+      tax,
+      isFull,
+      pctOfTier,
+      pctOfNet,
+      headroom,
+    });
+  }
+
+  return {
+    netIncome,
+    totalTax,
+    topMarginalRate,
+    headroom,
+    nextBracketRate,
+    tiers,
+  };
+}
+
+/**
  * 2-Tier Hierarchical DCA Minimum Budget Projection (v1.8.0)
  */
 function computeMinRebalanceBudget(buckets) {
@@ -427,81 +505,6 @@ describe('Financial Math Verification', () => {
   });
 
   describe('Tax Bracket Waterfall Allocation & Headroom', () => {
-    function computeTaxWaterfall(netIncome) {
-      const brackets = [
-        { limit: 150000, rate: 0, color: '#10b981', labelTh: '0 - 150,000', labelEn: '0 - 150,000' },
-        { limit: 150000, rate: 0.05, color: '#06b6d4', labelTh: '150,001 - 300,000', labelEn: '150,001 - 300,000' },
-        { limit: 200000, rate: 0.1, color: '#3b82f6', labelTh: '300,001 - 500,000', labelEn: '300,001 - 500,000' },
-        { limit: 250000, rate: 0.15, color: '#6366f1', labelTh: '500,001 - 750,000', labelEn: '500,001 - 750,000' },
-        { limit: 250000, rate: 0.2, color: '#8b5cf6', labelTh: '750,001 - 1,000,000', labelEn: '750,001 - 1,000,000' },
-        {
-          limit: 1000000,
-          rate: 0.25,
-          color: '#f59e0b',
-          labelTh: '1,000,001 - 2,000,000',
-          labelEn: '1,000,001 - 2,000,000',
-        },
-        {
-          limit: 3000000,
-          rate: 0.3,
-          color: '#f97316',
-          labelTh: '2,000,001 - 5,000,000',
-          labelEn: '2,000,001 - 5,000,000',
-        },
-        { limit: Infinity, rate: 0.35, color: '#ef4444', labelTh: '5,000,001 ขึ้นไป', labelEn: 'Over 5,000,000' },
-      ];
-
-      let remaining = Math.max(0, netIncome);
-      let totalTax = 0;
-      const tiers = [];
-      let topMarginalRate = 0;
-      let headroom = 0;
-      let nextBracketRate = 0;
-
-      for (let i = 0; i < brackets.length; i++) {
-        const b = brackets[i];
-        if (remaining <= 0 && tiers.length > 0) break;
-
-        const taxable = Math.min(remaining, b.limit);
-        const tax = taxable * b.rate;
-        totalTax += tax;
-        remaining -= taxable;
-
-        const isFull = taxable === b.limit;
-        const pctOfTier = b.limit === Infinity ? 100 : Math.min(100, Math.round((taxable / b.limit) * 100));
-        const pctOfNet = netIncome > 0 ? (taxable / netIncome) * 100 : 0;
-
-        topMarginalRate = Math.round(b.rate * 100);
-        headroom = b.limit === Infinity ? Infinity : Math.max(0, b.limit - taxable);
-        nextBracketRate = i + 1 < brackets.length ? Math.round(brackets[i + 1].rate * 100) : 35;
-
-        tiers.push({
-          index: i,
-          rate: b.rate,
-          ratePct: Math.round(b.rate * 100),
-          labelTh: b.labelTh,
-          labelEn: b.labelEn,
-          color: b.color,
-          limit: b.limit,
-          taxable,
-          tax,
-          isFull,
-          pctOfTier,
-          pctOfNet,
-          headroom,
-        });
-      }
-
-      return {
-        netIncome,
-        totalTax,
-        topMarginalRate,
-        headroom,
-        nextBracketRate,
-        tiers,
-      };
-    }
-
     it('allocates 0 THB net income into exempt tier with full headroom', () => {
       const wf = computeTaxWaterfall(0);
       assert.equal(wf.totalTax, 0);
@@ -1032,6 +1035,192 @@ describe('Financial Math Verification', () => {
       // Start is at leftmost padding (65), end is at rightmost boundary (570)
       assert.equal(coords[0].x, 65);
       assert.equal(coords[2].x, 570);
+    });
+  });
+
+  describe('Annual Tax Filing Report & Deduction Summary Generation', () => {
+    function buildTaxFilingSummary(inputs, lang = 'th', date = new Date(2026, 9, 17, 10, 45)) {
+      const isEn = lang === 'en';
+      const isYearly = inputs.incomeMode === 'yearly';
+
+      const salary = isYearly ? inputs.yearlyIncome || 0 : (inputs.monthlySalary || 0) * 12;
+      const bonus = isYearly ? inputs.yearlyBonus || 0 : inputs.bonus || 0;
+      const totalIncome = salary + bonus;
+
+      const expenseDeduction = Math.min(totalIncome * 0.5, 100000);
+      const personalDeduction = 60000;
+
+      // PVD & SSO
+      let pvdVal = 0;
+      let ssoVal = 0;
+      if (isYearly) {
+        const maxPvd = totalIncome > 0 ? totalIncome * 0.15 : Infinity;
+        pvdVal = Math.min(inputs.yearlyPvd || 0, maxPvd);
+        ssoVal = Math.min(inputs.yearlySso || 0, 13800);
+      } else {
+        const pvdPct = inputs.pvdPercent || 0;
+        pvdVal = salary * (pvdPct / 100);
+        const ssoCap = inputs.ssoCap !== undefined ? inputs.ssoCap : 750;
+        if (ssoCap > 0) {
+          const ssoMonthly = Math.min((inputs.monthlySalary || 0) * 0.05, ssoCap);
+          ssoVal = ssoMonthly * 12;
+        }
+      }
+
+      // Voluntary & Capped Deductions
+      const effectiveMortgage = Math.min(inputs.mortgageDeduct || 0, 100000);
+      const effectiveInsurance = Math.min(inputs.insuranceDeduct || 0, 100000);
+      const maxThaiEsg = Math.min(300000, totalIncome > 0 ? totalIncome * 0.3 : 300000);
+      const effectiveThaiEsg = Math.min(inputs.thaiEsgDeduct || 0, maxThaiEsg);
+      const maxFundAllowed = Math.max(0, 500000 - pvdVal);
+      const effectiveFund = Math.min(inputs.fundDeduct || 0, maxFundAllowed);
+      const effectiveEasyReceipt = Math.min(inputs.easyReceiptDeduct || 0, 50000);
+      const otherDeduct = inputs.otherDeduct || 0;
+
+      const totalDeductions =
+        expenseDeduction +
+        personalDeduction +
+        pvdVal +
+        ssoVal +
+        effectiveFund +
+        effectiveThaiEsg +
+        effectiveInsurance +
+        effectiveMortgage +
+        effectiveEasyReceipt +
+        otherDeduct;
+
+      const netIncome = Math.max(0, totalIncome - totalDeductions);
+      const wf = computeTaxWaterfall(netIncome);
+      const totalTax = wf.totalTax;
+      const effectiveRate = totalIncome > 0 ? parseFloat(((totalTax / totalIncome) * 100).toFixed(1)) : 0;
+
+      const taxYearStr = isEn
+        ? `Tax Year ${date.getFullYear()}`
+        : `ปีภาษี ${date.getFullYear() + 543} (พ.ศ. ${date.getFullYear() + 543})`;
+
+      const formName = isYearly ? (isEn ? 'Form P.N.D.90' : 'แบบ ภ.ง.ด.90') : isEn ? 'Form P.N.D.91' : 'แบบ ภ.ง.ด.91';
+
+      return {
+        taxYear: taxYearStr,
+        formName,
+        income: { salary, bonus, totalIncome },
+        deductions: {
+          expenseDeduction,
+          personalDeduction,
+          sso: ssoVal,
+          pvd: pvdVal,
+          retirementFund: effectiveFund,
+          thaiEsg: effectiveThaiEsg,
+          insurance: effectiveInsurance,
+          mortgage: effectiveMortgage,
+          easyReceipt: effectiveEasyReceipt,
+          other: otherDeduct,
+          totalDeductions,
+        },
+        computation: {
+          netIncome,
+          totalTax,
+          effectiveRate,
+          topMarginalRate: wf.topMarginalRate,
+          headroom: wf.headroom,
+          tierCount: wf.tiers.length,
+        },
+      };
+    }
+
+    it('generates standard salaried P.N.D.91 tax report with statutory deductions and legal caps', () => {
+      const salariedInputs = {
+        incomeMode: 'monthly',
+        monthlySalary: 60000, // 720,000 / yr
+        bonus: 80000, // Total = 800,000
+        pvdPercent: 5, // 5% of 720,000 = 36,000
+        ssoCap: 750, // 9,000 / yr
+        fundDeduct: 100000, // SSF/RMF
+        thaiEsgDeduct: 50000,
+        insuranceDeduct: 150000, // Exceeds 100k -> capped at 100k
+        mortgageDeduct: 120000, // Exceeds 100k -> capped at 100k
+        easyReceiptDeduct: 60000, // Exceeds 50k -> capped at 50k
+        otherDeduct: 0,
+      };
+
+      const report = buildTaxFilingSummary(salariedInputs, 'th');
+      assert.equal(report.formName, 'แบบ ภ.ง.ด.91');
+      assert.equal(report.taxYear, 'ปีภาษี 2569 (พ.ศ. 2569)');
+      assert.equal(report.income.salary, 720000);
+      assert.equal(report.income.bonus, 80000);
+      assert.equal(report.income.totalIncome, 800000);
+
+      // Verify deduction caps
+      assert.equal(report.deductions.expenseDeduction, 100000); // 50% capped at 100k
+      assert.equal(report.deductions.personalDeduction, 60000);
+      assert.equal(report.deductions.sso, 9000);
+      assert.equal(report.deductions.pvd, 36000);
+      assert.equal(report.deductions.insurance, 100000); // Capped from 150k
+      assert.equal(report.deductions.mortgage, 100000); // Capped from 120k
+      assert.equal(report.deductions.easyReceipt, 50000); // Capped from 60k
+      assert.equal(report.deductions.retirementFund, 100000);
+      assert.equal(report.deductions.thaiEsg, 50000);
+
+      // Total deductions = 100k + 60k + 9k + 36k + 100k + 50k + 100k + 100k + 50k = 605,000
+      assert.equal(report.deductions.totalDeductions, 605000);
+      // Net income = 800,000 - 605,000 = 195,000
+      assert.equal(report.computation.netIncome, 195000);
+      // Tax on 195,000:
+      // 0-150k @ 0% = 0
+      // 150k-195k (45,000) @ 5% = 2,250 THB
+      assert.equal(report.computation.totalTax, 2250);
+      assert.equal(report.computation.topMarginalRate, 5);
+      assert.equal(report.computation.effectiveRate, 0.3); // 2,250 / 800,000 = 0.28% -> 0.3%
+    });
+
+    it('generates freelance / annual P.N.D.90 report with bilingual labels and retirement pool caps', () => {
+      const freelanceInputs = {
+        incomeMode: 'yearly',
+        yearlyIncome: 1200000,
+        yearlyBonus: 300000, // Total = 1,500,000
+        yearlyPvd: 150000, // Capped at 15% (180k) -> 150k used
+        yearlySso: 15000, // Exceeds 13,800 statutory cap -> capped at 13,800
+        fundDeduct: 400000, // Combined with PVD (150k) = 550k > 500k cap -> capped at 350k
+        thaiEsgDeduct: 350000, // Exceeds 300k cap -> capped at 300k
+        insuranceDeduct: 80000,
+        mortgageDeduct: 50000,
+        easyReceiptDeduct: 0,
+        otherDeduct: 10000,
+      };
+
+      const reportEn = buildTaxFilingSummary(freelanceInputs, 'en');
+      assert.equal(reportEn.formName, 'Form P.N.D.90');
+      assert.equal(reportEn.taxYear, 'Tax Year 2026');
+      assert.equal(reportEn.income.totalIncome, 1500000);
+
+      // Verify retirement pool combined cap (PVD 150k + Fund 350k = 500k)
+      assert.equal(reportEn.deductions.pvd, 150000);
+      assert.equal(reportEn.deductions.retirementFund, 350000);
+      assert.equal(reportEn.deductions.pvd + reportEn.deductions.retirementFund, 500000);
+
+      // Verify SSO capped at 13,800
+      assert.equal(reportEn.deductions.sso, 13800);
+
+      // ThaiESG capped at 300k
+      assert.equal(reportEn.deductions.thaiEsg, 300000);
+
+      assert.ok(reportEn.computation.netIncome > 0);
+      assert.ok(reportEn.computation.totalTax > 0);
+      assert.ok(reportEn.computation.effectiveRate > 0);
+    });
+
+    it('handles zero income and tax-exempt filing thresholds safely', () => {
+      const zeroInputs = {
+        incomeMode: 'monthly',
+        monthlySalary: 0,
+        bonus: 0,
+      };
+      const report = buildTaxFilingSummary(zeroInputs, 'th');
+      assert.equal(report.income.totalIncome, 0);
+      assert.equal(report.computation.netIncome, 0);
+      assert.equal(report.computation.totalTax, 0);
+      assert.equal(report.computation.effectiveRate, 0);
+      assert.equal(report.computation.topMarginalRate, 0);
     });
   });
 });

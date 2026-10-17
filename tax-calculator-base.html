@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="1.9.6">
+    <meta name="version" content="1.9.7">
     <meta name="description" content="คำนวณภาษีเงินได้บุคคลธรรมดา — ประมาณการภาษีเงินได้จากเงินเดือนและโบนัส พร้อมแสดงรายละเอียดตามขั้นบันได">
     <title>คำนวณภาษีเงินได้บุคคลธรรมดา</title>
     <link rel="stylesheet" href="css/tailwind-lite.css">
@@ -57,14 +57,29 @@
         [data-theme="dark"] #taxAdvisorCard .text-emerald-800 { color: var(--ok) !important; }
         [data-theme="dark"] #taxAdvisorCard .text-emerald-900 { color: var(--ink) !important; }
         [data-theme="dark"] #taxAdvisorCard #badge-marginal-rate { background-color: var(--core) !important; color: #fff !important; }
+        .print-only { display: none !important; }
 
         @media print {
-            body { background: #fff !important; color: #000 !important; padding: 0 !important; }
-            .no-print, button, details summary { display: none !important; }
-            details { display: block !important; border: 1px solid #e2e8f0 !important; }
-            details > div { display: block !important; }
-            .bg-white { box-shadow: none !important; border: 1px solid #e2e8f0 !important; max-width: 100% !important; }
-            .bg-blue-50 { background-color: #f8fafc !important; border-color: #cbd5e1 !important; }
+            body {
+                background: #ffffff !important;
+                color: #0f172a !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Prompt", sans-serif !important;
+            }
+            .no-print, button, details summary {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            #screenCalculatorCard {
+                display: none !important;
+            }
+            @page {
+                size: A4 portrait;
+                margin: 10mm 14mm;
+            }
         }
 
         /* Material Design 3 Flat Segmented Buttons — Unified Sage/Emerald Palette */
@@ -176,7 +191,7 @@
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
 
-    <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+    <div id="screenCalculatorCard" class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md no-print">
         <div class="flex items-center justify-between mb-6">
             <h2 class="text-2xl font-semibold text-gray-800" id="lbl-title">คำนวณภาษีเบื้องต้น 📊</h2>
             <button type="button" onclick="undoTaxChange()" id="btn-undo-tax-top" class="py-1 px-2.5 text-xs font-semibold rounded-lg no-print" style="display:none; color:var(--core); background:var(--panel-2); border:1px solid var(--line); cursor:pointer;" title="เลิกทำ / Undo (Ctrl+Z)" aria-label="Undo last change">↩ <span id="lbl-undo-tax-top">เลิกทำ (Undo)</span></button>
@@ -414,14 +429,137 @@
                 <button onclick="copyTaxSummary()" id="btn-copy-tax" class="py-1.5 px-3 md-btn-outlined text-xs font-medium rounded-lg flex items-center gap-1.5" style="color:var(--ink); border:1px solid var(--line);">
                     <span id="lbl-copy-tax">📋 คัดลอกสรุปภาษี</span>
                 </button>
-                <button onclick="window.print()" id="btn-print-tax" class="py-1.5 px-3 md-btn-flat text-white text-xs font-medium rounded-lg flex items-center gap-1.5 no-print" style="background:var(--core);">
+                <button onclick="printTaxReport()" id="btn-print-tax" class="py-1.5 px-3 md-btn-flat text-white text-xs font-medium rounded-lg flex items-center gap-1.5 no-print" style="background:var(--core);">
                     <span id="lbl-print-tax">🖨️ พิมพ์ / PDF</span>
                 </button>
                 <button type="button" onclick="resetTaxForm()" id="btn-reset-tax" class="py-1.5 px-3 md-btn-outlined text-xs font-medium rounded-lg flex items-center gap-1.5 no-print" style="color:var(--ink-faint); border:1px solid var(--line); cursor:pointer;">
                     <span id="lbl-reset-tax">ล้างข้อมูล</span>
                 </button>
             </div>
-            <p class="text-xs text-gray-400">v1.9.6</p>
+            <p class="text-xs text-gray-400">v1.9.7</p>
+        </div>
+    </div>
+
+    <!-- Printable Annual Tax Return & Deduction Summary (Print-Only) -->
+    <div id="taxPrintReport" class="print-only" style="display:none; width:100%; max-width:800px; margin:0 auto; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Prompt', sans-serif; color:#0f172a;">
+        <!-- Header -->
+        <div style="border-bottom:2px solid #0f172a; padding-bottom:8px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+                <div style="font-size:18px; font-weight:800; color:#0f172a;" id="print-doc-title">รายงานสรุปภาษีเงินได้บุคคลธรรมดาประจำปี (แบบ ภ.ง.ด.91/90)</div>
+                <div style="font-size:11px; color:#475569;" id="print-doc-sub">เอกสารสรุปประมาณการคำนวณภาษีและรายการหักลดหย่อน เพื่อใช้ประกอบการยื่นแบบชำระภาษี</div>
+            </div>
+            <div style="text-align:right; font-size:11px; color:#475569; line-height:1.4;">
+                <div style="font-weight:700; color:#0f172a; font-size:12px;" id="print-tax-year">ปีภาษี 2569 (2026)</div>
+                <div id="print-timestamp">วันที่จัดทำ: 17 ต.ค. 2569 10:45</div>
+                <div style="color:#059669; font-weight:600;">🔒 100% Private Client-Side Calculation</div>
+            </div>
+        </div>
+
+        <!-- Section 1: Assessable Income -->
+        <div style="margin-bottom:12px;">
+            <div style="font-size:12px; font-weight:700; background:#f1f5f9; padding:4px 8px; border-left:4px solid #2563eb; margin-bottom:4px;" id="print-lbl-sec1">ส่วนที่ 1: เงินได้พึงประเมิน (Assessable Income)</div>
+            <table style="width:100%; border-collapse:collapse; font-size:11.5px;">
+                <tbody>
+                    <tr style="border-bottom:1px solid #e2e8f0;">
+                        <td style="padding:4px 8px;" id="print-lbl-income-main">เงินเดือน / ค่าจ้างประจำ (มาตรา 40(1))</td>
+                        <td style="padding:4px 8px; text-align:right; font-weight:600;" id="print-val-income-main">0 บาท</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #e2e8f0;">
+                        <td style="padding:4px 8px;" id="print-lbl-income-bonus">โบนัสและเงินได้พิเศษอื่นๆ (มาตรา 40(2))</td>
+                        <td style="padding:4px 8px; text-align:right; font-weight:600;" id="print-val-income-bonus">0 บาท</td>
+                    </tr>
+                    <tr style="border-bottom:2px solid #cbd5e1; background:#f8fafc; font-weight:700;">
+                        <td style="padding:5px 8px;" id="print-lbl-income-total">รวมเงินได้พึงประเมินทั้งปี</td>
+                        <td style="padding:5px 8px; text-align:right; color:#2563eb;" id="print-val-income-total">0 บาท</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Section 2: Deductions & Allowances -->
+        <div style="margin-bottom:12px;">
+            <div style="font-size:12px; font-weight:700; background:#f1f5f9; padding:4px 8px; border-left:4px solid #0d9488; margin-bottom:4px;" id="print-lbl-sec2">ส่วนที่ 2: รายการหักค่าใช้จ่ายและค่าลดหย่อน (Deductions & Allowances)</div>
+            <table style="width:100%; border-collapse:collapse; font-size:11.5px;">
+                <tbody>
+                    <tr style="border-bottom:1px solid #e2e8f0;">
+                        <td style="padding:4px 8px;" id="print-lbl-deduct-expense">ค่าใช้จ่ายตามกฎหมาย (50% ของเงินได้ แต่ไม่เกิน 100,000 บาท)</td>
+                        <td style="padding:4px 8px; text-align:right; color:#dc2626;" id="print-val-deduct-expense">- 0 บาท</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #e2e8f0;">
+                        <td style="padding:4px 8px;" id="print-lbl-deduct-personal">ค่าลดหย่อนส่วนตัวผู้มีเงินได้</td>
+                        <td style="padding:4px 8px; text-align:right; color:#dc2626;" id="print-val-deduct-personal">- 60,000 บาท</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #e2e8f0;">
+                        <td style="padding:4px 8px;" id="print-lbl-deduct-sso">เงินสมทบกองทุนประกันสังคม (SSO)</td>
+                        <td style="padding:4px 8px; text-align:right; color:#dc2626;" id="print-val-deduct-sso">- 0 บาท</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #e2e8f0;">
+                        <td style="padding:4px 8px;" id="print-lbl-deduct-pvd">เงินสะสมกองทุนสำรองเลี้ยงชีพ (PVD)</td>
+                        <td style="padding:4px 8px; text-align:right; color:#dc2626;" id="print-val-deduct-pvd">- 0 บาท</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #e2e8f0;" id="print-row-fund">
+                        <td style="padding:4px 8px;" id="print-lbl-deduct-fund">กองทุนเพื่อการเกษียณ (SSF / RMF)</td>
+                        <td style="padding:4px 8px; text-align:right; color:#dc2626;" id="print-val-deduct-fund">- 0 บาท</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #e2e8f0;" id="print-row-thaiesg">
+                        <td style="padding:4px 8px;" id="print-lbl-deduct-thaiesg">กองทุนรวมไทยเพื่อความยั่งยืน (ThaiESG)</td>
+                        <td style="padding:4px 8px; text-align:right; color:#dc2626;" id="print-val-deduct-thaiesg">- 0 บาท</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #e2e8f0;" id="print-row-ins">
+                        <td style="padding:4px 8px;" id="print-lbl-deduct-ins">เบี้ยประกันชีวิตและสุขภาพ</td>
+                        <td style="padding:4px 8px; text-align:right; color:#dc2626;" id="print-val-deduct-ins">- 0 บาท</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #e2e8f0;" id="print-row-mortgage">
+                        <td style="padding:4px 8px;" id="print-lbl-deduct-mortgage">ดอกเบี้ยเงินกู้ยืมเพื่อซื้อที่อยู่อาศัย</td>
+                        <td style="padding:4px 8px; text-align:right; color:#dc2626;" id="print-val-deduct-mortgage">- 0 บาท</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #e2e8f0;" id="print-row-easyreceipt">
+                        <td style="padding:4px 8px;" id="print-lbl-deduct-easyreceipt">โครงการ Easy E-Receipt</td>
+                        <td style="padding:4px 8px; text-align:right; color:#dc2626;" id="print-val-deduct-easyreceipt">- 0 บาท</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #e2e8f0;" id="print-row-other">
+                        <td style="padding:4px 8px;" id="print-lbl-deduct-other">ค่าลดหย่อนอื่นๆ / เงินบริจาค</td>
+                        <td style="padding:4px 8px; text-align:right; color:#dc2626;" id="print-val-deduct-other">- 0 บาท</td>
+                    </tr>
+                    <tr style="border-bottom:2px solid #cbd5e1; background:#f8fafc; font-weight:700;">
+                        <td style="padding:5px 8px;" id="print-lbl-deduct-total">รวมรายการหักค่าใช้จ่ายและค่าลดหย่อนทั้งสิ้น</td>
+                        <td style="padding:5px 8px; text-align:right; color:#dc2626;" id="print-val-deduct-total">- 0 บาท</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Section 3: Progressive Tax Calculation Waterfall -->
+        <div style="margin-bottom:12px; page-break-inside:avoid;">
+            <div style="font-size:12px; font-weight:700; background:#f1f5f9; padding:4px 8px; border-left:4px solid #7c3aed; margin-bottom:4px;" id="print-lbl-sec3">ส่วนที่ 3: การคำนวณภาษีตามขั้นบันได (Tax Calculation Waterfall)</div>
+            <table style="width:100%; border-collapse:collapse; font-size:11px; margin-bottom:6px;">
+                <thead>
+                    <tr style="background:#e2e8f0; text-align:left;">
+                        <th style="padding:4px 8px;" id="print-th-tier">ขั้นเงินได้สุทธิ</th>
+                        <th style="padding:4px 8px; text-align:right;" id="print-th-taxable">เงินได้ในขั้น</th>
+                        <th style="padding:4px 8px; text-align:center;" id="print-th-rate">อัตราภาษี</th>
+                        <th style="padding:4px 8px; text-align:right;" id="print-th-tax">ภาษีแต่ละขั้น</th>
+                    </tr>
+                </thead>
+                <tbody id="print-tbody-waterfall"></tbody>
+            </table>
+
+            <div style="display:flex; justify-content:space-between; background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:6px 10px; font-size:11.5px;">
+                <div><span id="print-lbl-netincome">เงินได้สุทธิ: </span><strong style="color:#0f172a;" id="print-val-netincome">0 บาท</strong></div>
+                <div><span id="print-lbl-toprate">ฐานภาษีสูงสุด: </span><strong style="color:#7c3aed;" id="print-val-toprate">0%</strong></div>
+                <div><span id="print-lbl-effrate">อัตราภาษีเฉลี่ย: </span><strong style="color:#0f172a;" id="print-val-effrate">0.0%</strong></div>
+                <div><span id="print-lbl-totaltax">ภาษีที่ต้องชำระ: </span><strong style="color:#2563eb; font-size:13px;" id="print-val-totaltax">0 บาท</strong></div>
+            </div>
+        </div>
+
+        <!-- Section 4: Filing Notes & Checklist -->
+        <div style="margin-top:8px; border-top:1px dashed #cbd5e1; padding-top:6px; font-size:9.5px; color:#64748b; line-height:1.45; page-break-inside:avoid;">
+            <div style="font-weight:700; color:#334155; margin-bottom:2px;" id="print-lbl-notes-title">📌 หมายเหตุและข้อแนะนำในการยื่นแบบแสดงรายการภาษี (ภ.ง.ด.91/90):</div>
+            <ul style="margin:0; padding-left:14px; list-style-type:disc;" id="print-list-notes">
+                <li id="print-note-1">กำหนดยื่นแบบกระดาษภายใน 31 มีนาคม หรือยื่นแบบผ่านอินเทอร์เน็ต (E-Filing กรมสรรพากร) ภายใน 8 เมษายน ของทุกปี</li>
+                <li id="print-note-2">กรุณาจัดเตรียมเอกสารหลักฐาน: หนังสือรับรองการหักภาษี ณ ที่จ่าย (ใบ 50 ทวิ), หนังสือรับรองเบี้ยประกันชีวิต/สุขภาพ, เอกสารรับรองการซื้อหน่วยลงทุน SSF/RMF/ThaiESG, และหนังสือรับรองดอกเบี้ยเงินกู้ยืมเพื่อที่อยู่อาศัย</li>
+                <li id="print-note-3">คำนวณและประมวลผลด้วย Money Superapp ภายในเบราว์เซอร์ของผู้ใช้ 100% ไม่มีการส่งข้อมูลทางการเงินออกสู่เครือข่ายภายนอก</li>
+            </ul>
         </div>
     </div>
 
@@ -479,11 +617,43 @@
                 'lbl-undo-tax': 'Undo',
                 'lbl-undo-tax-top': 'Undo',
                 'lbl-reset-tax': 'Clear Form',
+                'print-doc-sub': 'Tax Return Estimate & Allowances Statement for Annual Filing',
+                'print-lbl-sec1': 'Part 1: Assessable Income',
+                'print-lbl-income-main': 'Salary & Wages (Section 40(1))',
+                'print-lbl-income-bonus': 'Bonus & Other Income (Section 40(2))',
+                'print-lbl-income-total': 'Total Assessable Income',
+                'print-lbl-sec2': 'Part 2: Deductions & Allowances',
+                'print-lbl-deduct-expense': 'Statutory expense deduction (50% max 100k THB)',
+                'print-lbl-deduct-personal': 'Personal taxpayer allowance',
+                'print-lbl-deduct-sso': 'Social Security Fund (SSO)',
+                'print-lbl-deduct-pvd': 'Provident Fund (PVD)',
+                'print-lbl-deduct-fund': 'Retirement Funds (SSF / RMF)',
+                'print-lbl-deduct-thaiesg': 'Thai ESG Fund',
+                'print-lbl-deduct-ins': 'Life & Health Insurance',
+                'print-lbl-deduct-mortgage': 'Mortgage loan interest',
+                'print-lbl-deduct-easyreceipt': 'Easy E-Receipt scheme',
+                'print-lbl-deduct-other': 'Other deductions & donations',
+                'print-lbl-deduct-total': 'Total Deductions & Allowances',
+                'print-lbl-sec3': 'Part 3: Progressive Tax Computation Waterfall',
+                'print-th-tier': 'Net Income Bracket',
+                'print-th-taxable': 'Taxable in Tier',
+                'print-th-rate': 'Rate',
+                'print-th-tax': 'Tax in Tier',
+                'print-lbl-netincome': 'Net Taxable Income: ',
+                'print-lbl-toprate': 'Top Marginal Rate: ',
+                'print-lbl-effrate': 'Effective Rate: ',
+                'print-lbl-totaltax': 'Total Tax Payable: ',
+                'print-lbl-notes-title': '📌 Filing Notes & Checklist (P.N.D.91/90):',
+                'print-note-1': 'Paper filing deadline: March 31 / Online E-Filing deadline: April 8 annually.',
+                'print-note-2': 'Prepare supporting documents: 50 Tawi withholding tax cert, insurance certs, SSF/RMF/ThaiESG confirmations, and mortgage certs.',
+                'print-note-3': '100% private and computed locally in your browser by Money Superapp. No financial data leaves your device.',
             };
             Object.keys(EN).forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.textContent = EN[id];
             });
+            const printPersonalVal = document.getElementById('print-val-deduct-personal');
+            if (printPersonalVal) printPersonalVal.textContent = '- 60,000 THB';
             const enMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             for (let i = 1; i <= 12; i++) {
                 const mEl = document.getElementById('lbl-m-' + i);
@@ -954,6 +1124,134 @@
 
             // Update proactive tax optimization advisor (Task 3)
             updateTaxAdvisor(netIncome, totalIncome, pvdDeduction, effectiveFund, effectiveThaiEsg, tax);
+
+            // Update printable annual tax filing report
+            updatePrintReportView({
+                totalIncome,
+                salary: incomeMode === 'yearly' ? parseNum(document.getElementById('yearlyIncome')?.value) : parseNum(document.getElementById('salary')?.value) * 12,
+                bonus: incomeMode === 'yearly' ? parseNum(document.getElementById('yearlyBonus')?.value) : parseNum(document.getElementById('bonus')?.value),
+                expenseDeduction,
+                personalDeduction,
+                pvdDeduction,
+                ssoDeduction,
+                effectiveFund,
+                effectiveThaiEsg,
+                effectiveInsurance,
+                effectiveMortgage,
+                effectiveEasyReceipt,
+                otherDeduct,
+                totalDeductions,
+                netIncome,
+                tax,
+                effRate: totalIncome > 0 ? ((tax / totalIncome) * 100).toFixed(1) : '0.0',
+                wf,
+            });
+        }
+
+        function formatReportDate(d, lang) {
+            const enMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const thMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+            const day = d.getDate();
+            const m = lang === 'en' ? enMonths[d.getMonth()] : thMonths[d.getMonth()];
+            const y = lang === 'en' ? d.getFullYear() : d.getFullYear() + 543;
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mm = String(d.getMinutes()).padStart(2, '0');
+            return `${day} ${m} ${y} ${hh}:${mm}`;
+        }
+
+        function updatePrintReportView(data) {
+            const reportEl = document.getElementById('taxPrintReport');
+            if (!reportEl || !data) return;
+
+            const isEn = LANG === 'en';
+            const now = new Date();
+            const yearStr = isEn ? `Tax Year ${now.getFullYear()}` : `ปีภาษี ${now.getFullYear() + 543} (พ.ศ. ${now.getFullYear() + 543})`;
+            const timestampEl = document.getElementById('print-timestamp');
+            if (timestampEl) {
+                timestampEl.textContent = `${isEn ? 'Generated: ' : 'วันที่จัดทำ: '}${formatReportDate(now, LANG)}`;
+            }
+            const taxYearEl = document.getElementById('print-tax-year');
+            if (taxYearEl) {
+                taxYearEl.textContent = yearStr;
+            }
+
+            const docTitleEl = document.getElementById('print-doc-title');
+            if (docTitleEl) {
+                if (incomeMode === 'yearly') {
+                    docTitleEl.textContent = isEn ? 'Annual Personal Income Tax Return Summary (Form P.N.D.90)' : 'รายงานสรุปภาษีเงินได้บุคคลธรรมดาประจำปี (แบบ ภ.ง.ด.90)';
+                } else {
+                    docTitleEl.textContent = isEn ? 'Annual Personal Income Tax Return Summary (Form P.N.D.91)' : 'รายงานสรุปภาษีเงินได้บุคคลธรรมดาประจำปี (แบบ ภ.ง.ด.91)';
+                }
+            }
+
+            // Income
+            const mainEl = document.getElementById('print-val-income-main');
+            if (mainEl) mainEl.textContent = `${formatMoney(data.salary)} ${unit}`;
+            const bonusEl = document.getElementById('print-val-income-bonus');
+            if (bonusEl) bonusEl.textContent = `${formatMoney(data.bonus)} ${unit}`;
+            const totalIncEl = document.getElementById('print-val-income-total');
+            if (totalIncEl) totalIncEl.textContent = `${formatMoney(data.totalIncome)} ${unit}`;
+
+            // Deductions
+            const expEl = document.getElementById('print-val-deduct-expense');
+            if (expEl) expEl.textContent = `- ${formatMoney(data.expenseDeduction)} ${unit}`;
+            const pvdEl = document.getElementById('print-val-deduct-pvd');
+            if (pvdEl) pvdEl.textContent = `- ${formatMoney(data.pvdDeduction)} ${unit}`;
+            const ssoEl = document.getElementById('print-val-deduct-sso');
+            if (ssoEl) ssoEl.textContent = `- ${formatMoney(data.ssoDeduction)} ${unit}`;
+
+            const updateRow = (rowId, valId, val) => {
+                const row = document.getElementById(rowId);
+                const valEl = document.getElementById(valId);
+                if (valEl) valEl.textContent = `- ${formatMoney(val)} ${unit}`;
+                if (row) row.style.display = val > 0 ? 'table-row' : 'none';
+            };
+            updateRow('print-row-fund', 'print-val-deduct-fund', data.effectiveFund);
+            updateRow('print-row-thaiesg', 'print-val-deduct-thaiesg', data.effectiveThaiEsg);
+            updateRow('print-row-ins', 'print-val-deduct-ins', data.effectiveInsurance);
+            updateRow('print-row-mortgage', 'print-val-deduct-mortgage', data.effectiveMortgage);
+            updateRow('print-row-easyreceipt', 'print-val-deduct-easyreceipt', data.effectiveEasyReceipt);
+            updateRow('print-row-other', 'print-val-deduct-other', data.otherDeduct);
+
+            const totalDedEl = document.getElementById('print-val-deduct-total');
+            if (totalDedEl) totalDedEl.textContent = `- ${formatMoney(data.totalDeductions)} ${unit}`;
+
+            // Progressive waterfall table
+            const tbody = document.getElementById('print-tbody-waterfall');
+            if (tbody) {
+                if (data.netIncome <= 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" style="padding:6px 8px; text-align:center; color:#059669; font-weight:600;">${isEn ? '🎉 No taxable net income — 0 THB tax payable' : '🎉 ไม่มีเงินได้สุทธิที่ต้องเสียภาษี — ภาษี 0 บาท'}</td></tr>`;
+                } else {
+                    tbody.innerHTML = (data.wf.tiers || []).map(t => {
+                        const label = isEn ? t.labelEn : t.labelTh;
+                        const rateLabel = t.rate === 0 ? (isEn ? 'Exempt (0%)' : 'ยกเว้น (0%)') : `${t.ratePct}%`;
+                        const taxColor = t.tax > 0 ? '#0f172a' : '#059669';
+                        return `
+                            <tr style="border-bottom:1px solid #e2e8f0;">
+                                <td style="padding:3px 8px;">${escapeHtml(label)}</td>
+                                <td style="padding:3px 8px; text-align:right;">${formatMoney(t.taxable)} ${unit}</td>
+                                <td style="padding:3px 8px; text-align:center;">${rateLabel}</td>
+                                <td style="padding:3px 8px; text-align:right; font-weight:600; color:${taxColor};">${formatMoney(t.tax)} ${unit}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            }
+
+            // KPIs
+            const netIncEl = document.getElementById('print-val-netincome');
+            if (netIncEl) netIncEl.textContent = `${formatMoney(data.netIncome)} ${unit}`;
+            const topRateEl = document.getElementById('print-val-toprate');
+            if (topRateEl) topRateEl.textContent = `${data.wf.topMarginalRate}%`;
+            const effRateEl = document.getElementById('print-val-effrate');
+            if (effRateEl) effRateEl.textContent = `${data.effRate}%`;
+            const totalTaxEl = document.getElementById('print-val-totaltax');
+            if (totalTaxEl) totalTaxEl.textContent = `${formatMoney(data.tax)} ${unit}`;
+        }
+
+        function printTaxReport() {
+            calculateTax();
+            window.print();
         }
 
         let advisorState = {
