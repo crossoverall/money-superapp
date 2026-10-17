@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="1.8.8">
+<meta name="version" content="1.8.9">
 <meta name="theme-color" content="#2F8B76">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -132,7 +132,7 @@
     padding: 5px 8px;
   }
 
-  #btn-settings-modal {
+  #btn-settings-modal, #btn-help-modal {
     background: none;
     border: 1px solid #24352C;
     color: #8FA69C;
@@ -141,7 +141,7 @@
     cursor: pointer;
     font-size: 13px;
     font-weight: 700;
-    margin: auto 4px auto 2px;
+    margin: auto 2px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -149,7 +149,7 @@
     line-height: 1;
     transition: background 0.15s, color 0.15s;
   }
-  #btn-settings-modal:hover { background: #16221C; color: #EAF2EE; }
+  #btn-settings-modal:hover, #btn-help-modal:hover { background: #16221C; color: #EAF2EE; }
 
   iframe { display: block; width: 100%; flex: 1 1 auto; border: none; background: var(--bg); }
 
@@ -218,10 +218,10 @@
     }
     .theme-text { display: none; }
 
-    #btn-settings-modal {
+    #btn-settings-modal, #btn-help-modal {
       padding: 4px 8px;
       font-size: 13px;
-      margin: auto 4px auto 2px;
+      margin: auto 2px;
     }
     #lbl-settings-btn { display: none; }
 
@@ -307,7 +307,10 @@
       <button data-theme-btn="light" id="btn-theme-light" title="☀ Light Theme" aria-label="Switch to Light Theme"><span class="theme-icon">☀</span></button>
       <button data-theme-btn="dark" id="btn-theme-dark" title="☾ Dark Theme" aria-label="Switch to Dark Theme"><span class="theme-icon">☾</span></button>
     </div>
-    <span class="version-badge">v1.8.8</span>
+    <span class="version-badge">v1.8.9</span>
+    <button id="btn-help-modal" onclick="openOnboardingModal()" title="คู่มือการใช้งาน (Quick Tour)" aria-label="Open Quick Tour and Guide">
+      <span class="help-icon">❓</span>
+    </button>
     <button id="btn-settings-modal" onclick="openSettingsModal()" title="Data & Backup Management" aria-label="Open Settings and Data Backup">
       <span class="settings-icon">⚙️</span>
     </button>
@@ -319,7 +322,7 @@
 <!-- Privacy Footer Notice -->
 <div class="privacy-bar">
   <span id="lbl-privacy-footer">🔒 100% Client-Side Privacy — ทุกการคำนวณและข้อมูลถูกเก็บไว้ในอุปกรณ์ของคุณเท่านั้น ไม่มีการส่งข้อมูลสู่เซิร์ฟเวอร์</span>
-  <span style="color: #64748b; font-size: 10px;">Money Superapp v1.8.8</span>
+  <span style="color: #64748b; font-size: 10px;">Money Superapp v1.8.9</span>
 </div>
 
 <!-- Mobile Bottom Navigation Bar (Visible on Mobile <= 768px) -->
@@ -460,6 +463,17 @@
         </div>
       </div>
 
+      <!-- Quick Tour Link -->
+      <div style="display: flex; justify-content: space-between; align-items: center; background: #0E1512; padding: 12px 14px; border-radius: 10px; border: 1px solid #24352C;">
+        <div>
+          <div style="font-weight: 600; font-size: 13px;" id="lbl-settings-guide-title">📖 คู่มือเริ่มต้นใช้งาน (Quick Tour)</div>
+          <div style="font-size: 11px; color: #8FA69C;" id="lbl-settings-guide-desc">ดูภาพรวมขั้นตอนการทำงานของเครื่องมือทั้งหมด</div>
+        </div>
+        <button onclick="closeSettingsModal(); openOnboardingModal();" style="background: none; border: 1px solid #2F8B76; color: #4FA894; padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
+          <span id="lbl-btn-open-guide">เปิดคู่มือ</span>
+        </button>
+      </div>
+
       <!-- Reset -->
       <div style="display: flex; justify-content: space-between; align-items: center; background: #0E1512; padding: 12px 14px; border-radius: 10px; border: 1px dashed #C97D5A;">
         <div>
@@ -469,6 +483,97 @@
         <button onclick="resetAllData()" id="btn-master-reset" style="background: #C97D5A; color: #fff; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
           <span id="lbl-btn-reset">🗑️ ล้างทั้งหมด</span>
         </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Onboarding & Quick Tour Modal -->
+<div id="onboardingModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.65); z-index: 9999; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(2px);" onclick="if(event.target===this)closeOnboardingModal()">
+  <div style="background: #131E19; color: #EAF2EE; border: 1px solid #24352C; border-radius: 16px; max-width: 540px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 22px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 1px solid #24352C; padding-bottom: 12px;">
+      <div>
+        <h3 style="margin: 0; font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+          <span>🚀</span>
+          <span id="lbl-onboarding-title">เริ่มต้นใช้งาน Money Superapp</span>
+        </h3>
+        <p style="margin: 4px 0 0; font-size: 12px; color: #8FA69C;" id="lbl-onboarding-subtitle">คู่มือ 5 ขั้นตอนจัดระเบียบการเงินแบบครบวงจร ปลอดภัย 100% บนเครื่องของคุณ</p>
+      </div>
+      <button onclick="closeOnboardingModal()" style="background: none; border: none; color: #8FA69C; font-size: 22px; cursor: pointer; padding: 0 4px; line-height: 1;" aria-label="Close Tour">&times;</button>
+    </div>
+
+    <!-- Workflow Steps List -->
+    <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+      <!-- Step 1: Payslip -->
+      <div style="background: #0E1512; border: 1px solid #24352C; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+        <div style="flex: 1;">
+          <div style="font-weight: 700; font-size: 13px; color: #4FA894;" id="lbl-step1-title">1. 💵 สลิปเงินเดือน (Payslip)</div>
+          <div style="font-size: 11.5px; color: #8FA69C; margin-top: 2px;" id="lbl-step1-desc">จำลองรายได้สุทธิ, ภาษีหัก ณ ที่จ่าย, ปกส., และเงินสะสมกองทุนสำรองเลี้ยงชีพ (PVD)</div>
+        </div>
+        <button onclick="closeOnboardingModal(); activateTab('months-slips');" class="tour-step-btn" style="background: rgba(47,139,118,0.15); border: 1px solid #2F8B76; color: #4FA894; padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer; white-space: nowrap;">
+          <span class="lbl-btn-try-step">เปิดใช้</span>
+        </button>
+      </div>
+
+      <!-- Step 2: Remaining Money -->
+      <div style="background: #0E1512; border: 1px solid #24352C; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+        <div style="flex: 1;">
+          <div style="font-weight: 700; font-size: 13px; color: #38bdf8;" id="lbl-step2-title">2. 💰 เงินคงเหลือ (Remaining Money)</div>
+          <div style="font-size: 11.5px; color: #8FA69C; margin-top: 2px;" id="lbl-step2-desc">วางแผนงบรายจ่าย จัดสรรเงินออมฉุกเฉิน และส่งเงินส่วนเกินไปลงทุน</div>
+        </div>
+        <button onclick="closeOnboardingModal(); activateTab('remaining-money');" class="tour-step-btn" style="background: rgba(56,189,248,0.15); border: 1px solid #0284c7; color: #38bdf8; padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer; white-space: nowrap;">
+          <span class="lbl-btn-try-step">เปิดใช้</span>
+        </button>
+      </div>
+
+      <!-- Step 3: Rebalance -->
+      <div style="background: #0E1512; border: 1px solid #24352C; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+        <div style="flex: 1;">
+          <div style="font-weight: 700; font-size: 13px; color: #a78bfa;" id="lbl-step3-title">3. ⚖️ ปรับพอร์ต (Rebalance)</div>
+          <div style="font-size: 11.5px; color: #8FA69C; margin-top: 2px;" id="lbl-step3-desc">จัดสรรเงินลงทุนตามสัดส่วนเป้าหมาย คำนวณ DCA ขั้นต่ำแบบ Zero-Drift</div>
+        </div>
+        <button onclick="closeOnboardingModal(); activateTab('rebalance');" class="tour-step-btn" style="background: rgba(167,139,250,0.15); border: 1px solid #7c3aed; color: #a78bfa; padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer; white-space: nowrap;">
+          <span class="lbl-btn-try-step">เปิดใช้</span>
+        </button>
+      </div>
+
+      <!-- Step 4: Debt Payoff -->
+      <div style="background: #0E1512; border: 1px solid #24352C; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+        <div style="flex: 1;">
+          <div style="font-weight: 700; font-size: 13px; color: #fb923c;" id="lbl-step4-title">4. 📉 วางแผนปลดหนี้ (Debt Payoff)</div>
+          <div style="font-size: 11.5px; color: #8FA69C; margin-top: 2px;" id="lbl-step4-desc">เปรียบเทียบวิธี Snowball และ Avalanche พร้อมกราฟ Timeline ปลดหนี้</div>
+        </div>
+        <button onclick="closeOnboardingModal(); activateTab('debt-calculator');" class="tour-step-btn" style="background: rgba(251,146,60,0.15); border: 1px solid #ea580c; color: #fb923c; padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer; white-space: nowrap;">
+          <span class="lbl-btn-try-step">เปิดใช้</span>
+        </button>
+      </div>
+
+      <!-- Step 5: Dashboard -->
+      <div style="background: #0E1512; border: 1px solid #24352C; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+        <div style="flex: 1;">
+          <div style="font-weight: 700; font-size: 13px; color: #34d399;" id="lbl-step5-title">5. 📊 ภาพรวม & แดชบอร์ด (Dashboard)</div>
+          <div style="font-size: 11.5px; color: #8FA69C; margin-top: 2px;" id="lbl-step5-desc">บันทึกประวัติความมั่งคั่งสุทธิ (Net Worth) และติดตามเป้าหมายการเงินระยะยาว</div>
+        </div>
+        <button onclick="closeOnboardingModal(); activateTab('dashboard');" class="tour-step-btn" style="background: rgba(52,211,153,0.15); border: 1px solid #059669; color: #34d399; padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer; white-space: nowrap;">
+          <span class="lbl-btn-try-step">เปิดใช้</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Guarantees Pills -->
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+      <span style="background: rgba(255,255,255,0.04); border: 1px solid #24352C; border-radius: 999px; padding: 4px 10px; font-size: 11px; color: #8FA69C;">🔒 ปลอดภัย 100% บนเครื่อง</span>
+      <span style="background: rgba(255,255,255,0.04); border: 1px solid #24352C; border-radius: 999px; padding: 4px 10px; font-size: 11px; color: #8FA69C;">☁️ ซิงค์ Google Drive ได้</span>
+      <span style="background: rgba(255,255,255,0.04); border: 1px solid #24352C; border-radius: 999px; padding: 4px 10px; font-size: 11px; color: #8FA69C;">⌨️ คีย์ลัด Alt+1..7</span>
+    </div>
+
+    <!-- Action Footer -->
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <button onclick="closeOnboardingModal()" style="width: 100%; background: #2F8B76; color: #FFFFFF; border: none; padding: 11px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: background 0.15s;">
+        <span id="lbl-btn-get-started">🚀 เริ่มต้นใช้งานเลย</span>
+      </button>
+      <div style="text-align: center; font-size: 11px; color: #5B7168;" id="lbl-onboarding-footer-note">
+        💡 สามารถกดเปิดคู่มือนี้ได้ตลอดเวลาจากปุ่ม ❓ บนแถบเมนูด้านบน
       </div>
     </div>
   </div>
@@ -508,7 +613,26 @@
       gdriveLastSync: t => `สำรองล่าสุด: ${t}`,
       gdriveAdvanced: "⚙️ การตั้งค่าขั้นสูง (Client ID)",
       btnSaveClientId: "บันทึก",
-      gdriveClientIdNote: "ค่าเริ่มต้น: ผูกกับ https://crossoverall.github.io"
+      gdriveClientIdNote: "ค่าเริ่มต้น: ผูกกับ https://crossoverall.github.io",
+      helpBtn: "คู่มือการใช้งาน (Quick Tour)",
+      onboardingTitle: "เริ่มต้นใช้งาน Money Superapp",
+      onboardingSubtitle: "คู่มือ 5 ขั้นตอนจัดระเบียบการเงินแบบครบวงจร ปลอดภัย 100% บนเครื่องของคุณ",
+      step1Title: "1. 💵 สลิปเงินเดือน (Payslip)",
+      step1Desc: "จำลองรายได้สุทธิ, ภาษีหัก ณ ที่จ่าย, ปกส., และเงินสะสมกองทุนสำรองเลี้ยงชีพ (PVD)",
+      step2Title: "2. 💰 เงินคงเหลือ (Remaining Money)",
+      step2Desc: "วางแผนงบรายจ่าย จัดสรรเงินออมฉุกเฉิน และส่งเงินส่วนเกินไปลงทุน",
+      step3Title: "3. ⚖️ ปรับพอร์ต (Rebalance)",
+      step3Desc: "จัดสรรเงินลงทุนตามสัดส่วนเป้าหมาย คำนวณ DCA ขั้นต่ำแบบ Zero-Drift",
+      step4Title: "4. 📉 วางแผนปลดหนี้ (Debt Payoff)",
+      step4Desc: "เปรียบเทียบวิธี Snowball และ Avalanche พร้อมกราฟ Timeline ปลดหนี้",
+      step5Title: "5. 📊 ภาพรวม & แดชบอร์ด (Dashboard)",
+      step5Desc: "บันทึกประวัติความมั่งคั่งสุทธิ (Net Worth) และติดตามเป้าหมายการเงินระยะยาว",
+      btnTryStep: "เปิดใช้",
+      btnGetStarted: "🚀 เริ่มต้นใช้งานเลย",
+      onboardingFooterNote: "💡 สามารถกดเปิดคู่มือนี้ได้ตลอดเวลาจากปุ่ม ❓ บนแถบเมนูด้านบน",
+      settingsGuideTitle: "📖 คู่มือเริ่มต้นใช้งาน (Quick Tour)",
+      settingsGuideDesc: "ดูภาพรวมขั้นตอนการทำงานของเครื่องมือทั้งหมด",
+      btnOpenGuide: "เปิดคู่มือ"
     },
     en: {
       settingsBtn: "Data",
@@ -536,7 +660,26 @@
       gdriveLastSync: t => `Last backup: ${t}`,
       gdriveAdvanced: "⚙️ Advanced Settings (Client ID)",
       btnSaveClientId: "Save",
-      gdriveClientIdNote: "Default: Configured for https://crossoverall.github.io"
+      gdriveClientIdNote: "Default: Configured for https://crossoverall.github.io",
+      helpBtn: "Quick Tour & Guide",
+      onboardingTitle: "Welcome to Money Superapp",
+      onboardingSubtitle: "5 Steps to Financial Freedom with 100% Client-Side Privacy",
+      step1Title: "1. 💵 Payslip Simulator",
+      step1Desc: "Calculate net income, withholding tax, SSO, and Provident Fund (PVD) contributions.",
+      step2Title: "2. 💰 Remaining Money",
+      step2Desc: "Budget monthly expenses, build emergency reserves, and calculate investable surplus.",
+      step3Title: "3. ⚖️ Rebalance & DCA",
+      step3Desc: "Target asset allocation and zero-drift DCA minimum budget projections.",
+      step4Title: "4. 📉 Debt Payoff",
+      step4Desc: "Snowball vs Avalanche comparison with interactive amortization payoff curve.",
+      step5Title: "5. 📊 Financial Dashboard",
+      step5Desc: "Save monthly net worth snapshots and monitor long-term financial health.",
+      btnTryStep: "Open",
+      btnGetStarted: "🚀 Get Started",
+      onboardingFooterNote: "💡 You can reopen this tour anytime by clicking the ❓ button in the top bar.",
+      settingsGuideTitle: "📖 Quick Tour & Guide",
+      settingsGuideDesc: "Explore the interconnected financial workflow",
+      btnOpenGuide: "Open Guide"
     }
   };
 
@@ -589,6 +732,29 @@
     if(document.getElementById('lbl-gdrive-advanced')) document.getElementById('lbl-gdrive-advanced').textContent = t.gdriveAdvanced;
     if(document.getElementById('lbl-btn-save-client-id')) document.getElementById('lbl-btn-save-client-id').textContent = t.btnSaveClientId;
     if(document.getElementById('lbl-gdrive-client-id-note')) document.getElementById('lbl-gdrive-client-id-note').textContent = t.gdriveClientIdNote;
+
+    if(document.getElementById('btn-help-modal')) {
+      document.getElementById('btn-help-modal').title = t.helpBtn;
+    }
+    if(document.getElementById('lbl-onboarding-title')) document.getElementById('lbl-onboarding-title').textContent = t.onboardingTitle;
+    if(document.getElementById('lbl-onboarding-subtitle')) document.getElementById('lbl-onboarding-subtitle').textContent = t.onboardingSubtitle;
+    if(document.getElementById('lbl-step1-title')) document.getElementById('lbl-step1-title').textContent = t.step1Title;
+    if(document.getElementById('lbl-step1-desc')) document.getElementById('lbl-step1-desc').textContent = t.step1Desc;
+    if(document.getElementById('lbl-step2-title')) document.getElementById('lbl-step2-title').textContent = t.step2Title;
+    if(document.getElementById('lbl-step2-desc')) document.getElementById('lbl-step2-desc').textContent = t.step2Desc;
+    if(document.getElementById('lbl-step3-title')) document.getElementById('lbl-step3-title').textContent = t.step3Title;
+    if(document.getElementById('lbl-step3-desc')) document.getElementById('lbl-step3-desc').textContent = t.step3Desc;
+    if(document.getElementById('lbl-step4-title')) document.getElementById('lbl-step4-title').textContent = t.step4Title;
+    if(document.getElementById('lbl-step4-desc')) document.getElementById('lbl-step4-desc').textContent = t.step4Desc;
+    if(document.getElementById('lbl-step5-title')) document.getElementById('lbl-step5-title').textContent = t.step5Title;
+    if(document.getElementById('lbl-step5-desc')) document.getElementById('lbl-step5-desc').textContent = t.step5Desc;
+    document.querySelectorAll('.lbl-btn-try-step').forEach(el => { el.textContent = t.btnTryStep; });
+    if(document.getElementById('lbl-btn-get-started')) document.getElementById('lbl-btn-get-started').textContent = t.btnGetStarted;
+    if(document.getElementById('lbl-onboarding-footer-note')) document.getElementById('lbl-onboarding-footer-note').textContent = t.onboardingFooterNote;
+    if(document.getElementById('lbl-settings-guide-title')) document.getElementById('lbl-settings-guide-title').textContent = t.settingsGuideTitle;
+    if(document.getElementById('lbl-settings-guide-desc')) document.getElementById('lbl-settings-guide-desc').textContent = t.settingsGuideDesc;
+    if(document.getElementById('lbl-btn-open-guide')) document.getElementById('lbl-btn-open-guide').textContent = t.btnOpenGuide;
+
     updateGoogleUI();
   }
 
@@ -942,6 +1108,20 @@
     document.getElementById('settingsModal').style.display = 'none';
   }
 
+  function openOnboardingModal() {
+    const modal = document.getElementById('onboardingModal');
+    if (modal) modal.style.display = 'flex';
+  }
+  function closeOnboardingModal() {
+    const modal = document.getElementById('onboardingModal');
+    if (modal) modal.style.display = 'none';
+    try {
+      localStorage.setItem('moneySuperapp.hasSeenOnboarding', 'true');
+    } catch(e) {}
+  }
+  window.openOnboardingModal = openOnboardingModal;
+  window.closeOnboardingModal = closeOnboardingModal;
+
   function exportBackupData() {
     const backup = {
       version: "1.0.0",
@@ -1119,6 +1299,13 @@
   const initialHash = window.location.hash.replace(/^#/, '');
   const savedTab = (function(){ try { return localStorage.getItem('moneySuperapp.activeTab'); } catch(e){ return null; } })();
   activateTab(initialHash || savedTab || 'dashboard', false);
+
+  // Check for first-time user onboarding
+  try {
+    if (!localStorage.getItem('moneySuperapp.hasSeenOnboarding')) {
+      setTimeout(openOnboardingModal, 350);
+    }
+  } catch(e) {}
 
   // Register Service Worker for PWA and offline access
   if ('serviceWorker' in navigator) {

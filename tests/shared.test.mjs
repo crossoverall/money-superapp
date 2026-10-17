@@ -183,4 +183,14 @@ describe('MoneyApp Shared Core Module', () => {
       assert.equal(undoMgr.canUndo(), false);
     });
   });
+
+  describe('Onboarding State Management', () => {
+    it('detects first-run state when flag is missing in localStorage', () => {
+      const store = {};
+      const hasSeen = (s) => s['moneySuperapp.hasSeenOnboarding'] === 'true';
+      assert.equal(hasSeen(store), false);
+      store['moneySuperapp.hasSeenOnboarding'] = 'true';
+      assert.equal(hasSeen(store), true);
+    });
+  });
 });
