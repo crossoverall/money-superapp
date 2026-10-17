@@ -34,6 +34,34 @@ const EN = {
   btnSaveModal: 'Save',
   lblUndo: 'Undo',
   lblDivTitle: '🌐 Asset Class Correlation & Risk Diversification',
+  lblGoldTitle: 'Physical Thai Gold DCA & Weight Converter (96.5%)',
+  badgeGoldStatus: '96.5% Thai Gold',
+  lblGoldType: 'Gold Product Type:',
+  lblGoldWeight: 'Weight:',
+  lblGoldCost: 'Purchase Cost (Cost/Baht):',
+  lblGoldCostSub: 'per baht',
+  lblGoldFee: 'Block / Craft Fee (Fee):',
+  lblGoldFeeSub: 'per piece/total',
+  lblGoldMarketPrice: 'Current Association Selling Price (Market Sell):',
+  lblSyncGoldPrice: 'Fetch Association Price',
+  lblEquivalentWeight: '⚖️ Standard Weight Equivalence:',
+  lblCardGoldCost: 'Total Cost',
+  lblCardGoldVal: 'Market Sell Value',
+  lblCardGoldPL: 'Profit / Loss (P/L)',
+  lblCardGoldLiq: 'Liquidation Buyback',
+  lblAddGoldLot: 'Add to DCA Lots',
+  lblExportGoldToPortfolio: 'Export Gold Value to Portfolio',
+  lblGoldLotsTitle: '📜 Thai Gold DCA Lot History',
+  lblClearGoldLots: 'Clear History',
+  thGoldDate: 'Date',
+  thGoldType: 'Type',
+  thGoldWeight: 'Weight',
+  thGoldCost: 'Cost',
+  thGoldFee: 'Fee',
+  thGoldAction: 'Action',
+  lblGoldTaxTitle: 'Thai Gold Tax Law:',
+  txtGoldTaxDesc:
+    'Capital gains from buying and selling physical gold bullion and jewelry by individuals are exempt from Personal Income Tax under Section 42(9) of the Revenue Code (movable property acquired without commercial trade intent).',
 };
 if (LANG === 'en') {
   document.title = 'Monthly Top-up Calculator';
@@ -66,6 +94,33 @@ if (LANG === 'en') {
     'btnCancelModal',
     'btnSaveModal',
     'lblDivTitle',
+    'lblGoldTitle',
+    'badgeGoldStatus',
+    'lblGoldType',
+    'lblGoldWeight',
+    'lblGoldCost',
+    'lblGoldCostSub',
+    'lblGoldFee',
+    'lblGoldFeeSub',
+    'lblGoldMarketPrice',
+    'lblSyncGoldPrice',
+    'lblEquivalentWeight',
+    'lblCardGoldCost',
+    'lblCardGoldVal',
+    'lblCardGoldPL',
+    'lblCardGoldLiq',
+    'lblAddGoldLot',
+    'lblExportGoldToPortfolio',
+    'lblGoldLotsTitle',
+    'lblClearGoldLots',
+    'thGoldDate',
+    'thGoldType',
+    'thGoldWeight',
+    'thGoldCost',
+    'thGoldFee',
+    'thGoldAction',
+    'lblGoldTaxTitle',
+    'txtGoldTaxDesc',
   ].forEach((id) => {
     const el = document.getElementById(id);
     if (el && EN[id]) el.textContent = EN[id];
@@ -85,6 +140,30 @@ if (LANG === 'en') {
   if (undoTopLbl) undoTopLbl.textContent = EN.lblUndo;
   const undoBtmLbl = document.getElementById('lblUndoBottom');
   if (undoBtmLbl) undoBtmLbl.textContent = EN.lblUndo;
+
+  const selGoldType = document.getElementById('selGoldType');
+  if (selGoldType && selGoldType.options.length >= 2) {
+    selGoldType.options[0].text = 'Gold Bar 96.5% (15.244 g/baht)';
+    selGoldType.options[1].text = 'Gold Jewelry 96.5% (15.16 g/baht)';
+  }
+  const selGoldUnit = document.getElementById('selGoldUnit');
+  if (selGoldUnit && selGoldUnit.options.length >= 3) {
+    selGoldUnit.options[0].text = 'Baht Gold';
+    selGoldUnit.options[1].text = 'Salung';
+    selGoldUnit.options[2].text = 'Grams';
+  }
+  const btnSalung1 = document.getElementById('btnGoldSalung1');
+  if (btnSalung1) btnSalung1.textContent = '1 Salung';
+  const btnSalung2 = document.getElementById('btnGoldSalung2');
+  if (btnSalung2) btnSalung2.textContent = '2 Salung';
+  const btnBaht1 = document.getElementById('btnGoldBaht1');
+  if (btnBaht1) btnBaht1.textContent = '1 Baht';
+  const btnBaht2 = document.getElementById('btnGoldBaht2');
+  if (btnBaht2) btnBaht2.textContent = '2 Baht';
+  const btnBaht5 = document.getElementById('btnGoldBaht5');
+  if (btnBaht5) btnBaht5.textContent = '5 Baht';
+  const btnBaht10 = document.getElementById('btnGoldBaht10');
+  if (btnBaht10) btnBaht10.textContent = '10 Baht';
 }
 
 // Small dict for text regenerated on every render (compute/renderSplit/renderBuckets).
@@ -2450,9 +2529,379 @@ window.addEventListener('focus', () => {
   compute();
 });
 
+// ==========================================
+// Thai Gold Bar & Jewelry DCA & P/L Calculator
+// ==========================================
+
+const GOLD_STORAGE_KEY = 'moneySuperapp.thaiGold.state.v1';
+
+let goldState = {
+  goldType: 'bar',
+  weightUnit: 'baht',
+  weight: 1,
+  costPerBaht: 40000,
+  blockFee: 150,
+  marketPrice: 42000,
+  lots: [],
+};
+
+function loadGoldState() {
+  try {
+    const saved = MoneyApp.safeJsonParse(GOLD_STORAGE_KEY, null);
+    if (saved && typeof saved === 'object') {
+      goldState = Object.assign({}, goldState, saved);
+    }
+  } catch (_e) {}
+}
+
+function saveGoldState() {
+  try {
+    localStorage.setItem(GOLD_STORAGE_KEY, JSON.stringify(goldState));
+  } catch (_e) {}
+}
+
+function updateGoldCalculator(save = true) {
+  const typeEl = document.getElementById('selGoldType');
+  const unitEl = document.getElementById('selGoldUnit');
+  const weightEl = document.getElementById('inpGoldWeight');
+  const costEl = document.getElementById('inpGoldCost');
+  const feeEl = document.getElementById('inpGoldFee');
+  const marketPriceEl = document.getElementById('inpGoldMarketPrice');
+
+  if (!typeEl || !unitEl || !weightEl) return;
+
+  const goldType = typeEl.value || 'bar';
+  const weightUnit = unitEl.value || 'baht';
+  const weight = parseFloat(weightEl.value) || 0;
+  const costPerBaht = parseFloat(costEl?.value) || 0;
+  const blockFee = parseFloat(feeEl?.value) || 0;
+  const marketPrice = parseFloat(marketPriceEl?.value) || 0;
+
+  goldState.goldType = goldType;
+  goldState.weightUnit = weightUnit;
+  goldState.weight = weight;
+  goldState.costPerBaht = costPerBaht;
+  goldState.blockFee = blockFee;
+  goldState.marketPrice = marketPrice;
+
+  const params = {
+    goldType: goldType,
+    weightUnit: weightUnit,
+    weight: weight,
+    costPerBaht: costPerBaht,
+    blockFee: blockFee,
+    currentMarketPrice: marketPrice,
+  };
+
+  if (goldState.lots && goldState.lots.length > 0) {
+    params.tranches = goldState.lots.map((lot) => ({
+      goldType: lot.goldType || goldType,
+      weightUnit: lot.weightUnit || 'baht',
+      weight: lot.weight,
+      costPerBaht: lot.costPerBaht,
+      blockFee: lot.blockFee || 0,
+    }));
+  }
+
+  const metrics = MoneyApp.calculateThaiGoldMetrics(params);
+
+  // Update Weight conversions bar
+  const equivEl = document.getElementById('txtGoldWeightEquiv');
+  if (equivEl) {
+    if (LANG === 'en') {
+      equivEl.textContent = `${metrics.weightBaht} Baht = ${metrics.weightGrams} g = ${metrics.weightSalung} Salung = ${metrics.weightTroyOz} oz`;
+    } else {
+      equivEl.textContent = `${metrics.weightBaht} บาท = ${metrics.weightGrams} กรัม = ${metrics.weightSalung} สลึง = ${metrics.weightTroyOz} ออนซ์`;
+    }
+  }
+
+  // Cards
+  const valCostEl = document.getElementById('valGoldTotalCost');
+  const subCostEl = document.getElementById('subGoldAvgCost');
+  const valMarketEl = document.getElementById('valGoldMarketVal');
+  const subBreakEvenEl = document.getElementById('subGoldBreakEven');
+  const valPLEl = document.getElementById('valGoldPL');
+  const subPLPctEl = document.getElementById('subGoldPLPct');
+  const valLiqEl = document.getElementById('valGoldLiquidation');
+  const subLiqPLEl = document.getElementById('subGoldLiqPL');
+
+  const unitStr = LANG === 'en' ? 'THB' : 'บาท';
+
+  if (valCostEl) valCostEl.textContent = `${MoneyApp.formatMoney(metrics.totalCost)} ${unitStr}`;
+  if (subCostEl) {
+    subCostEl.textContent =
+      LANG === 'en'
+        ? `Avg ${MoneyApp.formatMoney(metrics.effectiveCostPerBaht)} THB/Baht`
+        : `เฉลี่ย ${MoneyApp.formatMoney(metrics.effectiveCostPerBaht)} บาท/บาท`;
+  }
+  if (valMarketEl) valMarketEl.textContent = `${MoneyApp.formatMoney(metrics.marketValue)} ${unitStr}`;
+  if (subBreakEvenEl) {
+    subBreakEvenEl.textContent =
+      LANG === 'en'
+        ? `Breakeven ${MoneyApp.formatMoney(metrics.breakEvenMarketPrice)} THB/Baht`
+        : `คุ้มทุน ${MoneyApp.formatMoney(metrics.breakEvenMarketPrice)} บาท/บาท`;
+  }
+
+  if (valPLEl) {
+    const isGain = metrics.unrealizedGainLoss >= 0;
+    valPLEl.textContent = `${isGain ? '+' : ''}${MoneyApp.formatMoney(metrics.unrealizedGainLoss)} ${unitStr}`;
+    valPLEl.style.color = isGain ? 'var(--ok, #10b981)' : 'var(--danger, #ef4444)';
+  }
+  if (subPLPctEl) {
+    const isGain = metrics.unrealizedGainLossPct >= 0;
+    subPLPctEl.textContent = `${isGain ? '+' : ''}${metrics.unrealizedGainLossPct.toFixed(1)}%`;
+    subPLPctEl.style.color = isGain ? 'var(--ok, #10b981)' : 'var(--danger, #ef4444)';
+  }
+
+  if (valLiqEl) valLiqEl.textContent = `${MoneyApp.formatMoney(metrics.liquidationValue)} ${unitStr}`;
+  if (subLiqPLEl) {
+    const isGain = metrics.liquidationGainLoss >= 0;
+    subLiqPLEl.textContent =
+      LANG === 'en'
+        ? `Buyback P/L: ${isGain ? '+' : ''}${MoneyApp.formatMoney(metrics.liquidationGainLoss)} ${unitStr}`
+        : `ขายคืนวันนี้: ${isGain ? '+' : ''}${MoneyApp.formatMoney(metrics.liquidationGainLoss)} บาท`;
+  }
+
+  if (save) {
+    saveGoldState();
+  }
+}
+
+function setGoldWeightPreset(weight, unit = 'baht') {
+  const weightEl = document.getElementById('inpGoldWeight');
+  const unitEl = document.getElementById('selGoldUnit');
+  if (weightEl) weightEl.value = weight;
+  if (unitEl) unitEl.value = unit;
+
+  document.querySelectorAll('.gold-pill').forEach((btn) => {
+    btn.classList.remove('active');
+  });
+  const presetIdMap = {
+    0.25: 'btnGoldSalung1',
+    0.5: 'btnGoldSalung2',
+    1: 'btnGoldBaht1',
+    2: 'btnGoldBaht2',
+    5: 'btnGoldBaht5',
+    10: 'btnGoldBaht10',
+  };
+  const targetId = presetIdMap[weight];
+  if (targetId) {
+    const targetBtn = document.getElementById(targetId);
+    if (targetBtn) targetBtn.classList.add('active');
+  }
+
+  updateGoldCalculator();
+}
+
+async function syncGoldMarketPrice() {
+  const btn = document.getElementById('btnSyncGoldPrice');
+  const inp = document.getElementById('inpGoldMarketPrice');
+  if (btn) btn.disabled = true;
+  try {
+    const data = await fetchThaiGoldPrice();
+    if (data && data.price > 0) {
+      if (inp) inp.value = Math.round(data.price);
+      updateGoldCalculator();
+    }
+  } catch (e) {
+    console.warn('Failed to fetch gold price:', e);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function renderGoldLotsTable() {
+  const container = document.getElementById('goldLotsContainer');
+  const tbody = document.getElementById('goldLotsTableBody');
+  if (!container || !tbody) return;
+
+  if (!goldState.lots || goldState.lots.length === 0) {
+    container.style.display = 'none';
+    tbody.innerHTML = '';
+    return;
+  }
+
+  container.style.display = 'block';
+  tbody.innerHTML = goldState.lots
+    .map((lot, idx) => {
+      const typeLabel =
+        lot.goldType === 'jewelry' ? (LANG === 'en' ? 'Jewelry' : 'รูปพรรณ') : LANG === 'en' ? 'Bar' : 'แท่ง';
+      let unitLabel = LANG === 'en' ? 'Baht' : 'บาท';
+      if (lot.weightUnit === 'salung') unitLabel = LANG === 'en' ? 'Salung' : 'สลึง';
+      else if (lot.weightUnit === 'gram') unitLabel = LANG === 'en' ? 'g' : 'กรัม';
+
+      return `
+      <tr style="border-bottom:1px solid var(--line);">
+        <td style="padding:4px 6px; color:var(--ink-dim);">${MoneyApp.escapeHtml(lot.date || '-')}</td>
+        <td style="padding:4px 6px; font-weight:600;">${typeLabel}</td>
+        <td style="padding:4px 6px; text-align:right;">${lot.weight} ${unitLabel}</td>
+        <td style="padding:4px 6px; text-align:right;">${MoneyApp.formatMoney(lot.costPerBaht)}</td>
+        <td style="padding:4px 6px; text-align:right;">${MoneyApp.formatMoney(lot.blockFee || 0)}</td>
+        <td style="padding:4px 6px; text-align:right;">
+          <button type="button" onclick="removeGoldLot(${idx})" style="background:none; border:none; color:var(--warn); cursor:pointer; font-size:11px;" aria-label="Remove lot">&times;</button>
+        </td>
+      </tr>
+    `;
+    })
+    .join('');
+}
+
+function addGoldLotToHistory() {
+  const typeEl = document.getElementById('selGoldType');
+  const unitEl = document.getElementById('selGoldUnit');
+  const weightEl = document.getElementById('inpGoldWeight');
+  const costEl = document.getElementById('inpGoldCost');
+  const feeEl = document.getElementById('inpGoldFee');
+
+  const weight = parseFloat(weightEl?.value) || 0;
+  const cost = parseFloat(costEl?.value) || 0;
+  if (weight <= 0 || cost <= 0) return;
+
+  const lot = {
+    id: Date.now(),
+    date: new Date().toISOString().slice(0, 10),
+    goldType: typeEl?.value || 'bar',
+    weightUnit: unitEl?.value || 'baht',
+    weight: weight,
+    costPerBaht: cost,
+    blockFee: parseFloat(feeEl?.value) || 0,
+  };
+
+  if (!goldState.lots) goldState.lots = [];
+  goldState.lots.push(lot);
+  saveGoldState();
+  renderGoldLotsTable();
+  updateGoldCalculator();
+}
+
+function removeGoldLot(idx) {
+  if (goldState.lots && goldState.lots[idx]) {
+    goldState.lots.splice(idx, 1);
+    saveGoldState();
+    renderGoldLotsTable();
+    updateGoldCalculator();
+  }
+}
+
+function clearGoldLots() {
+  goldState.lots = [];
+  saveGoldState();
+  renderGoldLotsTable();
+  updateGoldCalculator();
+}
+
+function exportGoldToPortfolio() {
+  const typeEl = document.getElementById('selGoldType');
+  const unitEl = document.getElementById('selGoldUnit');
+  const weightEl = document.getElementById('inpGoldWeight');
+  const costEl = document.getElementById('inpGoldCost');
+  const feeEl = document.getElementById('inpGoldFee');
+  const marketPriceEl = document.getElementById('inpGoldMarketPrice');
+
+  const params = {
+    goldType: typeEl?.value || 'bar',
+    weightUnit: unitEl?.value || 'baht',
+    weight: parseFloat(weightEl?.value) || 0,
+    costPerBaht: parseFloat(costEl?.value) || 0,
+    blockFee: parseFloat(feeEl?.value) || 0,
+    currentMarketPrice: parseFloat(marketPriceEl?.value) || 0,
+  };
+
+  if (goldState.lots && goldState.lots.length > 0) {
+    params.tranches = goldState.lots.map((lot) => ({
+      goldType: lot.goldType || 'bar',
+      weightUnit: lot.weightUnit || 'baht',
+      weight: lot.weight,
+      costPerBaht: lot.costPerBaht,
+      blockFee: lot.blockFee || 0,
+    }));
+  }
+
+  const metrics = MoneyApp.calculateThaiGoldMetrics(params);
+  if (!metrics || metrics.marketValue <= 0) return;
+
+  let foundAsset = null;
+  for (const b of state.buckets) {
+    if (!b.assets) continue;
+    foundAsset = b.assets.find((a) => a.ticker === 'GOLD' || a.ticker === 'GOLDBAR');
+    if (foundAsset) break;
+  }
+
+  if (foundAsset) {
+    foundAsset.value = metrics.marketValue;
+    foundAsset.units = metrics.weightBaht;
+    foundAsset.lastPrice = metrics.currentMarketPrice;
+    foundAsset.currency = 'THB';
+  } else {
+    const targetBucket = state.buckets.find((b) => b.id === 'ballast') || state.buckets[0];
+    if (targetBucket) {
+      if (!targetBucket.assets) targetBucket.assets = [];
+      targetBucket.assets.push({
+        name: LANG === 'en' ? 'Physical Thai Gold (96.5%)' : 'ทองคำแท่ง/รูปพรรณ (96.5%)',
+        ticker: 'GOLD',
+        units: metrics.weightBaht,
+        lastPrice: metrics.currentMarketPrice,
+        currency: 'THB',
+        value: metrics.marketValue,
+        weight: 10,
+      });
+    }
+  }
+
+  saveState();
+  renderBuckets();
+  compute();
+
+  const exportBtn = document.getElementById('lblExportGoldToPortfolio');
+  if (exportBtn) {
+    const originalText = exportBtn.textContent;
+    exportBtn.textContent = LANG === 'en' ? '✓ Exported!' : '✓ ส่งข้อมูลแล้ว!';
+    setTimeout(() => {
+      exportBtn.textContent = originalText;
+    }, 2000);
+  }
+}
+
+function initGoldCalculator() {
+  loadGoldState();
+  const typeEl = document.getElementById('selGoldType');
+  const unitEl = document.getElementById('selGoldUnit');
+  const weightEl = document.getElementById('inpGoldWeight');
+  const costEl = document.getElementById('inpGoldCost');
+  const feeEl = document.getElementById('inpGoldFee');
+  const marketPriceEl = document.getElementById('inpGoldMarketPrice');
+
+  if (typeEl && goldState.goldType) typeEl.value = goldState.goldType;
+  if (unitEl && goldState.weightUnit) unitEl.value = goldState.weightUnit;
+  if (weightEl && goldState.weight != null) weightEl.value = goldState.weight;
+  if (costEl && goldState.costPerBaht != null) costEl.value = goldState.costPerBaht;
+  if (feeEl && goldState.blockFee != null) feeEl.value = goldState.blockFee;
+  if (marketPriceEl && goldState.marketPrice != null) marketPriceEl.value = goldState.marketPrice;
+
+  renderGoldLotsTable();
+  updateGoldCalculator(false);
+
+  // If market price is default or 0, trigger price sync
+  if (!goldState.marketPrice || goldState.marketPrice === 42000) {
+    syncGoldMarketPrice();
+  }
+}
+
+// Global window exposure for inline handlers
+if (typeof window !== 'undefined') {
+  window.setGoldWeightPreset = setGoldWeightPreset;
+  window.updateGoldCalculator = updateGoldCalculator;
+  window.syncGoldMarketPrice = syncGoldMarketPrice;
+  window.addGoldLotToHistory = addGoldLotToHistory;
+  window.removeGoldLot = removeGoldLot;
+  window.clearGoldLots = clearGoldLots;
+  window.exportGoldToPortfolio = exportGoldToPortfolio;
+}
+
 renderSplit();
 renderBuckets();
 checkPendingBudget();
 compute();
 updatePriceTimestampUI();
 initAutoRefresh();
+initGoldCalculator();

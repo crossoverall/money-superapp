@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="2.3.9">
+<meta name="version" content="2.4.0">
 <title>คำนวณการเติมเงินรายเดือน</title>
 <link rel="stylesheet" href="css/theme.css">
 <style>
@@ -95,6 +95,13 @@
     cursor: pointer; transition: all 0.15s ease; white-space: nowrap;
   }
   .min-budget-apply-btn:hover{ background: var(--core); color: #fff; }
+  .gold-pill{
+    background: var(--panel-2); border: 1px solid var(--line); color: var(--ink-faint);
+    border-radius: 12px; padding: 2px 8px; font-size: 10px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s ease;
+  }
+  .gold-pill:hover{ border-color: var(--ballast); color: var(--ink); }
+  .gold-pill.active{ background: var(--ballast-dim); border-color: var(--ballast); color: var(--ballast); font-weight: 700; }
 
   .split-bar{ display:flex; height: 8px; border-radius: 5px; overflow: hidden; margin: 14px 0 8px; }
   .split-legend{ display:flex; justify-content: space-between; font-size: 11px; color: var(--ink-dim); }
@@ -441,6 +448,151 @@
     </div>
   </div>
 
+  <!-- Thai Gold Bar & Jewelry DCA P/L & Baht Weight Calculator -->
+  <div class="panel" role="region" aria-label="Thai Gold DCA &amp; Baht Weight Calculator" id="panelThaiGold">
+    <div class="panel-title" id="lbl-gold-panel-title" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+      <span>🟡 <span id="lblGoldTitle">คำนวณกำไร/ขาดทุนทองคำ &amp; แปลงหน่วยน้ำหนักบาท (Thai Gold DCA)</span></span>
+      <span id="badgeGoldStatus" style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--ballast-dim); color:var(--ballast); border:1px solid var(--ballast);">96.5% ทองไทย</span>
+    </div>
+
+    <!-- Inputs & Configuration Container -->
+    <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:12px;">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; font-size:11px;">
+        <!-- Gold Product Type -->
+        <div>
+          <label for="selGoldType" style="display:block; font-weight:600; color:var(--ink); margin-bottom:4px;" id="lblGoldType">
+            ประเภททองคำ (Product Type):
+          </label>
+          <select id="selGoldType" onchange="updateGoldCalculator()" style="width:100%; padding:7px 9px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--ink); font-size:12px; font-weight:600; outline:none;">
+            <option value="bar">ทองคำแท่ง 96.5% (15.244 กรัม/บาท)</option>
+            <option value="jewelry">ทองคำรูปพรรณ 96.5% (15.16 กรัม/บาท)</option>
+          </select>
+        </div>
+
+        <!-- Weight Quantity & Unit -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label for="inpGoldWeight" style="font-weight:600; color:var(--ink);" id="lblGoldWeight">น้ำหนัก (Weight):</label>
+            <div style="display:flex; gap:4px;">
+              <select id="selGoldUnit" onchange="updateGoldCalculator()" style="padding:2px 6px; border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--ink); font-size:10px; font-weight:600; outline:none;">
+                <option value="baht">บาททองคำ (Baht)</option>
+                <option value="salung">สลึง (Salung)</option>
+                <option value="gram">กรัม (Grams)</option>
+              </select>
+            </div>
+          </div>
+          <input type="number" id="inpGoldWeight" min="0" step="0.25" value="1" inputmode="decimal" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateGoldCalculator()">
+          <div style="display:flex; gap:4px; margin-top:6px; flex-wrap:wrap;">
+            <button type="button" class="gold-pill" onclick="setGoldWeightPreset(0.25, 'baht')" id="btnGoldSalung1">1 สลึง</button>
+            <button type="button" class="gold-pill" onclick="setGoldWeightPreset(0.5, 'baht')" id="btnGoldSalung2">2 สลึง</button>
+            <button type="button" class="gold-pill active" onclick="setGoldWeightPreset(1, 'baht')" id="btnGoldBaht1">1 บาท</button>
+            <button type="button" class="gold-pill" onclick="setGoldWeightPreset(2, 'baht')" id="btnGoldBaht2">2 บาท</button>
+            <button type="button" class="gold-pill" onclick="setGoldWeightPreset(5, 'baht')" id="btnGoldBaht5">5 บาท</button>
+            <button type="button" class="gold-pill" onclick="setGoldWeightPreset(10, 'baht')" id="btnGoldBaht10">10 บาท</button>
+          </div>
+        </div>
+
+        <!-- Purchase Cost per Baht -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label for="inpGoldCost" style="font-weight:600; color:var(--ink);" id="lblGoldCost">ราคาต้นทุนที่ซื้อ (Cost/Baht):</label>
+            <span style="font-size:9.5px; color:var(--ink-faint);" id="lblGoldCostSub">บาทละ</span>
+          </div>
+          <input type="number" id="inpGoldCost" min="0" step="100" placeholder="40000" inputmode="decimal" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateGoldCalculator()">
+        </div>
+
+        <!-- Block Fee / Craft Fee -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label for="inpGoldFee" style="font-weight:600; color:var(--ink);" id="lblGoldFee">ค่าบล็อก / ค่ากำเหน็จ (Fee):</label>
+            <span style="font-size:9.5px; color:var(--ink-faint);" id="lblGoldFeeSub">ต่อชิ้น/รวม</span>
+          </div>
+          <input type="number" id="inpGoldFee" min="0" step="50" placeholder="150" inputmode="decimal" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateGoldCalculator()">
+        </div>
+
+        <!-- Current Market Selling Price -->
+        <div style="grid-column: 1 / -1;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label for="inpGoldMarketPrice" style="font-weight:600; color:var(--ink);" id="lblGoldMarketPrice">ราคาขายออกสมาคมค้าทองคำปัจจุบัน (Market Sell):</label>
+            <button type="button" class="min-budget-apply-btn" onclick="syncGoldMarketPrice()" id="btnSyncGoldPrice" style="padding:2px 8px; font-size:10px;">
+              🔄 <span id="lblSyncGoldPrice">ดึงราคาสดสมาคม</span>
+            </button>
+          </div>
+          <input type="number" id="inpGoldMarketPrice" min="0" step="50" placeholder="42000" inputmode="decimal" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateGoldCalculator()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Weight Conversions Breakdown Bar -->
+    <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:8px 12px; margin-bottom:12px; font-size:11px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+      <span style="color:var(--ink-dim); font-weight:600;" id="lblEquivalentWeight">⚖️ เทียบเท่าน้ำหนักมาตรฐาน:</span>
+      <span id="txtGoldWeightEquiv" style="font-weight:700; color:var(--ballast);">1 บาท = 15.24 กรัม = 4 สลึง = 0.490 ออนซ์</span>
+    </div>
+
+    <!-- Key Metrics Cards Grid -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(115px, 1fr)); gap:8px; margin-bottom:12px; font-size:11px;">
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
+        <span style="color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGoldCost">ต้นทุนรวม</span>
+        <span id="valGoldTotalCost" style="font-size:13.5px; font-weight:800; color:var(--ink);">0 บาท</span>
+        <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="subGoldAvgCost">เฉลี่ย 0 บาท/บาท</div>
+      </div>
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
+        <span style="color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGoldVal">มูลค่าตลาดขายออก</span>
+        <span id="valGoldMarketVal" style="font-size:13.5px; font-weight:800; color:var(--ballast);">0 บาท</span>
+        <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="subGoldBreakEven">คุ้มทุน 0 บาท/บาท</div>
+      </div>
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
+        <span style="color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGoldPL">กำไร/ขาดทุน (P/L)</span>
+        <span id="valGoldPL" style="font-size:13.5px; font-weight:800; color:var(--ok);">+0 บาท</span>
+        <div style="font-size:9.5px; color:var(--ok); font-weight:700; margin-top:2px;" id="subGoldPLPct">+0.0%</div>
+      </div>
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
+        <span style="color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGoldLiq">ราคารับซื้อคืนสุทธิ</span>
+        <span id="valGoldLiquidation" style="font-size:13.5px; font-weight:800; color:var(--ink);">0 บาท</span>
+        <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="subGoldLiqPL">ขายคืนวันนี้: 0 บาท</div>
+      </div>
+    </div>
+
+    <!-- Actions & Inter-Tool Bridges -->
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+      <button type="button" class="min-budget-apply-btn" onclick="addGoldLotToHistory()" style="padding:6px 12px; font-size:11px; font-weight:700;">
+        + <span id="lblAddGoldLot">บันทึกเข้างวดสะสม (Add DCA Lot)</span>
+      </button>
+      <button type="button" class="min-budget-apply-btn" onclick="exportGoldToPortfolio()" style="background:var(--core-dim); color:var(--core); border-color:var(--core); padding:6px 12px; font-size:11px; font-weight:700;">
+        📥 <span id="lblExportGoldToPortfolio">ส่งมูลค่าทองไปยังพอร์ต Rebalance</span>
+      </button>
+    </div>
+
+    <!-- Multi-Tranche DCA Log Table Container -->
+    <div id="goldLotsContainer" style="display:none; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px; margin-bottom:12px; overflow-x:auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:11px;">
+        <span style="font-weight:700; color:var(--ink);" id="lblGoldLotsTitle">📜 ประวัติการสะสมทองคำ (DCA Lot History)</span>
+        <button type="button" onclick="clearGoldLots()" style="background:none; border:none; color:var(--warn); font-size:10.5px; cursor:pointer; text-decoration:underline;">
+          <span id="lblClearGoldLots">ล้างประวัติ</span>
+        </button>
+      </div>
+      <table style="width:100%; border-collapse:collapse; font-size:10.5px; text-align:left;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--line); color:var(--ink-faint);">
+            <th style="padding:4px 6px;" id="thGoldDate">วันที่</th>
+            <th style="padding:4px 6px;" id="thGoldType">ประเภท</th>
+            <th style="padding:4px 6px; text-align:right;" id="thGoldWeight">น้ำหนัก</th>
+            <th style="padding:4px 6px; text-align:right;" id="thGoldCost">ต้นทุน</th>
+            <th style="padding:4px 6px; text-align:right;" id="thGoldFee">ค่าบล็อก</th>
+            <th style="padding:4px 6px; text-align:right;" id="thGoldAction">จัดการ</th>
+          </tr>
+        </thead>
+        <tbody id="goldLotsTableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Revenue Code Section 42(9) Exemption Guidance Banner -->
+    <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:8px 12px; font-size:10.5px; color:var(--ink-dim); line-height:1.45;" id="boxGoldTaxExemption">
+      ⚖️ <strong id="lblGoldTaxTitle">กฎหมายภาษีทองคำไทย:</strong>
+      <span id="txtGoldTaxDesc">กำไรส่วนต่างราคา (Capital Gains) จากการซื้อขายทองคำแท่งและทองคำรูปพรรณของบุคคลธรรมดา ได้รับการยกเว้นภาษีเงินได้บุคคลธรรมดา ตามมาตรา 42(9) แห่งประมวลรัษฎากร (สังหาริมทรัพย์ที่ได้มาโดยมิได้มุ่งในทางการค้าหรือหากำไร)</span>
+    </div>
+  </div>
+
   <div id="bucketsContainer" role="region" aria-label="Investment Buckets and Assets"></div>
 
   <div class="howto" id="howto">
@@ -460,7 +612,7 @@
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v2.3.9</p>
+  <p class="version-tag">v2.4.0</p>
 
 <script src="js/shared.js"></script>
 <script src="js/rebalance.js"></script>

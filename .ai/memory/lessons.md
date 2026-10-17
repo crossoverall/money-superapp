@@ -726,3 +726,18 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
   3. Added dynamic speedup badge displaying exact months saved vs minimum-only payment schedule.
   4. Added 3 automated unit tests in `tests/financial-math.test.mjs` verifying milestone progression, cumulative clearance, interest velocity decay, and zero-debt resilience (**138 automated unit tests passing, 0 Biome linter errors**).
 - **Rule:** When displaying debt payoff schedules, visualize individual debt closures as progressive milestone nodes with cumulative percentage cleared and monthly interest velocity drop to maximize borrower motivation.
+
+### 2026-10-17: Thai Gold Purity Standards, Buyback Spread Discounts & PIT Exemption (Section 42(9))
+
+- **Date & Context:** 2026-10-17, implementing Thai Gold Bar & Jewelry DCA P/L & Baht Weight Calculator in `rebalance.html` (`v2.4.0`).
+- **Problem:**
+  1. Thai gold weight and purity standards differ fundamentally from international troy ounce standards (99.99%). In Thailand, 96.5% purity is statutory standard: Gold Bar (ทองคำแท่ง) is 15.244g/baht, whereas Gold Jewelry (ทองคำรูปพรรณ) is 15.16g/baht due to soldering allowance.
+  2. Buyback pricing mechanisms differ: Gold Bars trade with a statutory spread of 100 THB/baht below selling price with small block fees (100–350 THB, often waived for $\ge 5$ baht). Gold Jewelry experiences an immediate statutory melting/refining loss discount (~5% below gold bar spot) plus craft fees (500–2,000 THB/baht) that are lost upon purchase.
+  3. Individual retail investors in Thailand frequently inquire about taxation on gold capital gains.
+- **Resolution:**
+  1. Built `MoneyApp.calculateThaiGoldMetrics(params)` standardizing exact conversion constants: 1 baht bar = 15.244g, 1 baht jewelry = 15.16g, 1 salung = 0.25 baht, 1 Troy Ounce = 31.1034768g.
+  2. Implemented multi-tranche weighted average cost basis engine incorporating block/craft fees and real-time buyback liquidation value vs market selling valuation.
+  3. Linked physical gold portfolio valuation directly into portfolio DCA rebalancing under Ballast bucket (`ticker: 'GOLD'`).
+  4. Added prominent tax guidance banner clarifying that under **Section 42(9) of the Thai Revenue Code (ประมวลรัษฎากร มาตรา 42(9))**, capital gains from individual buying and selling of physical gold bullion and jewelry for personal investment are 100% exempt from Thai Personal Income Tax.
+  5. Added comprehensive test suite (`tests/gold-calculator.test.mjs`) and smoke tests (**237 tests passing, 0 Biome errors**).
+- **Rule:** When modeling Thai physical gold, never use a single flat gram weight or standard spot price: always bifurcate 96.5% bar (15.244g) vs jewelry (15.16g with 5% melting loss discount), factor in block/craft fees, and note PIT exemption under Section 42(9).
