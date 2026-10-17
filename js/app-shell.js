@@ -255,6 +255,18 @@ function applyLang(lang) {
   if (document.getElementById('lbl-btn-open-guide'))
     document.getElementById('lbl-btn-open-guide').textContent = t.btnOpenGuide;
 
+  const cmdInput = document.getElementById('cmdPaletteInput');
+  if (cmdInput) {
+    cmdInput.placeholder =
+      lang === 'en'
+        ? 'Type a command, tool, or feature... (e.g. tax, rmf, fire)'
+        : 'พิมพ์ค้นหาเครื่องมือ คำสั่ง หรือฟีเจอร์... (เช่น ภาษี, rmf, เกษียณ, หนี้)';
+  }
+  const btnCmd = document.getElementById('btn-cmd-palette');
+  if (btnCmd) {
+    btnCmd.title = lang === 'en' ? 'Command Palette & Omnisearch (Ctrl+K)' : 'ค้นหาด่วน & คำสั่งระบบ (Ctrl+K)';
+  }
+
   updateGoogleUI();
 }
 
@@ -1251,11 +1263,405 @@ window.addEventListener('message', (e) => {
   );
 })();
 
-// Global keyboard shortcuts: Alt+1..7 to switch tabs
+// --- Command Palette & Omnisearch Engine ---
+const COMMAND_PALETTE_ITEMS = [
+  {
+    id: 'nav-dashboard',
+    type: 'tab',
+    targetTab: 'dashboard',
+    titleTh: '🏠 ภาพรวม & แดชบอร์ด (Financial Dashboard)',
+    titleEn: '🏠 Financial Dashboard',
+    descTh: 'สรุปความมั่งคั่งสุทธิ (Net Worth), อัตราการออม และแบบจำลอง Monte Carlo',
+    descEn: 'Net worth overview, savings rate, and Monte Carlo simulator',
+    categoryTh: 'เครื่องมือ',
+    categoryEn: 'Tools',
+    keywords: ['dashboard', 'net worth', 'fire', 'monte carlo', 'ภาพรวม', 'ความมั่งคั่ง', 'เกษียณ'],
+  },
+  {
+    id: 'nav-rebalance',
+    type: 'tab',
+    targetTab: 'rebalance',
+    titleTh: '⚖️ ปรับพอร์ตลงทุน (Portfolio Rebalance)',
+    titleEn: '⚖️ Portfolio Rebalance & DCA',
+    descTh: 'ปรับสัดส่วนสินทรัพย์ คำนวณ Zero-Drift DCA และ Correlation Matrix',
+    descEn: 'Target asset allocation, zero-drift DCA, and asset correlation matrix',
+    categoryTh: 'เครื่องมือ',
+    categoryEn: 'Tools',
+    keywords: ['rebalance', 'dca', 'portfolio', 'asset allocation', 'ปรับพอร์ต', 'ลงทุน'],
+  },
+  {
+    id: 'nav-months-slips',
+    type: 'tab',
+    targetTab: 'months-slips',
+    titleTh: '💵 สลิปเงินเดือนรายเดือน (Payslip & 50 Tawi)',
+    titleEn: '💵 Monthly Payslip Simulator',
+    descTh: 'จำลองสลิปรายได้ 12 เดือน ภาษีหัก ณ ที่จ่าย ปกส. และกระทบยอด 50 ทวิ',
+    descEn: '12-month payslip forecasting, withholding tax, SSO, and 50 Tawi audit',
+    categoryTh: 'เครื่องมือ',
+    categoryEn: 'Tools',
+    keywords: ['payslip', 'salary', '50 tawi', 'sso', 'เงินเดือน', 'ภาษี', 'สลิป'],
+  },
+  {
+    id: 'nav-tax-base',
+    type: 'tab',
+    targetTab: 'tax-calculator-base',
+    titleTh: '🧾 ภาษีเงินได้บุคคลธรรมดา (Thai Personal Income Tax)',
+    titleEn: '🧾 Thai Personal Income Tax (PIT)',
+    descTh: 'คำนวณภาษี ภ.ง.ด.91/90 หักค่าลดหย่อน SSF/RMF/ThaiESG และเงินบริจาค',
+    descEn: 'PIT computation, deduction planning (SSF, RMF, ThaiESG), step tax brackets',
+    categoryTh: 'เครื่องมือ',
+    categoryEn: 'Tools',
+    keywords: ['tax', 'pit', 'deductions', 'rmf', 'ssf', 'thaiesg', 'ภาษี', 'ลดหย่อน'],
+  },
+  {
+    id: 'nav-tax-pvd',
+    type: 'tab',
+    targetTab: 'tax-calculator',
+    titleTh: '📈 ภาษีเงินชดเชย & PVD (Severance & PVD Tax)',
+    titleEn: '📈 Severance & PVD Retirement Tax',
+    descTh: 'คำนวณภาษี ม.48(5) ใบแนบแยกยื่น และเปรียบเทียบโอนย้ายเข้า RMF',
+    descEn: 'Section 48(5) tax schedule and PVD vs RMF rollover optimizer',
+    categoryTh: 'เครื่องมือ',
+    categoryEn: 'Tools',
+    keywords: ['pvd', 'severance', 'rmf', '48(5)', 'ชดเชย', 'เลิกจ้าง', 'กองทุนสำรองเลี้ยงชีพ'],
+  },
+  {
+    id: 'nav-remaining-money',
+    type: 'tab',
+    targetTab: 'remaining-money',
+    titleTh: '💰 เงินคงเหลือ & งบประมาณ (Remaining Money & Budget)',
+    titleEn: '💰 Remaining Money & Budget Flow',
+    descTh: 'วางแผนรายจ่ายประจำ จัดสรรเงินออมฉุกเฉิน และแผนภูมิกระแสเงิน Sankey',
+    descEn: 'Monthly budgeting, emergency fund buffer, and interactive Sankey cashflow',
+    categoryTh: 'เครื่องมือ',
+    categoryEn: 'Tools',
+    keywords: ['remaining', 'budget', 'emergency fund', 'sankey', 'เงินคงเหลือ', 'งบประมาณ', 'ออม'],
+  },
+  {
+    id: 'nav-debt',
+    type: 'tab',
+    targetTab: 'debt-calculator',
+    titleTh: '📉 วางแผนปลดหนี้ (Debt Payoff & Prepayment)',
+    titleEn: '📉 Debt Payoff & Prepayment',
+    descTh: 'เปรียบเทียบ Snowball vs Avalanche แผนภาพไทม์ไลน์ และลดหย่อนดอกเบี้ยบ้าน',
+    descEn: 'Snowball vs Avalanche comparison, payoff roadmap, and loan prepayment',
+    categoryTh: 'เครื่องมือ',
+    categoryEn: 'Tools',
+    keywords: ['debt', 'snowball', 'avalanche', 'prepayment', 'mortgage', 'หนี้', 'ปลดหนี้', 'บ้าน'],
+  },
+  {
+    id: 'feat-monte-carlo',
+    type: 'tab',
+    targetTab: 'dashboard',
+    titleTh: '🎲 แบบจำลอง Monte Carlo เกษียณอายุ',
+    titleEn: '🎲 Monte Carlo Retirement Longevity Simulator',
+    descTh: 'จำลองสภาวะตลาด 1,000 รอบ คำนวณ Ruin Probability & Fan Chart',
+    descEn: '1,000-run stochastic sequence-of-returns ruin probability and confidence fan chart',
+    categoryTh: 'ฟีเจอร์เด่น',
+    categoryEn: 'Features',
+    keywords: ['monte carlo', 'ruin', 'retirement', 'simulation', 'fire', 'พอร์ตเกษียณ', 'ความเสี่ยง'],
+  },
+  {
+    id: 'feat-pvd-rmf',
+    type: 'tab',
+    targetTab: 'tax-calculator',
+    titleTh: '🔄 เปรียบเทียบโอน PVD ไปยัง RMF (Rollover)',
+    titleEn: '🔄 PVD to RMF Rollover Strategy',
+    descTh: 'วิเคราะห์ความคุ้มค่าระหว่างคงเงินไว้ใน PVD หรือโอนเข้า RMF เพื่อชะลอภาษี',
+    descEn: 'Optimize tax deferral between keeping funds in PVD vs transferring to RMF',
+    categoryTh: 'ฟีเจอร์เด่น',
+    categoryEn: 'Features',
+    keywords: ['rmf', 'rollover', 'pvd', 'โอน', 'ชะลอภาษี'],
+  },
+  {
+    id: 'feat-sankey',
+    type: 'tab',
+    targetTab: 'remaining-money',
+    titleTh: '🌊 แผนภูมิกระแสเงินสด (Sankey Diagram)',
+    titleEn: '🌊 Cashflow Sankey Diagram',
+    descTh: 'มองเห็นเส้นทางการไหลของเงินจากรายได้สู่งบรายจ่ายและเงินออม',
+    descEn: 'Visual distribution flow from total income into fixed/variable costs and savings',
+    categoryTh: 'ฟีเจอร์เด่น',
+    categoryEn: 'Features',
+    keywords: ['sankey', 'cashflow', 'กระแสเงินสด', 'แผนภูมิ'],
+  },
+  {
+    id: 'feat-correlation',
+    type: 'tab',
+    targetTab: 'rebalance',
+    titleTh: '📊 สหสัมพันธ์สินทรัพย์ (Correlation Matrix)',
+    titleEn: '📊 Asset Correlation Matrix',
+    descTh: 'ตรวจจับการกระจุกตัวของความเสี่ยงในพอร์ตการลงทุน',
+    descEn: 'Cross-asset covariance and correlation heat matrix for risk diversification',
+    categoryTh: 'ฟีเจอร์เด่น',
+    categoryEn: 'Features',
+    keywords: ['correlation', 'matrix', 'diversification', 'สหสัมพันธ์', 'ความเสี่ยง'],
+  },
+  {
+    id: 'act-theme',
+    type: 'action',
+    action: () => {
+      const current = getTheme();
+      const next = current === 'dark' ? 'light' : 'dark';
+      try {
+        localStorage.setItem('moneySuperapp.theme', next);
+      } catch (_e) {}
+      applyTheme(next);
+      reloadFrame();
+    },
+    titleTh: '🌓 สลับธีม (Toggle Light/Dark Theme)',
+    titleEn: '🌓 Toggle Light/Dark Theme',
+    descTh: 'สลับระหว่างโหมดสว่างและโหมดมืด',
+    descEn: 'Toggle between light and dark UI themes',
+    categoryTh: 'คำสั่งด่วน',
+    categoryEn: 'Actions',
+    keywords: ['theme', 'dark', 'light', 'mode', 'ธีม', 'สว่าง', 'มืด'],
+  },
+  {
+    id: 'act-lang',
+    type: 'action',
+    action: () => {
+      const current = getLang();
+      const next = current === 'th' ? 'en' : 'th';
+      try {
+        localStorage.setItem('moneySuperapp.lang', next);
+      } catch (_e) {}
+      applyLang(next);
+      reloadFrame();
+    },
+    titleTh: '🌐 สลับภาษา (Switch Language TH / EN)',
+    titleEn: '🌐 Switch Language (TH / EN)',
+    descTh: 'เปลี่ยนภาษาระหว่าง ภาษาไทย และ English',
+    descEn: 'Toggle language between Thai and English',
+    categoryTh: 'คำสั่งด่วน',
+    categoryEn: 'Actions',
+    keywords: ['language', 'english', 'thai', 'ภาษา', 'แปล'],
+  },
+  {
+    id: 'act-vault',
+    type: 'action',
+    action: () => {
+      openSettingsModal();
+      setTimeout(() => {
+        const btn = document.getElementById('lbl-btn-export-vault');
+        if (btn) btn.click();
+      }, 150);
+    },
+    titleTh: '🔐 ส่งออกคลังนิรภัยเข้ารหัส (Export Encrypted Vault)',
+    titleEn: '🔐 Export Encrypted Vault (AES-GCM)',
+    descTh: 'สำรองข้อมูลทั้งหมดด้วยการเข้ารหัส Client-Side AES-GCM 100% ปลอดภัย',
+    descEn: 'Client-side AES-GCM encrypted backup of all application data',
+    categoryTh: 'คำสั่งด่วน',
+    categoryEn: 'Actions',
+    keywords: ['vault', 'export', 'encrypt', 'security', 'backup', 'ส่งออก', 'เข้ารหัส', 'สำรอง'],
+  },
+  {
+    id: 'act-backup-json',
+    type: 'action',
+    action: () => {
+      exportBackupData();
+    },
+    titleTh: '📤 ส่งออกข้อมูลสำรอง (Export JSON Backup)',
+    titleEn: '📤 Export JSON Backup',
+    descTh: 'ดาวน์โหลดไฟล์สำรองข้อมูล JSON สำหรับทุกเครื่องมือ',
+    descEn: 'Download raw JSON backup file containing all local data',
+    categoryTh: 'คำสั่งด่วน',
+    categoryEn: 'Actions',
+    keywords: ['export', 'json', 'backup', 'ดาวน์โหลด', 'สำรอง'],
+  },
+  {
+    id: 'act-storage-health',
+    type: 'action',
+    action: () => {
+      openSettingsModal();
+      setTimeout(() => {
+        runStorageHealthCheck(true);
+      }, 200);
+    },
+    titleTh: '🩺 ตรวจสุขภาพข้อมูล (Storage Health Inspector)',
+    titleEn: '🩺 Inspect Storage Health',
+    descTh: 'ตรวจสอบขนาด ความสมบูรณ์ และแก้ไขปัญหาข้อมูลค้างในเครื่อง',
+    descEn: 'Check localStorage quota usage, corrupted keys, and data health',
+    categoryTh: 'คำสั่งด่วน',
+    categoryEn: 'Actions',
+    keywords: ['health', 'storage', 'diagnose', 'repair', 'ตรวจสุขภาพ', 'ซ่อมแซม'],
+  },
+  {
+    id: 'act-onboarding',
+    type: 'action',
+    action: () => {
+      openOnboardingModal();
+    },
+    titleTh: '❓ คู่มือการใช้งาน (Quick Tour & Guide)',
+    titleEn: '❓ Quick Tour & User Guide',
+    descTh: 'เปิดดูคู่มือขั้นตอนการใช้งาน 5 เครื่องมือหลักแบบกระชับ',
+    descEn: 'Open interactive 5-step quick tour guide',
+    categoryTh: 'คำสั่งด่วน',
+    categoryEn: 'Actions',
+    keywords: ['tour', 'guide', 'help', 'คู่มือ', 'วิธีใช้'],
+  },
+];
+
+let paletteSelectedIndex = 0;
+let paletteFilteredItems = [...COMMAND_PALETTE_ITEMS];
+
+function openCommandPalette() {
+  const modal = document.getElementById('cmdPaletteModal');
+  const input = document.getElementById('cmdPaletteInput');
+  if (!modal || !input) return;
+  modal.style.display = 'flex';
+  input.value = '';
+  paletteSelectedIndex = 0;
+  filterCommandPalette();
+  setTimeout(() => {
+    input.focus();
+  }, 50);
+}
+
+function closeCommandPalette() {
+  const modal = document.getElementById('cmdPaletteModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function filterCommandPalette() {
+  const input = document.getElementById('cmdPaletteInput');
+  const query = (input?.value || '').trim().toLowerCase();
+  const lang = getLang();
+
+  if (!query) {
+    paletteFilteredItems = [...COMMAND_PALETTE_ITEMS];
+  } else {
+    paletteFilteredItems = COMMAND_PALETTE_ITEMS.filter((item) => {
+      const title = (lang === 'en' ? item.titleEn : item.titleTh).toLowerCase();
+      const desc = (lang === 'en' ? item.descEn : item.descTh).toLowerCase();
+      const matchTitle = title.includes(query);
+      const matchDesc = desc.includes(query);
+      const matchKeyword = item.keywords.some((kw) => kw.toLowerCase().includes(query));
+      return matchTitle || matchDesc || matchKeyword;
+    });
+  }
+
+  if (paletteSelectedIndex >= paletteFilteredItems.length) {
+    paletteSelectedIndex = Math.max(0, paletteFilteredItems.length - 1);
+  }
+  renderCommandPaletteResults();
+}
+
+function renderCommandPaletteResults() {
+  const container = document.getElementById('cmdPaletteResults');
+  if (!container) return;
+  const lang = getLang();
+
+  if (paletteFilteredItems.length === 0) {
+    container.innerHTML = `
+      <div style="padding:24px 16px; text-align:center; color:#94a3b8; font-size:13px;">
+        ${lang === 'en' ? 'No matching commands or tools found' : 'ไม่พบคำสั่งหรือเครื่องมือที่ตรงกัน'}
+      </div>
+    `;
+    return;
+  }
+
+  let html = '';
+  paletteFilteredItems.forEach((item, idx) => {
+    const isSelected = idx === paletteSelectedIndex;
+    const title = lang === 'en' ? item.titleEn : item.titleTh;
+    const desc = lang === 'en' ? item.descEn : item.descTh;
+    const category = lang === 'en' ? item.categoryEn : item.categoryTh;
+    const bgStyle = isSelected
+      ? 'background:rgba(59, 130, 246, 0.18); border-color:#3b82f6;'
+      : 'background:transparent; border-color:transparent;';
+
+    html += `
+      <div class="cmd-item" data-index="${idx}" onclick="executeCommand(${idx})"
+           style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; margin-bottom:4px; border-radius:8px; border:1px solid; ${bgStyle} cursor:pointer; transition:all 0.12s ease;"
+           onmouseenter="paletteSelectedIndex=${idx}; renderCommandPaletteResults();">
+        <div style="display:flex; flex-direction:column; gap:2px; text-align:left; overflow:hidden;">
+          <div style="font-size:13px; font-weight:600; color:${isSelected ? '#60a5fa' : '#f1f5f9'}; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">
+            ${title}
+          </div>
+          <div style="font-size:11px; color:#94a3b8; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">
+            ${desc}
+          </div>
+        </div>
+        <div style="font-size:10px; color:#cbd5e1; background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px; white-space:nowrap; margin-left:8px;">
+          ${category}
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+  const activeEl = container.querySelector(`[data-index="${paletteSelectedIndex}"]`);
+  if (activeEl) {
+    activeEl.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function handleCommandPaletteKey(e) {
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (paletteFilteredItems.length > 0) {
+      paletteSelectedIndex = (paletteSelectedIndex + 1) % paletteFilteredItems.length;
+      renderCommandPaletteResults();
+    }
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (paletteFilteredItems.length > 0) {
+      paletteSelectedIndex = (paletteSelectedIndex - 1 + paletteFilteredItems.length) % paletteFilteredItems.length;
+      renderCommandPaletteResults();
+    }
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (paletteFilteredItems.length > 0 && paletteFilteredItems[paletteSelectedIndex]) {
+      executeCommand(paletteSelectedIndex);
+    }
+  } else if (e.key === 'Escape') {
+    e.preventDefault();
+    closeCommandPalette();
+  }
+}
+
+function executeCommand(index) {
+  const item = paletteFilteredItems[index];
+  if (!item) return;
+  closeCommandPalette();
+
+  if (item.type === 'tab') {
+    activateTab(item.targetTab, true);
+  } else if (item.type === 'action' && typeof item.action === 'function') {
+    item.action();
+  }
+}
+
+window.openCommandPalette = openCommandPalette;
+window.closeCommandPalette = closeCommandPalette;
+window.filterCommandPalette = filterCommandPalette;
+window.handleCommandPaletteKey = handleCommandPaletteKey;
+window.executeCommand = executeCommand;
+
+// Global keyboard shortcuts: Alt+1..7 to switch tabs, Ctrl+K / Cmd+K for Command Palette
 window.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    const modal = document.getElementById('cmdPaletteModal');
+    if (modal && modal.style.display === 'flex') {
+      closeCommandPalette();
+    } else {
+      openCommandPalette();
+    }
+    return;
+  }
+  if (e.key === 'Escape') {
+    const modal = document.getElementById('cmdPaletteModal');
+    if (modal && modal.style.display === 'flex') {
+      e.preventDefault();
+      closeCommandPalette();
+      return;
+    }
+  }
   if (e.altKey && e.key >= '1' && e.key <= '7') {
     e.preventDefault();
-    const tabIndex = parseInt(e.key) - 1;
+    const tabIndex = parseInt(e.key, 10) - 1;
     const btn = topNavButtons[tabIndex];
     if (btn) activateTab(btn.dataset.tab, true);
   }

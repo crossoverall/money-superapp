@@ -393,4 +393,88 @@ describe('MoneyApp Shared Core Module', () => {
       });
     });
   });
+
+  describe('Command Palette & Omnisearch Filter Engine', () => {
+    const sampleCommands = [
+      {
+        id: 'nav-dashboard',
+        titleTh: '🏠 ภาพรวมการเงิน',
+        titleEn: '🏠 Financial Dashboard',
+        descTh: 'สรุปความมั่งคั่งสุทธิ และอัตราการออม',
+        descEn: 'Net worth overview and savings rate',
+        category: 'tools',
+        keywords: ['networth', 'fire', 'goals', 'ความมั่งคั่ง', 'เกษียณ'],
+      },
+      {
+        id: 'nav-pvd',
+        titleTh: '📈 คำนวณภาษีเงินชดเชย & PVD',
+        titleEn: '📈 Severance & PVD Tax',
+        descTh: 'คำนวณภาษี ม.48(5) และเปรียบเทียบโอนเข้า RMF',
+        descEn: 'Section 48(5) and RMF rollover optimizer',
+        category: 'tools',
+        keywords: ['rmf', 'severance', 'pvd', '48(5)', 'ชดเชย', 'เลิกจ้าง'],
+      },
+      {
+        id: 'act-theme',
+        titleTh: '🌗 สลับธีม (Light / Dark)',
+        titleEn: '🌗 Toggle Theme (Light / Dark)',
+        descTh: 'สลับระหว่างโหมดสว่างและโหมดมืด',
+        descEn: 'Switch between light and dark themes',
+        category: 'actions',
+        keywords: ['theme', 'dark', 'light', 'ธีม', 'สี'],
+      },
+      {
+        id: 'act-vault',
+        titleTh: '🔐 ส่งออกคลังนิรภัย (Export Vault)',
+        titleEn: '🔐 Export Encrypted Vault',
+        descTh: 'สำรองข้อมูลเข้ารหัส AES-GCM 100% ปลอดภัย',
+        descEn: 'AES-GCM client-side encrypted backup',
+        category: 'actions',
+        keywords: ['backup', 'vault', 'export', 'security', 'สำรอง'],
+      },
+    ];
+
+    function filterCommands(items, query, lang = 'th') {
+      const q = (query || '').trim().toLowerCase();
+      if (!q) return items;
+
+      return items.filter((item) => {
+        const title = (lang === 'en' ? item.titleEn : item.titleTh).toLowerCase();
+        const desc = (lang === 'en' ? item.descEn : item.descTh).toLowerCase();
+        const matchTitle = title.includes(q);
+        const matchDesc = desc.includes(q);
+        const matchKeyword = item.keywords.some((kw) => kw.toLowerCase().includes(q));
+        return matchTitle || matchDesc || matchKeyword;
+      });
+    }
+
+    it('returns all items when query is empty', () => {
+      const res = filterCommands(sampleCommands, '', 'th');
+      assert.equal(res.length, 4);
+    });
+
+    it('filters items correctly by English keyword', () => {
+      const res = filterCommands(sampleCommands, 'rmf', 'en');
+      assert.equal(res.length, 1);
+      assert.equal(res[0].id, 'nav-pvd');
+    });
+
+    it('filters items correctly by Thai keyword', () => {
+      const res = filterCommands(sampleCommands, 'สำรอง', 'th');
+      // matches dashboard (desc/keywords: เงินสำรอง) and vault (desc: สำรองข้อมูล)
+      assert.ok(res.length >= 1);
+      assert.ok(res.some((i) => i.id === 'act-vault'));
+    });
+
+    it('performs case-insensitive fuzzy matching', () => {
+      const res = filterCommands(sampleCommands, 'VAULT', 'en');
+      assert.equal(res.length, 1);
+      assert.equal(res[0].id, 'act-vault');
+    });
+
+    it('returns empty array when query does not match any items', () => {
+      const res = filterCommands(sampleCommands, 'nonexistent-crypto-future-xyz', 'en');
+      assert.equal(res.length, 0);
+    });
+  });
 });

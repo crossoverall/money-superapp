@@ -310,6 +310,15 @@ function applyLocalization() {
 
   const btnPrint = document.getElementById('btn-print');
   if (btnPrint) btnPrint.title = t.printTitle;
+
+  const btnHor5 = document.getElementById('btnHorPreset5');
+  if (btnHor5) btnHor5.textContent = LANG === 'en' ? '5 Yrs' : '5 ปี';
+  const btnHor10 = document.getElementById('btnHorPreset10');
+  if (btnHor10) btnHor10.textContent = LANG === 'en' ? '10 Yrs' : '10 ปี';
+  const btnHor20 = document.getElementById('btnHorPreset20');
+  if (btnHor20) btnHor20.textContent = LANG === 'en' ? '20 Yrs' : '20 ปี';
+  const btnHor30 = document.getElementById('btnHorPreset30');
+  if (btnHor30) btnHor30.textContent = LANG === 'en' ? '30 Yrs' : '30 ปี';
 }
 
 applyLocalization();

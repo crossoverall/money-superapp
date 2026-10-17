@@ -93,6 +93,9 @@ const EN = {
   noCustomTemplates: 'No saved templates yet. Enter a name above to save your current budget.',
   txtPresetBarTitle: 'Budget Mode:',
   lblManageTemplates: 'Manage Templates...',
+  lblTarget50: 'Target 50%',
+  lblTarget30: 'Target 30%',
+  lblTarget20: 'Target 20%',
 };
 
 const T = {
@@ -220,6 +223,9 @@ if (LANG === 'en') {
     'lblPrint',
     'lblImport',
     'importModalTitle',
+    'lblTarget50',
+    'lblTarget30',
+    'lblTarget20',
   ].forEach((id) => {
     const el = document.getElementById(id);
     if (el && EN[id]) el.textContent = EN[id];

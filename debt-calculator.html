@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.2.8">
+  <meta name="version" content="2.2.9">
   <title>วางแผนปลดหนี้ (Debt Payoff)</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -281,10 +281,10 @@
           </div>
         </div>
         <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;">
-          <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setWindfallPreset(20000, 1)">20K (ด.1)</button>
-          <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setWindfallPreset(50000, 3)">50K (ด.3)</button>
-          <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setWindfallPreset(100000, 6)">100K (ด.6)</button>
-          <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setWindfallPreset(200000, 12)">200K (ด.12)</button>
+          <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setWindfallPreset(20000, 1)" id="btn-wf-preset-1">20K (ด.1)</button>
+          <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setWindfallPreset(50000, 3)" id="btn-wf-preset-2">50K (ด.3)</button>
+          <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setWindfallPreset(100000, 6)" id="btn-wf-preset-3">100K (ด.6)</button>
+          <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setWindfallPreset(200000, 12)" id="btn-wf-preset-4">200K (ด.12)</button>
         </div>
         <div id="windfallImpactBadge" style="display:none; margin-top:10px; padding:8px 10px; border-radius:8px; font-size:11px; font-weight:600; background:var(--ok-dim); border:1px solid var(--ok); color:var(--ok);"></div>
       </div>
@@ -370,11 +370,11 @@
       </div>
 
       <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;">
-        <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(12)">12 ด. (1 ปี)</button>
-        <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(24)">24 ด. (2 ปี)</button>
-        <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(36)">36 ด. (3 ปี)</button>
-        <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(48)">48 ด. (4 ปี)</button>
-        <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(60)">60 ด. (5 ปี)</button>
+        <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(12)" id="btn-refi-12">12 ด. (1 ปี)</button>
+        <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(24)" id="btn-refi-24">24 ด. (2 ปี)</button>
+        <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(36)" id="btn-refi-36">36 ด. (3 ปี)</button>
+        <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(48)" id="btn-refi-48">48 ด. (4 ปี)</button>
+        <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(60)" id="btn-refi-60">60 ด. (5 ปี)</button>
       </div>
 
       <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; margin-top:12px;">
@@ -465,7 +465,7 @@
     <span id="saveStatus">&nbsp;</span>
     <button class="reset-btn" id="btn-reset-debts" onclick="resetDefaults()">รีเซ็ตค่าเริ่มต้น</button>
   </div>
-  <p class="version-tag">v2.2.8</p>
+  <p class="version-tag">v2.2.9</p>
 
 <script src="js/shared.js"></script>
 <script src="js/debt-calculator.js"></script>

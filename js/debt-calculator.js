@@ -194,6 +194,16 @@ if (LANG === 'en') {
     'lbl-refinance-interest-saved': t.refinanceSavedLabel,
     'lbl-refinance-cashflow-relief': t.refinanceReliefLabel,
     'lbl-milestone-road-title': t.milestoneRoadTitle,
+    'lbl-print-debt-doc-sub': 'Debt Payoff Strategy & Freedom Horizon Simulation',
+    'btn-wf-preset-1': '20K (Mo 1)',
+    'btn-wf-preset-2': '50K (Mo 3)',
+    'btn-wf-preset-3': '100K (Mo 6)',
+    'btn-wf-preset-4': '200K (Mo 12)',
+    'btn-refi-12': '12 Mo (1 Yr)',
+    'btn-refi-24': '24 Mo (2 Yrs)',
+    'btn-refi-36': '36 Mo (3 Yrs)',
+    'btn-refi-48': '48 Mo (4 Yrs)',
+    'btn-refi-60': '60 Mo (5 Yrs)',
   };
   for (let id in map) {
     const el = document.getElementById(id);
