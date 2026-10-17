@@ -253,7 +253,7 @@ function computeCurrencyExposure(assets, totalVal) {
   const exposures = Object.values(map)
     .map((e) => ({
       ...e,
-      sharePct: parseFloat(((e.totalThb / totalVal) * 100).toFixed(1)),
+      sharePct: totalVal > 0 ? parseFloat(((e.totalThb / totalVal) * 100).toFixed(1)) : 0,
     }))
     .sort((a, b) => b.totalThb - a.totalThb);
 
@@ -419,10 +419,10 @@ function resolveNumericInput(raw, base) {
   if (m) {
     const sign = m[1] === '-' ? -1 : 1;
     const num = m[2] === '' ? 0 : parseFloat(m[2]);
-    return (base || 0) + sign * (isNaN(num) ? 0 : num);
+    return (base || 0) + sign * (Number.isNaN(num) ? 0 : num);
   }
   const n = parseFloat(trimmed);
-  return isNaN(n) ? 0 : n;
+  return Number.isNaN(n) ? 0 : n;
 }
 
 function fmtPlain(n) {
@@ -1087,7 +1087,7 @@ function renderAssetRows(bucket) {
       const idx = parseInt(e.target.dataset.idx);
       const field = e.target.dataset.field;
       const val = parseFloat(e.target.value);
-      b.assets[idx][field] = isNaN(val) ? 0 : val;
+      b.assets[idx][field] = Number.isNaN(val) ? 0 : val;
 
       const a = b.assets[idx];
       if (a.units > 0 && a.lastPrice > 0) {
@@ -1853,7 +1853,7 @@ function checkPendingBudget() {
     const raw = localStorage.getItem('moneySuperapp.pendingBudget');
     if (raw) {
       const budget = parseFloat(raw);
-      if (!isNaN(budget) && budget > 0) {
+      if (!Number.isNaN(budget) && budget > 0) {
         undoMgr.push(captureSnapshot());
         state.totalBudget = budget;
         totalBudgetEl.value = fmtPlain(budget);
@@ -1871,7 +1871,7 @@ function checkPendingBudget() {
         }
       }
     }
-  } catch (e) {}
+  } catch (_e) {}
 }
 
 function dismissPendingBudget() {
@@ -2016,7 +2016,7 @@ async function fetchThaiGoldPrice() {
     const rawPrice = data?.response?.price?.gold_bar?.sell || data?.response?.price?.gold?.sell;
     if (rawPrice) {
       const num = parseFloat(String(rawPrice).replace(/,/g, ''));
-      if (!isNaN(num) && num > 0) {
+      if (!Number.isNaN(num) && num > 0) {
         return { price: num, currency: 'THB' };
       }
     }
@@ -2033,7 +2033,7 @@ function getApiSettings() {
 function saveApiSettingsToStorage(settings) {
   try {
     localStorage.setItem('moneySuperapp.apiSettings', JSON.stringify(settings));
-  } catch (e) {}
+  } catch (_e) {}
 }
 
 function calculateCrossRates(rates) {
@@ -2087,11 +2087,11 @@ async function fetchAssetPrice(rawSymbol, apiSettings) {
       if (res.ok) {
         const data = await res.json();
         const amt = parseFloat(data?.data?.amount);
-        if (!isNaN(amt) && amt > 0) {
+        if (!Number.isNaN(amt) && amt > 0) {
           return { price: amt, currency: 'USD' };
         }
       }
-    } catch (e) {}
+    } catch (_e) {}
   }
 
   // 2b. Short-circuit Thai mutual funds — no open-CORS public NAV API exists.
@@ -2116,7 +2116,7 @@ async function fetchAssetPrice(rawSymbol, apiSettings) {
           return { price: data.c, currency: isTHB ? 'THB' : 'USD' };
         }
       }
-    } catch (e) {}
+    } catch (_e) {}
   }
 
   // 4. Try Twelve Data for US Stocks & ETFs and Thai SET Stocks
@@ -2136,12 +2136,12 @@ async function fetchAssetPrice(rawSymbol, apiSettings) {
         if (res.ok) {
           const data = await res.json();
           const p = parseFloat(data?.price);
-          if (!isNaN(p) && p > 0) {
+          if (!Number.isNaN(p) && p > 0) {
             const isTHB = isThai || qSym.includes(':SET') || qSym.endsWith('.BK');
             return { price: p, currency: isTHB ? 'THB' : 'USD' };
           }
         }
-      } catch (e) {}
+      } catch (_e) {}
     }
   }
 
@@ -2159,11 +2159,11 @@ async function fetchAssetPrice(rawSymbol, apiSettings) {
       if (res.ok) {
         const data = await res.json();
         const amt = parseFloat(data?.data?.amount);
-        if (!isNaN(amt) && amt > 0) {
+        if (!Number.isNaN(amt) && amt > 0) {
           return { price: amt, currency: 'USD' };
         }
       }
-    } catch (e) {}
+    } catch (_e) {}
   }
 
   return null;
@@ -2388,13 +2388,13 @@ async function testApiKeys() {
   try {
     const cb = await fetch('https://api.coinbase.com/v2/prices/BTC-USD/spot');
     cryptoOk = cb.ok;
-  } catch (e) {}
+  } catch (_e) {}
 
   let goldOk = false;
   try {
     const gold = await fetchThaiGoldPrice();
     goldOk = !!(gold && gold.price > 0);
-  } catch (e) {}
+  } catch (_e) {}
 
   if (finnhubKey) {
     try {
@@ -2406,7 +2406,7 @@ async function testApiKeys() {
         statusEl.textContent = t('testSuccess', 'NVDA (Finnhub)', data.c.toFixed(2));
         return;
       }
-    } catch (e) {}
+    } catch (_e) {}
   }
 
   if (twelveDataKey) {
@@ -2421,7 +2421,7 @@ async function testApiKeys() {
         statusEl.textContent = t('testSuccess', 'NVDA (Twelve Data)', parseFloat(data.price).toFixed(2));
         return;
       }
-    } catch (e) {}
+    } catch (_e) {}
   }
 
   if (!finnhubKey && !twelveDataKey) {

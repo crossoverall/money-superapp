@@ -277,7 +277,7 @@ function saveState() {
   };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch (e) {}
+  } catch (_e) {}
 }
 
 function computeTaxWaterfall(netIncome) {
@@ -477,7 +477,7 @@ function importWithholdingFromPayslip() {
         feedbackEl.style.display = 'flex';
         feedbackEl.className =
           'p-2 rounded bg-amber-100 text-[11px] text-amber-900 font-medium flex items-center justify-between';
-        feedbackEl.innerHTML = `<span>⚠️ ${isEn ? 'No payslip data found. Please calculate in Payslip tab first.' : 'ยังไม่พบข้อมูลสลิปเงินเดือน กรุณาเข้าใช้งานแท็บจำลองสลิปเงินเดือนก่อน'}</span><button type="button" onclick="this.parentElement.style.display=\'none\'" class="text-amber-700 font-bold ml-2">✕</button>`;
+        feedbackEl.innerHTML = `<span>⚠️ ${isEn ? 'No payslip data found. Please calculate in Payslip tab first.' : 'ยังไม่พบข้อมูลสลิปเงินเดือน กรุณาเข้าใช้งานแท็บจำลองสลิปเงินเดือนก่อน'}</span><button type="button" onclick="this.parentElement.style.display='none'" class="text-amber-700 font-bold ml-2">✕</button>`;
       }
       return;
     }
@@ -508,7 +508,7 @@ function importWithholdingFromPayslip() {
         feedbackEl.style.display = 'flex';
         feedbackEl.className =
           'p-2 rounded bg-indigo-100/90 text-[11px] text-indigo-900 font-medium flex items-center justify-between';
-        feedbackEl.innerHTML = `<span>✓ ${isEn ? `Imported ${formatMoney(withheld)} THB withholding from payslips` : `ดึงภาษีหัก ณ ที่จ่ายสำเร็จ: ${formatMoney(withheld)} บาท`}</span><button type="button" onclick="this.parentElement.style.display=\'none\'" class="text-indigo-700 font-bold ml-2">✕</button>`;
+        feedbackEl.innerHTML = `<span>✓ ${isEn ? `Imported ${formatMoney(withheld)} THB withholding from payslips` : `ดึงภาษีหัก ณ ที่จ่ายสำเร็จ: ${formatMoney(withheld)} บาท`}</span><button type="button" onclick="this.parentElement.style.display='none'" class="text-indigo-700 font-bold ml-2">✕</button>`;
       }
     }
   } catch (e) {
@@ -1807,7 +1807,7 @@ function loadState() {
     } else if (parseFloat(document.getElementById('salary').value) > 0) {
       calculateTax();
     }
-  } catch (e) {}
+  } catch (_e) {}
 }
 
 loadState();

@@ -117,7 +117,7 @@ function saveState() {
   };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch (e) {}
+  } catch (_e) {}
 }
 
 let currentStreamData = null;
@@ -302,7 +302,7 @@ function exportSlipToRemaining() {
   };
   try {
     localStorage.setItem('moneySuperapp.pendingSlipImport', JSON.stringify(slipData));
-  } catch (e) {}
+  } catch (_e) {}
   if (window.parent && typeof window.parent.switchToTab === 'function') {
     window.parent.switchToTab('remaining-money');
   } else {
@@ -695,7 +695,7 @@ function loadState() {
     }
 
     calculateSlip();
-  } catch (e) {}
+  } catch (_e) {}
 }
 
 function toggleCompare() {

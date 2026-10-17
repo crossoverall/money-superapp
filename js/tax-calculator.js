@@ -265,7 +265,7 @@ function toggleSeveranceCalc() {
   panel.style.display = isHidden ? 'block' : 'none';
   if (isHidden) {
     const yrs = parseFloat(document.getElementById('years').value);
-    if (!isNaN(yrs) && yrs > 0) {
+    if (!Number.isNaN(yrs) && yrs > 0) {
       syncBracketFromYears(yrs);
     }
     if (!document.getElementById('lastMonthlyWage').value) {
@@ -276,7 +276,7 @@ function toggleSeveranceCalc() {
         if (defaultWage) {
           document.getElementById('lastMonthlyWage').value = defaultWage;
         }
-      } catch (e) {}
+      } catch (_e) {}
     }
     updateSeveranceCalc();
   }
@@ -289,7 +289,7 @@ function saveState() {
   });
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch (e) {}
+  } catch (_e) {}
 }
 
 function calculate() {
@@ -428,7 +428,7 @@ function exportPayoutToRemaining() {
   };
   try {
     localStorage.setItem('moneySuperapp.pendingLumpSum', JSON.stringify(lump));
-  } catch (e) {}
+  } catch (_e) {}
   if (window.parent && typeof window.parent.switchToTab === 'function') {
     window.parent.switchToTab('remaining-money');
   } else {
@@ -443,7 +443,7 @@ function reset() {
   });
   try {
     localStorage.removeItem(STORAGE_KEY);
-  } catch (e) {}
+  } catch (_e) {}
   document.getElementById('results').classList.remove('show');
   const rmfOptEl = document.getElementById('rmf-optimizer-card');
   if (rmfOptEl) rmfOptEl.style.display = 'none';
@@ -466,7 +466,7 @@ function loadState() {
     if (parseFloat(document.getElementById('years').value) > 0) {
       calculate();
     }
-  } catch (e) {}
+  } catch (_e) {}
 }
 
 inputIds.forEach((id) => {
@@ -479,10 +479,18 @@ inputIds.forEach((id) => {
 
 document.getElementById('years').addEventListener('input', (e) => {
   const yrs = parseFloat(e.target.value);
-  if (!isNaN(yrs) && yrs > 0) {
+  if (!Number.isNaN(yrs) && yrs > 0) {
     syncBracketFromYears(yrs);
   }
 });
+
+// Expose functions called by HTML onclick handlers
+window.setTab = setTab;
+window.toggleSeveranceCalc = toggleSeveranceCalc;
+window.applySeveranceCalc = applySeveranceCalc;
+window.calculate = calculate;
+window.exportPayoutToRemaining = exportPayoutToRemaining;
+window.reset = reset;
 
 // Restore state if available
 loadState();

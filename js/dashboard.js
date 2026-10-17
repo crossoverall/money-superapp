@@ -343,7 +343,7 @@ function gatherFinancialProfile() {
         );
       }
     }
-  } catch (e) {}
+  } catch (_e) {}
 
   // 2. Remaining Money & Cash Flow
   let monthlyIncome = 0;
@@ -367,7 +367,7 @@ function gatherFinancialProfile() {
         }
       }
     }
-  } catch (e) {}
+  } catch (_e) {}
 
   // 3. Tax
   let estimatedTax = 0;
@@ -429,7 +429,7 @@ function gatherFinancialProfile() {
         else topMarginalRate = 35;
       }
     }
-  } catch (e) {}
+  } catch (_e) {}
 
   // 4. Debt
   let totalDebt = 0;
@@ -470,7 +470,7 @@ function gatherFinancialProfile() {
         }
       }
     }
-  } catch (e) {}
+  } catch (_e) {}
 
   // Computed totals
   const netWorth = portfolioVal + emergencyReserve - totalDebt;
@@ -926,7 +926,7 @@ function calculateInflationMetrics({ nominalAmount = 0, inflationRatePct = 2.5, 
   const rate = Math.max(0, Number(inflationRatePct) || 0) / 100;
   const t = Math.max(0, Number(years) || 0);
 
-  const growthFactor = Math.pow(1 + rate, t);
+  const growthFactor = (1 + rate) ** t;
   const deflatorMultiplier = growthFactor > 0 ? 1 / growthFactor : 1;
   const realValue = Math.round(nominal * deflatorMultiplier * 100) / 100;
   const purchasingPowerErosionPct = Math.round((1 - deflatorMultiplier) * 10000) / 100;
@@ -1025,7 +1025,7 @@ function getFinancialGoals() {
 function saveFinancialGoals(goals) {
   try {
     localStorage.setItem(GOALS_KEY, JSON.stringify(goals));
-  } catch (e) {}
+  } catch (_e) {}
 }
 
 /**
@@ -1704,7 +1704,7 @@ function saveGoalsFromModal() {
 function jumpToTab(tabId) {
   try {
     window.parent.postMessage({ action: 'switchToTab', target: tabId }, '*');
-  } catch (e) {}
+  } catch (_e) {}
 }
 
 // --- Historical Snapshots & SVG Charting (Task 1) ---
@@ -1716,7 +1716,7 @@ function getSnapshots() {
       const arr = JSON.parse(raw);
       if (Array.isArray(arr)) return arr;
     }
-  } catch (e) {}
+  } catch (_e) {}
 
   // If no snapshots, seed realistic past 3 months based on current profile
   const cur = gatherFinancialProfile();
@@ -1739,7 +1739,7 @@ function getSnapshots() {
   }
   try {
     localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(seed));
-  } catch (e) {}
+  } catch (_e) {}
   return seed;
 }
 
@@ -1748,7 +1748,7 @@ const ARCHIVE_KEY = 'moneySuperapp.archivedSnapshots.v1';
 function saveSnapshots(snapshots) {
   try {
     localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshots));
-  } catch (e) {}
+  } catch (_e) {}
   if (typeof MoneyApp !== 'undefined' && MoneyApp.idbStorage) {
     MoneyApp.idbStorage.set(SNAPSHOT_KEY, snapshots).catch(() => {});
   }

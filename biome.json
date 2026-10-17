@@ -27,6 +27,9 @@
       "style": {
         "useConst": "off",
         "useNodejsImportProtocol": "off"
+      },
+      "correctness": {
+        "noUnusedVariables": "off"
       }
     }
   }

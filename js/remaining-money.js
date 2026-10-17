@@ -515,10 +515,10 @@ function resolveNumericInput(raw, base) {
   if (m) {
     const sign = m[1] === '-' ? -1 : 1;
     const num = m[2] === '' ? 0 : parseFloat(m[2]);
-    return (base || 0) + sign * (isNaN(num) ? 0 : num);
+    return (base || 0) + sign * (Number.isNaN(num) ? 0 : num);
   }
   const n = parseFloat(trimmed);
-  return isNaN(n) ? 0 : n;
+  return Number.isNaN(n) ? 0 : n;
 }
 
 function fmtPlain(n) {
@@ -619,9 +619,9 @@ let pvdPercent = (() => {
     const saved = localStorage.getItem(PVD_PERCENT_KEY);
     if (saved !== null) {
       const n = parseFloat(saved);
-      if (!isNaN(n) && n >= 0 && n <= 100) return n;
+      if (!Number.isNaN(n) && n >= 0 && n <= 100) return n;
     }
-  } catch (e) {}
+  } catch (_e) {}
   return 5;
 })();
 
@@ -746,7 +746,7 @@ function restoreSnapshot(snap) {
     manualOverrides.sso = false;
     manualOverrides.pvd = false;
   }
-  if (snap.pvdPercent != null && !isNaN(snap.pvdPercent)) {
+  if (snap.pvdPercent != null && !Number.isNaN(snap.pvdPercent)) {
     pvdPercent = snap.pvdPercent;
   } else {
     pvdPercent = 5;
@@ -822,7 +822,7 @@ function checkPendingLumpSum() {
           : `✓ นำเข้า${getDisplayName(lump.name)}: ${fmtCurrency(lump.value)} เรียบร้อยแล้ว`,
       );
     }
-  } catch (e) {}
+  } catch (_e) {}
 }
 
 function checkPendingSlipImport() {
@@ -845,7 +845,7 @@ function checkPendingSlipImport() {
         pvdPercent = slip.pvd;
         try {
           localStorage.setItem(PVD_PERCENT_KEY, String(slip.pvd));
-        } catch (e) {}
+        } catch (_e) {}
         const pvdInput = document.getElementById('pvdPctInput');
         if (pvdInput) pvdInput.value = slip.pvd;
       }
@@ -865,7 +865,7 @@ function checkPendingSlipImport() {
           : `✓ ซิงค์เงินเดือน (${fmtCurrency(slip.salary)}) และ allowances จากสลิปเงินเดือนเรียบร้อยแล้ว`,
       );
     }
-  } catch (e) {}
+  } catch (_e) {}
 }
 
 if (resetBtn) {
@@ -962,11 +962,11 @@ function renderPvdRow() {
 
   pvdInput.addEventListener('input', () => {
     const val = parseFloat(pvdInput.value);
-    if (!isNaN(val) && val >= 0 && val <= 100) {
+    if (!Number.isNaN(val) && val >= 0 && val <= 100) {
       pvdPercent = val;
       try {
         localStorage.setItem(PVD_PERCENT_KEY, String(val));
-      } catch (e) {}
+      } catch (_e) {}
       manualOverrides.pvd = false;
       updateAutoExpenses(pvdPercent);
       compute();
@@ -975,7 +975,7 @@ function renderPvdRow() {
 
   pvdInput.addEventListener('blur', () => {
     let val = parseFloat(pvdInput.value);
-    if (isNaN(val) || val < 0) {
+    if (Number.isNaN(val) || val < 0) {
       val = 0;
     }
     if (val > 100) {
@@ -985,7 +985,7 @@ function renderPvdRow() {
     pvdInput.value = val;
     try {
       localStorage.setItem(PVD_PERCENT_KEY, String(val));
-    } catch (e) {}
+    } catch (_e) {}
     manualOverrides.pvd = false;
     updateAutoExpenses(pvdPercent);
     compute();
@@ -1052,7 +1052,7 @@ function bindRows(container, type) {
                 pvdPercent = newPct;
                 try {
                   localStorage.setItem(PVD_PERCENT_KEY, String(newPct));
-                } catch (e) {}
+                } catch (_e) {}
                 const pvdInpEl = document.getElementById('pvdPctInput');
                 if (pvdInpEl) pvdInpEl.value = newPct;
                 // If tax hasn't been manually overridden, update tax with the new PVD deduction
@@ -2414,7 +2414,7 @@ function sendToRebalance() {
   if (remaining > 0) {
     try {
       localStorage.setItem('moneySuperapp.pendingBudget', String(remaining));
-    } catch (e) {}
+    } catch (_e) {}
     if (window.parent && typeof window.parent.switchToTab === 'function') {
       window.parent.switchToTab('rebalance');
     } else {
@@ -2428,7 +2428,7 @@ function sendToRebalance() {
 function csvSafe(val) {
   let str = String(val == null ? '' : val);
   if (/^\s*[\t\r=+\-@]/.test(str)) {
-    if (isNaN(Number(str))) {
+    if (Number.isNaN(Number(str))) {
       str = "'" + str;
     }
   }
@@ -2555,7 +2555,7 @@ function fallbackCopyText(text, onSuccess) {
     document.execCommand('copy');
     document.body.removeChild(ta);
     if (typeof onSuccess === 'function') onSuccess();
-  } catch (e) {}
+  } catch (_e) {}
 }
 
 function copySummary() {
@@ -2789,13 +2789,13 @@ function cleanField(val) {
 }
 
 function cleanAmount(val) {
-  if (typeof val === 'number') return isNaN(val) ? 0 : Math.max(0, val);
+  if (typeof val === 'number') return Number.isNaN(val) ? 0 : Math.max(0, val);
   if (typeof val !== 'string') return 0;
   let s = val.trim();
   if (s.startsWith("'")) s = s.slice(1).trim();
   s = s.replace(/,/g, '').replace(/[^\d.-]/g, '');
   const num = parseFloat(s);
-  return isNaN(num) ? 0 : Math.max(0, num);
+  return Number.isNaN(num) ? 0 : Math.max(0, num);
 }
 
 function isSubtotalRow(cat, item) {
@@ -2881,18 +2881,18 @@ function parseImportJSON(text, fileName = 'data.json') {
     try {
       dataObj =
         typeof parsed.data[STORAGE_KEY] === 'string' ? JSON.parse(parsed.data[STORAGE_KEY]) : parsed.data[STORAGE_KEY];
-    } catch (e) {}
+    } catch (_e) {}
     if (parsed.data[PVD_PERCENT_KEY]) {
       const p = parseFloat(parsed.data[PVD_PERCENT_KEY]);
-      if (!isNaN(p) && p >= 0 && p <= 100) detectedPvd = p;
+      if (!Number.isNaN(p) && p >= 0 && p <= 100) detectedPvd = p;
     }
   } else if (parsed[STORAGE_KEY]) {
     try {
       dataObj = typeof parsed[STORAGE_KEY] === 'string' ? JSON.parse(parsed[STORAGE_KEY]) : parsed[STORAGE_KEY];
-    } catch (e) {}
+    } catch (_e) {}
     if (parsed[PVD_PERCENT_KEY]) {
       const p = parseFloat(parsed[PVD_PERCENT_KEY]);
-      if (!isNaN(p) && p >= 0 && p <= 100) detectedPvd = p;
+      if (!Number.isNaN(p) && p >= 0 && p <= 100) detectedPvd = p;
     }
   } else if (
     parsed.data &&
@@ -2914,14 +2914,14 @@ function parseImportJSON(text, fileName = 'data.json') {
   if (detectedPvd === null) {
     if (
       typeof dataObj.pvdPercent === 'number' &&
-      !isNaN(dataObj.pvdPercent) &&
+      !Number.isNaN(dataObj.pvdPercent) &&
       dataObj.pvdPercent >= 0 &&
       dataObj.pvdPercent <= 100
     ) {
       detectedPvd = dataObj.pvdPercent;
     } else if (
       typeof parsed.pvdPercent === 'number' &&
-      !isNaN(parsed.pvdPercent) &&
+      !Number.isNaN(parsed.pvdPercent) &&
       parsed.pvdPercent >= 0 &&
       parsed.pvdPercent <= 100
     ) {
@@ -3083,7 +3083,7 @@ function parseImportCSV(text, fileName = 'data.csv') {
         combinedText.match(/(\d+(?:\.\d+)?)\s*%/);
       if (pvdMatch) {
         const pct = parseFloat(pvdMatch[1]);
-        if (!isNaN(pct) && pct >= 0 && pct <= 100) {
+        if (!Number.isNaN(pct) && pct >= 0 && pct <= 100) {
           candidate.pvdPercent = pct;
         }
       }
@@ -3189,7 +3189,8 @@ function showImportPreview(candidate, fileName, format) {
   const incTotal = (candidate.incomes || []).reduce((s, it) => s + (Number(it.value) || 0), 0);
 
   const salary = ((candidate.incomes || []).find((it, idx) => isSalaryRow(it, idx)) || {}).value || 0;
-  const candPvdPct = candidate.pvdPercent != null && !isNaN(candidate.pvdPercent) ? candidate.pvdPercent : pvdPercent;
+  const candPvdPct =
+    candidate.pvdPercent != null && !Number.isNaN(candidate.pvdPercent) ? candidate.pvdPercent : pvdPercent;
 
   let expCount = 0;
   let expTotal = 0;
@@ -3277,11 +3278,11 @@ function confirmImport() {
       manualOverrides.pvd = false;
     }
 
-    if (candidate.pvdPercent != null && !isNaN(candidate.pvdPercent)) {
+    if (candidate.pvdPercent != null && !Number.isNaN(candidate.pvdPercent)) {
       pvdPercent = candidate.pvdPercent;
       try {
         localStorage.setItem(PVD_PERCENT_KEY, String(pvdPercent));
-      } catch (e) {}
+      } catch (_e) {}
     }
 
     state.showEmergencyRunway = !!candidate.showEmergencyRunway;
@@ -3366,11 +3367,11 @@ function confirmImport() {
       if (candidate.manualOverrides.pvd) manualOverrides.pvd = true;
     }
 
-    if (candidate.pvdPercent != null && !isNaN(candidate.pvdPercent)) {
+    if (candidate.pvdPercent != null && !Number.isNaN(candidate.pvdPercent)) {
       pvdPercent = candidate.pvdPercent;
       try {
         localStorage.setItem(PVD_PERCENT_KEY, String(pvdPercent));
-      } catch (e) {}
+      } catch (_e) {}
     }
 
     if (candidate.showEmergencyRunway) {

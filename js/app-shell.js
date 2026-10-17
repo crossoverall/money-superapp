@@ -297,7 +297,7 @@ function saveCustomClientId() {
     alert(getLang() === 'en' ? 'Client ID updated.' : 'บันทึก Client ID เรียบร้อย');
     googleTokenClient = null;
     updateGoogleUI();
-  } catch (e) {}
+  } catch (_e) {}
 }
 
 function initGoogleTokenClient(onSuccessCallback) {
@@ -329,7 +329,7 @@ function initGoogleTokenClient(onSuccessCallback) {
         try {
           sessionStorage.setItem('moneySuperapp.googleToken', googleAccessToken);
           sessionStorage.setItem('moneySuperapp.googleTokenExpiry', String(googleTokenExpiry));
-        } catch (e) {}
+        } catch (_e) {}
         await fetchGoogleUserInfo();
         updateGoogleUI();
         if (typeof onSuccessCallback === 'function') {
@@ -365,7 +365,7 @@ async function fetchGoogleUserInfo() {
         }),
       );
     }
-  } catch (e) {}
+  } catch (_e) {}
 }
 
 function handleGoogleSignIn(afterSignInCallback) {
@@ -381,7 +381,7 @@ function handleGoogleSignIn(afterSignInCallback) {
       if (typeof afterSignInCallback === 'function') afterSignInCallback();
       return;
     }
-  } catch (e) {}
+  } catch (_e) {}
   // Trigger standard Google OAuth popup
   googleTokenClient.requestAccessToken({ prompt: '' });
 }
@@ -390,7 +390,7 @@ function handleGoogleSignOut() {
   if (googleAccessToken && typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
     try {
       google.accounts.oauth2.revoke(googleAccessToken, () => {});
-    } catch (e) {}
+    } catch (_e) {}
   }
   googleAccessToken = null;
   googleTokenExpiry = 0;
@@ -398,7 +398,7 @@ function handleGoogleSignOut() {
     sessionStorage.removeItem('moneySuperapp.googleToken');
     sessionStorage.removeItem('moneySuperapp.googleTokenExpiry');
     localStorage.removeItem('moneySuperapp.googleUser');
-  } catch (e) {}
+  } catch (_e) {}
   updateGoogleUI();
   alert(getLang() === 'en' ? 'Signed out of Google.' : 'ออกจากระบบ Google แล้ว');
 }
@@ -464,7 +464,7 @@ function updateGoogleUI() {
       } else {
         lastSyncEl.textContent = t.gdriveNeverSynced || 'สำรองล่าสุด: ยังไม่เคยสำรอง';
       }
-    } catch (e) {}
+    } catch (_e) {}
   }
 }
 
@@ -480,7 +480,7 @@ async function ensureValidGoogleToken() {
       googleTokenExpiry = savedExp;
       return googleAccessToken;
     }
-  } catch (e) {}
+  } catch (_e) {}
 
   return new Promise((resolve) => {
     handleGoogleSignIn(() => {
@@ -891,7 +891,7 @@ function closeOnboardingModal() {
   if (modal) modal.style.display = 'none';
   try {
     localStorage.setItem('moneySuperapp.hasSeenOnboarding', 'true');
-  } catch (e) {}
+  } catch (_e) {}
 }
 window.openOnboardingModal = openOnboardingModal;
 window.closeOnboardingModal = closeOnboardingModal;
@@ -1144,7 +1144,7 @@ function activateTab(tabIdOrSrc, updateHash = true) {
 
   try {
     localStorage.setItem('moneySuperapp.activeTab', activeTab);
-  } catch (e) {}
+  } catch (_e) {}
   if (updateHash && window.location.hash !== '#' + activeTab) {
     history.replaceState(null, '', '#' + activeTab);
   }
@@ -1165,7 +1165,7 @@ function handleSwipeTab(direction) {
     document.querySelector('.bottom-nav button.active') || document.querySelector('.top-nav button.active');
   const currentTab = active
     ? active.dataset.tab
-    : (function () {
+    : (() => {
         try {
           return localStorage.getItem('moneySuperapp.activeTab') || 'dashboard';
         } catch (_e) {
@@ -1192,7 +1192,7 @@ function handleSwipeTab(direction) {
   }
 }
 
-window.switchToTab = function (target) {
+window.switchToTab = (target) => {
   activateTab(target, true);
 };
 
@@ -1678,7 +1678,7 @@ langButtons.forEach((btn) => {
     const lang = btn.dataset.lang;
     try {
       localStorage.setItem('moneySuperapp.lang', lang);
-    } catch (e) {}
+    } catch (_e) {}
     applyLang(lang);
     reloadFrame();
   });
@@ -1689,7 +1689,7 @@ themeButtons.forEach((btn) => {
     const theme = btn.dataset.themeBtn;
     try {
       localStorage.setItem('moneySuperapp.theme', theme);
-    } catch (e) {}
+    } catch (_e) {}
     applyTheme(theme);
     reloadFrame();
   });
@@ -1705,7 +1705,7 @@ applyTheme(getTheme());
 
 // Restore initial tab from URL hash or localStorage
 const initialHash = window.location.hash.replace(/^#/, '');
-const savedTab = (function () {
+const savedTab = (() => {
   try {
     return localStorage.getItem('moneySuperapp.activeTab');
   } catch (e) {
@@ -1719,7 +1719,7 @@ try {
   if (!localStorage.getItem('moneySuperapp.hasSeenOnboarding')) {
     setTimeout(openOnboardingModal, 350);
   }
-} catch (e) {}
+} catch (_e) {}
 
 // Register Service Worker for PWA and offline access
 if ('serviceWorker' in navigator) {

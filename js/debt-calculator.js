@@ -357,7 +357,7 @@ function undoDebtChange() {
 function saveState() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch (e) {}
+  } catch (_e) {}
 }
 
 function loadState() {
@@ -945,7 +945,7 @@ function calculateDebtConsolidation({
 
   let pmt = 0;
   if (monthlyR > 0) {
-    pmt = (totalBalance * monthlyR) / (1 - Math.pow(1 + monthlyR, -n));
+    pmt = (totalBalance * monthlyR) / (1 - (1 + monthlyR) ** -n);
   } else {
     pmt = totalBalance / n;
   }
@@ -1418,7 +1418,7 @@ function calculateStandardMonthlyPayment(principal, annualRatePct, termMonths) {
   if (principal <= 0 || termMonths <= 0) return 0;
   const r = (annualRatePct || 0) / 100 / 12;
   if (r <= 0) return principal / termMonths;
-  const factor = Math.pow(1 + r, termMonths);
+  const factor = (1 + r) ** termMonths;
   return (principal * r * factor) / (factor - 1);
 }
 

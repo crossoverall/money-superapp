@@ -60,6 +60,11 @@
     );
   }
 
+  function escapeAttr(str) {
+    if (str == null) return '';
+    return String(str).replace(/"/g, '&quot;');
+  }
+
   function initShortcutForwarding() {
     if (typeof window !== 'undefined' && window.addEventListener) {
       window.addEventListener('keydown', (e) => {
@@ -585,6 +590,7 @@
     formatMoney: formatMoney,
     parseNum: parseNum,
     escapeHtml: escapeHtml,
+    escapeAttr: escapeAttr,
     formatBytes: formatBytes,
     initTheme: initTheme,
     initShortcutForwarding: initShortcutForwarding,
@@ -609,6 +615,7 @@
     if (typeof global.formatMoney === 'undefined') global.formatMoney = formatMoney;
     if (typeof global.parseNum === 'undefined') global.parseNum = parseNum;
     if (typeof global.escapeHtml === 'undefined') global.escapeHtml = escapeHtml;
+    if (typeof global.escapeAttr === 'undefined') global.escapeAttr = escapeAttr;
     if (typeof global.safeJsonParse === 'undefined') global.safeJsonParse = safeJsonParse;
     if (typeof global.createUndoManager === 'undefined') global.createUndoManager = createUndoManager;
     if (typeof global.detectSwipeGesture === 'undefined') global.detectSwipeGesture = detectSwipeGesture;

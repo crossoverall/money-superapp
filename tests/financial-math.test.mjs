@@ -3161,7 +3161,7 @@ describe('Financial Math Verification', () => {
 
       let pmt = 0;
       if (monthlyR > 0) {
-        pmt = (totalBalance * monthlyR) / (1 - Math.pow(1 + monthlyR, -n));
+        pmt = (totalBalance * monthlyR) / (1 - (1 + monthlyR) ** -n);
       } else {
         pmt = totalBalance / n;
       }
@@ -4707,7 +4707,7 @@ describe('Financial Math Verification', () => {
       const rate = Math.max(0, Number(inflationRatePct) || 0) / 100;
       const t = Math.max(0, Number(years) || 0);
 
-      const growthFactor = Math.pow(1 + rate, t);
+      const growthFactor = (1 + rate) ** t;
       const deflatorMultiplier = growthFactor > 0 ? 1 / growthFactor : 1;
       const realValue = Math.round(nominal * deflatorMultiplier * 100) / 100;
       const purchasingPowerErosionPct = Math.round((1 - deflatorMultiplier) * 10000) / 100;
@@ -5318,7 +5318,7 @@ describe('Financial Math Verification', () => {
       if (principal <= 0 || termMonths <= 0) return 0;
       const r = (annualRatePct || 0) / 100 / 12;
       if (r <= 0) return principal / termMonths;
-      const factor = Math.pow(1 + r, termMonths);
+      const factor = (1 + r) ** termMonths;
       return (principal * r * factor) / (factor - 1);
     }
 

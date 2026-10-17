@@ -101,6 +101,20 @@ describe('MoneyApp Shared Core Module', () => {
     });
   });
 
+  describe('escapeAttr', () => {
+    const { MoneyApp } = createEnvironment();
+
+    it('escapes double quotes in HTML attributes', () => {
+      assert.equal(MoneyApp.escapeAttr('Hello "World"'), 'Hello &quot;World&quot;');
+    });
+
+    it('handles null and undefined gracefully', () => {
+      assert.equal(MoneyApp.escapeAttr(null), '');
+      assert.equal(MoneyApp.escapeAttr(undefined), '');
+      assert.equal(MoneyApp.escapeAttr(''), '');
+    });
+  });
+
   describe('safeJsonParse', () => {
     it('returns parsed object for valid JSON', () => {
       const mockStorage = {
