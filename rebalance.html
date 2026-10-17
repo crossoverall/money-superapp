@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="2.0.4">
+<meta name="version" content="2.0.5">
 <title>คำนวณการเติมเงินรายเดือน</title>
 <link rel="stylesheet" href="css/theme.css">
 <style>
@@ -399,6 +399,32 @@
 
       <!-- Max Drift Extremes Chips -->
       <div id="driftExtremesContainer" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; font-size:11px;"></div>
+
+      <!-- Currency Exposure & Allocation Intensity Heatmap (Roadmap Item 3.2) -->
+      <div id="portfolioHeatmapContainer" style="margin-top:12px; padding-top:10px; border-top:1px dashed var(--line);">
+        <!-- Currency Exposure Bar -->
+        <div style="margin-bottom:12px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; font-size:11px;">
+            <span style="font-weight:700; color:var(--ink);" id="lblCurrencyExposureTitle">การกระจายความเสี่ยงสกุลเงิน (Currency Exposure)</span>
+            <span id="txtPrimaryCurrencyShare" style="color:var(--ink-dim); font-size:10px; font-weight:600;">THB 100%</span>
+          </div>
+          <div id="barCurrencyExposure" style="display:flex; width:100%; height:8px; background:var(--panel-2); border-radius:4px; overflow:hidden;"></div>
+          <div id="currencyChipsContainer" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; font-size:10.5px;"></div>
+        </div>
+
+        <!-- Allocation Intensity Heatmap -->
+        <div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; font-size:11px; flex-wrap:wrap; gap:4px;">
+            <span style="font-weight:700; color:var(--ink);" id="lblHeatmapTitle">แผนที่ความหนาแน่นสัดส่วน (Allocation Intensity Heatmap)</span>
+            <div style="display:flex; align-items:center; gap:8px; font-size:10px; color:var(--ink-dim);">
+              <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:8px; height:8px; border-radius:2px; background:#3b82f6;"></span> <span id="lblLegendUnder">ตามหลังเป้า (ซื้อเพิ่ม)</span></span>
+              <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:8px; height:8px; border-radius:2px; background:#10b981;"></span> <span id="lblLegendAligned">สมดุล (±1%)</span></span>
+              <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:8px; height:8px; border-radius:2px; background:#f59e0b;"></span> <span id="lblLegendOver">เกินเป้า (ชะลอ)</span></span>
+            </div>
+          </div>
+          <div id="heatmapGridContainer" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(135px, 1fr)); gap:6px;"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -421,7 +447,7 @@
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v2.0.4</p>
+  <p class="version-tag">v2.0.5</p>
 
 <script src="js/shared.js"></script>
 <script src="js/rebalance.js"></script>

@@ -12,6 +12,11 @@ const EN = {
   lblDriftTitle: 'Portfolio Drift & Tracking Error',
   lblPreDrift: 'Pre-DCA Tracking Error',
   lblPostDrift: 'Post-DCA Tracking Error',
+  lblCurrencyExposureTitle: 'Currency Exposure Breakdown',
+  lblHeatmapTitle: 'Portfolio Allocation Intensity Heatmap',
+  lblLegendUnder: 'Underweight (Buy Target)',
+  lblLegendAligned: 'Balanced (±1%)',
+  lblLegendOver: 'Overweight (Trim/Hold)',
   howto:
     '<b>How it works</b> — The total budget is split by Core/Ballast/Satellite weights first. Within each group, the system tops up whichever asset lags its target weight the most. Anything already over target gets nothing this month (= 0), and its share goes to the laggards instead — nothing is ever sold.<br><br><b>Monthly routine</b> — Before buying each month, update every "Current value" with the real price, then check the new results.<br><br><b>Tip</b> — In "Current value" or the total budget, type <code>+10000</code> or <code>-5000</code> then press Enter/click away to add/subtract from the existing value without doing the math yourself.',
   lblRefreshPrices: 'Refresh Prices',
@@ -43,6 +48,11 @@ if (LANG === 'en') {
     'lblDriftTitle',
     'lblPreDrift',
     'lblPostDrift',
+    'lblCurrencyExposureTitle',
+    'lblHeatmapTitle',
+    'lblLegendUnder',
+    'lblLegendAligned',
+    'lblLegendOver',
     'lblRefreshPrices',
     'lblAutoRefresh',
     'lblSettingsBtn',
@@ -200,6 +210,99 @@ function getCurrencySymbol(currency) {
     .toUpperCase()
     .trim();
   return CURRENCY_SYMBOLS[curr] || curr;
+}
+
+const CURRENCY_COLORS = {
+  THB: '#10b981',
+  USD: '#3b82f6',
+  EUR: '#8b5cf6',
+  GBP: '#f59e0b',
+  JPY: '#f43f5e',
+  SGD: '#14b8a6',
+  OTHER: '#64748b',
+};
+
+function computeCurrencyExposure(assets, totalVal) {
+  if (!assets || !Array.isArray(assets) || assets.length === 0 || totalVal <= 0) {
+    return {
+      exposures: [],
+      dominantCurrency: 'THB',
+      dominantPct: 100,
+    };
+  }
+
+  const map = {};
+  for (const a of assets) {
+    const curr = String(a.currency || 'THB')
+      .toUpperCase()
+      .trim();
+    const val = Math.max(0, a.val ?? a.value ?? 0);
+    if (!map[curr]) {
+      map[curr] = {
+        currency: curr,
+        symbol: getCurrencySymbol(curr),
+        color: CURRENCY_COLORS[curr] || CURRENCY_COLORS.OTHER,
+        totalThb: 0,
+      };
+    }
+    map[curr].totalThb += val;
+  }
+
+  const exposures = Object.values(map)
+    .map((e) => ({
+      ...e,
+      sharePct: parseFloat(((e.totalThb / totalVal) * 100).toFixed(1)),
+    }))
+    .sort((a, b) => b.totalThb - a.totalThb);
+
+  const dominant = exposures[0] || { currency: 'THB', sharePct: 100 };
+
+  return {
+    exposures,
+    dominantCurrency: dominant.currency,
+    dominantPct: dominant.sharePct,
+  };
+}
+
+function computeAllocationHeatmapCells(analyzedAssets) {
+  if (!analyzedAssets || !Array.isArray(analyzedAssets)) return [];
+
+  return analyzedAssets.map((a) => {
+    const preDrift = typeof a.preDrift === 'number' ? a.preDrift : (a.currPct || 0) - (a.targetPct || 0);
+    const absDrift = Math.abs(preDrift);
+    const intensity = Math.min(1.0, parseFloat((absDrift / 5.0).toFixed(2)));
+
+    let tone = 'aligned';
+    let textColor = 'var(--ok)';
+    let bgColor = 'rgba(16, 185, 129, 0.12)';
+    let borderColor = 'rgba(16, 185, 129, 0.28)';
+
+    if (preDrift > 1.0) {
+      tone = 'overweight';
+      textColor = 'var(--warn)';
+      bgColor = `rgba(245, 158, 11, ${parseFloat((0.08 + intensity * 0.2).toFixed(2))})`;
+      borderColor = `rgba(245, 158, 11, ${parseFloat((0.25 + intensity * 0.45).toFixed(2))})`;
+    } else if (preDrift < -1.0) {
+      tone = 'underweight';
+      textColor = '#2563eb';
+      bgColor = `rgba(37, 99, 235, ${parseFloat((0.08 + intensity * 0.2).toFixed(2))})`;
+      borderColor = `rgba(37, 99, 235, ${parseFloat((0.25 + intensity * 0.45).toFixed(2))})`;
+    }
+
+    return {
+      name: a.name,
+      currency: a.currency || 'THB',
+      currPct: a.currPct,
+      targetPct: a.targetPct,
+      preDrift: parseFloat(preDrift.toFixed(1)),
+      absDrift: parseFloat(absDrift.toFixed(1)),
+      intensity,
+      tone,
+      textColor,
+      bgColor,
+      borderColor,
+    };
+  });
 }
 
 const defaultState = {
@@ -1155,10 +1258,12 @@ function calculatePortfolioDrift(buckets, totalBudget = 0, tradeOrders = {}) {
       totalVal += val;
 
       const buyAmt = Math.max(0, (tradeOrders && (tradeOrders[a.id || a.name] ?? tradeOrders[a.name])) || 0);
+      const currency = a.currency || (isThaiAssetSymbol(a.ticker) ? 'THB' : a.ticker ? 'USD' : 'THB');
 
       flatAssets.push({
         id: a.id || a.name,
         name: a.name,
+        currency,
         bucketId: b.id,
         val,
         buyAmt,
@@ -1187,6 +1292,7 @@ function calculatePortfolioDrift(buckets, totalBudget = 0, tradeOrders = {}) {
 
     return {
       name: a.name,
+      currency: a.currency,
       val: a.val,
       buyAmt: a.buyAmt,
       currPct: parseFloat(currPct.toFixed(1)),
@@ -1214,6 +1320,70 @@ function calculatePortfolioDrift(buckets, totalBudget = 0, tradeOrders = {}) {
     reductionPct: Math.max(0, reductionPct),
     assets: analyzedAssets,
   };
+}
+
+function renderCurrencyExposure(assets, totalVal) {
+  const barEl = document.getElementById('barCurrencyExposure');
+  const chipsEl = document.getElementById('currencyChipsContainer');
+  const shareEl = document.getElementById('txtPrimaryCurrencyShare');
+  if (!barEl || !chipsEl) return;
+
+  const res = computeCurrencyExposure(assets, totalVal);
+  if (res.exposures.length === 0) {
+    barEl.innerHTML = '';
+    chipsEl.innerHTML = '';
+    return;
+  }
+
+  if (shareEl) {
+    shareEl.textContent = `${res.dominantCurrency} ${res.dominantPct.toFixed(1)}%`;
+  }
+
+  let barHtml = '';
+  let chipsHtml = '';
+
+  for (const exp of res.exposures) {
+    barHtml += `<div style="width:${exp.sharePct}%; height:100%; background:${exp.color}; transition:width 0.3s ease;" title="${exp.currency} ${exp.sharePct}% (${fmt(exp.totalThb)} ฿)"></div>`;
+    chipsHtml += `
+      <span style="display:inline-flex; align-items:center; gap:4px; background:var(--panel-2); border:1px solid var(--line); border-radius:6px; padding:2px 7px;">
+        <span style="width:6px; height:6px; border-radius:50%; background:${exp.color};"></span>
+        <strong style="color:var(--ink);">${exp.symbol} ${exp.currency}</strong>
+        <span style="color:var(--ink-dim);">${exp.sharePct.toFixed(1)}%</span>
+        <span style="color:var(--ink-faint); font-size:9.5px;">(${fmt(exp.totalThb)} ฿)</span>
+      </span>
+    `;
+  }
+
+  barEl.innerHTML = barHtml;
+  chipsEl.innerHTML = chipsHtml;
+}
+
+function renderAllocationHeatmap(analyzedAssets) {
+  const gridEl = document.getElementById('heatmapGridContainer');
+  if (!gridEl) return;
+
+  const cells = computeAllocationHeatmapCells(analyzedAssets);
+  if (cells.length === 0) {
+    gridEl.innerHTML = '';
+    return;
+  }
+
+  let html = '';
+  for (const c of cells) {
+    const sign = c.preDrift > 0 ? '+' : '';
+    const arrow = c.tone === 'overweight' ? '🔼' : c.tone === 'underweight' ? '🔽' : '✓';
+    html += `
+      <div style="background:${c.bgColor}; border:1px solid ${c.borderColor}; border-radius:8px; padding:7px 8px; display:flex; flex-direction:column; justify-content:space-between; min-width:0; transition:border-color 0.2s ease;" title="${escapeAttr(c.name)}: ${LANG === 'en' ? 'Current' : 'ปัจจุบัน'} ${c.currPct.toFixed(1)}% | ${LANG === 'en' ? 'Target' : 'เป้า'} ${c.targetPct.toFixed(1)}%">
+        <div style="font-weight:700; font-size:11px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px;" title="${escapeAttr(c.name)}">${escapeAttr(c.name)}</div>
+        <div style="display:flex; align-items:baseline; justify-content:space-between; font-size:10px;">
+          <span style="color:var(--ink-dim);">${c.currPct.toFixed(1)}% <span style="color:var(--ink-faint);">/ ${c.targetPct.toFixed(1)}%</span></span>
+          <span style="font-weight:700; color:${c.textColor}; font-size:10.5px;">${arrow} ${sign}${c.preDrift.toFixed(1)}%</span>
+        </div>
+      </div>
+    `;
+  }
+
+  gridEl.innerHTML = html;
 }
 
 function updatePortfolioDriftUI(tradeOrders = {}) {
@@ -1315,6 +1485,9 @@ function updatePortfolioDriftUI(tradeOrders = {}) {
       extremesEl.innerHTML = `<span style="color:var(--ok); font-size:11px;">✓ ${LANG === 'en' ? 'All active assets are within target tolerance (±1.5%)' : 'สินทรัพย์ทั้งหมดอยู่ในกรอบเป้าหมาย (±1.5%)'}</span>`;
     }
   }
+
+  renderCurrencyExposure(driftData.assets, driftData.totalVal);
+  renderAllocationHeatmap(driftData.assets);
 }
 
 function compute() {

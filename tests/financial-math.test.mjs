@@ -1621,6 +1621,183 @@ describe('Financial Math Verification', () => {
     });
   });
 
+  describe('Portfolio Allocation Heatmap & Currency Exposure Matrix', () => {
+    const CURRENCY_SYMBOLS = {
+      THB: '฿',
+      USD: '$',
+      EUR: '€',
+      GBP: '£',
+      JPY: '¥',
+      SGD: 'S$',
+    };
+
+    const CURRENCY_COLORS = {
+      THB: '#10b981',
+      USD: '#3b82f6',
+      EUR: '#8b5cf6',
+      GBP: '#f59e0b',
+      JPY: '#f43f5e',
+      SGD: '#14b8a6',
+      OTHER: '#64748b',
+    };
+
+    function computeCurrencyExposure(assets, totalVal) {
+      if (!assets || !Array.isArray(assets) || assets.length === 0 || totalVal <= 0) {
+        return {
+          exposures: [],
+          dominantCurrency: 'THB',
+          dominantPct: 100,
+        };
+      }
+
+      const map = {};
+      for (const a of assets) {
+        const curr = String(a.currency || 'THB')
+          .toUpperCase()
+          .trim();
+        const val = Math.max(0, a.val ?? a.value ?? 0);
+        if (!map[curr]) {
+          map[curr] = {
+            currency: curr,
+            symbol: CURRENCY_SYMBOLS[curr] || curr,
+            color: CURRENCY_COLORS[curr] || CURRENCY_COLORS.OTHER,
+            totalThb: 0,
+          };
+        }
+        map[curr].totalThb += val;
+      }
+
+      const exposures = Object.values(map)
+        .map((e) => ({
+          ...e,
+          sharePct: parseFloat(((e.totalThb / totalVal) * 100).toFixed(1)),
+        }))
+        .sort((a, b) => b.totalThb - a.totalThb);
+
+      const dominant = exposures[0] || { currency: 'THB', sharePct: 100 };
+
+      return {
+        exposures,
+        dominantCurrency: dominant.currency,
+        dominantPct: dominant.sharePct,
+      };
+    }
+
+    function computeAllocationHeatmapCells(analyzedAssets) {
+      if (!analyzedAssets || !Array.isArray(analyzedAssets)) return [];
+
+      return analyzedAssets.map((a) => {
+        const preDrift = typeof a.preDrift === 'number' ? a.preDrift : (a.currPct || 0) - (a.targetPct || 0);
+        const absDrift = Math.abs(preDrift);
+        const intensity = Math.min(1.0, parseFloat((absDrift / 5.0).toFixed(2)));
+
+        let tone = 'aligned';
+        let textColor = 'var(--ok)';
+        let bgColor = 'rgba(16, 185, 129, 0.12)';
+        let borderColor = 'rgba(16, 185, 129, 0.28)';
+
+        if (preDrift > 1.0) {
+          tone = 'overweight';
+          textColor = 'var(--warn)';
+          bgColor = `rgba(245, 158, 11, ${parseFloat((0.08 + intensity * 0.2).toFixed(2))})`;
+          borderColor = `rgba(245, 158, 11, ${parseFloat((0.25 + intensity * 0.45).toFixed(2))})`;
+        } else if (preDrift < -1.0) {
+          tone = 'underweight';
+          textColor = '#2563eb';
+          bgColor = `rgba(37, 99, 235, ${parseFloat((0.08 + intensity * 0.2).toFixed(2))})`;
+          borderColor = `rgba(37, 99, 235, ${parseFloat((0.25 + intensity * 0.45).toFixed(2))})`;
+        }
+
+        return {
+          name: a.name,
+          currency: a.currency || 'THB',
+          currPct: a.currPct,
+          targetPct: a.targetPct,
+          preDrift: parseFloat(preDrift.toFixed(1)),
+          absDrift: parseFloat(absDrift.toFixed(1)),
+          intensity,
+          tone,
+          textColor,
+          bgColor,
+          borderColor,
+        };
+      });
+    }
+
+    it('correctly aggregates multi-currency assets into proportional exposure shares', () => {
+      const assets = [
+        { name: 'Thai Govt Bond', currency: 'THB', val: 50000 },
+        { name: 'S&P 500 ETF', currency: 'USD', val: 30000 },
+        { name: 'European Stoxx 50', currency: 'EUR', val: 15000 },
+        { name: 'Thai Cash Deposit', currency: 'THB', val: 5000 },
+      ];
+      const totalVal = 100000;
+
+      const res = computeCurrencyExposure(assets, totalVal);
+      assert.equal(res.dominantCurrency, 'THB');
+      assert.equal(res.dominantPct, 55.0);
+      assert.equal(res.exposures.length, 3);
+
+      assert.equal(res.exposures[0].currency, 'THB');
+      assert.equal(res.exposures[0].totalThb, 55000);
+      assert.equal(res.exposures[0].sharePct, 55.0);
+      assert.equal(res.exposures[0].symbol, '฿');
+      assert.equal(res.exposures[0].color, '#10b981');
+
+      assert.equal(res.exposures[1].currency, 'USD');
+      assert.equal(res.exposures[1].totalThb, 30000);
+      assert.equal(res.exposures[1].sharePct, 30.0);
+      assert.equal(res.exposures[1].symbol, '$');
+
+      assert.equal(res.exposures[2].currency, 'EUR');
+      assert.equal(res.exposures[2].totalThb, 15000);
+      assert.equal(res.exposures[2].sharePct, 15.0);
+      assert.equal(res.exposures[2].symbol, '€');
+    });
+
+    it('handles empty assets or zero portfolio value safely without division by zero', () => {
+      const resEmpty = computeCurrencyExposure([], 0);
+      assert.deepEqual(resEmpty.exposures, []);
+      assert.equal(resEmpty.dominantCurrency, 'THB');
+      assert.equal(resEmpty.dominantPct, 100);
+
+      const resNull = computeCurrencyExposure(null, 0);
+      assert.deepEqual(resNull.exposures, []);
+    });
+
+    it('maps allocation deviation intensity and color tones correctly across heatmap cells', () => {
+      const analyzed = [
+        { name: 'Overweight Asset', currPct: 45.0, targetPct: 40.0, preDrift: 5.0 },
+        { name: 'Underweight Asset', currPct: 25.0, targetPct: 30.0, preDrift: -5.0 },
+        { name: 'Aligned Asset', currPct: 30.0, targetPct: 30.0, preDrift: 0.0 },
+      ];
+
+      const cells = computeAllocationHeatmapCells(analyzed);
+      assert.equal(cells.length, 3);
+
+      // Overweight cell
+      assert.equal(cells[0].tone, 'overweight');
+      assert.equal(cells[0].intensity, 1.0); // 5.0 / 5.0 = 1.0
+      assert.equal(cells[0].preDrift, 5.0);
+      assert.ok(cells[0].bgColor.includes('245, 158, 11'));
+      assert.equal(cells[0].textColor, 'var(--warn)');
+
+      // Underweight cell
+      assert.equal(cells[1].tone, 'underweight');
+      assert.equal(cells[1].intensity, 1.0);
+      assert.equal(cells[1].preDrift, -5.0);
+      assert.ok(cells[1].bgColor.includes('37, 99, 235'));
+      assert.equal(cells[1].textColor, '#2563eb');
+
+      // Aligned cell
+      assert.equal(cells[2].tone, 'aligned');
+      assert.equal(cells[2].intensity, 0.0);
+      assert.equal(cells[2].preDrift, 0.0);
+      assert.ok(cells[2].bgColor.includes('16, 185, 129'));
+      assert.equal(cells[2].textColor, 'var(--ok)');
+    });
+  });
+
   describe('Shell Navigation, Haptics & Skeleton State Engine', () => {
     function triggerHaptic(nav, ms = 10) {
       try {

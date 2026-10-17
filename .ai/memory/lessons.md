@@ -366,3 +366,15 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
   2. Wrapped `navigator.vibrate(10)` with safe capability checks (`'vibrate' in navigator`) ensuring subtle haptic feedback on supported mobile devices while failing safely on desktop.
   3. Added an accessible skip-link (`.skip-link`) positioned off-screen that appears cleanly on keyboard `focus`.
 - **Rule:** When orchestrating multi-tool iframe shells, always overlay an animated skeleton during frame transitions and guard hardware APIs (like vibration) with feature detection.
+
+### 2026-10-17: Portfolio Allocation Heatmap & Multi-Currency Exposure Matrix
+
+- **Date & Context:** 2026-10-17, implementing Portfolio Allocation Intensity Heatmap & Currency Exposure Matrix in `rebalance.html` and `js/rebalance.js` (`v2.0.5`).
+- **Problem:**
+  1. Investors with multi-currency assets (e.g. THB cash/bonds, USD global equities, EUR/SGD international funds) could only see aggregate tracking error without insight into foreign exchange risk or home-currency bias.
+  2. Text-only drift extreme lists only highlighted the 2 most extreme assets, making it difficult to see overall portfolio balance and concentration clusters at a glance.
+- **Resolution:**
+  1. Built a multi-segmented stacked currency exposure bar and currency badge breakdown summing THB equivalent values per currency (THB, USD, EUR, GBP, JPY, SGD), highlighting the dominant currency share percentage.
+  2. Implemented an adaptive allocation intensity heatmap grid where each asset's tile reflects its deviation intensity (0% to 5%+ deviation scaled to color opacity) and directional status: emerald/ok for balanced (±1%), blue for underweight (priority DCA buy targets), and amber/warn for overweight (over-allocated / paused).
+  3. Sanitized all dynamic tooltips and asset names via `escapeAttr()` to maintain strict offline XSS safety.
+- **Rule:** When visualizing multi-asset rebalancing states, pair aggregate tracking error metrics with a full-portfolio intensity heatmap and FX currency exposure matrix to provide holistic risk visibility before executing DCA orders.
