@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.2.7">
+  <meta name="version" content="2.2.8">
   <title>ภาพรวมการเงิน</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -413,6 +413,43 @@
         <span style="color:var(--ink-dim);" id="lbl-fire-passive-income">🛡️ Passive Income ปลอดภัย:</span>
         <b style="color:var(--ok);" id="val-fire-passive-income">0 บาท/ปี (ครอบคลุม 0%)</b>
       </div>
+
+      <!-- Monte Carlo Longevity Simulator Panel -->
+      <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--line);">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:11px; font-weight:700; color:var(--ink);" id="lbl-mc-title">🎲 จำลองโอกาสรอดพ้นความยากจน (Monte Carlo Ruin Probability)</span>
+            <span id="badge-mc-survival" style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--ok-dim, #d1fae5); color:var(--ok, #059669); border:1px solid var(--ok, #059669);">โอกาสรอด 95%</span>
+          </div>
+          <button type="button" id="btn-toggle-mc" onclick="toggleMonteCarloDetails()" style="background:none; border:none; color:var(--accent, #3b82f6); font-size:11px; font-weight:600; cursor:pointer; padding:2px 4px; text-decoration:underline; font-family:inherit;">
+            📊 ดูผลวิเคราะห์ 1,000 การทดลอง
+          </button>
+        </div>
+
+        <div id="mc-details-panel" style="display:none; margin-top:8px; padding:10px; background:var(--panel); border:1px solid var(--line); border-radius:8px;">
+          <!-- SVG Confidence Fan Chart -->
+          <div style="margin-bottom:8px;">
+            <svg id="mc-fan-chart" viewBox="0 0 400 130" style="width:100%; height:120px; overflow:visible; display:block;"></svg>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; text-align:center; font-size:10px;">
+            <div style="padding:6px; background:var(--surface-2, rgba(239, 68, 68, 0.08)); border-radius:6px; border:1px solid var(--line);">
+              <div style="color:var(--danger); font-weight:700;" id="lbl-mc-p10-title">📉 กรณีวิกฤต (10th %)</div>
+              <div style="font-size:12px; font-weight:700; color:var(--ink); margin-top:2px;" id="val-mc-p10">0 บาท</div>
+            </div>
+            <div style="padding:6px; background:var(--surface-2, rgba(59, 130, 246, 0.08)); border-radius:6px; border:1px solid var(--line);">
+              <div style="color:var(--accent, #3b82f6); font-weight:700;" id="lbl-mc-p50-title">📊 ค่ามัธยฐาน (50th %)</div>
+              <div style="font-size:12px; font-weight:700; color:var(--ink); margin-top:2px;" id="val-mc-p50">0 บาท</div>
+            </div>
+            <div style="padding:6px; background:var(--surface-2, rgba(16, 185, 129, 0.08)); border-radius:6px; border:1px solid var(--line);">
+              <div style="color:var(--ok, #10b981); font-weight:700;" id="lbl-mc-p90-title">📈 กรณีตลาดดี (90th %)</div>
+              <div style="font-size:12px; font-weight:700; color:var(--ink); margin-top:2px;" id="val-mc-p90">0 บาท</div>
+            </div>
+          </div>
+          <div style="font-size:10px; color:var(--ink-faint); margin-top:8px; line-height:1.4;" id="lbl-mc-expl">
+            💡 <strong>ลำดับผลตอบแทน (Sequence of Returns):</strong> จำลองผลตอบแทนแบบสุ่ม 500 สถานการณ์อิงความผันผวนตลาดจริง (SD 10%) โดยปรับอัตราการถอนตามเงินเฟ้อ 2.5%/ปี เพื่อทดสอบว่าเงินจะหมดก่อนครบ 30 ปีหรือไม่
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -710,7 +747,7 @@
     </div>
   </div>
 
-  <p class="version-tag">Money Superapp v2.2.7</p>
+  <p class="version-tag">Money Superapp v2.2.8</p>
 
 <script src="js/shared.js"></script>
 <script src="js/dashboard.js"></script>

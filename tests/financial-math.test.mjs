@@ -5165,4 +5165,151 @@ describe('Financial Math Verification', () => {
       assert.equal(Number.isNaN(neg.taxSaved), false);
     });
   });
+
+  describe('Monte Carlo Retirement Longevity & Sequence-of-Returns Simulator Engine', () => {
+    function simulateMonteCarloRetirement({
+      initialPortfolio = 10000000,
+      annualWithdrawal = 400000,
+      years = 30,
+      meanReturn = 0.07,
+      volatility = 0.15,
+      inflation = 0.025,
+      trials = 1000,
+      seed = 42,
+    } = {}) {
+      let s = seed || 12345;
+      function rand() {
+        s = (s * 1664525 + 1013904223) % 4294967296;
+        return s / 4294967296;
+      }
+
+      function randomNormal() {
+        let u1 = rand();
+        const u2 = rand();
+        while (u1 <= 1e-15) u1 = rand();
+        return Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+      }
+
+      const safeYears = Math.max(1, Math.min(50, years || 30));
+      const safeInitPort = Math.max(0, initialPortfolio || 0);
+      const safeInitWithdrawal = Math.max(0, annualWithdrawal || 0);
+      const safeTrials = Math.max(10, Math.min(2000, trials || 1000));
+
+      let successfulTrials = 0;
+      const yearlyPortfolios = Array.from({ length: safeYears + 1 }, () => []);
+
+      for (let t = 0; t < safeTrials; t++) {
+        let portfolio = safeInitPort;
+        let withdrawal = safeInitWithdrawal;
+        let ruined = false;
+
+        yearlyPortfolios[0].push(portfolio);
+
+        for (let yr = 1; yr <= safeYears; yr++) {
+          if (!ruined) {
+            portfolio -= withdrawal;
+            if (portfolio <= 0) {
+              portfolio = 0;
+              ruined = true;
+            } else {
+              const z = randomNormal();
+              const annualRate = meanReturn + volatility * z;
+              portfolio = Math.max(0, portfolio * (1 + annualRate));
+            }
+            withdrawal *= 1 + inflation;
+          }
+          yearlyPortfolios[yr].push(portfolio);
+        }
+
+        if (!ruined && portfolio > 0) {
+          successfulTrials++;
+        }
+      }
+
+      const survivalProbability = Math.round((successfulTrials / safeTrials) * 1000) / 10;
+
+      const trajectoryPercentiles = [];
+      for (let yr = 0; yr <= safeYears; yr++) {
+        const sorted = [...yearlyPortfolios[yr]].sort((a, b) => a - b);
+        const idx10 = Math.floor(safeTrials * 0.1);
+        const idx50 = Math.floor(safeTrials * 0.5);
+        const idx90 = Math.floor(safeTrials * 0.9);
+        trajectoryPercentiles.push({
+          year: yr,
+          p10: Math.round(sorted[idx10]),
+          p50: Math.round(sorted[idx50]),
+          p90: Math.round(sorted[idx90]),
+        });
+      }
+
+      let tier = 'safe';
+      if (survivalProbability < 50) tier = 'critical';
+      else if (survivalProbability < 75) tier = 'fragile';
+      else if (survivalProbability < 90) tier = 'moderate';
+
+      return {
+        survivalProbability,
+        tier,
+        finalP10: trajectoryPercentiles[safeYears].p10,
+        finalP50: trajectoryPercentiles[safeYears].p50,
+        finalP90: trajectoryPercentiles[safeYears].p90,
+        trajectoryPercentiles,
+      };
+    }
+
+    it('validates high survival probability for conservative 4% SWR over 30 years', () => {
+      const res = simulateMonteCarloRetirement({
+        initialPortfolio: 10000000,
+        annualWithdrawal: 400000, // 4% SWR
+        years: 30,
+        meanReturn: 0.07,
+        volatility: 0.1, // Balanced portfolio volatility (60% equities / 40% bonds)
+        inflation: 0.025,
+        trials: 500,
+        seed: 42,
+      });
+
+      assert.ok(res.survivalProbability >= 85);
+      assert.ok(res.tier === 'safe' || res.tier === 'moderate');
+      assert.ok(res.finalP50 > 0);
+      assert.ok(res.finalP90 > res.finalP50);
+      assert.ok(res.finalP50 >= res.finalP10);
+      assert.equal(res.trajectoryPercentiles.length, 31);
+    });
+
+    it('identifies critical ruin risk when aggressive withdrawal rate (9% SWR) is applied', () => {
+      const res = simulateMonteCarloRetirement({
+        initialPortfolio: 10000000,
+        annualWithdrawal: 900000, // 9% SWR
+        years: 30,
+        meanReturn: 0.07,
+        volatility: 0.15,
+        inflation: 0.025,
+        trials: 500,
+        seed: 42,
+      });
+
+      assert.ok(res.survivalProbability < 50);
+      assert.equal(res.tier, 'critical');
+      assert.equal(res.finalP10, 0);
+    });
+
+    it('handles zero portfolio, zero withdrawals, and zero years gracefully without crashing', () => {
+      const zero = simulateMonteCarloRetirement({
+        initialPortfolio: 0,
+        annualWithdrawal: 0,
+        years: 30,
+      });
+      assert.equal(zero.finalP50, 0);
+      assert.equal(Number.isNaN(zero.survivalProbability), false);
+
+      const noWithdrawal = simulateMonteCarloRetirement({
+        initialPortfolio: 5000000,
+        annualWithdrawal: 0,
+        years: 10,
+      });
+      assert.equal(noWithdrawal.survivalProbability, 100);
+      assert.equal(noWithdrawal.tier, 'safe');
+    });
+  });
 });

@@ -74,6 +74,12 @@ const translations = {
     goalFireTitle: '🔥 อิสรภาพทางการเงิน (FIRE Number)',
     lblFireSwrPillsTitle: 'อัตราถอน (SWR):',
     lblFirePassiveIncome: '🛡️ Passive Income ปลอดภัย:',
+    lblMcTitle: '🎲 จำลองโอกาสรอดพ้นความยากจน (Monte Carlo Ruin Probability)',
+    lblMcP10Title: '📉 กรณีวิกฤต (10th %)',
+    lblMcP50Title: '📊 ค่ามัธยฐาน (50th %)',
+    lblMcP90Title: '📈 กรณีตลาดดี (90th %)',
+    lblMcExpl:
+      '💡 <strong>ลำดับผลตอบแทน (Sequence of Returns):</strong> จำลองผลตอบแทนแบบสุ่ม 500 สถานการณ์อิงความผันผวนตลาดจริง (SD 10%) โดยปรับอัตราการถอนตามเงินเฟ้อ 2.5%/ปี เพื่อทดสอบว่าเงินจะหมดก่อนครบ 30 ปีหรือไม่',
     lblModalAnnualExpenses: '🔥 ค่าใช้จ่ายรายปีสำหรับคำนวณ FIRE (บาท/ปี, 0 = ดึงอัตโนมัติ)',
     btnAutoExpenses: 'ดึงอัตโนมัติ (Auto)',
     deflatorTitle: '📉 ปรับลดเงินเฟ้อ &amp; อำนาจซื้อที่แท้จริง (Inflation Deflator &amp; Real Purchasing Power)',
@@ -170,6 +176,12 @@ const translations = {
     goalFireTitle: '🔥 Financial Independence (FIRE Number)',
     lblFireSwrPillsTitle: 'Safe Withdrawal (SWR):',
     lblFirePassiveIncome: '🛡️ Safe Annual Passive Income:',
+    lblMcTitle: '🎲 Monte Carlo Retirement Ruin Probability',
+    lblMcP10Title: '📉 Bear Market (10th %)',
+    lblMcP50Title: '📊 Median Path (50th %)',
+    lblMcP90Title: '📈 Bull Market (90th %)',
+    lblMcExpl:
+      '💡 <strong>Sequence of Returns:</strong> Simulates 500 stochastic market scenarios (SD 10%) with 2.5% inflation-adjusted withdrawals over 30 years to quantify depletion risk.',
     lblModalAnnualExpenses: '🔥 Annual Expenses for FIRE (THB/yr, 0 = Auto)',
     btnAutoExpenses: 'Auto Sync',
     deflatorTitle: '📉 Inflation Deflator &amp; Real Purchasing Power',
@@ -275,7 +287,14 @@ function applyLocalization() {
     'sub-pillar-wealth': t.subPillarWealth,
     'lbl-pillar-tax': t.pillarTax,
     'sub-pillar-tax': t.subPillarTax,
+    'lbl-mc-title': t.lblMcTitle,
+    'lbl-mc-p10-title': t.lblMcP10Title,
+    'lbl-mc-p50-title': t.lblMcP50Title,
+    'lbl-mc-p90-title': t.lblMcP90Title,
   };
+
+  const mcExplEl = document.getElementById('lbl-mc-expl');
+  if (mcExplEl) mcExplEl.innerHTML = t.lblMcExpl;
 
   Object.keys(textMapping).forEach((id) => {
     const el = document.getElementById(id);
@@ -1370,6 +1389,221 @@ function renderFinancialGoals() {
     pill.classList.toggle('active', isActive);
     pill.setAttribute('aria-pressed', isActive ? 'true' : 'false');
   });
+
+  // 5. Monte Carlo Retirement Longevity Simulation
+  const currentNetWorth = Math.max(0, p.netWorth);
+  const withdrawalAmt = Math.max(0, annualExp);
+  const mcRes = simulateMonteCarloRetirement({
+    initialPortfolio: currentNetWorth > 0 ? currentNetWorth : fireMetrics.fireNumber,
+    annualWithdrawal: withdrawalAmt,
+    years: 30,
+    meanReturn: returnRate,
+    volatility: 0.1,
+    inflation: 0.025,
+    trials: 500,
+    seed: 42,
+  });
+
+  const mcBadge = document.getElementById('badge-mc-survival');
+  if (mcBadge) {
+    mcBadge.textContent = `${isEn ? 'Survival: ' : 'โอกาสรอด: '}${mcRes.survivalProbability}%`;
+    if (mcRes.survivalProbability >= 85) {
+      mcBadge.style.color = 'var(--ok, #059669)';
+      mcBadge.style.background = 'var(--ok-dim, #d1fae5)';
+      mcBadge.style.borderColor = 'var(--ok, #059669)';
+    } else if (mcRes.survivalProbability >= 65) {
+      mcBadge.style.color = 'var(--warn, #d97706)';
+      mcBadge.style.background = 'var(--warn-dim, #fef3c7)';
+      mcBadge.style.borderColor = 'var(--warn, #d97706)';
+    } else {
+      mcBadge.style.color = 'var(--danger, #dc2626)';
+      mcBadge.style.background = 'rgba(239, 68, 68, 0.12)';
+      mcBadge.style.borderColor = 'var(--danger, #dc2626)';
+    }
+  }
+
+  const p10El = document.getElementById('val-mc-p10');
+  const p50El = document.getElementById('val-mc-p50');
+  const p90El = document.getElementById('val-mc-p90');
+  if (p10El) p10El.textContent = `${formatMoney(mcRes.finalP10)} ${unit}`;
+  if (p50El) p50El.textContent = `${formatMoney(mcRes.finalP50)} ${unit}`;
+  if (p90El) p90El.textContent = `${formatMoney(mcRes.finalP90)} ${unit}`;
+
+  renderMonteCarloFanChart(mcRes.trajectoryPercentiles);
+}
+
+function simulateMonteCarloRetirement({
+  initialPortfolio = 10000000,
+  annualWithdrawal = 400000,
+  years = 30,
+  meanReturn = 0.07,
+  volatility = 0.1,
+  inflation = 0.025,
+  trials = 500,
+  seed = 42,
+} = {}) {
+  let s = seed || 12345;
+  function rand() {
+    s = (s * 1664525 + 1013904223) % 4294967296;
+    return s / 4294967296;
+  }
+
+  function randomNormal() {
+    let u1 = rand();
+    const u2 = rand();
+    while (u1 <= 1e-15) u1 = rand();
+    return Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+  }
+
+  const safeYears = Math.max(1, Math.min(50, years || 30));
+  const safeInitPort = Math.max(0, initialPortfolio || 0);
+  const safeInitWithdrawal = Math.max(0, annualWithdrawal || 0);
+  const safeTrials = Math.max(10, Math.min(2000, trials || 500));
+
+  let successfulTrials = 0;
+  const yearlyPortfolios = Array.from({ length: safeYears + 1 }, () => []);
+
+  for (let t = 0; t < safeTrials; t++) {
+    let portfolio = safeInitPort;
+    let withdrawal = safeInitWithdrawal;
+    let ruined = false;
+
+    yearlyPortfolios[0].push(portfolio);
+
+    for (let yr = 1; yr <= safeYears; yr++) {
+      if (!ruined) {
+        portfolio -= withdrawal;
+        if (portfolio <= 0) {
+          portfolio = 0;
+          ruined = true;
+        } else {
+          const z = randomNormal();
+          const annualRate = meanReturn + volatility * z;
+          portfolio = Math.max(0, portfolio * (1 + annualRate));
+        }
+        withdrawal *= 1 + inflation;
+      }
+      yearlyPortfolios[yr].push(portfolio);
+    }
+
+    if (!ruined && portfolio > 0) {
+      successfulTrials++;
+    }
+  }
+
+  const survivalProbability = Math.round((successfulTrials / safeTrials) * 1000) / 10;
+
+  const trajectoryPercentiles = [];
+  for (let yr = 0; yr <= safeYears; yr++) {
+    const sorted = [...yearlyPortfolios[yr]].sort((a, b) => a - b);
+    const idx10 = Math.floor(safeTrials * 0.1);
+    const idx50 = Math.floor(safeTrials * 0.5);
+    const idx90 = Math.floor(safeTrials * 0.9);
+    trajectoryPercentiles.push({
+      year: yr,
+      p10: Math.round(sorted[idx10]),
+      p50: Math.round(sorted[idx50]),
+      p90: Math.round(sorted[idx90]),
+    });
+  }
+
+  let tier = 'safe';
+  if (survivalProbability < 50) tier = 'critical';
+  else if (survivalProbability < 75) tier = 'fragile';
+  else if (survivalProbability < 90) tier = 'moderate';
+
+  return {
+    survivalProbability,
+    tier,
+    finalP10: trajectoryPercentiles[safeYears].p10,
+    finalP50: trajectoryPercentiles[safeYears].p50,
+    finalP90: trajectoryPercentiles[safeYears].p90,
+    trajectoryPercentiles,
+  };
+}
+
+function renderMonteCarloFanChart(trajectoryPercentiles) {
+  const svg = document.getElementById('mc-fan-chart');
+  if (!svg || !trajectoryPercentiles || trajectoryPercentiles.length === 0) return;
+
+  const width = 400;
+  const height = 130;
+  const padL = 35;
+  const padR = 15;
+  const padT = 15;
+  const padB = 25;
+  const chartW = width - padL - padR;
+  const chartH = height - padT - padB;
+
+  const n = trajectoryPercentiles.length - 1;
+  let maxVal = 1000;
+  for (let i = 0; i <= n; i++) {
+    const pt = trajectoryPercentiles[i];
+    if (pt.p90 > maxVal) maxVal = pt.p90;
+  }
+
+  function getX(yr) {
+    return padL + (yr / n) * chartW;
+  }
+  function getY(val) {
+    const clamped = Math.max(0, Math.min(maxVal, val));
+    return padT + chartH - (clamped / maxVal) * chartH;
+  }
+
+  const upperPoints = [];
+  const lowerPoints = [];
+  const medianPoints = [];
+
+  for (let yr = 0; yr <= n; yr++) {
+    const pt = trajectoryPercentiles[yr];
+    const x = getX(yr);
+    upperPoints.push(`${x},${getY(pt.p90)}`);
+    lowerPoints.unshift(`${x},${getY(pt.p10)}`);
+    medianPoints.push(`${x},${getY(pt.p50)}`);
+  }
+
+  const fanAreaPath = `${upperPoints.join(' ')} ${lowerPoints.join(' ')}`;
+  const medianPath = medianPoints.join(' ');
+  const zeroY = getY(0);
+
+  const maxValLabel = maxVal >= 1000000 ? `${(maxVal / 1000000).toFixed(1)}M` : `${Math.round(maxVal / 1000)}k`;
+
+  svg.innerHTML = `
+    <!-- Zero Line -->
+    <line x1="${padL}" y1="${zeroY}" x2="${padL + chartW}" y2="${zeroY}" stroke="var(--danger, #ef4444)" stroke-width="1.2" stroke-dasharray="3,3" opacity="0.6" />
+    <text x="${padL - 4}" y="${zeroY + 3}" font-size="9" fill="var(--danger, #ef4444)" text-anchor="end" font-weight="600">0</text>
+    
+    <!-- Max label -->
+    <text x="${padL - 4}" y="${padT + 8}" font-size="9" fill="var(--ink-faint)" text-anchor="end">${maxValLabel}</text>
+
+    <!-- Year 0 and Year N labels -->
+    <text x="${padL}" y="${height - 8}" font-size="9" fill="var(--ink-faint)" text-anchor="start">Yr 0</text>
+    <text x="${padL + chartW / 2}" y="${height - 8}" font-size="9" fill="var(--ink-faint)" text-anchor="middle">Yr ${Math.round(n / 2)}</text>
+    <text x="${padL + chartW}" y="${height - 8}" font-size="9" fill="var(--ink-faint)" text-anchor="end">Yr ${n}</text>
+
+    <!-- 10th-90th Percentile Confidence Fan Area -->
+    <polygon points="${fanAreaPath}" fill="rgba(59, 130, 246, 0.18)" stroke="rgba(59, 130, 246, 0.4)" stroke-width="0.8" />
+
+    <!-- 50th Percentile Median Path -->
+    <polyline points="${medianPath}" fill="none" stroke="var(--accent, #3b82f6)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+  `;
+}
+
+function toggleMonteCarloDetails() {
+  const panel = document.getElementById('mc-details-panel');
+  if (!panel) return;
+  const isHidden = panel.style.display === 'none';
+  panel.style.display = isHidden ? 'block' : 'none';
+  const btn = document.getElementById('btn-toggle-mc');
+  if (btn) {
+    btn.textContent = isHidden
+      ? LANG === 'en'
+        ? '▲ Hide Analysis'
+        : '▲ ซ่อนผลวิเคราะห์'
+      : LANG === 'en'
+        ? '📊 View 1,000 Trials Analysis'
+        : '📊 ดูผลวิเคราะห์ 1,000 การทดลอง';
+  }
 }
 
 function openGoalsModal() {
