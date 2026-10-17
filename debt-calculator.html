@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.2.9">
+  <meta name="version" content="2.3.0">
   <title>วางแผนปลดหนี้ (Debt Payoff)</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -396,6 +396,79 @@
     </div>
   </div>
 
+  <!-- Mortgage & Loan Prepayment Engine (Roadmap Phase 47) -->
+  <div class="panel" id="panelLoanPrepayment">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <div class="panel-title" style="margin-bottom:0;" id="lbl-prepay-title">🏡 จำลองโปะหนี้บ้าน &amp; สินเชื่อ (Mortgage &amp; Loan Prepayment)</div>
+      <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; font-weight:600; color:var(--ink);">
+        <input type="checkbox" id="chkEnablePrepay" onchange="onTogglePrepay(this.checked)" style="cursor:pointer;">
+        <span id="lbl-enable-prepay">เปิดใช้งาน</span>
+      </label>
+    </div>
+    
+    <div id="prepayInputsContainer" style="display:none; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:12px; margin-top:8px;">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:10px;">
+        <div>
+          <label for="txtPrepayPrincipal" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-prepay-principal">ยอดเงินกู้คงเหลือ (บาท)</label>
+          <input type="number" id="txtPrepayPrincipal" value="3000000" min="0" step="50000" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onPrepayChange()">
+        </div>
+        <div>
+          <label for="txtPrepayRate" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-prepay-rate">อัตราดอกเบี้ย (% ต่อปี)</label>
+          <input type="number" id="txtPrepayRate" value="5.0" min="0" max="36" step="0.1" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onPrepayChange()">
+        </div>
+        <div>
+          <label for="txtPrepayTerm" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-prepay-term">ระยะเวลาผ่อนที่เหลือ (เดือน)</label>
+          <input type="number" id="txtPrepayTerm" value="360" min="1" max="480" step="12" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onPrepayChange()">
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+        <div>
+          <label for="txtPrepayExtraMonthly" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-prepay-extra">โปะเพิ่มต่อเดือน (บาท)</label>
+          <input type="number" id="txtPrepayExtraMonthly" value="5000" min="0" step="1000" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onPrepayChange()">
+        </div>
+        <div>
+          <label for="txtPrepayLumpSum" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-prepay-lump">โปะเงินก้อนพิเศษ (บาท)</label>
+          <input type="number" id="txtPrepayLumpSum" value="0" min="0" step="10000" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onPrepayChange()">
+        </div>
+      </div>
+
+      <!-- Strategy Radio Selector -->
+      <div style="margin-top:10px; padding:8px 10px; background:var(--panel); border:1px solid var(--line); border-radius:8px;">
+        <div style="font-size:11px; font-weight:700; color:var(--ink); margin-bottom:6px;" id="lbl-prepay-strategy-title">🎯 เลือกกลยุทธ์การโปะ (Prepayment Strategy):</div>
+        <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:11.5px;">
+          <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; color:var(--ink);">
+            <input type="radio" name="prepayStrategy" id="stratReduceTerm" value="reduce_term" checked onchange="onPrepayChange()">
+            <span id="lbl-strat-reduce-term">ย่นระยะเวลาผ่อน (Reduce Term — ประหยัดดอกเบี้ยสูงสุด)</span>
+          </label>
+          <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; color:var(--ink);">
+            <input type="radio" name="prepayStrategy" id="stratReducePmt" value="reduce_payment" onchange="onPrepayChange()">
+            <span id="lbl-strat-reduce-pmt">ลดค่างวดรายเดือน (Reduce Payment — ผ่อนเบาลง)</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Comparison Metrics Cards -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; margin-top:12px;">
+        <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
+          <div style="font-size:10px; color:var(--ink-faint);" id="lbl-res-prepay-horizon">ระยะเวลาผ่อนใหม่</div>
+          <div style="font-size:13px; font-weight:700; color:var(--ink); margin-top:2px;" id="valPrepayHorizon">-</div>
+        </div>
+        <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
+          <div style="font-size:10px; color:var(--ink-faint);" id="lbl-res-prepay-saved">ประหยัดดอกเบี้ย</div>
+          <div style="font-size:13px; font-weight:700; color:var(--ok); margin-top:2px;" id="valPrepayInterestSaved">-</div>
+        </div>
+        <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
+          <div style="font-size:10px; color:var(--ink-faint);" id="lbl-res-prepay-pmt">ค่างวดต่อเดือน</div>
+          <div style="font-size:13px; font-weight:700; color:var(--core); margin-top:2px;" id="valPrepayPayment">-</div>
+        </div>
+      </div>
+
+      <!-- Thai Mortgage Tax Deduction Callout (Section 47(1)(h)) -->
+      <div id="mortgageTaxDeductionBadge" style="margin-top:10px; padding:10px 12px; border-radius:8px; font-size:11px; background:rgba(59, 130, 246, 0.1); border:1px solid var(--core); color:var(--ink); line-height:1.45;"></div>
+    </div>
+  </div>
+
   <div class="panel" id="debtChartPanel">
     <div class="panel-title" id="lbl-chart-title">กราฟการลดลงของหนี้สิน (Payoff Trajectory)</div>
     <div id="debtStrategyDeltaBadge" style="display:none; margin-bottom:12px; padding:8px 12px; border-radius:10px; font-size:12px; line-height:1.4; background:var(--panel-2); border:1px solid var(--line); color:var(--ink);"></div>
@@ -465,7 +538,7 @@
     <span id="saveStatus">&nbsp;</span>
     <button class="reset-btn" id="btn-reset-debts" onclick="resetDefaults()">รีเซ็ตค่าเริ่มต้น</button>
   </div>
-  <p class="version-tag">v2.2.9</p>
+  <p class="version-tag">v2.3.0</p>
 
 <script src="js/shared.js"></script>
 <script src="js/debt-calculator.js"></script>

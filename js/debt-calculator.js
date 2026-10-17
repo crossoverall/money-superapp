@@ -64,6 +64,19 @@ const translations = {
     refinanceSavedLabel: 'ประหยัดดอกเบี้ย',
     refinanceReliefLabel: 'ภาระผ่อน/เดือน',
     milestoneRoadTitle: '🛣️ แผนที่สู่เสรีภาพทางการเงิน (Payoff Milestone Road)',
+    prepayTitle: '🏡 จำลองโปะหนี้บ้าน & สินเชื่อ (Mortgage & Loan Prepayment)',
+    enablePrepay: 'เปิดใช้งาน',
+    prepayPrincipal: 'ยอดเงินกู้คงเหลือ (บาท)',
+    prepayRate: 'อัตราดอกเบี้ย (% ต่อปี)',
+    prepayTerm: 'ระยะเวลาผ่อนที่เหลือ (เดือน)',
+    prepayExtra: 'โปะเพิ่มต่อเดือน (บาท)',
+    prepayLump: 'โปะเงินก้อนพิเศษ (บาท)',
+    prepayStrategyTitle: '🎯 เลือกกลยุทธ์การโปะ (Prepayment Strategy):',
+    stratReduceTerm: 'ย่นระยะเวลาผ่อน (Reduce Term — ประหยัดดอกเบี้ยสูงสุด)',
+    stratReducePmt: 'ลดค่างวดรายเดือน (Reduce Payment — ผ่อนเบาลง)',
+    resPrepayHorizon: 'ระยะเวลาผ่อนใหม่',
+    resPrepaySaved: 'ประหยัดดอกเบี้ย',
+    resPrepayPmt: 'ค่างวดต่อเดือน',
   },
   en: {
     title: 'Debt Payoff Calculator',
@@ -132,6 +145,19 @@ const translations = {
     refinanceSavedLabel: 'Interest Saved',
     refinanceReliefLabel: 'Monthly Cash Flow',
     milestoneRoadTitle: '🛣️ Payoff Milestone Road & Financial Freedom',
+    prepayTitle: '🏡 Mortgage & Loan Prepayment Engine',
+    enablePrepay: 'Enable',
+    prepayPrincipal: 'Remaining Principal (THB)',
+    prepayRate: 'Interest Rate (% APR)',
+    prepayTerm: 'Remaining Term (Months)',
+    prepayExtra: 'Extra Monthly Payment (THB)',
+    prepayLump: 'One-Time Lump Sum (THB)',
+    prepayStrategyTitle: '🎯 Choose Prepayment Strategy:',
+    stratReduceTerm: 'Reduce Loan Term (Maximum Interest Saved)',
+    stratReducePmt: 'Reduce Monthly Payment (Cash Flow Relief)',
+    resPrepayHorizon: 'New Payoff Horizon',
+    resPrepaySaved: 'Interest Saved',
+    resPrepayPmt: 'New Monthly Payment',
   },
 };
 
@@ -204,6 +230,19 @@ if (LANG === 'en') {
     'btn-refi-36': '36 Mo (3 Yrs)',
     'btn-refi-48': '48 Mo (4 Yrs)',
     'btn-refi-60': '60 Mo (5 Yrs)',
+    'lbl-prepay-title': t.prepayTitle,
+    'lbl-enable-prepay': t.enablePrepay,
+    'lbl-prepay-principal': t.prepayPrincipal,
+    'lbl-prepay-rate': t.prepayRate,
+    'lbl-prepay-term': t.prepayTerm,
+    'lbl-prepay-extra': t.prepayExtra,
+    'lbl-prepay-lump': t.prepayLump,
+    'lbl-prepay-strategy-title': t.prepayStrategyTitle,
+    'lbl-strat-reduce-term': t.stratReduceTerm,
+    'lbl-strat-reduce-pmt': t.stratReducePmt,
+    'lbl-res-prepay-horizon': t.resPrepayHorizon,
+    'lbl-res-prepay-saved': t.resPrepaySaved,
+    'lbl-res-prepay-pmt': t.resPrepayPmt,
   };
   for (let id in map) {
     const el = document.getElementById(id);
@@ -222,6 +261,13 @@ const defaultState = {
   refinanceEnabled: false,
   refinanceRate: 9.9,
   refinanceTerm: 36,
+  prepayEnabled: false,
+  prepayPrincipal: 3000000,
+  prepayRate: 5.0,
+  prepayTerm: 360,
+  prepayExtraMonthly: 5000,
+  prepayLumpSum: 0,
+  prepayStrategy: 'reduce_term',
   debts: [
     { id: 1, name: LANG === 'en' ? 'Credit Card A' : 'บัตรเครดิต KBank', balance: 45000, rate: 16, minPayment: 2500 },
     { id: 2, name: LANG === 'en' ? 'Personal Loan' : 'สินเชื่อส่วนบุคคล', balance: 120000, rate: 18, minPayment: 4200 },
@@ -253,6 +299,33 @@ function syncRefinanceInputs() {
   if (box) box.style.display = state.refinanceEnabled ? 'block' : 'none';
 }
 
+function syncPrepayInputs() {
+  const chk = document.getElementById('chkEnablePrepay');
+  const p = document.getElementById('txtPrepayPrincipal');
+  const r = document.getElementById('txtPrepayRate');
+  const t = document.getElementById('txtPrepayTerm');
+  const em = document.getElementById('txtPrepayExtraMonthly');
+  const ls = document.getElementById('txtPrepayLumpSum');
+  const box = document.getElementById('prepayInputsContainer');
+  const stratTerm = document.getElementById('stratReduceTerm');
+  const stratPmt = document.getElementById('stratReducePmt');
+
+  if (chk) chk.checked = Boolean(state.prepayEnabled);
+  if (p) p.value = state.prepayPrincipal ?? 3000000;
+  if (r) r.value = state.prepayRate ?? 5.0;
+  if (t) t.value = state.prepayTerm ?? 360;
+  if (em) em.value = state.prepayExtraMonthly ?? 5000;
+  if (ls) ls.value = state.prepayLumpSum ?? 0;
+  if (stratTerm && stratPmt) {
+    if (state.prepayStrategy === 'reduce_payment') {
+      stratPmt.checked = true;
+    } else {
+      stratTerm.checked = true;
+    }
+  }
+  if (box) box.style.display = state.prepayEnabled ? 'block' : 'none';
+}
+
 const undoMgr = MoneyApp.createUndoManager({
   maxDepth: 15,
   enableShortcuts: true,
@@ -261,8 +334,10 @@ const undoMgr = MoneyApp.createUndoManager({
     document.getElementById('txtExtraPayment').value = state.extraPayment;
     syncWindfallInputs();
     syncRefinanceInputs();
+    syncPrepayInputs();
     renderTable();
     setStrategy(state.strategy);
+    computePrepay();
     saveState();
     updateUndoUI();
   },
@@ -1315,8 +1390,10 @@ function resetDefaults() {
   document.getElementById('txtExtraPayment').value = state.extraPayment;
   syncWindfallInputs();
   syncRefinanceInputs();
+  syncPrepayInputs();
   renderTable();
   setStrategy(state.strategy);
+  computePrepay();
   saveState();
   updateUndoUI();
 }
@@ -1337,10 +1414,224 @@ function printDebtPlan() {
   window.print();
 }
 
+function calculateStandardMonthlyPayment(principal, annualRatePct, termMonths) {
+  if (principal <= 0 || termMonths <= 0) return 0;
+  const r = (annualRatePct || 0) / 100 / 12;
+  if (r <= 0) return principal / termMonths;
+  const factor = Math.pow(1 + r, termMonths);
+  return (principal * r * factor) / (factor - 1);
+}
+
+function calculateLoanPrepayment({
+  principal = 0,
+  annualInterestRatePct = 5.0,
+  termMonths = 360,
+  extraMonthlyPayment = 0,
+  lumpSumPrepayment = 0,
+  lumpSumMonth = 1,
+  strategy = 'reduce_term',
+  taxBracketPct = 15,
+}) {
+  const p0 = Math.max(0, Number(principal) || 0);
+  const rAnnual = Math.max(0, Number(annualInterestRatePct) || 0) / 100;
+  const rMonthly = rAnnual / 12;
+  const nMonths = Math.max(1, Math.round(Number(termMonths) || 360));
+  const extraMonthly = Math.max(0, Number(extraMonthlyPayment) || 0);
+  const lumpSum = Math.max(0, Number(lumpSumPrepayment) || 0);
+  const lumpMonth = Math.max(1, Math.round(Number(lumpSumMonth) || 1));
+
+  const baseMonthlyPayment = calculateStandardMonthlyPayment(p0, annualInterestRatePct, nMonths);
+  let baseBalance = p0;
+  let baseTotalInterest = 0;
+  let baseFirstYearInterest = 0;
+
+  for (let m = 1; m <= nMonths; m++) {
+    if (baseBalance <= 0) break;
+    const interest = rMonthly > 0 ? baseBalance * rMonthly : 0;
+    const principalPaid = Math.min(baseBalance, baseMonthlyPayment - interest);
+    baseTotalInterest += interest;
+    if (m <= 12) baseFirstYearInterest += interest;
+    baseBalance -= principalPaid;
+  }
+
+  let balance = p0;
+  let totalInterest = 0;
+  let firstYearInterest = 0;
+  let monthsToPayoff = 0;
+  let currentMonthlyPayment = baseMonthlyPayment;
+
+  if (p0 <= 0) {
+    return {
+      baseMonthlyPayment: 0,
+      newMonthlyPayment: 0,
+      baseTotalInterest: 0,
+      prepaymentTotalInterest: 0,
+      interestSaved: 0,
+      basePayoffMonths: 0,
+      prepaymentPayoffMonths: 0,
+      monthsSaved: 0,
+      yearsSaved: 0,
+      firstYearInterest: 0,
+      firstYearTaxDeduction: 0,
+      firstYearTaxSaved: 0,
+      strategy,
+    };
+  }
+
+  for (let m = 1; m <= 600; m++) {
+    if (balance <= 0.01) break;
+    monthsToPayoff = m;
+
+    if (m === lumpMonth && lumpSum > 0) {
+      balance = Math.max(0, balance - lumpSum);
+      if (strategy === 'reduce_payment' && balance > 0) {
+        const remainingTerm = Math.max(1, nMonths - m + 1);
+        currentMonthlyPayment = calculateStandardMonthlyPayment(balance, annualInterestRatePct, remainingTerm);
+      }
+    }
+
+    if (balance <= 0.01) break;
+
+    const interest = rMonthly > 0 ? balance * rMonthly : 0;
+    totalInterest += interest;
+    if (m <= 12) firstYearInterest += interest;
+
+    const scheduledPayment =
+      strategy === 'reduce_term' ? baseMonthlyPayment + extraMonthly : currentMonthlyPayment + extraMonthly;
+
+    if (balance + interest <= scheduledPayment) {
+      balance = 0;
+      break;
+    } else {
+      const principalPaid = scheduledPayment - interest;
+      balance = Math.max(0, balance - principalPaid);
+    }
+  }
+
+  const interestSaved = Math.max(0, Math.round((baseTotalInterest - totalInterest) * 100) / 100);
+  const monthsSaved = Math.max(0, nMonths - monthsToPayoff);
+  const firstYearTaxDeduction = Math.min(100000, Math.round(firstYearInterest * 100) / 100);
+  const firstYearTaxSaved = Math.round(firstYearTaxDeduction * (taxBracketPct / 100) * 100) / 100;
+
+  return {
+    baseMonthlyPayment: Math.round(baseMonthlyPayment * 100) / 100,
+    newMonthlyPayment:
+      strategy === 'reduce_term'
+        ? Math.round((baseMonthlyPayment + extraMonthly) * 100) / 100
+        : Math.round(currentMonthlyPayment * 100) / 100,
+    baseTotalInterest: Math.round(baseTotalInterest * 100) / 100,
+    prepaymentTotalInterest: Math.round(totalInterest * 100) / 100,
+    interestSaved,
+    basePayoffMonths: nMonths,
+    prepaymentPayoffMonths: monthsToPayoff,
+    monthsSaved,
+    yearsSaved: Math.round((monthsSaved / 12) * 10) / 10,
+    firstYearInterest: Math.round(firstYearInterest * 100) / 100,
+    firstYearTaxDeduction,
+    firstYearTaxSaved,
+    strategy,
+  };
+}
+
+function onTogglePrepay(checked) {
+  undoMgr.push(state);
+  state.prepayEnabled = checked;
+  syncPrepayInputs();
+  saveState();
+  computePrepay();
+  updateUndoUI();
+}
+
+function onPrepayChange() {
+  const p = Math.max(0, parseNum(document.getElementById('txtPrepayPrincipal')?.value));
+  const r = Math.max(0, Math.min(36, parseNum(document.getElementById('txtPrepayRate')?.value)));
+  const term = Math.max(1, Math.min(480, parseNum(document.getElementById('txtPrepayTerm')?.value)));
+  const em = Math.max(0, parseNum(document.getElementById('txtPrepayExtraMonthly')?.value));
+  const ls = Math.max(0, parseNum(document.getElementById('txtPrepayLumpSum')?.value));
+  const stratReducePmt = document.getElementById('stratReducePmt');
+  const strategy = stratReducePmt && stratReducePmt.checked ? 'reduce_payment' : 'reduce_term';
+
+  state.prepayPrincipal = p;
+  state.prepayRate = r;
+  state.prepayTerm = term;
+  state.prepayExtraMonthly = em;
+  state.prepayLumpSum = ls;
+  state.prepayStrategy = strategy;
+
+  saveState();
+  computePrepay();
+}
+
+function computePrepay() {
+  const container = document.getElementById('prepayInputsContainer');
+  if (!container || !state.prepayEnabled) return;
+
+  const result = calculateLoanPrepayment({
+    principal: state.prepayPrincipal,
+    annualInterestRatePct: state.prepayRate,
+    termMonths: state.prepayTerm,
+    extraMonthlyPayment: state.prepayExtraMonthly,
+    lumpSumPrepayment: state.prepayLumpSum,
+    strategy: state.prepayStrategy,
+    taxBracketPct: 15,
+  });
+
+  const horizonEl = document.getElementById('valPrepayHorizon');
+  const savedEl = document.getElementById('valPrepayInterestSaved');
+  const pmtEl = document.getElementById('valPrepayPayment');
+  const taxBadge = document.getElementById('mortgageTaxDeductionBadge');
+
+  if (horizonEl) {
+    if (result.prepaymentPayoffMonths <= 0) {
+      horizonEl.textContent = '-';
+    } else {
+      const yrs = (result.prepaymentPayoffMonths / 12).toFixed(1);
+      const moUnit = LANG === 'en' ? 'Mo' : 'เดือน';
+      const yrUnit = LANG === 'en' ? 'Yrs' : 'ปี';
+      let text = `${result.prepaymentPayoffMonths} ${moUnit} (${yrs} ${yrUnit})`;
+      if (result.monthsSaved > 0) {
+        text += ` [${LANG === 'en' ? 'Faster' : 'เร็วขึ้น'} ${result.monthsSaved} ${LANG === 'en' ? 'Mo' : 'ด.'}]`;
+      }
+      horizonEl.textContent = text;
+    }
+  }
+
+  if (savedEl) {
+    savedEl.textContent = `${formatMoney(result.interestSaved)} ${LANG === 'en' ? 'THB' : 'บาท'}`;
+  }
+
+  if (pmtEl) {
+    const unitText = LANG === 'en' ? 'THB/mo' : 'บาท/ด.';
+    if (state.prepayStrategy === 'reduce_payment') {
+      pmtEl.textContent = `${formatMoney(result.newMonthlyPayment)} ${unitText}`;
+    } else {
+      pmtEl.textContent = `${formatMoney(result.newMonthlyPayment)} ${unitText} (+${formatMoney(state.prepayExtraMonthly)})`;
+    }
+  }
+
+  if (taxBadge) {
+    const isEn = LANG === 'en';
+    if (isEn) {
+      taxBadge.innerHTML = `🏛️ <strong>Thai Tax Code Sec. 47(1)(h) Housing Loan Interest Deduction:</strong> Estimated Year 1 interest paid is <strong>${formatMoney(result.firstYearInterest)} THB</strong>, eligible for up to <strong>${formatMoney(result.firstYearTaxDeduction)} THB</strong> deduction (statutory cap 100,000 THB/yr), saving approx <strong>${formatMoney(result.firstYearTaxSaved)} THB</strong> in income taxes (at 15% marginal bracket).`;
+    } else {
+      taxBadge.innerHTML = `🏛️ <strong>สิทธิประโยชน์ภาษี ดอกเบี้ยกู้บ้าน ม.47(1)(ช):</strong> ปีแรกจ่ายดอกเบี้ยประมาณ <strong>${formatMoney(result.firstYearInterest)} บาท</strong> นำไปหักลดหย่อนภาษีได้ <strong>${formatMoney(result.firstYearTaxDeduction)} บาท</strong> (เพดาน 100,000 บาท/ปี) ช่วยประหยัดภาษีได้ราว <strong>${formatMoney(result.firstYearTaxSaved)} บาท</strong> (ที่ฐานภาษี 15%)`;
+    }
+  }
+}
+
+// Global exports for HTML handlers
+window.onTogglePrepay = onTogglePrepay;
+window.onPrepayChange = onPrepayChange;
+window.calculateStandardMonthlyPayment = calculateStandardMonthlyPayment;
+window.calculateLoanPrepayment = calculateLoanPrepayment;
+window.computePrepay = computePrepay;
+
 // Initialize
 loadState();
 document.getElementById('txtExtraPayment').value = state.extraPayment;
 syncWindfallInputs();
 syncRefinanceInputs();
+syncPrepayInputs();
 renderTable();
 setStrategy(state.strategy);
+computePrepay();

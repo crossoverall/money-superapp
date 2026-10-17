@@ -5312,4 +5312,175 @@ describe('Financial Math Verification', () => {
       assert.equal(noWithdrawal.tier, 'safe');
     });
   });
+
+  describe('Mortgage & Loan Prepayment Amortization & Tax Deduction Engine', () => {
+    function calculateStandardMonthlyPayment(principal, annualRatePct, termMonths) {
+      if (principal <= 0 || termMonths <= 0) return 0;
+      const r = (annualRatePct || 0) / 100 / 12;
+      if (r <= 0) return principal / termMonths;
+      const factor = Math.pow(1 + r, termMonths);
+      return (principal * r * factor) / (factor - 1);
+    }
+
+    function calculateLoanPrepayment({
+      principal = 0,
+      annualInterestRatePct = 5.0,
+      termMonths = 360,
+      extraMonthlyPayment = 0,
+      lumpSumPrepayment = 0,
+      lumpSumMonth = 1,
+      strategy = 'reduce_term',
+      taxBracketPct = 15,
+    }) {
+      const p0 = Math.max(0, Number(principal) || 0);
+      const rAnnual = Math.max(0, Number(annualInterestRatePct) || 0) / 100;
+      const rMonthly = rAnnual / 12;
+      const nMonths = Math.max(1, Math.round(Number(termMonths) || 360));
+      const extraMonthly = Math.max(0, Number(extraMonthlyPayment) || 0);
+      const lumpSum = Math.max(0, Number(lumpSumPrepayment) || 0);
+      const lumpMonth = Math.max(1, Math.round(Number(lumpSumMonth) || 1));
+
+      const baseMonthlyPayment = calculateStandardMonthlyPayment(p0, annualInterestRatePct, nMonths);
+      let baseBalance = p0;
+      let baseTotalInterest = 0;
+      let baseFirstYearInterest = 0;
+
+      for (let m = 1; m <= nMonths; m++) {
+        if (baseBalance <= 0) break;
+        const interest = rMonthly > 0 ? baseBalance * rMonthly : 0;
+        const principalPaid = Math.min(baseBalance, baseMonthlyPayment - interest);
+        baseTotalInterest += interest;
+        if (m <= 12) baseFirstYearInterest += interest;
+        baseBalance -= principalPaid;
+      }
+
+      let balance = p0;
+      let totalInterest = 0;
+      let firstYearInterest = 0;
+      let monthsToPayoff = 0;
+      let currentMonthlyPayment = baseMonthlyPayment;
+
+      if (p0 <= 0) {
+        return {
+          baseMonthlyPayment: 0,
+          newMonthlyPayment: 0,
+          baseTotalInterest: 0,
+          prepaymentTotalInterest: 0,
+          interestSaved: 0,
+          basePayoffMonths: 0,
+          prepaymentPayoffMonths: 0,
+          monthsSaved: 0,
+          yearsSaved: 0,
+          firstYearInterest: 0,
+          firstYearTaxDeduction: 0,
+          firstYearTaxSaved: 0,
+          strategy,
+        };
+      }
+
+      for (let m = 1; m <= 600; m++) {
+        if (balance <= 0.01) break;
+        monthsToPayoff = m;
+
+        if (m === lumpMonth && lumpSum > 0) {
+          balance = Math.max(0, balance - lumpSum);
+          if (strategy === 'reduce_payment' && balance > 0) {
+            const remainingTerm = Math.max(1, nMonths - m + 1);
+            currentMonthlyPayment = calculateStandardMonthlyPayment(balance, annualInterestRatePct, remainingTerm);
+          }
+        }
+
+        if (balance <= 0.01) break;
+
+        const interest = rMonthly > 0 ? balance * rMonthly : 0;
+        totalInterest += interest;
+        if (m <= 12) firstYearInterest += interest;
+
+        const scheduledPayment =
+          strategy === 'reduce_term' ? baseMonthlyPayment + extraMonthly : currentMonthlyPayment + extraMonthly;
+
+        if (balance + interest <= scheduledPayment) {
+          balance = 0;
+          break;
+        } else {
+          const principalPaid = scheduledPayment - interest;
+          balance = Math.max(0, balance - principalPaid);
+        }
+      }
+
+      const interestSaved = Math.max(0, Math.round((baseTotalInterest - totalInterest) * 100) / 100);
+      const monthsSaved = Math.max(0, nMonths - monthsToPayoff);
+      const firstYearTaxDeduction = Math.min(100000, Math.round(firstYearInterest * 100) / 100);
+      const firstYearTaxSaved = Math.round(firstYearTaxDeduction * (taxBracketPct / 100) * 100) / 100;
+
+      return {
+        baseMonthlyPayment: Math.round(baseMonthlyPayment * 100) / 100,
+        newMonthlyPayment:
+          Math.round(
+            (strategy === 'reduce_payment' ? currentMonthlyPayment : baseMonthlyPayment + extraMonthly) * 100,
+          ) / 100,
+        baseTotalInterest: Math.round(baseTotalInterest * 100) / 100,
+        prepaymentTotalInterest: Math.round(totalInterest * 100) / 100,
+        interestSaved,
+        basePayoffMonths: nMonths,
+        prepaymentPayoffMonths: monthsToPayoff,
+        monthsSaved,
+        yearsSaved: Math.round((monthsSaved / 12) * 10) / 10,
+        firstYearInterest: Math.round(firstYearInterest * 100) / 100,
+        firstYearTaxDeduction,
+        firstYearTaxSaved,
+        strategy,
+      };
+    }
+
+    it('validates Reduce Term strategy saves maximum interest and cuts years off 30-year mortgage', () => {
+      const res = calculateLoanPrepayment({
+        principal: 3000000,
+        annualInterestRatePct: 5.0,
+        termMonths: 360,
+        extraMonthlyPayment: 5000,
+        strategy: 'reduce_term',
+        taxBracketPct: 15,
+      });
+
+      assert.ok(res.baseMonthlyPayment > 16000 && res.baseMonthlyPayment < 16200);
+      assert.ok(
+        res.prepaymentPayoffMonths < 220,
+        `Payoff should be under 220 months, got ${res.prepaymentPayoffMonths}`,
+      );
+      assert.ok(res.yearsSaved >= 12);
+      assert.ok(res.interestSaved >= 1000000, `Interest saved should exceed 1,000,000 THB, got ${res.interestSaved}`);
+      assert.equal(res.firstYearTaxDeduction, 100000); // capped at statutory 100,000 THB
+      assert.equal(res.firstYearTaxSaved, 15000); // 15% of 100k
+    });
+
+    it('validates Reduce Payment strategy lowers monthly repayment while preserving term', () => {
+      const res = calculateLoanPrepayment({
+        principal: 2000000,
+        annualInterestRatePct: 4.5,
+        termMonths: 240, // 20 years
+        lumpSumPrepayment: 300000,
+        lumpSumMonth: 12,
+        strategy: 'reduce_payment',
+      });
+
+      assert.ok(res.newMonthlyPayment < res.baseMonthlyPayment);
+      assert.ok(res.interestSaved > 140000);
+      assert.equal(res.prepaymentPayoffMonths, 240);
+    });
+
+    it('handles zero principal, zero interest rate, and full lump-sum payoff safely', () => {
+      const zero = calculateLoanPrepayment({ principal: 0 });
+      assert.equal(zero.interestSaved, 0);
+      assert.equal(zero.prepaymentPayoffMonths, 0);
+
+      const fullPayoff = calculateLoanPrepayment({
+        principal: 500000,
+        lumpSumPrepayment: 600000,
+        lumpSumMonth: 1,
+      });
+      assert.equal(fullPayoff.prepaymentPayoffMonths, 1);
+      assert.ok(fullPayoff.interestSaved > 0);
+    });
+  });
 });
