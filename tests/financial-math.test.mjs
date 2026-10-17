@@ -3289,4 +3289,168 @@ describe('Financial Math Verification', () => {
       assert.equal(zeroRate.verdict, 'optimal');
     });
   });
+
+  describe('Financial Independence & Early Retirement (FIRE) Engine', () => {
+    function calculateGoalHorizonMonths(currentVal, targetVal, monthlyPmt, annualRate) {
+      const cur = typeof currentVal === 'number' ? currentVal : 0;
+      const tgt = typeof targetVal === 'number' ? targetVal : 0;
+      const pmt = typeof monthlyPmt === 'number' ? monthlyPmt : 0;
+      const rate = typeof annualRate === 'number' ? annualRate : 0;
+
+      if (cur >= tgt) return 0;
+      const r = rate / 12;
+
+      if (Math.abs(r) < 1e-9) {
+        if (pmt <= 0) return Infinity;
+        const months = Math.ceil((tgt - cur) / pmt);
+        return months > 600 ? Infinity : Math.max(0, months);
+      }
+
+      const num = tgt * r + pmt;
+      const den = cur * r + pmt;
+      if (den <= 0 || num <= 0) return Infinity;
+
+      const ratio = num / den;
+      if (ratio <= 1) return 0;
+
+      const months = Math.ceil(Math.log(ratio) / Math.log(1 + r));
+      return months > 600 ? Infinity : Math.max(0, months);
+    }
+
+    function calculateFIREMetrics({
+      netWorth = 0,
+      annualExpenses = 0,
+      swrRate = 0.04,
+      monthlyContribution = 0,
+      expectedReturnRate = 0.06,
+    } = {}) {
+      const nw = Math.max(0, Number(netWorth) || 0);
+      const exp = Math.max(0, Number(annualExpenses) || 0);
+      const swr = swrRate > 0 ? swrRate : 0.04;
+      const pmt = Math.max(0, Number(monthlyContribution) || 0);
+      const rAnnual = Math.max(0, Number(expectedReturnRate) || 0.06);
+
+      const fireNumber = exp > 0 ? Math.round(exp / swr) : 0;
+      const leanFireNumber = Math.round(fireNumber * 0.75);
+      const fatFireNumber = Math.round(fireNumber * 1.25);
+
+      const firePct = fireNumber > 0 ? Math.min(100, Math.round((nw / fireNumber) * 100)) : nw > 0 ? 100 : 0;
+      const rawPct = fireNumber > 0 ? parseFloat(((nw / fireNumber) * 100).toFixed(1)) : nw > 0 ? 100 : 0;
+
+      const currentSafePassiveIncome = Math.round(nw * swr);
+      const expenseCoveragePct =
+        exp > 0 ? Math.min(100, Math.round((currentSafePassiveIncome / exp) * 100)) : nw > 0 ? 100 : 0;
+
+      let tier = 'accumulating';
+      if (fireNumber > 0) {
+        if (nw >= fatFireNumber) tier = 'fat_fire';
+        else if (nw >= fireNumber) tier = 'standard_fire';
+        else if (nw >= leanFireNumber) tier = 'lean_fire';
+        else if (nw >= fireNumber * 0.5) tier = 'halfway_fire';
+      } else if (nw > 0) {
+        tier = 'standard_fire';
+      }
+
+      let monthsToFire = 0;
+      if (nw < fireNumber) {
+        monthsToFire = calculateGoalHorizonMonths(nw, fireNumber, pmt, rAnnual);
+      }
+
+      return {
+        netWorth: nw,
+        annualExpenses: exp,
+        swrRate: swr,
+        fireNumber,
+        leanFireNumber,
+        fatFireNumber,
+        firePct,
+        rawPct,
+        currentSafePassiveIncome,
+        expenseCoveragePct,
+        tier,
+        monthsToFire: Number.isFinite(monthsToFire) ? monthsToFire : Infinity,
+      };
+    }
+
+    it('calculates standard 4% FIRE number and milestone brackets accurately', () => {
+      const res = calculateFIREMetrics({
+        netWorth: 3000000,
+        annualExpenses: 480000, // 40,000 / mo
+        swrRate: 0.04,
+        monthlyContribution: 20000,
+        expectedReturnRate: 0.06,
+      });
+
+      assert.equal(res.fireNumber, 12000000);
+      assert.equal(res.leanFireNumber, 9000000);
+      assert.equal(res.fatFireNumber, 15000000);
+      assert.equal(res.firePct, 25);
+      assert.equal(res.rawPct, 25.0);
+      assert.equal(res.currentSafePassiveIncome, 120000);
+      assert.equal(res.expenseCoveragePct, 25);
+      assert.equal(res.tier, 'accumulating');
+    });
+
+    it('handles variable safe withdrawal rates (3.0%, 3.5%, 4.0%) correctly', () => {
+      const annualExp = 480000;
+      const fire4 = calculateFIREMetrics({ annualExpenses: annualExp, swrRate: 0.04 });
+      const fire35 = calculateFIREMetrics({ annualExpenses: annualExp, swrRate: 0.035 });
+      const fire30 = calculateFIREMetrics({ annualExpenses: annualExp, swrRate: 0.03 });
+
+      assert.equal(fire4.fireNumber, 12000000);
+      assert.equal(fire35.fireNumber, 13714286);
+      assert.equal(fire30.fireNumber, 16000000);
+    });
+
+    it('classifies milestone tiers across accumulating, halfway, lean, standard, and fat FIRE', () => {
+      const base = { annualExpenses: 400000, swrRate: 0.04 }; // FIRE Target = 10,000,000
+      // 1. Accumulating (< 50%)
+      assert.equal(calculateFIREMetrics({ ...base, netWorth: 2000000 }).tier, 'accumulating');
+      // 2. Halfway (50% - 74%)
+      assert.equal(calculateFIREMetrics({ ...base, netWorth: 5500000 }).tier, 'halfway_fire');
+      // 3. Lean FIRE (75% - 99%)
+      assert.equal(calculateFIREMetrics({ ...base, netWorth: 8000000 }).tier, 'lean_fire');
+      // 4. Standard FIRE (100% - 124%)
+      assert.equal(calculateFIREMetrics({ ...base, netWorth: 10500000 }).tier, 'standard_fire');
+      // 5. Fat FIRE (125%+)
+      assert.equal(calculateFIREMetrics({ ...base, netWorth: 13000000 }).tier, 'fat_fire');
+    });
+
+    it('computes months to FIRE using compound growth and zero-delta when reached', () => {
+      const inProgress = calculateFIREMetrics({
+        netWorth: 2000000,
+        annualExpenses: 400000, // 10M target
+        swrRate: 0.04,
+        monthlyContribution: 25000,
+        expectedReturnRate: 0.06,
+      });
+      assert.ok(inProgress.monthsToFire > 100 && inProgress.monthsToFire < 250);
+
+      const achieved = calculateFIREMetrics({
+        netWorth: 10000000,
+        annualExpenses: 400000,
+        swrRate: 0.04,
+      });
+      assert.equal(achieved.monthsToFire, 0);
+    });
+
+    it('handles zero annual expenses or zero net worth edge cases safely', () => {
+      const zeroExp = calculateFIREMetrics({
+        netWorth: 5000000,
+        annualExpenses: 0,
+      });
+      assert.equal(zeroExp.fireNumber, 0);
+      assert.equal(zeroExp.firePct, 100);
+      assert.equal(zeroExp.tier, 'standard_fire');
+
+      const zeroNw = calculateFIREMetrics({
+        netWorth: 0,
+        annualExpenses: 300000,
+      });
+      assert.equal(zeroNw.firePct, 0);
+      assert.equal(zeroNw.currentSafePassiveIncome, 0);
+      assert.equal(zeroNw.expenseCoveragePct, 0);
+      assert.equal(zeroNw.tier, 'accumulating');
+    });
+  });
 });

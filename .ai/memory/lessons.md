@@ -496,4 +496,24 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
   4. Added 5 comprehensive automated unit tests in `tests/financial-math.test.mjs` verifying weighted rate math, amortization payments, monthly cash flow differences, and term-stretching warnings.
 - **Rule:** When modeling debt consolidation loans, always evaluate both total lifetime interest savings ($\Delta I$) and monthly cash flow delta ($\Delta PMT$), and provide an explicit warning badge if an extended repayment duration inflates total interest despite a lower headline interest rate.
 
+### 2026-10-17: Financial Independence & Early Retirement (FIRE) Safe Withdrawal & Target Net Worth Visualizer
+
+- **Date & Context:** 2026-10-17, implementing FIRE Safe Withdrawal & Target Net Worth Visualizer in `dashboard.html` (`v2.1.4`).
+- **Problem:**
+  1. The master financial dashboard tracked individual wealth goals (Emergency Fund, static Net Worth milestone, and Debt-Free countdown), but lacked a holistic milestone metric for Financial Independence and Early Retirement (FIRE) based on real-world living expenses.
+  2. Users adjust to different risk tolerances regarding Safe Withdrawal Rates (SWR): conservative retirees prefer 3.0%–3.5% (28.6x–33.3x expenses), while classic Trinity Study adherents use 4.0% (25x expenses). Hardcoding a single rate restricts personalization.
+  3. Achieving full financial independence is a multi-year journey; without sub-milestones (such as Lean FIRE at 75% or Fat FIRE at 125%), users lack psychological momentum during the accumulation phase.
+- **Resolution:**
+  1. Built `calculateFIREMetrics()` engine computing target FIRE wealth thresholds: $\text{FIRE Number} = \text{Annual Expenses} / \text{SWR}$, auto-linking annual living expenses from `remainingMoneyCalculator.state.v1` ($12 \times \text{monthlyExpense}$) with optional manual override in `#goalsModal`.
+  2. Defined clear milestone spectrum tiers:
+     - `accumulating`: Building foundation (< 50% of target).
+     - `halfway_fire`: 50% to 74% of target.
+     - `lean_fire`: 75% to 99% of target (covers basic living needs).
+     - `standard_fire`: 100% to 124% of target (full current lifestyle covered indefinitely by 4% rule).
+     - `fat_fire`: 125%+ of target (abundant lifestyle buffer).
+  3. Integrated interactive SWR selection pills (3.0%, 3.5%, 4.0%) with live recalculation, dual-gradient progress bar, Safe Annual Passive Income readout ($NW \times \text{SWR}$), and projected years-to-freedom timeline (ETA) calculated via logarithmic compound growth.
+  4. Added 5 comprehensive automated unit tests in `tests/financial-math.test.mjs` verifying milestone brackets, SWR sensitivity, compound horizon solver, and zero-expense edge cases.
+- **Rule:** When visualizing financial independence (FIRE), calculate target net worth directly from annualized living expenses across selectable Safe Withdrawal Rates (3.0%–4.0%), pair the primary target with interim milestone brackets (Lean vs Standard vs Fat FIRE), and calculate projected completion timelines using compound yield on monthly investment contributions.
+
+
 
