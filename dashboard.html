@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="1.9.0">
+  <meta name="version" content="1.9.1">
   <title>ภาพรวมการเงิน</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -142,6 +142,58 @@
     </div>
   </div>
 
+  <div class="panel" role="region" aria-label="Financial Goals & Milestones">
+    <div class="panel-title" id="lbl-goals-panel-title">
+      <span id="lbl-goals-title">🎯 เป้าหมายทางการเงิน (Goals & Milestones)</span>
+      <button onclick="openGoalsModal()" class="action-btn" style="padding:4px 8px; font-size:10px;" aria-label="Configure financial goals"><span id="lbl-btn-edit-goals">⚙️ ตั้งค่าเป้าหมาย</span></button>
+    </div>
+
+    <!-- Emergency Fund Goal -->
+    <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span style="font-size:12px; font-weight:700; color:var(--ink);" id="lbl-goal-emergency-title">🛡️ เงินสำรองฉุกเฉิน (Emergency Fund)</span>
+        <span id="goal-emergency-badge" style="font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--panel); border:1px solid var(--line);">0 / 6 เดือน</span>
+      </div>
+      <div style="height:8px; background:var(--panel); border-radius:999px; overflow:hidden; border:1px solid var(--line);">
+        <div id="goal-emergency-bar" style="height:100%; width:0%; background:var(--purple); border-radius:999px; transition:width 0.4s ease;"></div>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--ink-faint); margin-top:6px;">
+        <span id="goal-emergency-cur-txt">ปัจจุบัน: 0 บาท</span>
+        <span id="goal-emergency-target-txt">เป้าหมาย: 0 บาท</span>
+      </div>
+    </div>
+
+    <!-- Net Worth Milestone -->
+    <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span style="font-size:12px; font-weight:700; color:var(--ink);" id="lbl-goal-networth-title">💎 ความมั่งคั่งสุทธิ (Net Worth Milestone)</span>
+        <span id="goal-networth-badge" style="font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--panel); border:1px solid var(--line);">0%</span>
+      </div>
+      <div style="height:8px; background:var(--panel); border-radius:999px; overflow:hidden; border:1px solid var(--line);">
+        <div id="goal-networth-bar" style="height:100%; width:0%; background:var(--blue); border-radius:999px; transition:width 0.4s ease;"></div>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--ink-faint); margin-top:6px;">
+        <span id="goal-networth-cur-txt">ปัจจุบัน: 0 บาท</span>
+        <span id="goal-networth-target-txt">เป้าหมาย: 1,000,000 บาท</span>
+      </div>
+    </div>
+
+    <!-- Debt Free Countdown -->
+    <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span style="font-size:12px; font-weight:700; color:var(--ink);" id="lbl-goal-debt-title">🚀 เป้าหมายปลดหนี้สิน (Debt-Free Goal)</span>
+        <span id="goal-debt-badge" style="font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--panel); border:1px solid var(--line);">-</span>
+      </div>
+      <div style="height:8px; background:var(--panel); border-radius:999px; overflow:hidden; border:1px solid var(--line);">
+        <div id="goal-debt-bar" style="height:100%; width:100%; background:var(--ok); border-radius:999px; transition:width 0.4s ease;"></div>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--ink-faint); margin-top:6px;">
+        <span id="goal-debt-cur-txt">หนี้คงเหลือ: 0 บาท</span>
+        <span id="goal-debt-target-txt">เป้าหมาย: 0 บาท</span>
+      </div>
+    </div>
+  </div>
+
   <div class="panel" role="region" aria-label="Growth Trends">
     <div class="panel-title" id="lbl-chart-title">
       <span id="lbl-chart-title-txt">แนวโน้มการเติบโต (Trends)</span>
@@ -179,7 +231,54 @@
     <div onclick="window.parent.postMessage({action:'switchToTab', target:'debt-calculator'},'*')" class="quick-link"><span id="qc-debt-title">📉 วางแผนปลดหนี้ (Debt)</span> <span>Alt+7</span><span id="qc-debt-sub" style="display:none;"></span></div>
   </div>
 
-  <p class="version-tag">Money Superapp v1.9.0</p>
+  <!-- Financial Goals Configuration Modal -->
+  <div id="goalsModal" role="dialog" aria-modal="true" aria-labelledby="goalsModalTitle" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; display:none; align-items:center; justify-content:center; backdrop-filter:blur(2px);" onclick="if(event.target===this)closeGoalsModal()">
+    <div style="background:var(--panel); border:1px solid var(--line); border-radius:16px; width:92%; max-width:460px; padding:20px; box-shadow:0 12px 30px rgba(0,0,0,0.3); color:var(--ink); font-family:inherit;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; border-bottom:1px solid var(--line); padding-bottom:12px;">
+        <h3 id="goalsModalTitle" style="margin:0; font-size:16px; font-weight:700; display:flex; align-items:center; gap:6px;">
+          <span>🎯</span>
+          <span id="lblGoalsModalTitle">ตั้งค่าเป้าหมายทางการเงิน</span>
+        </h3>
+        <button type="button" onclick="closeGoalsModal()" style="background:none; border:none; font-size:22px; line-height:1; color:var(--ink-faint); cursor:pointer; padding:0 4px;" aria-label="Close">&times;</button>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label for="inpGoalEmergencyMonths" style="display:block; font-size:12px; font-weight:700; margin-bottom:6px;" id="lblModalEmergency">🛡️ เป้าหมายเงินสำรองฉุกเฉิน (เดือนของค่าใช้จ่าย)</label>
+        <div style="display:flex; gap:8px; margin-bottom:8px;">
+          <input type="number" id="inpGoalEmergencyMonths" min="1" max="60" step="1" inputmode="decimal" style="flex:1; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:14px; font-weight:600; color:var(--ink); outline:none;">
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button type="button" onclick="setGoalEmergencyPreset(3)" class="action-btn" style="padding:4px 10px; font-size:11px;">3 <span class="lbl-months-unit">เดือน</span></button>
+          <button type="button" onclick="setGoalEmergencyPreset(6)" class="action-btn" style="padding:4px 10px; font-size:11px;">6 <span class="lbl-months-unit">เดือน</span></button>
+          <button type="button" onclick="setGoalEmergencyPreset(12)" class="action-btn" style="padding:4px 10px; font-size:11px;">12 <span class="lbl-months-unit">เดือน</span></button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <label for="inpGoalNetWorth" style="display:block; font-size:12px; font-weight:700; margin-bottom:6px;" id="lblModalNetWorth">💎 เป้าหมายความมั่งคั่งสุทธิ (บาท)</label>
+        <div style="display:flex; gap:8px; margin-bottom:8px;">
+          <input type="number" id="inpGoalNetWorth" min="10000" step="50000" inputmode="decimal" style="flex:1; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:14px; font-weight:600; color:var(--ink); outline:none;">
+        </div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button type="button" onclick="setGoalNetWorthPreset(100000)" class="action-btn" style="padding:4px 8px; font-size:11px;">100K</button>
+          <button type="button" onclick="setGoalNetWorthPreset(500000)" class="action-btn" style="padding:4px 8px; font-size:11px;">500K</button>
+          <button type="button" onclick="setGoalNetWorthPreset(1000000)" class="action-btn" style="padding:4px 8px; font-size:11px;">1M</button>
+          <button type="button" onclick="setGoalNetWorthPreset(5000000)" class="action-btn" style="padding:4px 8px; font-size:11px;">5M</button>
+          <button type="button" onclick="setGoalNetWorthPreset(10000000)" class="action-btn" style="padding:4px 8px; font-size:11px;">10M</button>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--line); padding-top:14px;">
+        <button type="button" onclick="resetGoalsToDefault()" class="reset-btn" style="font-size:12px;" id="btnResetGoalsText">รีเซ็ตค่าเริ่มต้น</button>
+        <div style="display:flex; gap:8px;">
+          <button type="button" onclick="closeGoalsModal()" class="action-btn" style="padding:6px 12px; font-size:12px;" id="btnCloseGoalsModal">ยกเลิก</button>
+          <button type="button" onclick="saveGoalsFromModal()" class="action-btn" style="background:var(--ok); border-color:var(--ok); color:#fff; padding:6px 16px; font-size:12px; font-weight:700;" id="btnSaveGoalsText">บันทึก</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="version-tag">Money Superapp v1.9.1</p>
 
 <script src="js/shared.js"></script>
 <script>
@@ -214,7 +313,19 @@
             statusHealthy: 'สุขภาพการเงินดี',
             statusCaution: 'ต้องระวัง',
             deleteTitle: 'ลบ',
-            eyebrow: 'ภาพรวม (DASHBOARD)'
+            eyebrow: 'ภาพรวม (DASHBOARD)',
+            goalsTitle: '🎯 เป้าหมายทางการเงิน (Goals & Milestones)',
+            btnEditGoals: '⚙️ ตั้งค่าเป้าหมาย',
+            goalEmergencyTitle: '🛡️ เงินสำรองฉุกเฉิน (Emergency Fund)',
+            goalNetWorthTitle: '💎 ความมั่งคั่งสุทธิ (Net Worth Milestone)',
+            goalDebtTitle: '🚀 เป้าหมายปลดหนี้สิน (Debt-Free Goal)',
+            lblGoalsModalTitle: '🎯 กำหนดเป้าหมายทางการเงิน',
+            lblModalEmergency: '🛡️ เป้าหมายเงินสำรองฉุกเฉิน (เดือนของค่าใช้จ่าย)',
+            lblModalNetWorth: '💎 เป้าหมายความมั่งคั่งสุทธิ (บาท)',
+            btnResetGoalsText: 'รีเซ็ตค่าเริ่มต้น',
+            btnCloseGoalsModal: 'ยกเลิก',
+            btnSaveGoalsText: 'บันทึก',
+            monthsUnit: 'เดือน'
         },
         en: {
             title: 'Financial Dashboard',
@@ -246,7 +357,19 @@
             statusHealthy: 'Financially Healthy',
             statusCaution: 'Caution',
             deleteTitle: 'Delete',
-            eyebrow: 'FINANCIAL DASHBOARD'
+            eyebrow: 'FINANCIAL DASHBOARD',
+            goalsTitle: '🎯 Financial Goals & Milestones',
+            btnEditGoals: '⚙️ Configure Goals',
+            goalEmergencyTitle: '🛡️ Emergency Runway Goal',
+            goalNetWorthTitle: '💎 Net Worth Milestone',
+            goalDebtTitle: '🚀 Debt-Free Goal',
+            lblGoalsModalTitle: '🎯 Configure Financial Goals',
+            lblModalEmergency: '🛡️ Emergency Runway Target (months of expenses)',
+            lblModalNetWorth: '💎 Net Worth Milestone Target (THB)',
+            btnResetGoalsText: 'Reset Defaults',
+            btnCloseGoalsModal: 'Cancel',
+            btnSaveGoalsText: 'Save Goals',
+            monthsUnit: 'mos'
         }
     };
 
@@ -279,11 +402,26 @@
             'qc-tax-title': t.qcTaxTitle,
             'qc-pvd-title': t.qcPvdTitle,
             'qc-debt-title': t.qcDebtTitle,
+            'lbl-goals-title': t.goalsTitle,
+            'lbl-btn-edit-goals': t.btnEditGoals,
+            'lbl-goal-emergency-title': t.goalEmergencyTitle,
+            'lbl-goal-networth-title': t.goalNetWorthTitle,
+            'lbl-goal-debt-title': t.goalDebtTitle,
+            'lblGoalsModalTitle': t.lblGoalsModalTitle,
+            'lblModalEmergency': t.lblModalEmergency,
+            'lblModalNetWorth': t.lblModalNetWorth,
+            'btnResetGoalsText': t.btnResetGoalsText,
+            'btnCloseGoalsModal': t.btnCloseGoalsModal,
+            'btnSaveGoalsText': t.btnSaveGoalsText,
         };
 
         Object.keys(textMapping).forEach(id => {
             const el = document.getElementById(id);
             if (el) el.textContent = textMapping[id];
+        });
+
+        document.querySelectorAll('.lbl-months-unit').forEach(el => {
+            el.textContent = t.monthsUnit;
         });
 
         const btnRefresh = document.getElementById('btn-refresh');
@@ -462,6 +600,188 @@
         if (document.getElementById('qc-rebal-sub')) document.getElementById('qc-rebal-sub').textContent = `${(LANG === 'en' ? 'Portfolio: ' : 'พอร์ต: ')}${formatMoney(p.portfolioVal)} ${unit}`;
         if (document.getElementById('qc-rem-sub')) document.getElementById('qc-rem-sub').textContent = `${(LANG === 'en' ? 'Investable: ' : 'คงเหลือลงทุน: ')}${formatMoney(p.monthlyInvest)} ${unit}`;
         if (document.getElementById('qc-debt-sub')) document.getElementById('qc-debt-sub').textContent = `${(LANG === 'en' ? 'Debt: ' : 'ยอดหนี้: ')}${formatMoney(p.totalDebt)} ${unit}`;
+    }
+
+    // --- Financial Goals & Milestones ---
+    const GOALS_KEY = 'moneySuperapp.financialGoals.v1';
+    const DEFAULT_GOALS = {
+        emergencyMonths: 6,
+        netWorthTarget: 1000000
+    };
+
+    function getFinancialGoals() {
+        return safeJsonParse(GOALS_KEY, DEFAULT_GOALS);
+    }
+
+    function saveFinancialGoals(goals) {
+        try {
+            localStorage.setItem(GOALS_KEY, JSON.stringify(goals));
+        } catch(e){}
+    }
+
+    function computeGoalProgress(curNW, targetNW, curRunway, targetRunway, totalDebt, monthlyExpense, emergencyReserve) {
+        const safeTargetNW = Math.max(1, targetNW || 1000000);
+        const safeTargetRunway = Math.max(0.1, targetRunway || 6);
+
+        // Net worth progress (clamped between 0% and 100%)
+        const nwPct = Math.max(0, Math.min(100, Math.round(((curNW || 0) / safeTargetNW) * 100)));
+        const nwAchieved = (curNW || 0) >= safeTargetNW && (curNW || 0) > 0;
+
+        // Emergency runway progress (clamped between 0% and 100%)
+        const runwayPct = Math.max(0, Math.min(100, Math.round(((curRunway || 0) / safeTargetRunway) * 100)));
+        const runwayAchieved = (curRunway || 0) >= safeTargetRunway && (curRunway || 0) > 0;
+        const targetBufferAmt = safeTargetRunway * (monthlyExpense || 0);
+
+        // Debt freedom status
+        const isDebtFree = (totalDebt || 0) <= 0;
+
+        return {
+            nwPct,
+            nwAchieved,
+            runwayPct,
+            runwayAchieved,
+            targetBufferAmt,
+            isDebtFree
+        };
+    }
+
+    function renderFinancialGoals() {
+        const p = gatherFinancialProfile();
+        const g = getFinancialGoals();
+        const isEn = LANG === 'en';
+        const progress = computeGoalProgress(
+            p.netWorth,
+            g.netWorthTarget,
+            p.runwayMonths,
+            g.emergencyMonths,
+            p.totalDebt,
+            p.monthlyExpense,
+            p.emergencyReserve
+        );
+
+        // 1. Emergency runway goal
+        const emergBar = document.getElementById('goal-emergency-bar');
+        const emergBadge = document.getElementById('goal-emergency-badge');
+        const emergCurTxt = document.getElementById('goal-emergency-cur-txt');
+        const emergTargetTxt = document.getElementById('goal-emergency-target-txt');
+
+        if (emergBar) {
+            emergBar.style.width = `${progress.runwayPct}%`;
+            emergBar.style.background = progress.runwayAchieved ? 'var(--ok)' : 'var(--purple)';
+        }
+        if (emergBadge) {
+            if (progress.runwayAchieved) {
+                emergBadge.textContent = isEn ? '🎉 Goal Achieved!' : '🎉 บรรลุเป้าหมาย!';
+                emergBadge.style.color = 'var(--ok)';
+                emergBadge.style.borderColor = 'var(--ok)';
+            } else {
+                emergBadge.textContent = `${p.runwayMonths.toFixed(1)} / ${g.emergencyMonths} ${isEn ? 'mos' : 'เดือน'} (${progress.runwayPct}%)`;
+                emergBadge.style.color = 'var(--ink)';
+                emergBadge.style.borderColor = 'var(--line)';
+            }
+        }
+        if (emergCurTxt) emergCurTxt.textContent = `${isEn ? 'Current: ' : 'ปัจจุบัน: '}${formatMoney(p.emergencyReserve)} ${unit}`;
+        if (emergTargetTxt) {
+            emergTargetTxt.textContent = `${isEn ? 'Target (' : 'เป้าหมาย ('}${g.emergencyMonths}${isEn ? ' mos): ' : ' เดือน): '}${formatMoney(progress.targetBufferAmt)} ${unit}`;
+        }
+
+        // 2. Net worth milestone
+        const nwBar = document.getElementById('goal-networth-bar');
+        const nwBadge = document.getElementById('goal-networth-badge');
+        const nwCurTxt = document.getElementById('goal-networth-cur-txt');
+        const nwTargetTxt = document.getElementById('goal-networth-target-txt');
+
+        if (nwBar) {
+            nwBar.style.width = `${progress.nwPct}%`;
+            nwBar.style.background = progress.nwAchieved ? 'var(--ok)' : 'var(--blue)';
+        }
+        if (nwBadge) {
+            if (progress.nwAchieved) {
+                nwBadge.textContent = isEn ? '🏆 Milestone Reached!' : '🏆 บรรลุเป้าหมาย!';
+                nwBadge.style.color = 'var(--ok)';
+                nwBadge.style.borderColor = 'var(--ok)';
+            } else {
+                nwBadge.textContent = `${progress.nwPct}%`;
+                nwBadge.style.color = 'var(--blue)';
+                nwBadge.style.borderColor = 'var(--line)';
+            }
+        }
+        if (nwCurTxt) nwCurTxt.textContent = `${isEn ? 'Current: ' : 'ปัจจุบัน: '}${formatMoney(p.netWorth)} ${unit}`;
+        if (nwTargetTxt) nwTargetTxt.textContent = `${isEn ? 'Target: ' : 'เป้าหมาย: '}${formatMoney(g.netWorthTarget)} ${unit}`;
+
+        // 3. Debt-free goal
+        const debtBar = document.getElementById('goal-debt-bar');
+        const debtBadge = document.getElementById('goal-debt-badge');
+        const debtCurTxt = document.getElementById('goal-debt-cur-txt');
+        const debtTargetTxt = document.getElementById('goal-debt-target-txt');
+
+        if (progress.isDebtFree) {
+            if (debtBar) {
+                debtBar.style.width = '100%';
+                debtBar.style.background = 'var(--ok)';
+            }
+            if (debtBadge) {
+                debtBadge.textContent = isEn ? '🎉 100% Debt Free!' : '🎉 ปลอดหนี้สิน 100%!';
+                debtBadge.style.color = 'var(--ok)';
+                debtBadge.style.borderColor = 'var(--ok)';
+            }
+            if (debtCurTxt) debtCurTxt.textContent = isEn ? 'No Outstanding Debt' : 'ไม่มีภาระหนี้คงค้าง';
+            if (debtTargetTxt) debtTargetTxt.textContent = `0 ${unit}`;
+        } else {
+            if (debtBar) {
+                debtBar.style.width = '50%';
+                debtBar.style.background = 'var(--warn)';
+            }
+            if (debtBadge) {
+                debtBadge.textContent = p.debtFreeText || (isEn ? 'In Progress' : 'กำลังดำเนินการ');
+                debtBadge.style.color = 'var(--warn)';
+                debtBadge.style.borderColor = 'var(--warn)';
+            }
+            if (debtCurTxt) debtCurTxt.textContent = `${isEn ? 'Remaining: ' : 'หนี้คงเหลือ: '}${formatMoney(p.totalDebt)} ${unit}`;
+            if (debtTargetTxt) debtTargetTxt.textContent = `${isEn ? 'Goal: ' : 'เป้าหมาย: '}0 ${unit}`;
+        }
+    }
+
+    function openGoalsModal() {
+        const goals = getFinancialGoals();
+        const inpEmerg = document.getElementById('inpGoalEmergencyMonths');
+        const inpNW = document.getElementById('inpGoalNetWorth');
+        if (inpEmerg) inpEmerg.value = goals.emergencyMonths;
+        if (inpNW) inpNW.value = goals.netWorthTarget;
+        const modal = document.getElementById('goalsModal');
+        if (modal) modal.style.display = 'flex';
+    }
+
+    function closeGoalsModal() {
+        const modal = document.getElementById('goalsModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function setGoalEmergencyPreset(val) {
+        const inp = document.getElementById('inpGoalEmergencyMonths');
+        if (inp) inp.value = val;
+    }
+
+    function setGoalNetWorthPreset(val) {
+        const inp = document.getElementById('inpGoalNetWorth');
+        if (inp) inp.value = val;
+    }
+
+    function resetGoalsToDefault() {
+        const inpEmerg = document.getElementById('inpGoalEmergencyMonths');
+        const inpNW = document.getElementById('inpGoalNetWorth');
+        if (inpEmerg) inpEmerg.value = DEFAULT_GOALS.emergencyMonths;
+        if (inpNW) inpNW.value = DEFAULT_GOALS.netWorthTarget;
+    }
+
+    function saveGoalsFromModal() {
+        const inpEmerg = document.getElementById('inpGoalEmergencyMonths');
+        const inpNW = document.getElementById('inpGoalNetWorth');
+        const emerg = Math.max(1, parseNum(inpEmerg ? inpEmerg.value : DEFAULT_GOALS.emergencyMonths));
+        const nw = Math.max(1000, parseNum(inpNW ? inpNW.value : DEFAULT_GOALS.netWorthTarget));
+        saveFinancialGoals({ emergencyMonths: emerg, netWorthTarget: nw });
+        closeGoalsModal();
+        renderFinancialGoals();
     }
 
     function jumpToTab(tabId) {
@@ -785,15 +1105,23 @@
 
     // Initialize
     renderDashboardKPIs();
+    renderFinancialGoals();
     renderSnapshotsTable();
     renderChart();
 
     function refreshDashboard() {
         applyLocalization();
         renderDashboardKPIs();
+        renderFinancialGoals();
         renderSnapshotsTable();
         renderChart();
     }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeGoalsModal();
+        }
+    });
 </script>
 </body>
 </html>

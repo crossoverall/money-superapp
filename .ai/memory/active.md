@@ -1,5 +1,5 @@
 ---
-task_id: "FEAT-BUDGET-TEMPLATES-01"
+task_id: "FEAT-GOALS-MILESTONES-01"
 status: "completed"
 current_stage: "release"
 complexity: "level_2"
@@ -7,45 +7,46 @@ iteration_count: 0
 pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Feature / Task Specification: Recurring Budget Profiles & Templates (Phase 7 Item 3.3)
+### Feature / Task Specification: Financial Goals & Milestones Tracker (Phase 8 Item 3.1)
 
 #### 1. Goal & Scope Limits
-- **Objective:** Add customizable recurring budget templates ("Save as Template" / "Load Template") and curated financial presets (First Jobber, Mid-Career, Freelancer) in `remaining-money.html` to streamline monthly budgeting without tedious data re-entry.
+- **Objective:** Add an interactive Financial Goals & Milestones tracker in `dashboard.html` empowering users to define, track, and celebrate essential financial targets (Emergency Runway, Net Worth Milestone, and Debt Freedom Countdown) directly connected to their live financial data.
 - **Target Files (<= 5 files):**
-  1. `remaining-money.html` (Template modal, preset loader, custom template persistence, undo snapshot integration)
-  2. `tests/financial-math.test.mjs` (Unit test for budget template serialization/hydration and preset schema integrity)
+  1. `dashboard.html` (Goals UI panel, configuration modal, real-time progress calculations, localization)
+  2. `tests/financial-math.test.mjs` (Unit tests for goal percentage clamping, milestone calculations, and boundary safety)
   3. `.ai/memory/active.md`
 - **Explicit Out of Scope:**
-  - Complex multi-month recurring scheduling or external calendar sync.
-  - Third-party template libraries.
+  - Remote cloud synchronization (strictly 100% client-side privacy per ADR-001).
+  - External charting libraries (zero-dependency vanilla SVG/CSS bars).
 
 #### 2. Architecture & Decision Alignment
-- **ADR-001 (Zero-Build Static PWA / Privacy):** 100% offline, stored in client-side `localStorage.getItem('moneySuperapp.budgetTemplates.v1')`.
-- **ADR-002 (Iframe Isolation):** Self-contained in `remaining-money.html`.
-- **Undo Integration:** Loading any template captures an in-memory snapshot in `undoMgr` first for instant rollback (`Ctrl+Z`).
+- **ADR-001 (Zero-Build Static PWA / Privacy):** 100% offline, persistent in `localStorage.getItem('moneySuperapp.financialGoals.v1')`.
+- **ADR-002 (Iframe Isolation):** Self-contained in `dashboard.html`, reading aggregated live data from other calculators.
+- **Visual Design:** Uses project theme tokens (`--panel`, `--panel-2`, `--line`, `--ink`, `--ok`, `--blue`, `--purple`), accessible ARIA attributes, responsive layout.
 
 #### 3. Step-by-Step Implementation Summary
-1. **Curated Starter Presets:**
-   - 💼 **First Jobber**: Salary 25k, Rent 6k, Utilities 1.2k, Food 7k, Travel 2.5k, Emergency Fund 2.5k.
-   - 👨‍👩‍👧 **Family & Mid-Career**: Salary 60k, Allowance 5k, Mortgage 15k, Utilities 3.5k, Groceries 12k, Insurance 3k, Savings 10k.
-   - 🌴 **Freelancer / Variable**: Project Income 45k, Withholding Tax 3%, Tech Tools 3k, Rent 8k, Living 9k, Health 2.5k, Safety Fund 10k.
-2. **Custom User Templates:**
-   - Saved in `localStorage.getItem('moneySuperapp.budgetTemplates.v1')`.
-   - Name input, quick save, item summary badges (incomes, expenses, net cashflow).
-   - "นำไปใช้ (Apply)" and "🗑️ (Delete)" with user confirmation.
-3. **Undo Integration:**
-   - Automatic snapshot capture in `undoMgr` prior to applying any template, allowing one-key rollback via `Ctrl+Z` or ↩ Undo.
-4. **Bilingual Localization:**
-   - Complete Thai and English strings for modal header, placeholders, buttons, and preset descriptions.
-5. **Verification & Tests:**
-   - Added unit test `Budget Template Serialization & Presets` in `tests/financial-math.test.mjs`.
-   - All 33 unit tests pass in 61ms.
+1. **Interactive Goals Panel in `dashboard.html`:**
+   - Positioned prominently below Key Financial Indicators.
+   - 🛡️ **Emergency Reserve Runway Goal**: Current runway vs target (e.g. 3.5 / 6.0 months - 58%), current reserve vs target buffer in THB.
+   - 💎 **Net Worth Milestone**: Current Net Worth vs Milestone target (e.g. ฿450,000 / ฿1,000,000 - 45%).
+   - 🚀 **Debt Freedom Goal**: Countdown of remaining debt balance towards 0 THB with payoff timeline and debt-free celebration badge when balance is 0.
+2. **Goal Configuration Modal (`#goalsModal`):**
+   - Clean pop-up dialog with quick preset pills:
+     - Emergency Runway: `3 mos`, `6 mos`, `12 mos`.
+     - Net Worth Milestone: `100K`, `500K`, `1M`, `5M`, `10M`.
+   - Number inputs with `inputmode="decimal"` for custom values.
+   - Instant save, defaults reset, and live UI refresh.
+3. **Bilingual Localization:**
+   - Full Thai and English translations for all labels, progress tooltips, preset buttons, and modal dialog.
+4. **Verification & Tests:**
+   - Added unit test suite `Financial Goals & Milestones Progress` in `tests/financial-math.test.mjs`.
+   - 36 automated unit tests pass in 70ms.
    - Biome linter passes with 0 errors.
-   - Bumped to `v1.9.0` via `node scripts/bump.mjs minor`.
+   - Bumped to `v1.9.1` via `node scripts/bump.mjs patch`.
 
 #### 4. Acceptance Criteria
-- [x] Users can save their current custom budget under any custom name.
-- [x] Users can load starter presets or saved custom templates with 1 click.
-- [x] Instant rollback via `Ctrl+Z` undo is preserved.
-- [x] Both Thai and English languages are fully supported.
-- [x] All 33 automated tests pass and Biome check passes cleanly.
+- [x] Financial Goals & Milestones panel rendered with real-time progress bars in `dashboard.html`.
+- [x] Users can customize Emergency Reserve Runway and Net Worth targets via modal settings with quick presets.
+- [x] Targets are safely persisted offline in `moneySuperapp.financialGoals.v1`.
+- [x] Complete bilingual support (TH / EN) and keyboard accessibility (`Escape` key modal dismissal).
+- [x] Automated unit test suite expanded to 36 tests with 100% pass rate.

@@ -353,4 +353,76 @@ describe('Financial Math Verification', () => {
       assert.equal(computeTemplateNet(restored[0].state).net, 13000);
     });
   });
+
+  describe('Financial Goals & Milestones Progress', () => {
+    function computeGoalProgress(
+      curNW,
+      targetNW,
+      curRunway,
+      targetRunway,
+      totalDebt,
+      monthlyExpense,
+      _emergencyReserve,
+    ) {
+      const safeTargetNW = Math.max(1, targetNW || 1000000);
+      const safeTargetRunway = Math.max(0.1, targetRunway || 6);
+
+      // Net worth progress (clamped between 0% and 100%)
+      const nwPct = Math.max(0, Math.min(100, Math.round(((curNW || 0) / safeTargetNW) * 100)));
+      const nwAchieved = (curNW || 0) >= safeTargetNW && (curNW || 0) > 0;
+
+      // Emergency runway progress (clamped between 0% and 100%)
+      const runwayPct = Math.max(0, Math.min(100, Math.round(((curRunway || 0) / safeTargetRunway) * 100)));
+      const runwayAchieved = (curRunway || 0) >= safeTargetRunway && (curRunway || 0) > 0;
+      const targetBufferAmt = safeTargetRunway * (monthlyExpense || 0);
+
+      // Debt freedom status
+      const isDebtFree = (totalDebt || 0) <= 0;
+
+      return {
+        nwPct,
+        nwAchieved,
+        runwayPct,
+        runwayAchieved,
+        targetBufferAmt,
+        isDebtFree,
+      };
+    }
+
+    it('calculates correct partial progress for runway and net worth', () => {
+      // 3 months runway out of 6 months target = 50%
+      // 500,000 NW out of 1,000,000 target = 50%
+      const res = computeGoalProgress(500000, 1000000, 3, 6, 20000, 25000, 75000);
+      assert.equal(res.nwPct, 50);
+      assert.equal(res.nwAchieved, false);
+      assert.equal(res.runwayPct, 50);
+      assert.equal(res.runwayAchieved, false);
+      assert.equal(res.targetBufferAmt, 150000);
+      assert.equal(res.isDebtFree, false);
+    });
+
+    it('correctly detects goal achievement and clamps percentage at 100%', () => {
+      // 1.5M NW out of 1M target -> 100% clamped, achieved = true
+      // 8 months runway out of 6 months target -> 100% clamped, achieved = true
+      // 0 total debt -> isDebtFree = true
+      const res = computeGoalProgress(1500000, 1000000, 8, 6, 0, 30000, 240000);
+      assert.equal(res.nwPct, 100);
+      assert.equal(res.nwAchieved, true);
+      assert.equal(res.runwayPct, 100);
+      assert.equal(res.runwayAchieved, true);
+      assert.equal(res.isDebtFree, true);
+    });
+
+    it('handles negative net worth and zero expenses safely without NaN', () => {
+      // -100,000 NW -> clamped to 0%
+      // 0 monthly expense -> target buffer = 0
+      const res = computeGoalProgress(-100000, 1000000, 0, 6, 50000, 0, 0);
+      assert.equal(res.nwPct, 0);
+      assert.equal(res.nwAchieved, false);
+      assert.equal(res.runwayPct, 0);
+      assert.equal(res.runwayAchieved, false);
+      assert.equal(res.targetBufferAmt, 0);
+      assert.equal(res.isDebtFree, false);
+    });
+  });
 });
