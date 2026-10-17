@@ -326,3 +326,18 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
      - Maximum duration: $\le 550\text{ms}$ (filters slow drags / resting fingers).
      - Interactive element exclusion: `input`, `textarea`, `select`, `button`, `[role="slider"]`, `.no-swipe`.
 - **Rule:** For iframe-based SPAs, route child touch events via `postMessage` with strict perpendicular displacement filters and interactive element exclusions before triggering tab navigation.
+
+### 2026-10-17: Multi-Series Debt Payoff Amortization Curves & Visual Hierarchy
+
+- **Date & Context:** 2026-10-17, implementing Multi-Series Debt Payoff Amortization Comparison in `debt-calculator.html` (`v2.0.2`).
+- **Problem:**
+  1. Users could only view one strategy curve at a time, making it impossible to directly compare the payoff velocity and interest slope of Avalanche (interest-minimizing) versus Snowball (behavioral milestone-maximizing) versus Minimum-Only (baseline).
+  2. Rendering multiple overlapping curves on mobile SVG viewports risked visual clutter and obscured milestone payoff markers.
+- **Resolution:**
+  1. Simulated Avalanche, Snowball, and Minimum-Only trajectories concurrently, deriving uniform X/Y bounds from the maximum timeline across all three simulations (`maxMonths = Math.max(simCurrent.months, simMinOnly.months, simAvalanche.months, simSnowball.months, 1)`).
+  2. Applied clear visual hierarchy:
+     - Primary/Selected strategy: Solid stroke (width 2.6) with shaded area gradient under the curve and prominent circular milestone markers for completed loans.
+     - Secondary/Alternative strategy: Dashed stroke (width 1.8, dasharray `5,3`) for immediate visual comparison without conflicting color intensity.
+     - Minimum-Only baseline: High-contrast amber dashed stroke (`4,4`, width 1.8, opacity 0.8) displaying the default cost of inaction.
+  3. Added a dynamic payoff delta badge summarizing time and interest variance between Snowball and Avalanche based on actual extra payments.
+- **Rule:** When comparing multi-trajectory financial curves, normalize axes to the union of all trajectories, highlight the user's active choice with filled gradients and milestone markers, and render counterfactuals with distinct dashed strokes.

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.0.1">
+  <meta name="version" content="2.0.2">
   <title>วางแผนปลดหนี้ (Debt Payoff)</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -313,6 +313,7 @@
 
   <div class="panel" id="debtChartPanel">
     <div class="panel-title" id="lbl-chart-title">กราฟการลดลงของหนี้สิน (Payoff Trajectory)</div>
+    <div id="debtStrategyDeltaBadge" style="display:none; margin-bottom:12px; padding:8px 12px; border-radius:10px; font-size:12px; line-height:1.4; background:var(--panel-2); border:1px solid var(--line); color:var(--ink);"></div>
     <div style="position:relative; width:100%; height:200px; margin-top:8px;">
       <svg id="svgDebtChart" viewBox="0 0 600 220" preserveAspectRatio="none" role="img" aria-label="Debt payoff trajectory chart">
         <title id="svgDebtChartTitle">Debt Payoff Trajectory</title>
@@ -321,15 +322,19 @@
     <div class="debt-chart-legend" id="debtChartLegend">
       <div class="debt-chart-legend-item">
         <span style="display:inline-block; width:14px; height:4px; border-radius:2px; background:#10b981;"></span>
-        <span id="lbl-leg-current">กลยุทธ์ปัจจุบัน (Current Strategy)</span>
+        <span id="lbl-leg-avalanche">Avalanche (ดอกสูงสุดก่อน)</span>
+      </div>
+      <div class="debt-chart-legend-item">
+        <span style="display:inline-block; width:14px; height:4px; border-radius:2px; background:#3b82f6;"></span>
+        <span id="lbl-leg-snowball">Snowball (ยอดน้อยสุดก่อน)</span>
       </div>
       <div class="debt-chart-legend-item">
         <span style="display:inline-block; width:14px; height:2px; border-top:2px dashed #f59e0b;"></span>
         <span id="lbl-leg-min">จ่ายขั้นต่ำเท่านั้น (Minimum Only)</span>
       </div>
       <div class="debt-chart-legend-item">
-        <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; border:2px solid #fff; box-shadow:0 0 2px rgba(0,0,0,0.3);"></span>
-        <span id="lbl-leg-milestone">จุดปลดหนี้แต่ละรายการ (Milestone)</span>
+        <span id="milestoneLegendDot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; border:2px solid #fff; box-shadow:0 0 2px rgba(0,0,0,0.3);"></span>
+        <span id="lbl-leg-milestone">จุดปลดหนี้ (Milestone)</span>
       </div>
     </div>
   </div>
@@ -359,7 +364,7 @@
     <span id="saveStatus">&nbsp;</span>
     <button class="reset-btn" id="btn-reset-debts" onclick="resetDefaults()">รีเซ็ตค่าเริ่มต้น</button>
   </div>
-  <p class="version-tag">v2.0.1</p>
+  <p class="version-tag">v2.0.2</p>
 
 <script src="js/shared.js"></script>
 <script>
@@ -411,9 +416,10 @@
             colMin: 'ขั้นต่ำ',
             rowItemsCount: 'รายการ',
             chartTitle: 'กราฟการลดลงของหนี้สิน (Payoff Trajectory)',
-            legCurrentStrategy: 'กลยุทธ์ปัจจุบัน (Current Strategy)',
+            legAvalanche: 'Avalanche (ดอกสูงสุดก่อน)',
+            legSnowball: 'Snowball (ยอดน้อยสุดก่อน)',
             legMinOnly: 'จ่ายขั้นต่ำเท่านั้น (Minimum Only)',
-            legMilestone: 'จุดปลดหนี้แต่ละรายการ (Milestone)'
+            legMilestone: 'จุดปลดหนี้ (Milestone)'
         },
                 en: {
             title: 'Debt Payoff Calculator',
@@ -462,7 +468,8 @@
             colMin: 'Min Pay',
             rowItemsCount: 'Accounts',
             chartTitle: 'Debt Payoff Trajectory',
-            legCurrentStrategy: 'Current Strategy',
+            legAvalanche: 'Avalanche (Highest Rate First)',
+            legSnowball: 'Snowball (Smallest Bal First)',
             legMinOnly: 'Minimum Payment Only',
             legMilestone: 'Debt-Free Milestone'
         }
@@ -509,7 +516,8 @@
             'lbl-avg-rate': t.avgRateLabel,
             'lbl-min-pay': t.minPayLabel,
             'lbl-chart-title': t.chartTitle,
-            'lbl-leg-current': t.legCurrentStrategy,
+            'lbl-leg-avalanche': t.legAvalanche,
+            'lbl-leg-snowball': t.legSnowball,
             'lbl-leg-min': t.legMinOnly,
             'lbl-leg-milestone': t.legMilestone
         };
@@ -885,22 +893,56 @@
         `).join('');
 
         updateOrderBadges();
-        renderPayoffChart(simCurrent, simMinOnly, totalDebt);
+        renderPayoffChart(simCurrent, simMinOnly, totalDebt, simAvalanche, simSnowball);
     }
 
     /**
      * Render SVG Debt Payoff Trajectory Chart offline without external libraries
+     * Comparing Avalanche, Snowball, and Minimum Payments Only
      */
-    function renderPayoffChart(simCurrent, simMinOnly, totalDebt) {
+    function renderPayoffChart(simCurrent, simMinOnly, totalDebt, simAvalanche, simSnowball) {
         const svg = document.getElementById('svgDebtChart');
         if (!svg) return;
 
+        const deltaBadge = document.getElementById('debtStrategyDeltaBadge');
+
         if (!totalDebt || totalDebt <= 0 || !simCurrent || simCurrent.months === 0) {
+            if (deltaBadge) deltaBadge.style.display = 'none';
             const emptyMsg = LANG === 'en'
                 ? 'No debt balance to display — You are debt-free! 🎉'
                 : 'ไม่มีภาระหนี้คงค้าง — ปลอดหนี้แล้ว! 🎉';
             svg.innerHTML = `<text x="300" y="110" text-anchor="middle" fill="#94a3b8" font-size="13" font-family="inherit">${emptyMsg}</text>`;
             return;
+        }
+
+        // 1. Strategy Delta Callout Badge
+        if (deltaBadge && simAvalanche && simSnowball) {
+            deltaBadge.style.display = 'block';
+            const interestDiff = Math.max(0, simSnowball.totalInterest - simAvalanche.totalInterest);
+            const monthsDiff = simSnowball.months - simAvalanche.months;
+            const isAvActive = state.strategy === 'avalanche';
+
+            if (interestDiff > 10 || monthsDiff !== 0) {
+                if (isAvActive) {
+                    deltaBadge.style.background = 'var(--ok-dim)';
+                    deltaBadge.style.borderColor = 'var(--ok)';
+                    deltaBadge.innerHTML = LANG === 'en'
+                        ? `💡 <strong>Avalanche Method:</strong> Saves <strong>${formatMoney(interestDiff)} ${unit}</strong> more in total interest than Snowball${monthsDiff > 0 ? ` and finishes ${monthsDiff} mos sooner` : ''}.`
+                        : `💡 วิธี <strong>Avalanche:</strong> ช่วยประหยัดดอกเบี้ยได้มากกว่า Snowball <strong>${formatMoney(interestDiff)} ${unit}</strong>${monthsDiff > 0 ? ` และปลดหนี้เร็วกว่า ${monthsDiff} เดือน` : ''}`;
+                } else {
+                    deltaBadge.style.background = 'var(--blue-dim)';
+                    deltaBadge.style.borderColor = 'var(--blue)';
+                    deltaBadge.innerHTML = LANG === 'en'
+                        ? `💡 <strong>Snowball Method:</strong> Maximizes early momentum and quick psychological wins (total interest is +${formatMoney(interestDiff)} ${unit} vs Avalanche).`
+                        : `💡 วิธี <strong>Snowball:</strong> เน้นสร้างกำลังใจปลดหนี้ก้อนแรกเร็วที่สุด (ดอกเบี้ยรวมมากกว่า Avalanche +${formatMoney(interestDiff)} ${unit})`;
+                }
+            } else {
+                deltaBadge.style.background = 'var(--panel-2)';
+                deltaBadge.style.borderColor = 'var(--line)';
+                deltaBadge.innerHTML = LANG === 'en'
+                    ? '💡 Both Snowball and Avalanche produce identical timeline and interest savings for this debt structure.'
+                    : '💡 ทั้งวิธี Snowball และ Avalanche ให้ผลลัพธ์ระยะเวลาและดอกเบี้ยเท่ากันสำหรับรายการหนี้ชุดนี้';
+            }
         }
 
         const width = 600;
@@ -909,20 +951,38 @@
         const plotWidth = width - padding.left - padding.right;
         const plotHeight = height - padding.top - padding.bottom;
 
-        const maxMonths = Math.max(simCurrent.months, simMinOnly ? simMinOnly.months : 0, 1);
+        const maxMonths = Math.max(
+            simCurrent.months,
+            simMinOnly ? simMinOnly.months : 0,
+            simAvalanche ? simAvalanche.months : 0,
+            simSnowball ? simSnowball.months : 0,
+            1,
+        );
         const maxBalance = totalDebt > 0 ? totalDebt : 1;
 
         const mapX = (m) => padding.left + (m / maxMonths) * plotWidth;
         const mapY = (b) => padding.top + plotHeight - (Math.max(0, b) / maxBalance) * plotHeight;
+        const xBaseY = padding.top + plotHeight;
+
+        const isSnowball = state.strategy === 'snowball';
+        const primaryColor = isSnowball ? '#3b82f6' : '#10b981';
+        const secondaryColor = isSnowball ? '#10b981' : '#3b82f6';
+        const secondarySim = isSnowball ? simAvalanche : simSnowball;
+        const secondaryName = isSnowball
+            ? (LANG === 'en' ? 'Avalanche' : 'Avalanche (ดอกสูงสุดก่อน)')
+            : (LANG === 'en' ? 'Snowball' : 'Snowball (ยอดน้อยสุดก่อน)');
+        const primaryName = isSnowball
+            ? (LANG === 'en' ? 'Snowball (Active)' : 'Snowball (กำลังเลือก)')
+            : (LANG === 'en' ? 'Avalanche (Active)' : 'Avalanche (กำลังเลือก)');
 
         let svgHtml = '';
 
-        // Gradients and definitions
+        // Gradients
         svgHtml += `
           <defs>
             <linearGradient id="debtCurrentGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#10b981" stop-opacity="0.22" />
-              <stop offset="100%" stop-color="#10b981" stop-opacity="0.01" />
+              <stop offset="0%" stop-color="${primaryColor}" stop-opacity="0.22" />
+              <stop offset="100%" stop-color="${primaryColor}" stop-opacity="0.01" />
             </linearGradient>
           </defs>
         `;
@@ -934,7 +994,7 @@
             const val = ratio * maxBalance;
             const y = padding.top + plotHeight - (ratio * plotHeight);
             svgHtml += `<line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="var(--line, rgba(148,163,184,0.25))" stroke-width="1" stroke-dasharray="3,3" />`;
-            
+
             let labelText = '';
             if (val >= 1000000) {
                 labelText = (val / 1000000).toFixed(1) + 'M';
@@ -947,7 +1007,6 @@
         }
 
         // X-axis baseline & labels
-        const xBaseY = padding.top + plotHeight;
         svgHtml += `<line x1="${padding.left}" y1="${xBaseY}" x2="${width - padding.right}" y2="${xBaseY}" stroke="var(--line, rgba(148,163,184,0.4))" stroke-width="1.5" />`;
 
         const xTicksCount = Math.min(maxMonths, 5);
@@ -970,12 +1029,22 @@
             const minPathD = simMinOnly.trajectory
                 .map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${mapX(p.month).toFixed(1)} ${mapY(p.balance).toFixed(1)}`)
                 .join(' ');
-            svgHtml += `<path d="${minPathD}" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4,4" opacity="0.85">
+            svgHtml += `<path d="${minPathD}" fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-dasharray="4,4" opacity="0.8">
               <title>${LANG === 'en' ? 'Minimum Payments Only: ' + simMinOnly.months + ' months' : 'จ่ายขั้นต่ำเท่านั้น: ' + simMinOnly.months + ' เดือน'}</title>
             </path>`;
         }
 
-        // 2. Plot Current Strategy Trajectory (Emerald line with shaded area)
+        // 2. Plot Secondary Strategy Trajectory (Alternative comparative line)
+        if (secondarySim && Array.isArray(secondarySim.trajectory) && secondarySim.trajectory.length > 0) {
+            const secPathD = secondarySim.trajectory
+                .map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${mapX(p.month).toFixed(1)} ${mapY(p.balance).toFixed(1)}`)
+                .join(' ');
+            svgHtml += `<path d="${secPathD}" fill="none" stroke="${secondaryColor}" stroke-width="1.8" stroke-dasharray="5,3" opacity="0.85">
+              <title>${secondaryName}: ${secondarySim.months} ${LANG === 'en' ? 'months' : 'เดือน'}</title>
+            </path>`;
+        }
+
+        // 3. Plot Primary (Active) Strategy Trajectory (Solid line with shaded area)
         if (simCurrent && Array.isArray(simCurrent.trajectory) && simCurrent.trajectory.length > 0) {
             const traj = simCurrent.trajectory;
             const linePathD = traj
@@ -987,11 +1056,11 @@
             const areaPathD = `${linePathD} L ${lastX} ${xBaseY} L ${firstX} ${xBaseY} Z`;
 
             svgHtml += `<path d="${areaPathD}" fill="url(#debtCurrentGrad)" />`;
-            svgHtml += `<path d="${linePathD}" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <title>${LANG === 'en' ? 'Current Strategy: ' + simCurrent.months + ' months' : 'กลยุทธ์ปัจจุบัน: ' + simCurrent.months + ' เดือน'}</title>
+            svgHtml += `<path d="${linePathD}" fill="none" stroke="${primaryColor}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+              <title>${primaryName}: ${simCurrent.months} ${LANG === 'en' ? 'months' : 'เดือน'}</title>
             </path>`;
 
-            // 3. Milestone dots for paid-off loans
+            // 4. Milestone dots for paid-off loans along the active curve
             if (Array.isArray(simCurrent.payoffOrder) && simCurrent.payoffOrder.length > 0) {
                 simCurrent.payoffOrder.forEach(po => {
                     const pt = traj.find(p => p.month === po.month) || { month: po.month, balance: 0 };
@@ -1002,7 +1071,7 @@
                         : `🎉 ปลดหนี้ ${po.name} สำเร็จในเดือนที่ ${po.month}!`;
                     svgHtml += `
                       <g class="milestone-marker">
-                        <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="5" fill="#10b981" stroke="#ffffff" stroke-width="2" style="cursor:pointer;">
+                        <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="5" fill="${primaryColor}" stroke="#ffffff" stroke-width="2" style="cursor:pointer;">
                           <title>${tipText}</title>
                         </circle>
                       </g>
@@ -1012,6 +1081,10 @@
         }
 
         svg.innerHTML = svgHtml;
+
+        // Update milestone legend dot color to match active strategy
+        const mDot = document.getElementById('milestoneLegendDot');
+        if (mDot) mDot.style.background = primaryColor;
     }
 
     function importFromRemainingMoney() {

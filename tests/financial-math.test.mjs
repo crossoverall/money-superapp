@@ -307,49 +307,151 @@ describe('Financial Math Verification', () => {
       assert.equal(avalanche[2].id, 3); // 3.5%
     });
 
-    it('generates a monotonic decreasing trajectory from initial total to zero', () => {
-      function simulateTrajectory(debtsList, extra, strategy) {
-        const debts = debtsList.map((d) => ({ ...d, initialBalance: d.balance }));
-        let months = 0;
-        const initialTotal = debts.reduce((sum, d) => sum + d.initialBalance, 0);
-        const trajectory = [{ month: 0, balance: initialTotal }];
-        while (debts.some((d) => d.balance > 0.01) && months < 360) {
-          months++;
-          debts.forEach((d) => {
-            if (d.balance > 0) d.balance += d.balance * (d.rate / 100 / 12);
-          });
-          let avail = extra;
-          debts.forEach((d) => {
-            if (d.balance > 0) {
-              const pay = Math.min(d.balance, d.minPayment);
-              d.balance -= pay;
-            } else {
-              avail += d.minPayment;
-            }
-          });
-          const active = debts.filter((d) => d.balance > 0.01);
-          active.sort((a, b) => (strategy === 'snowball' ? a.balance - b.balance : b.rate - a.rate));
-          for (const target of active) {
-            if (avail <= 0.01) break;
-            const pay = Math.min(target.balance, avail);
-            target.balance -= pay;
-            avail -= pay;
-          }
-          const remaining = debts.reduce((sum, d) => sum + Math.max(0, d.balance), 0);
-          trajectory.push({ month: months, balance: Math.max(0, remaining) });
-        }
-        return { months, trajectory };
-      }
+    function simulateDebt(debtsList, extra, strategy) {
+      const debts = debtsList.map((d) => ({
+        ...d,
+        initialBalance: d.balance,
+        paidOffMonth: null,
+      }));
+      let months = 0;
+      let totalInterest = 0;
+      let totalPaid = 0;
+      const payoffOrder = [];
+      const initialTotal = debts.reduce((sum, d) => sum + d.initialBalance, 0);
+      const trajectory = [{ month: 0, balance: initialTotal }];
 
+      while (debts.some((d) => d.balance > 0.01) && months < 360) {
+        months++;
+        let monthPayment = 0;
+
+        debts.forEach((d) => {
+          if (d.balance > 0) {
+            const interest = d.balance * (d.rate / 100 / 12);
+            d.balance += interest;
+            totalInterest += interest;
+          }
+        });
+
+        let avail = extra;
+        debts.forEach((d) => {
+          if (d.balance > 0) {
+            const pay = Math.min(d.balance, d.minPayment);
+            d.balance -= pay;
+            monthPayment += pay;
+          } else {
+            avail += d.minPayment;
+          }
+        });
+
+        const active = debts.filter((d) => d.balance > 0.01);
+        active.sort((a, b) => (strategy === 'snowball' ? a.balance - b.balance : b.rate - a.rate));
+
+        for (const target of active) {
+          if (avail <= 0.01) break;
+          const extraPay = Math.min(target.balance, avail);
+          target.balance -= extraPay;
+          monthPayment += extraPay;
+          avail -= extraPay;
+
+          if (target.balance <= 0.01 && target.paidOffMonth === null) {
+            target.paidOffMonth = months;
+            payoffOrder.push({ name: target.name, month: months });
+          }
+        }
+
+        debts.forEach((d) => {
+          if (d.balance <= 0.01 && d.paidOffMonth === null) {
+            d.paidOffMonth = months;
+            payoffOrder.push({ name: d.name, month: months });
+          }
+        });
+
+        totalPaid += monthPayment;
+        const remaining = debts.reduce((sum, d) => sum + Math.max(0, d.balance), 0);
+        trajectory.push({ month: months, balance: Math.max(0, remaining) });
+      }
+      return { months, totalInterest, totalPaid, payoffOrder, trajectory };
+    }
+
+    it('generates a monotonic decreasing trajectory from initial total to zero', () => {
       const sampleDebts = [
         { id: 1, name: 'Card', balance: 10000, rate: 12, minPayment: 1000 },
         { id: 2, name: 'Loan', balance: 20000, rate: 8, minPayment: 2000 },
       ];
-      const res = simulateTrajectory(sampleDebts, 1000, 'avalanche');
+      const res = simulateDebt(sampleDebts, 1000, 'avalanche');
       assert.ok(res.months > 0 && res.months <= 360);
       assert.equal(res.trajectory[0].balance, 30000);
       assert.equal(res.trajectory[res.trajectory.length - 1].balance, 0);
       assert.equal(res.trajectory[res.trajectory.length - 1].month, res.months);
+      for (let i = 1; i < res.trajectory.length; i++) {
+        assert.ok(res.trajectory[i].balance <= res.trajectory[i - 1].balance + 1e-4);
+      }
+    });
+
+    it('proves Avalanche yields less or equal total interest than Snowball and Minimum-Only', () => {
+      const complexDebts = [
+        { id: 1, name: 'High Rate Card', balance: 35000, rate: 22, minPayment: 1200 },
+        { id: 2, name: 'Small Balance Loan', balance: 12000, rate: 9, minPayment: 800 },
+        { id: 3, name: 'Personal Loan', balance: 60000, rate: 14, minPayment: 2500 },
+      ];
+      const av = simulateDebt(complexDebts, 3000, 'avalanche');
+      const sb = simulateDebt(complexDebts, 3000, 'snowball');
+      const minOnly = simulateDebt(complexDebts, 0, 'avalanche');
+
+      // Avalanche must save more or equal interest compared to Snowball
+      assert.ok(av.totalInterest <= sb.totalInterest);
+      // Both extra-payment strategies must substantially outperform min-only
+      assert.ok(sb.totalInterest < minOnly.totalInterest);
+      assert.ok(av.months <= minOnly.months);
+      assert.ok(sb.months <= minOnly.months);
+    });
+
+    it('Snowball strategy pays off the smallest balance account earlier than or equal to Avalanche', () => {
+      const debts = [
+        { id: 1, name: 'High Card', balance: 40000, rate: 24, minPayment: 1500 },
+        { id: 2, name: 'Small Loan', balance: 8000, rate: 8, minPayment: 600 },
+      ];
+      const sb = simulateDebt(debts, 2000, 'snowball');
+      const av = simulateDebt(debts, 2000, 'avalanche');
+
+      const sbFirst = sb.payoffOrder.find((p) => p.name === 'Small Loan');
+      const avFirst = av.payoffOrder.find((p) => p.name === 'Small Loan');
+      assert.ok(sbFirst !== undefined);
+      assert.ok(avFirst !== undefined);
+      // Small Loan gets eliminated sooner or at the same time in Snowball
+      assert.ok(sbFirst.month <= avFirst.month);
+    });
+
+    it('correctly maps multi-series trajectories onto SVG coordinate bounds without NaN or overflow', () => {
+      const debts = [
+        { id: 1, name: 'Debt 1', balance: 25000, rate: 18, minPayment: 1000 },
+        { id: 2, name: 'Debt 2', balance: 15000, rate: 12, minPayment: 800 },
+      ];
+      const av = simulateDebt(debts, 1500, 'avalanche');
+      const sb = simulateDebt(debts, 1500, 'snowball');
+
+      const width = 600;
+      const height = 220;
+      const padding = { top: 22, right: 30, bottom: 35, left: 65 };
+      const plotWidth = width - padding.left - padding.right;
+      const plotHeight = height - padding.top - padding.bottom;
+
+      const maxMonths = Math.max(av.months, sb.months, 1);
+      const maxBalance = 40000;
+
+      const mapX = (m) => padding.left + (m / maxMonths) * plotWidth;
+      const mapY = (b) => padding.top + plotHeight - (Math.max(0, b) / maxBalance) * plotHeight;
+
+      [av.trajectory, sb.trajectory].forEach((traj) => {
+        traj.forEach((pt) => {
+          const x = mapX(pt.month);
+          const y = mapY(pt.balance);
+          assert.ok(!Number.isNaN(x) && Number.isFinite(x));
+          assert.ok(!Number.isNaN(y) && Number.isFinite(y));
+          assert.ok(x >= padding.left - 1e-4 && x <= width - padding.right + 1e-4);
+          assert.ok(y >= padding.top - 1e-4 && y <= height - padding.bottom + 1e-4);
+        });
+      });
     });
   });
 
