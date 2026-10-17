@@ -467,6 +467,112 @@
 
   var idbStorage = createIndexedDBAdapter();
 
+  function arrayBufferToBase64(buffer) {
+    var binary = '';
+    var bytes = new Uint8Array(buffer);
+    var len = bytes.byteLength;
+    var i = 0;
+    for (i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  }
+
+  function base64ToArrayBuffer(base64) {
+    var binary_string = atob(base64);
+    var len = binary_string.length;
+    var bytes = new Uint8Array(len);
+    var i = 0;
+    for (i = 0; i < len; i++) {
+      bytes[i] = binary_string.charCodeAt(i);
+    }
+    return bytes.buffer;
+  }
+
+  async function deriveVaultKey(passphrase, saltUint8, usage) {
+    var enc = new TextEncoder();
+    var cryptoObj = typeof crypto !== 'undefined' ? crypto : typeof window !== 'undefined' ? window.crypto : null;
+    if (!cryptoObj || !cryptoObj.subtle) {
+      throw new Error('Web Cryptography API is not supported in this environment');
+    }
+    var keyMaterial = await cryptoObj.subtle.importKey('raw', enc.encode(passphrase), { name: 'PBKDF2' }, false, [
+      'deriveKey',
+    ]);
+    return cryptoObj.subtle.deriveKey(
+      {
+        name: 'PBKDF2',
+        salt: saltUint8,
+        iterations: 100000,
+        hash: 'SHA-256',
+      },
+      keyMaterial,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      usage,
+    );
+  }
+
+  async function encryptVaultData(plainText, passphrase) {
+    if (!passphrase || typeof passphrase !== 'string' || passphrase.trim() === '') {
+      throw new Error('Passphrase cannot be empty');
+    }
+    var cryptoObj = typeof crypto !== 'undefined' ? crypto : typeof window !== 'undefined' ? window.crypto : null;
+    if (!cryptoObj || !cryptoObj.subtle) {
+      throw new Error('Web Cryptography API is not supported');
+    }
+    var salt = cryptoObj.getRandomValues(new Uint8Array(16));
+    var iv = cryptoObj.getRandomValues(new Uint8Array(12));
+    var key = await deriveVaultKey(passphrase, salt, ['encrypt']);
+    var enc = new TextEncoder();
+    var cipherBuffer = await cryptoObj.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, enc.encode(plainText));
+
+    return JSON.stringify(
+      {
+        format: 'money-superapp-vault-v1',
+        createdAt: new Date().toISOString(),
+        salt: arrayBufferToBase64(salt),
+        iv: arrayBufferToBase64(iv),
+        ciphertext: arrayBufferToBase64(cipherBuffer),
+      },
+      null,
+      2,
+    );
+  }
+
+  async function decryptVaultData(vaultPayloadOrString, passphrase) {
+    if (!passphrase || typeof passphrase !== 'string') {
+      throw new Error('Passphrase cannot be empty');
+    }
+    var envelope = vaultPayloadOrString;
+    if (typeof vaultPayloadOrString === 'string') {
+      envelope = JSON.parse(vaultPayloadOrString);
+    }
+    if (
+      !envelope ||
+      envelope.format !== 'money-superapp-vault-v1' ||
+      !envelope.salt ||
+      !envelope.iv ||
+      !envelope.ciphertext
+    ) {
+      throw new Error('Invalid vault envelope format');
+    }
+
+    var cryptoObj = typeof crypto !== 'undefined' ? crypto : typeof window !== 'undefined' ? window.crypto : null;
+    if (!cryptoObj || !cryptoObj.subtle) {
+      throw new Error('Web Cryptography API is not supported');
+    }
+
+    var salt = new Uint8Array(base64ToArrayBuffer(envelope.salt));
+    var iv = new Uint8Array(base64ToArrayBuffer(envelope.iv));
+    var cipherBuffer = base64ToArrayBuffer(envelope.ciphertext);
+
+    var key = await deriveVaultKey(passphrase, salt, ['decrypt']);
+    var decBuffer = await cryptoObj.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, cipherBuffer);
+
+    var dec = new TextDecoder();
+    return dec.decode(decBuffer);
+  }
+
   // Auto-initialize document theme, shortcuts, and swipe navigation when running in browser
   initTheme();
   initShortcutForwarding();
@@ -489,6 +595,8 @@
     partitionSnapshots: partitionSnapshots,
     createIndexedDBAdapter: createIndexedDBAdapter,
     idbStorage: idbStorage,
+    encryptVaultData: encryptVaultData,
+    decryptVaultData: decryptVaultData,
   };
 
   // Expose on global window object
@@ -507,5 +615,7 @@
     if (typeof global.formatBytes === 'undefined') global.formatBytes = formatBytes;
     if (typeof global.partitionSnapshots === 'undefined') global.partitionSnapshots = partitionSnapshots;
     if (typeof global.idbStorage === 'undefined') global.idbStorage = idbStorage;
+    if (typeof global.encryptVaultData === 'undefined') global.encryptVaultData = encryptVaultData;
+    if (typeof global.decryptVaultData === 'undefined') global.decryptVaultData = decryptVaultData;
   }
 })(typeof window !== 'undefined' ? window : this);

@@ -308,4 +308,89 @@ describe('MoneyApp Shared Core Module', () => {
       assert.equal(computeTargetIndex(6, 'next'), 6);
     });
   });
+
+  describe('AES-GCM Encrypted Vault Storage', () => {
+    const { MoneyApp } = createEnvironment();
+
+    it('encrypts payload into valid money-superapp-vault-v1 envelope with Base64 salt, iv, and ciphertext', async () => {
+      const secretData = JSON.stringify({ key: 'super-secret-balance', amount: 500000 });
+      const vaultStr = await MoneyApp.encryptVaultData(secretData, 'MyMasterPassphrase!123');
+
+      assert.equal(typeof vaultStr, 'string');
+      const envelope = JSON.parse(vaultStr);
+      assert.equal(envelope.format, 'money-superapp-vault-v1');
+      assert.ok(envelope.createdAt);
+      assert.ok(envelope.salt);
+      assert.ok(envelope.iv);
+      assert.ok(envelope.ciphertext);
+      assert.notEqual(envelope.ciphertext, secretData);
+    });
+
+    it('successfully decrypts encrypted vault payload with correct passphrase', async () => {
+      const originalPayload = JSON.stringify({
+        'moneySuperapp.dashboard.goals.v1': { netWorthTarget: 10000000 },
+        'moneySuperapp.rebalance.state': { totalBudget: 25000 },
+      });
+      const passphrase = 'SecurePassphrase$2026';
+
+      const encrypted = await MoneyApp.encryptVaultData(originalPayload, passphrase);
+      const decrypted = await MoneyApp.decryptVaultData(encrypted, passphrase);
+
+      assert.equal(decrypted, originalPayload);
+      const parsed = JSON.parse(decrypted);
+      assert.equal(parsed['moneySuperapp.dashboard.goals.v1'].netWorthTarget, 10000000);
+    });
+
+    it('rejects decryption with wrong passphrase via AEAD authentication tag check', async () => {
+      const original = JSON.stringify({ secret: 'private-financials' });
+      const encrypted = await MoneyApp.encryptVaultData(original, 'CorrectPassword99');
+
+      await assert.rejects(
+        async () => {
+          await MoneyApp.decryptVaultData(encrypted, 'WrongPassword00');
+        },
+        (err) => {
+          assert.ok(err);
+          return true;
+        },
+      );
+    });
+
+    it('rejects decryption on tampered ciphertext', async () => {
+      const original = JSON.stringify({ balance: 1000000 });
+      const encrypted = await MoneyApp.encryptVaultData(original, 'VaultPassKey1');
+      const envelope = JSON.parse(encrypted);
+
+      // Tamper ciphertext
+      envelope.ciphertext = envelope.ciphertext.slice(0, -4) + 'AAAA';
+
+      await assert.rejects(
+        async () => {
+          await MoneyApp.decryptVaultData(envelope, 'VaultPassKey1');
+        },
+        (err) => {
+          assert.ok(err);
+          return true;
+        },
+      );
+    });
+
+    it('safely throws when passphrase is empty or payload format is invalid', async () => {
+      await assert.rejects(async () => {
+        await MoneyApp.encryptVaultData('data', '');
+      });
+
+      await assert.rejects(async () => {
+        await MoneyApp.encryptVaultData('data', null);
+      });
+
+      await assert.rejects(async () => {
+        await MoneyApp.decryptVaultData({}, 'pass');
+      });
+
+      await assert.rejects(async () => {
+        await MoneyApp.decryptVaultData('{ "format": "invalid" }', 'pass');
+      });
+    });
+  });
 });
