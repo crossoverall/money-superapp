@@ -696,4 +696,149 @@ describe('Financial Math Verification', () => {
       assert.equal(calculateAssetValueTHB(10, 100, 'EUR', customRates), 38000);
     });
   });
+
+  describe('Storage Health Diagnostic & Repair Verification', () => {
+    const SCHEMAS = {
+      'rebalanceCalculator.state.v1': { label: 'พอร์ต Rebalance', isJson: true, defaultVal: '{}' },
+      'moneySuperapp.financialGoals.v1': { label: 'เป้าหมายการเงิน (Goals)', isJson: true, defaultVal: '{}' },
+      'moneySuperapp.monthsSlips': { label: 'ประวัติสลิปเงินเดือน', isJson: true, defaultVal: '[]' },
+      'moneySuperapp.lang': { label: 'ภาษา (Language)', isJson: false, defaultVal: 'th' },
+    };
+
+    function inspectStorageHealth(storageMap, schemas) {
+      let totalBytes = 0;
+      let appBytes = 0;
+      let corruptedCount = 0;
+      const items = [];
+      const allowedPrefixes = ['moneySuperapp.', 'remainingMoneyCalculator.', 'rebalanceCalculator.'];
+
+      const keys = Object.keys(storageMap);
+      for (const k of keys) {
+        const rawVal = storageMap[k] != null ? String(storageMap[k]) : '';
+        const keySize = k.length + rawVal.length;
+        totalBytes += keySize;
+
+        const isAppKey = allowedPrefixes.some((p) => k.startsWith(p));
+        if (isAppKey) {
+          appBytes += keySize;
+          const schema = schemas?.[k];
+          const shouldBeJson = schema ? schema.isJson : rawVal.trim().startsWith('{') || rawVal.trim().startsWith('[');
+          let isCorrupted = false;
+
+          if (shouldBeJson) {
+            try {
+              JSON.parse(rawVal);
+            } catch {
+              isCorrupted = true;
+              corruptedCount++;
+            }
+          }
+
+          items.push({
+            key: k,
+            label: schema ? schema.label : k,
+            sizeBytes: keySize,
+            isCorrupted,
+          });
+        }
+      }
+
+      items.sort((a, b) => {
+        if (a.isCorrupted !== b.isCorrupted) return a.isCorrupted ? -1 : 1;
+        return b.sizeBytes - a.sizeBytes;
+      });
+
+      return {
+        totalBytes,
+        appBytes,
+        appKb: parseFloat((appBytes / 1024).toFixed(2)),
+        percentUsed: parseFloat(Math.min(100, (appBytes / (5 * 1024 * 1024)) * 100).toFixed(2)),
+        corruptedCount,
+        items,
+      };
+    }
+
+    function repairStorageItems(storageMap, schemas) {
+      const allowedPrefixes = ['moneySuperapp.', 'remainingMoneyCalculator.', 'rebalanceCalculator.'];
+      const repairedKeys = [];
+      const keys = Object.keys(storageMap);
+
+      for (const k of keys) {
+        const isAppKey = allowedPrefixes.some((p) => k.startsWith(p));
+        if (!isAppKey) continue;
+
+        const rawVal = storageMap[k] != null ? String(storageMap[k]) : '';
+        const schema = schemas?.[k];
+        const shouldBeJson = schema ? schema.isJson : rawVal.trim().startsWith('{') || rawVal.trim().startsWith('[');
+
+        if (shouldBeJson) {
+          try {
+            JSON.parse(rawVal);
+          } catch {
+            if (schema && schema.defaultVal !== undefined) {
+              storageMap[k] = schema.defaultVal;
+            } else {
+              delete storageMap[k];
+            }
+            repairedKeys.push(k);
+          }
+        }
+      }
+
+      return repairedKeys;
+    }
+
+    it('reports 100% healthy status when all app keys have valid JSON or strings', () => {
+      const mockStorage = {
+        'rebalanceCalculator.state.v1': JSON.stringify({ totalBudget: 200000 }),
+        'moneySuperapp.financialGoals.v1': JSON.stringify({ emergencyMonths: 6 }),
+        'moneySuperapp.lang': 'th',
+        unrelatedKey: 'some other value',
+      };
+      const report = inspectStorageHealth(mockStorage, SCHEMAS);
+      assert.equal(report.corruptedCount, 0);
+      assert.equal(report.items.length, 3);
+      assert.equal(
+        report.items.every((it) => !it.isCorrupted),
+        true,
+      );
+      assert.ok(report.appBytes > 0);
+    });
+
+    it('identifies corrupted JSON keys accurately and flags them', () => {
+      const mockStorage = {
+        'rebalanceCalculator.state.v1': '{"totalBudget": 200000',
+        'moneySuperapp.financialGoals.v1': JSON.stringify({ emergencyMonths: 6 }),
+        'moneySuperapp.monthsSlips': 'Corrupted String [Not JSON',
+        'moneySuperapp.lang': 'th',
+      };
+      const report = inspectStorageHealth(mockStorage, SCHEMAS);
+      assert.equal(report.corruptedCount, 2);
+      assert.equal(report.items[0].isCorrupted, true);
+      assert.equal(report.items[1].isCorrupted, true);
+      assert.equal(report.items[2].isCorrupted, false);
+      assert.equal(report.items[3].isCorrupted, false);
+    });
+
+    it('repairs corrupted storage keys to safe default values without wiping intact data', () => {
+      const mockStorage = {
+        'rebalanceCalculator.state.v1': '{"corrupt',
+        'moneySuperapp.financialGoals.v1': JSON.stringify({ emergencyMonths: 6, netWorthTarget: 1000000 }),
+        'moneySuperapp.monthsSlips': '[invalid array',
+      };
+      const repaired = repairStorageItems(mockStorage, SCHEMAS);
+      assert.deepEqual(repaired.sort(), ['moneySuperapp.monthsSlips', 'rebalanceCalculator.state.v1'].sort());
+
+      assert.equal(mockStorage['rebalanceCalculator.state.v1'], '{}');
+      assert.equal(mockStorage['moneySuperapp.monthsSlips'], '[]');
+
+      assert.deepEqual(JSON.parse(mockStorage['moneySuperapp.financialGoals.v1']), {
+        emergencyMonths: 6,
+        netWorthTarget: 1000000,
+      });
+
+      const freshReport = inspectStorageHealth(mockStorage, SCHEMAS);
+      assert.equal(freshReport.corruptedCount, 0);
+    });
+  });
 });

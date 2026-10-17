@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="1.9.4">
+<meta name="version" content="1.9.5">
 <meta name="theme-color" content="#2F8B76">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -307,7 +307,7 @@
       <button data-theme-btn="light" id="btn-theme-light" title="☀ Light Theme" aria-label="Switch to Light Theme"><span class="theme-icon">☀</span></button>
       <button data-theme-btn="dark" id="btn-theme-dark" title="☾ Dark Theme" aria-label="Switch to Dark Theme"><span class="theme-icon">☾</span></button>
     </div>
-    <span class="version-badge">v1.9.4</span>
+    <span class="version-badge">v1.9.5</span>
     <button id="btn-help-modal" onclick="openOnboardingModal()" title="คู่มือการใช้งาน (Quick Tour)" aria-label="Open Quick Tour and Guide">
       <span class="help-icon">❓</span>
     </button>
@@ -322,7 +322,7 @@
 <!-- Privacy Footer Notice -->
 <div class="privacy-bar">
   <span id="lbl-privacy-footer">🔒 100% Client-Side Privacy — ทุกการคำนวณและข้อมูลถูกเก็บไว้ในอุปกรณ์ของคุณเท่านั้น ไม่มีการส่งข้อมูลสู่เซิร์ฟเวอร์</span>
-  <span style="color: #64748b; font-size: 10px;">Money Superapp v1.9.4</span>
+  <span style="color: #64748b; font-size: 10px;">Money Superapp v1.9.5</span>
 </div>
 
 <!-- Mobile Bottom Navigation Bar (Visible on Mobile <= 768px) -->
@@ -472,6 +472,50 @@
         <button onclick="closeSettingsModal(); openOnboardingModal();" style="background: none; border: 1px solid #2F8B76; color: #4FA894; padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
           <span id="lbl-btn-open-guide">เปิดคู่มือ</span>
         </button>
+      </div>
+
+      <!-- Storage Health & Usage Inspector -->
+      <div style="background: #0E1512; padding: 12px 14px; border-radius: 10px; border: 1px solid #24352C;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div>
+            <div style="font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+              <span>🩺</span>
+              <span id="lbl-storage-health-title">สุขภาพข้อมูล & พื้นที่จัดเก็บ (Storage Health)</span>
+            </div>
+            <div style="font-size: 11px; color: #8FA69C; margin-top: 2px;" id="lbl-storage-health-desc">ตรวจสอบความสมบูรณ์และขนาดของข้อมูลในเครื่อง (Client-Side)</div>
+          </div>
+          <button onclick="runStorageHealthCheck(true)" id="btn-diagnose-storage" style="background: rgba(47, 139, 118, 0.15); border: 1px solid #2F8B76; color: #4FA894; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap;">
+            <span id="lbl-btn-diagnose">🔍 ตรวจเช็ค</span>
+          </button>
+        </div>
+
+        <!-- Storage Progress & Status Summary -->
+        <div style="background: rgba(0,0,0,0.25); padding: 8px 10px; border-radius: 6px; border: 1px solid #24352C; font-size: 11px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span style="color: #8FA69C;" id="lbl-storage-usage-text">พื้นที่ที่ใช้งาน:</span>
+            <span id="storage-usage-badge" style="font-weight: 700; color: #4FA894; font-family: monospace;">0.0 KB / ~5,120 KB (0.00%)</span>
+          </div>
+          <div style="width: 100%; height: 6px; background: #1a2721; border-radius: 3px; overflow: hidden; margin-bottom: 6px;">
+            <div id="storage-usage-bar" style="width: 0%; height: 100%; background: #2F8B76; transition: width 0.3s ease;"></div>
+          </div>
+          <div id="storage-health-status" style="display: flex; justify-content: space-between; align-items: center; color: #8FA69C;">
+            <span id="lbl-storage-integrity-status">สถานะข้อมูล: สมบูรณ์ปกติ (100% Healthy)</span>
+            <span id="storage-health-pill" style="display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(47,139,118,0.2); color: #4FA894;">✓ ปกติ</span>
+          </div>
+        </div>
+
+        <!-- Diagnostic Key Details (Expandable) -->
+        <details id="storage-details-accordion" style="margin-top: 8px; font-size: 11px; color: #8FA69C;">
+          <summary style="cursor: pointer; user-select: none; color: #8FA69C;" id="lbl-storage-details-summary">📋 ดูรายละเอียดข้อมูลแต่ละส่วน (Key Inventory)</summary>
+          <div id="storage-keys-list" style="margin-top: 6px; max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; background: #070B09; padding: 6px; border-radius: 6px; border: 1px solid #1a2721;">
+            <!-- Populated dynamically by runStorageHealthCheck() -->
+          </div>
+          <div id="storage-repair-container" style="display: none; margin-top: 8px; text-align: right;">
+            <button onclick="repairCorruptedStorage()" style="background: #C97D5A; color: #fff; border: none; padding: 5px 10px; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer;">
+              <span id="lbl-btn-repair-storage">🛠️ ซ่อมแซมข้อมูลที่เสียหาย</span>
+            </button>
+          </div>
+        </details>
       </div>
 
       <!-- Reset -->
@@ -632,7 +676,13 @@
       onboardingFooterNote: "💡 สามารถกดเปิดคู่มือนี้ได้ตลอดเวลาจากปุ่ม ❓ บนแถบเมนูด้านบน",
       settingsGuideTitle: "📖 คู่มือเริ่มต้นใช้งาน (Quick Tour)",
       settingsGuideDesc: "ดูภาพรวมขั้นตอนการทำงานของเครื่องมือทั้งหมด",
-      btnOpenGuide: "เปิดคู่มือ"
+      btnOpenGuide: "เปิดคู่มือ",
+      storageHealthTitle: "สุขภาพข้อมูล & พื้นที่จัดเก็บ (Storage Health)",
+      storageHealthDesc: "ตรวจสอบความสมบูรณ์และขนาดของข้อมูลในเครื่อง (Client-Side)",
+      btnDiagnose: "🔍 ตรวจเช็ค",
+      storageUsageText: "พื้นที่ที่ใช้งาน:",
+      storageDetailsSummary: "📋 ดูรายละเอียดข้อมูลแต่ละส่วน (Key Inventory)",
+      btnRepairStorage: "🛠️ ซ่อมแซมข้อมูลที่เสียหาย"
     },
     en: {
       settingsBtn: "Data",
@@ -679,7 +729,13 @@
       onboardingFooterNote: "💡 You can reopen this tour anytime by clicking the ❓ button in the top bar.",
       settingsGuideTitle: "📖 Quick Tour & Guide",
       settingsGuideDesc: "Explore the interconnected financial workflow",
-      btnOpenGuide: "Open Guide"
+      btnOpenGuide: "Open Guide",
+      storageHealthTitle: "Storage Health & Usage Inspector",
+      storageHealthDesc: "Check local data integrity and storage consumption",
+      btnDiagnose: "🔍 Diagnose",
+      storageUsageText: "Storage used:",
+      storageDetailsSummary: "📋 View Data Key Inventory",
+      btnRepairStorage: "🛠️ Repair Corrupted Data"
     }
   };
 
@@ -721,6 +777,13 @@
     if(document.getElementById('lbl-reset-title')) document.getElementById('lbl-reset-title').textContent = t.resetTitle;
     if(document.getElementById('lbl-reset-desc')) document.getElementById('lbl-reset-desc').textContent = t.resetDesc;
     if(document.getElementById('lbl-btn-reset')) document.getElementById('lbl-btn-reset').textContent = t.btnReset;
+
+    if(document.getElementById('lbl-storage-health-title')) document.getElementById('lbl-storage-health-title').textContent = t.storageHealthTitle;
+    if(document.getElementById('lbl-storage-health-desc')) document.getElementById('lbl-storage-health-desc').textContent = t.storageHealthDesc;
+    if(document.getElementById('lbl-btn-diagnose')) document.getElementById('lbl-btn-diagnose').textContent = t.btnDiagnose;
+    if(document.getElementById('lbl-storage-usage-text')) document.getElementById('lbl-storage-usage-text').textContent = t.storageUsageText;
+    if(document.getElementById('lbl-storage-details-summary')) document.getElementById('lbl-storage-details-summary').textContent = t.storageDetailsSummary;
+    if(document.getElementById('lbl-btn-repair-storage')) document.getElementById('lbl-btn-repair-storage').textContent = t.btnRepairStorage;
 
     if(document.getElementById('lbl-gdrive-title')) document.getElementById('lbl-gdrive-title').textContent = t.gdriveTitle;
     if(document.getElementById('lbl-gdrive-desc')) document.getElementById('lbl-gdrive-desc').textContent = t.gdriveDesc;
@@ -1100,8 +1163,193 @@
     }
   }
 
+  // --- Storage Health & Diagnostic Subsystem ---
+  const CANONICAL_STORAGE_SCHEMAS = {
+    'rebalanceCalculator.state.v1': { label: 'พอร์ต Rebalance', isJson: true, defaultVal: '{}' },
+    'remainingMoneyCalculator.state.v1': { label: 'งบประมาณรายเดือน', isJson: true, defaultVal: '{}' },
+    'moneySuperapp.debtCalculator.state.v1': { label: 'แผนปลดหนี้', isJson: true, defaultVal: '{}' },
+    'moneySuperapp.monthsSlips': { label: 'ประวัติสลิปเงินเดือน', isJson: true, defaultVal: '[]' },
+    'moneySuperapp.taxBase': { label: 'คำนวณภาษีเงินได้', isJson: true, defaultVal: '{}' },
+    'moneySuperapp.financialGoals.v1': { label: 'เป้าหมายการเงิน (Goals)', isJson: true, defaultVal: '{}' },
+    'moneySuperapp.budgetTemplates.v1': { label: 'แม่แบบงบประมาณ (Templates)', isJson: true, defaultVal: '[]' },
+    'moneySuperapp.dashboardSnapshots.v1': { label: 'ภาพรวม Dashboard (Snapshots)', isJson: true, defaultVal: '[]' },
+    'moneySuperapp.apiSettings': { label: 'ตั้งค่า API Key', isJson: true, defaultVal: '{}' },
+    'moneySuperapp.lang': { label: 'ภาษา (Language)', isJson: false, defaultVal: 'th' },
+    'moneySuperapp.theme': { label: 'ธีม (Theme)', isJson: false, defaultVal: 'light' },
+    'moneySuperapp.hasSeenOnboarding': { label: 'สถานะคู่มือ (Onboarding)', isJson: false, defaultVal: 'true' },
+    'moneySuperapp.googleUser': { label: 'ข้อมูลผู้ใช้ Google', isJson: true, defaultVal: '{}' },
+    'moneySuperapp.lastGoogleSync': { label: 'ประวัติ Sync Drive', isJson: false, defaultVal: '' },
+    'moneySuperapp.pendingBudget': { label: 'งบประมาณข้ามเครื่องมือ', isJson: false, defaultVal: '0' },
+  };
+
+  function inspectStorageHealth(storageMap, schemas) {
+    let totalBytes = 0;
+    let appBytes = 0;
+    let corruptedCount = 0;
+    const items = [];
+    const allowedPrefixes = ['moneySuperapp.', 'remainingMoneyCalculator.', 'rebalanceCalculator.'];
+
+    const keys = Object.keys(storageMap);
+    for (const k of keys) {
+      const rawVal = storageMap[k] != null ? String(storageMap[k]) : '';
+      const keySize = k.length + rawVal.length;
+      totalBytes += keySize;
+
+      const isAppKey = allowedPrefixes.some(p => k.startsWith(p));
+      if (isAppKey) {
+        appBytes += keySize;
+        const schema = schemas && schemas[k];
+        const shouldBeJson = schema ? schema.isJson : (rawVal.trim().startsWith('{') || rawVal.trim().startsWith('['));
+        let isCorrupted = false;
+
+        if (shouldBeJson) {
+          try {
+            JSON.parse(rawVal);
+          } catch (e) {
+            isCorrupted = true;
+            corruptedCount++;
+          }
+        }
+
+        items.push({
+          key: k,
+          label: schema ? schema.label : k,
+          sizeBytes: keySize,
+          isCorrupted,
+        });
+      }
+    }
+
+    items.sort((a, b) => {
+      if (a.isCorrupted !== b.isCorrupted) return a.isCorrupted ? -1 : 1;
+      return b.sizeBytes - a.sizeBytes;
+    });
+
+    return {
+      totalBytes,
+      appBytes,
+      appKb: parseFloat((appBytes / 1024).toFixed(2)),
+      percentUsed: parseFloat(Math.min(100, (appBytes / (5 * 1024 * 1024)) * 100).toFixed(2)),
+      corruptedCount,
+      items,
+    };
+  }
+
+  function runStorageHealthCheck(shouldNotify = false) {
+    const isEN = getLang() === 'en';
+    const storageMap = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k) storageMap[k] = localStorage.getItem(k);
+    }
+
+    const report = inspectStorageHealth(storageMap, CANONICAL_STORAGE_SCHEMAS);
+
+    const badgeEl = document.getElementById('storage-usage-badge');
+    const barEl = document.getElementById('storage-usage-bar');
+    const statusTextEl = document.getElementById('lbl-storage-integrity-status');
+    const pillEl = document.getElementById('storage-health-pill');
+    const listEl = document.getElementById('storage-keys-list');
+    const repairBoxEl = document.getElementById('storage-repair-container');
+
+    if (badgeEl) badgeEl.textContent = `${report.appKb} KB / ~5,120 KB (${report.percentUsed}%)`;
+    if (barEl) barEl.style.width = `${Math.max(1, Math.min(100, report.percentUsed * 10))}%`;
+
+    if (report.corruptedCount === 0) {
+      if (statusTextEl) statusTextEl.textContent = isEN ? 'Data Status: 100% Healthy (0 issues)' : 'สถานะข้อมูล: สมบูรณ์ปกติ (ไม่พบข้อผิดพลาด)';
+      if (pillEl) {
+        pillEl.textContent = isEN ? '✓ Healthy' : '✓ ปกติ';
+        pillEl.style.background = 'rgba(47,139,118,0.2)';
+        pillEl.style.color = '#4FA894';
+      }
+      if (repairBoxEl) repairBoxEl.style.display = 'none';
+      if (shouldNotify) alert(isEN ? `✓ Storage health check passed! All ${report.items.length} items are healthy.` : `✓ ตรวจเช็คเรียบร้อย! ข้อมูลทั้งหมด ${report.items.length} รายการสมบูรณ์ปกติ`);
+    } else {
+      if (statusTextEl) statusTextEl.textContent = isEN ? `⚠️ ${report.corruptedCount} corrupted item(s) detected` : `⚠️ พบข้อมูลเสียหาย ${report.corruptedCount} รายการ`;
+      if (pillEl) {
+        pillEl.textContent = isEN ? '⚠️ Corrupted' : '⚠️ เสียหาย';
+        pillEl.style.background = 'rgba(201,125,90,0.2)';
+        pillEl.style.color = '#C97D5A';
+      }
+      if (repairBoxEl) repairBoxEl.style.display = 'block';
+      const detailsEl = document.getElementById('storage-details-accordion');
+      if (detailsEl) detailsEl.open = true;
+      if (shouldNotify) alert(isEN ? `⚠️ Found ${report.corruptedCount} corrupted item(s). Click 'Repair' to restore safe defaults.` : `⚠️ พบข้อมูลเสียหาย ${report.corruptedCount} รายการ สามารถกดปุ่มซ่อมแซมเพื่อคืนค่าปลอดภัยได้`);
+    }
+
+    if (listEl) {
+      listEl.innerHTML = '';
+      if (report.items.length === 0) {
+        listEl.innerHTML = `<div style="color:#5B7168; font-size:10px; padding:4px;">${isEN ? 'No data stored yet' : 'ยังไม่มีข้อมูลถูกบันทึก'}</div>`;
+      } else {
+        report.items.forEach(item => {
+          const row = document.createElement('div');
+          row.style.display = 'flex';
+          row.style.justifyContent = 'space-between';
+          row.style.alignItems = 'center';
+          row.style.fontSize = '10px';
+          row.style.padding = '3px 4px';
+          row.style.borderRadius = '4px';
+          row.style.background = item.isCorrupted ? 'rgba(201,125,90,0.15)' : 'rgba(255,255,255,0.02)';
+          row.innerHTML = `
+            <div style="display:flex; align-items:center; gap:6px; overflow:hidden;">
+              <span>${item.isCorrupted ? '⚠️' : '📄'}</span>
+              <span style="font-family:monospace; color:${item.isCorrupted ? '#C97D5A' : '#EAF2EE'}; font-weight:${item.isCorrupted ? '700' : '400'}; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="${item.key}">${item.key}</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+              <span style="color:#8FA69C;">${(item.sizeBytes / 1024).toFixed(1)} KB</span>
+              <span style="color:${item.isCorrupted ? '#C97D5A' : '#4FA894'}; font-weight:700;">${item.isCorrupted ? (isEN ? 'Corrupted' : 'เสียหาย') : 'OK'}</span>
+            </div>
+          `;
+          listEl.appendChild(row);
+        });
+      }
+    }
+    return report;
+  }
+
+  function repairCorruptedStorage() {
+    const isEN = getLang() === 'en';
+    const storageMap = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k) storageMap[k] = localStorage.getItem(k);
+    }
+    const repairedKeys = [];
+    const allowedPrefixes = ['moneySuperapp.', 'remainingMoneyCalculator.', 'rebalanceCalculator.'];
+
+    Object.keys(storageMap).forEach(k => {
+      const isAppKey = allowedPrefixes.some(p => k.startsWith(p));
+      if (!isAppKey) return;
+      const rawVal = storageMap[k] || '';
+      const schema = CANONICAL_STORAGE_SCHEMAS[k];
+      const shouldBeJson = schema ? schema.isJson : (rawVal.trim().startsWith('{') || rawVal.trim().startsWith('['));
+      if (shouldBeJson) {
+        try {
+          JSON.parse(rawVal);
+        } catch(e) {
+          if (schema && schema.defaultVal !== undefined) {
+            localStorage.setItem(k, schema.defaultVal);
+          } else {
+            localStorage.removeItem(k);
+          }
+          repairedKeys.push(k);
+        }
+      }
+    });
+
+    runStorageHealthCheck(false);
+    alert(isEN ? `✓ Repaired ${repairedKeys.length} corrupted item(s) successfully!` : `✓ ซ่อมแซมข้อมูลที่เสียหายเรียบร้อยแล้ว (${repairedKeys.length} รายการ)!`);
+    reloadFrame();
+  }
+
+  window.runStorageHealthCheck = runStorageHealthCheck;
+  window.repairCorruptedStorage = repairCorruptedStorage;
+  window.inspectStorageHealth = inspectStorageHealth;
+
   function openSettingsModal() {
     updateGoogleUI();
+    runStorageHealthCheck(false);
     document.getElementById('settingsModal').style.display = 'flex';
   }
   function closeSettingsModal() {
