@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="2.4.5">
+<meta name="version" content="2.4.6">
 <title>คำนวณการเติมเงินรายเดือน</title>
 <link rel="stylesheet" href="css/theme.css">
 <style>
@@ -593,6 +593,112 @@
     </div>
   </div>
 
+  <!-- Foreign Investment & Crypto Repatriation Tax Advisor (Roadmap Phase 63) -->
+  <div class="card" id="panelForeignTaxAdvisor" role="region" aria-label="Foreign Investment &amp; Crypto Repatriation Tax Advisor" style="margin-bottom:16px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleForeignTaxAdvisor()" id="btnToggleForeignTax" role="button" tabindex="0" aria-expanded="false">
+      <div>
+        <div style="font-size:14px; font-weight:700; color:var(--ink);" id="lblForeignTaxTitle">
+          🌐 วางแผนภาษีนำเงินลงทุนต่างประเทศ/คริปโตกลับไทย (ป.161/ป.162)
+        </div>
+        <div style="font-size:11px; color:var(--ink-dim);" id="lblForeignTaxSubtitle">
+          คำสั่งกรมสรรพากรที่ ป.161/2566 &amp; ป.162/2566 (ประเมินสิทธิยกเว้นก่อน-หลังปี 2024, เกณฑ์ 180 วัน, และเครดิตภาษีซ้อน DTA)
+        </div>
+      </div>
+      <span id="foreignTaxToggleArrow" style="font-size:14px; color:var(--core); font-weight:700;">▼</span>
+    </div>
+
+    <div id="foreignTaxPanelBody" style="display:none; margin-top:14px; border-top:1px solid var(--line); padding-top:12px;">
+      <!-- Input Controls Grid -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; margin-bottom:12px;">
+        <div>
+          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpRemitAmt">
+            ยอดเงินที่นำกลับเข้าไทยในปีภาษี (บาท)
+          </label>
+          <input type="number" id="inpRemittanceAmount" value="500000" min="0" step="10000" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateForeignTaxUI()">
+        </div>
+
+        <div>
+          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpPre2024Amt">
+            ส่วนที่เป็นเงินได้ก่อนปี 2567 (ป.162 ยกเว้น 100%)
+          </label>
+          <input type="number" id="inpPre2024Amount" value="0" min="0" step="10000" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateForeignTaxUI()">
+        </div>
+
+        <div>
+          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpPrincipalAmt">
+            ส่วนที่เป็นเงินต้นลงทุนเดิม (ไม่ใช่กำไร - ไม่เสียภาษี)
+          </label>
+          <input type="number" id="inpPrincipalAmount" value="0" min="0" step="10000" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateForeignTaxUI()">
+        </div>
+
+        <div>
+          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpDaysInThai">
+            จำนวนวันพักอาศัยในไทยในปีภาษี (วัน)
+          </label>
+          <input type="number" id="inpDaysInThailand" value="200" min="0" max="366" step="1" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateForeignTaxUI()">
+        </div>
+
+        <div>
+          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpForeignTaxPaid">
+            ภาษีที่ถูกหักไว้ ณ ต่างประเทศ (บาท) - เครดิต DTA
+          </label>
+          <input type="number" id="inpForeignTaxPaid" value="0" min="0" step="1000" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateForeignTaxUI()">
+        </div>
+
+        <div>
+          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpOtherDomesticNet">
+            เงินได้สุทธิในไทยก่อนรวมเงินนอก (บาท)
+          </label>
+          <input type="number" id="inpOtherDomesticNet" value="500000" min="0" step="10000" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateForeignTaxUI()">
+        </div>
+      </div>
+
+      <!-- Quick Preset Buttons -->
+      <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:12px;">
+        <button type="button" class="tab" onclick="setRemittancePreset(100000)" style="font-size:10.5px; padding:3px 8px; width:auto;">100k</button>
+        <button type="button" class="tab" onclick="setRemittancePreset(500000)" style="font-size:10.5px; padding:3px 8px; width:auto;">500k</button>
+        <button type="button" class="tab" onclick="setRemittancePreset(1000000)" style="font-size:10.5px; padding:3px 8px; width:auto;">1M</button>
+        <button type="button" class="tab" onclick="setRemittancePreset(3000000)" style="font-size:10.5px; padding:3px 8px; width:auto;">3M</button>
+        <button type="button" class="tab" onclick="setRemittancePre2024Full()" style="font-size:10.5px; padding:3px 8px; width:auto; border-color:var(--ok); color:var(--ok);" id="btnPre2024Preset">
+          🛡️ ยกเว้นเงินได้ก่อนปี 2567 ทั้งหมด
+        </button>
+      </div>
+
+      <!-- Key Metrics Display Grid -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; margin-bottom:12px;">
+        <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
+          <span style="font-size:10px; color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardForeignTaxable">ยอดเงินที่เข้าเกณฑ์เสียภาษี</span>
+          <span id="valForeignTaxableRemit" style="font-size:13.5px; font-weight:800; color:var(--ink);">0 บาท</span>
+          <div style="font-size:9.5px; color:var(--ok); margin-top:2px;" id="subForeignExemptTotal">ได้รับยกเว้น: 0 บาท</div>
+        </div>
+        <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
+          <span style="font-size:10px; color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGrossThaiTax">ภาษีไทยก่อนหักเครดิต</span>
+          <span id="valForeignGrossTax" style="font-size:13.5px; font-weight:800; color:var(--ink);">0 บาท</span>
+          <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="subForeignEffectiveRate">อัตราภาษีเฉลี่ย: 0.0%</div>
+        </div>
+        <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
+          <span style="font-size:10px; color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardDtaCredit">เครดิตภาษีซ้อน (DTA)</span>
+          <span id="valForeignDtaCredit" style="font-size:13.5px; font-weight:800; color:var(--ok);">0 บาท</span>
+          <div style="font-size:9.5px; color:var(--ok); margin-top:2px;" id="subForeignDtaStatus">ป้องกันการเสียภาษีซ้ำซ้อน</div>
+        </div>
+        <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
+          <span style="font-size:10px; color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardNetThaiTax">ภาษีไทยสุทธิที่ต้องชำระ</span>
+          <span id="valForeignNetTax" style="font-size:13.5px; font-weight:800; color:var(--core);">0 บาท</span>
+          <div style="font-size:9.5px; color:var(--core); margin-top:2px;" id="subForeignNetRetained">เงินเหลือเข้าไทยสุทธิ: 0 บาท</div>
+        </div>
+      </div>
+
+      <!-- Strategic Repatriation Guidance Banner -->
+      <div id="boxForeignTaxAdvice" style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:12px; font-size:11px; line-height:1.5;"></div>
+
+      <!-- Statutory Reference Note -->
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:8px 12px; font-size:10.5px; color:var(--ink-dim); line-height:1.45;" id="boxForeignLawRef">
+        ⚖️ <strong id="lblForeignLawTitle">กฎหมายอ้างอิง:</strong>
+        <span id="txtForeignLawDesc">ประมวลรัษฎากร มาตรา 41 วรรคสอง, คำสั่งกรมสรรพากรที่ ป.161/2566 (บังคับใช้ 1 ม.ค. 2567) และ ป.162/2566 (คุ้มครองเงินได้ก่อนปี 2567), และพระราชกฤษฎีกา ฉบับที่ 300 ว่าด้วยการยกเว้นภาษีตามอนุสัญญาภาษีซ้อน (DTA)</span>
+      </div>
+    </div>
+  </div>
+
   <div id="bucketsContainer" role="region" aria-label="Investment Buckets and Assets"></div>
 
   <div class="howto" id="howto">
@@ -612,7 +718,7 @@
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v2.4.5</p>
+  <p class="version-tag">v2.4.6</p>
 
 <script src="js/shared.js"></script>
 <script src="js/rebalance.js"></script>

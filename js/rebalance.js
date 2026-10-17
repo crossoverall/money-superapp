@@ -62,6 +62,23 @@ const EN = {
   lblGoldTaxTitle: 'Thai Gold Tax Law:',
   txtGoldTaxDesc:
     'Capital gains from buying and selling physical gold bullion and jewelry by individuals are exempt from Personal Income Tax under Section 42(9) of the Revenue Code (movable property acquired without commercial trade intent).',
+  lblForeignTaxTitle: 'Foreign Investment & Crypto Repatriation Tax Advisor (Orders P.161 & P.162)',
+  lblForeignTaxSubtitle:
+    'Revenue Dept Orders P.161/2566 & P.162/2566 (Pre/Post-2024 exemption, 180-day residency, and DTA tax credit)',
+  lblInpRemitAmt: 'Remittance Amount Brought into Thailand (THB)',
+  lblInpPre2024Amt: 'Derived Before 2024 (P.162 100% Exempt)',
+  lblInpPrincipalAmt: 'Original Principal Capital (Exempt from Assessable Income)',
+  lblInpDaysInThai: 'Days Residing in Thailand in Tax Year (Days)',
+  lblInpForeignTaxPaid: 'Foreign Tax Withheld Abroad (THB) - DTA Credit',
+  lblInpOtherDomesticNet: 'Domestic Net Taxable Income in Thailand (THB)',
+  btnPre2024Preset: '🛡️ Exempt All Pre-2024 Capital/Gains',
+  lblCardForeignTaxable: 'Assessable Taxable Remittance',
+  lblCardGrossThaiTax: 'Gross Thai PIT on Remittance',
+  lblCardDtaCredit: 'DTA Foreign Tax Credit',
+  lblCardNetThaiTax: 'Net Thai Tax Payable',
+  lblForeignLawTitle: 'Statutory References:',
+  txtForeignLawDesc:
+    'Revenue Code Section 41 Paragraph 2, Revenue Department Orders Por. 161/2566 (effective 1 Jan 2024) & Por. 162/2566 (grandfathered pre-2024 income), and Royal Decree No. 300 (Foreign Tax Credit under DTA).',
 };
 if (LANG === 'en') {
   document.title = 'Monthly Top-up Calculator';
@@ -121,6 +138,21 @@ if (LANG === 'en') {
     'thGoldAction',
     'lblGoldTaxTitle',
     'txtGoldTaxDesc',
+    'lblForeignTaxTitle',
+    'lblForeignTaxSubtitle',
+    'lblInpRemitAmt',
+    'lblInpPre2024Amt',
+    'lblInpPrincipalAmt',
+    'lblInpDaysInThai',
+    'lblInpForeignTaxPaid',
+    'lblInpOtherDomesticNet',
+    'btnPre2024Preset',
+    'lblCardForeignTaxable',
+    'lblCardGrossThaiTax',
+    'lblCardDtaCredit',
+    'lblCardNetThaiTax',
+    'lblForeignLawTitle',
+    'txtForeignLawDesc',
   ].forEach((id) => {
     const el = document.getElementById(id);
     if (el && EN[id]) el.textContent = EN[id];
@@ -2887,6 +2919,228 @@ function initGoldCalculator() {
   }
 }
 
+// ==========================================
+// Foreign Investment & Crypto Repatriation Tax Advisor (Roadmap Phase 63)
+// ==========================================
+const FOREIGN_TAX_STORAGE_KEY = 'money_superapp_foreign_tax_v1';
+let foreignTaxState = {
+  isOpen: false,
+  remittanceAmount: 500000,
+  pre2024Amount: 0,
+  principalAmount: 0,
+  daysInThailand: 200,
+  foreignTaxPaid: 0,
+  otherDomesticNetIncome: 500000,
+};
+
+function loadForeignTaxState() {
+  try {
+    const raw = localStorage.getItem(FOREIGN_TAX_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        foreignTaxState = { ...foreignTaxState, ...parsed };
+      }
+    }
+  } catch (_e) {
+    // Graceful fallback to default state
+  }
+}
+
+function saveForeignTaxState() {
+  try {
+    localStorage.setItem(FOREIGN_TAX_STORAGE_KEY, JSON.stringify(foreignTaxState));
+  } catch (_e) {
+    // Storage quota or disabled fallback
+  }
+}
+
+function toggleForeignTaxAdvisor() {
+  const panel = document.getElementById('foreignTaxPanelBody');
+  const arrow = document.getElementById('foreignTaxToggleArrow');
+  const btn = document.getElementById('btnToggleForeignTax');
+  if (!panel) return;
+  const isHidden = panel.style.display === 'none' || !panel.style.display;
+  panel.style.display = isHidden ? 'block' : 'none';
+  if (arrow) arrow.textContent = isHidden ? '▲' : '▼';
+  if (btn) btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+  foreignTaxState.isOpen = isHidden;
+  saveForeignTaxState();
+  if (isHidden) {
+    updateForeignTaxUI();
+  }
+}
+
+function setRemittancePreset(amt) {
+  const inp = document.getElementById('inpRemittanceAmount');
+  if (inp) {
+    inp.value = amt;
+    updateForeignTaxUI();
+  }
+}
+
+function setRemittancePre2024Full() {
+  const remitEl = document.getElementById('inpRemittanceAmount');
+  const preEl = document.getElementById('inpPre2024Amount');
+  if (remitEl && preEl) {
+    preEl.value = remitEl.value;
+    updateForeignTaxUI();
+  }
+}
+
+function updateForeignTaxUI() {
+  const remitEl = document.getElementById('inpRemittanceAmount');
+  const pre2024El = document.getElementById('inpPre2024Amount');
+  const principalEl = document.getElementById('inpPrincipalAmount');
+  const daysEl = document.getElementById('inpDaysInThailand');
+  const foreignTaxEl = document.getElementById('inpForeignTaxPaid');
+  const domesticNetEl = document.getElementById('inpOtherDomesticNet');
+
+  if (!remitEl) return;
+
+  const remittanceAmount = Math.max(0, parseFloat(remitEl.value) || 0);
+  const pre2024Amount = Math.max(0, parseFloat(pre2024El ? pre2024El.value : 0) || 0);
+  const principalAmount = Math.max(0, parseFloat(principalEl ? principalEl.value : 0) || 0);
+  const daysInThailand = Math.max(0, parseInt(daysEl ? daysEl.value : 180, 10) || 0);
+  const foreignTaxPaid = Math.max(0, parseFloat(foreignTaxEl ? foreignTaxEl.value : 0) || 0);
+  const otherDomesticNetIncome = Math.max(0, parseFloat(domesticNetEl ? domesticNetEl.value : 0) || 0);
+
+  foreignTaxState.remittanceAmount = remittanceAmount;
+  foreignTaxState.pre2024Amount = pre2024Amount;
+  foreignTaxState.principalAmount = principalAmount;
+  foreignTaxState.daysInThailand = daysInThailand;
+  foreignTaxState.foreignTaxPaid = foreignTaxPaid;
+  foreignTaxState.otherDomesticNetIncome = otherDomesticNetIncome;
+  saveForeignTaxState();
+
+  const calc =
+    typeof MoneyApp !== 'undefined' && MoneyApp.calculateForeignRepatriationTax
+      ? MoneyApp.calculateForeignRepatriationTax({
+          remittanceAmount,
+          pre2024Amount,
+          principalAmount,
+          daysInThailand,
+          foreignTaxPaid,
+          otherDomesticNetIncome,
+        })
+      : {
+          isResident: daysInThailand >= 180,
+          taxableRemittance: Math.max(0, remittanceAmount - pre2024Amount - principalAmount),
+          totalExemptAmount: Math.min(remittanceAmount, pre2024Amount + principalAmount),
+          grossThaiTaxOnRemittance: 0,
+          dtaForeignTaxCredit: 0,
+          netThaiTaxPayable: 0,
+          effectiveTaxRate: 0,
+          netRetainedInThailand: remittanceAmount,
+          notes: [],
+        };
+
+  const currencyUnit = LANG === 'en' ? 'THB' : 'บาท';
+
+  const valTaxable = document.getElementById('valForeignTaxableRemit');
+  const subExempt = document.getElementById('subForeignExemptTotal');
+  const valGross = document.getElementById('valForeignGrossTax');
+  const subEff = document.getElementById('subForeignEffectiveRate');
+  const valDta = document.getElementById('valForeignDtaCredit');
+  const subDta = document.getElementById('subForeignDtaStatus');
+  const valNet = document.getElementById('valForeignNetTax');
+  const subRetained = document.getElementById('subForeignNetRetained');
+  const boxAdvice = document.getElementById('boxForeignTaxAdvice');
+
+  if (valTaxable) valTaxable.textContent = `${formatMoney(calc.taxableRemittance)} ${currencyUnit}`;
+  if (subExempt) {
+    subExempt.textContent =
+      LANG === 'en'
+        ? `Total Exempt: ${formatMoney(calc.totalExemptAmount)} ${currencyUnit}`
+        : `ได้รับยกเว้น: ${formatMoney(calc.totalExemptAmount)} ${currencyUnit}`;
+  }
+
+  if (valGross) valGross.textContent = `${formatMoney(calc.grossThaiTaxOnRemittance)} ${currencyUnit}`;
+  if (subEff) {
+    subEff.textContent =
+      LANG === 'en'
+        ? `Effective Rate: ${calc.effectiveTaxRate.toFixed(1)}%`
+        : `อัตราภาษีเฉลี่ย: ${calc.effectiveTaxRate.toFixed(1)}%`;
+  }
+
+  if (valDta) valDta.textContent = `${formatMoney(calc.dtaForeignTaxCredit)} ${currencyUnit}`;
+  if (subDta) {
+    if (foreignTaxPaid > 0) {
+      subDta.textContent = LANG === 'en' ? 'DTA relief applied' : 'หักลดหย่อนภาษีซ้ำซ้อนแล้ว';
+    } else {
+      subDta.textContent = LANG === 'en' ? 'No foreign tax claimed' : 'ไม่มีการขอเครดิตภาษีต่างประเทศ';
+    }
+  }
+
+  if (valNet) {
+    valNet.textContent = `${formatMoney(calc.netThaiTaxPayable)} ${currencyUnit}`;
+    valNet.style.color = calc.netThaiTaxPayable > 0 ? 'var(--warn)' : 'var(--ok)';
+  }
+  if (subRetained) {
+    subRetained.textContent =
+      LANG === 'en'
+        ? `Net Retained: ${formatMoney(calc.netRetainedInThailand)} ${currencyUnit}`
+        : `เงินเหลือเข้าไทยสุทธิ: ${formatMoney(calc.netRetainedInThailand)} ${currencyUnit}`;
+  }
+
+  if (boxAdvice) {
+    let adviceHtml = '';
+    if (!calc.isResident) {
+      adviceHtml =
+        LANG === 'en'
+          ? `🟢 <strong>Non-Resident Exemption (Section 41 Paragraph 3):</strong> Since your stay in Thailand is under 180 days (${daysInThailand} days), you are a tax non-resident. Remittances of foreign capital or gains into Thailand are <strong>100% exempt from Thai Personal Income Tax</strong> regardless of when earned.`
+          : `🟢 <strong>สิทธิประโยชน์ผู้ไม่อยู่ในไทยถึง 180 วัน (มาตรา 41 วรรคสาม):</strong> เนื่องจากคุณพำนักในไทยไม่ถึง 180 วันในปีภาษี (${daysInThailand} วัน) ถือเป็นผู้ไม่มีถิ่นที่อยู่ทางภาษีในไทย เงินได้หรือกำไรจากการลงทุนต่างประเทศที่นำเข้าไทย<strong>ได้รับการยกเว้นภาษีเงินได้ 100%</strong> โดยไม่ต้องคำนวณภาษี`;
+    } else if (calc.taxableRemittance === 0) {
+      adviceHtml =
+        LANG === 'en'
+          ? '🛡️ <strong>Fully Tax-Exempt Remittance:</strong> 100% of the remitted amount is shielded from Thai PIT via Pre-2024 grandfathering (Order P.162/2566) or original principal return. <em>Tip: Ensure you retain broker transfer slips and holding statements as statutory audit proof.</em>'
+          : '🛡️ <strong>ได้รับการยกเว้นภาษีทั้งจำนวน:</strong> เงินที่นำเข้าไทยทั้ง 100% ได้รับยกเว้นภาษีเงินได้บุคคลธรรมดา จากสิทธิประโยชน์เงินได้ก่อนปี 2567 (คำสั่ง ป.162/2566) หรือการถอนเงินต้นลงทุนเดิม <em>คำแนะนำ: ควรเก็บหลักฐานใบโอนเงิน บัญชีโบรกเกอร์ต่างประเทศ และ Bank Statement ไว้เป็นหลักฐานตรวจสอบ</em>';
+    } else {
+      const topBracketRate = calc.effectiveTaxRate > 20 ? '30-35%' : calc.effectiveTaxRate > 10 ? '15-20%' : '5-10%';
+      adviceHtml =
+        LANG === 'en'
+          ? `💡 <strong>Strategic Repatriation Advice (Orders P.161 & P.162):</strong><br>
+           • Remitted taxable assessable income is <strong>${formatMoney(calc.taxableRemittance)} THB</strong>, incurring net Thai tax of <strong>${formatMoney(calc.netThaiTaxPayable)} THB</strong> (effective ~${calc.effectiveTaxRate.toFixed(1)}%).<br>
+           • <strong>Bracket Management:</strong> If feasible, consider spreading remittances across multiple calendar years to stay within lower PIT brackets (5% - 15%).<br>
+           • <strong>DTA Foreign Tax Credit:</strong> If foreign withholding taxes (e.g. US 15% dividend WHT under Thai-US DTA) were deducted, retain IRS Form 1042-S / broker proof to claim full credit under Royal Decree No. 300.`
+          : `💡 <strong>กลยุทธ์การบริหารภาษีนำเงินกลับไทย (คำสั่ง ป.161 & ป.162):</strong><br>
+           • ยอดเงินได้ที่ต้องเสียภาษีสุทธิคือ <strong>${formatMoney(calc.taxableRemittance)} บาท</strong> มีภาษีต้องชำระสุทธิ <strong>${formatMoney(calc.netThaiTaxPayable)} บาท</strong> (อัตราภาษีเฉลี่ย ~${calc.effectiveTaxRate.toFixed(1)}%)<br>
+           • <strong>การกระจายปีภาษี (Tranche Spreading):</strong> หากไม่จำเป็นต้องใช้เงินก้อนทันที ควรพิจารณาแบ่งยอดนำเงินกลับไทยข้ามปีปฏิทินเพื่อรักษาระดับฐานภาษีบุคคลธรรมดาไม่ให้กระโดดขึ้นไปขั้น ${topBracketRate}<br>
+           • <strong>เครดิตภาษีซ้อน (DTA):</strong> หากถูกหักภาษี ณ ต่างประเทศไว้แล้ว (เช่น ภาษีปันผลหุ้นสหรัฐฯ 15% ตามอนุสัญญา DTA) ให้เตรียมเอกสารรับรองการหักภาษี (เช่น Form 1042-S) เพื่อขอลดหย่อนภาษีตาม พ.ร.ฎ. ฉบับที่ 300`;
+    }
+    boxAdvice.innerHTML = adviceHtml;
+  }
+}
+
+function initForeignTaxAdvisor() {
+  loadForeignTaxState();
+  const remitEl = document.getElementById('inpRemittanceAmount');
+  const pre2024El = document.getElementById('inpPre2024Amount');
+  const principalEl = document.getElementById('inpPrincipalAmount');
+  const daysEl = document.getElementById('inpDaysInThailand');
+  const foreignTaxEl = document.getElementById('inpForeignTaxPaid');
+  const domesticNetEl = document.getElementById('inpOtherDomesticNet');
+  const panel = document.getElementById('foreignTaxPanelBody');
+  const arrow = document.getElementById('foreignTaxToggleArrow');
+  const btn = document.getElementById('btnToggleForeignTax');
+
+  if (remitEl && foreignTaxState.remittanceAmount != null) remitEl.value = foreignTaxState.remittanceAmount;
+  if (pre2024El && foreignTaxState.pre2024Amount != null) pre2024El.value = foreignTaxState.pre2024Amount;
+  if (principalEl && foreignTaxState.principalAmount != null) principalEl.value = foreignTaxState.principalAmount;
+  if (daysEl && foreignTaxState.daysInThailand != null) daysEl.value = foreignTaxState.daysInThailand;
+  if (foreignTaxEl && foreignTaxState.foreignTaxPaid != null) foreignTaxEl.value = foreignTaxState.foreignTaxPaid;
+  if (domesticNetEl && foreignTaxState.otherDomesticNetIncome != null)
+    domesticNetEl.value = foreignTaxState.otherDomesticNetIncome;
+
+  if (foreignTaxState.isOpen && panel) {
+    panel.style.display = 'block';
+    if (arrow) arrow.textContent = '▲';
+    if (btn) btn.setAttribute('aria-expanded', 'true');
+  }
+
+  updateForeignTaxUI();
+}
+
 // Global window exposure for inline handlers
 if (typeof window !== 'undefined') {
   window.setGoldWeightPreset = setGoldWeightPreset;
@@ -2896,6 +3150,10 @@ if (typeof window !== 'undefined') {
   window.removeGoldLot = removeGoldLot;
   window.clearGoldLots = clearGoldLots;
   window.exportGoldToPortfolio = exportGoldToPortfolio;
+  window.toggleForeignTaxAdvisor = toggleForeignTaxAdvisor;
+  window.setRemittancePreset = setRemittancePreset;
+  window.setRemittancePre2024Full = setRemittancePre2024Full;
+  window.updateForeignTaxUI = updateForeignTaxUI;
 }
 
 renderSplit();
@@ -2905,3 +3163,4 @@ compute();
 updatePriceTimestampUI();
 initAutoRefresh();
 initGoldCalculator();
+initForeignTaxAdvisor();

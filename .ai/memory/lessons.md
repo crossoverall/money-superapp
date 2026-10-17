@@ -15,6 +15,20 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-17: Foreign Investment & Crypto Repatriation Tax Advisor (v2.4.6)
+
+- **Date & Context:** 2026-10-17, during implementation of Foreign Investment & Crypto Repatriation Tax Advisor in `rebalance.html` / `js/rebalance.js` / `js/shared.js` (`v2.4.6`).
+- **Problem:** Following the Revenue Department's major shift under Orders Por. 161/2566 and Por. 162/2566, Thai investors bringing offshore investment capital, stock gains, or crypto proceeds into Thailand face confusing tax rules and risk accidental double taxation or excessive PIT liability.
+- **Root Cause:** Prior to 2024, Section 41 Paragraph 2 was interpreted using the "different tax year" loophole (remitting in a subsequent year was non-taxable). Order P.161 revoked this loophole from 1 Jan 2024 onwards, but Order P.162 grandfathered all pre-2024 earnings and capital. Furthermore, original principal capital returns are not assessable income, and DTA tax credits under Royal Decree No. 300 can offset foreign withholding taxes.
+- **Solution & Rule:**
+  1. Implement `calculateForeignRepatriationTax(params)` in `js/shared.js`:
+     - Test 180-day Thai residency rule (Section 41 Paragraph 3: $< 180$ days is 100% tax-exempt non-resident).
+     - Separate pre-2024 earnings (Order P.162: 100% grandfathered exemption) and original principal capital return (not taxable income).
+     - Compute progressive Thai PIT liability on post-2024 taxable remittances over existing domestic net taxable income base.
+     - Compute Double Taxation Agreement (DTA) foreign tax credit cap under Royal Decree No. 300 to offset foreign taxes paid (e.g. US 15% dividend WHT).
+  2. Implement interactive advisor card `#panelForeignTaxAdvisor` with quick preset buttons, real-time metrics, strategic guidance, and statutory legal citations.
+  3. Validate with unit tests in `tests/foreign-tax-advisor.test.mjs` and smoke test in `tests/smoke.test.mjs`.
+
 ### 2026-10-17: Retirement 3-Bucket Cash Flow & SSO Drawdown Simulator (v2.4.2)
 
 - **Date & Context:** 2026-10-17, during implementation of Retirement 3-Bucket Cash Flow Allocation & Social Security Offset Simulator in `dashboard.html` / `js/dashboard.js` (`v2.4.2`).

@@ -1748,6 +1748,92 @@
     };
   }
 
+  /**
+   * Calculates Thai Foreign Investment & Crypto Repatriation Tax (คำสั่งกรมสรรพากร ป.161/2566 & ป.162/2566)
+   *
+   * @param {Object} params
+   * @param {number} [params.remittanceAmount=0] - Total foreign funds remitted into Thailand (THB)
+   * @param {number} [params.pre2024AccumulatedAmount=0] - Portion derived abroad before 1 Jan 2024 (exempt under P.162/2566)
+   * @param {number} [params.principalCapitalAmount=0] - Portion representing original invested capital (exempt from assessable income)
+   * @param {number} [params.daysInThailand=180] - Number of days residing in Thailand in the remittance tax year
+   * @param {number} [params.foreignTaxPaidThb=0] - Foreign tax paid abroad eligible for DTA tax credit (THB)
+   * @param {number} [params.otherTaxableNetIncome=0] - Domestic net taxable income in Thailand before remittance (THB)
+   * @returns {Object} Tax liability, DTA credits, exemptions, and strategic repatriation guidance
+   */
+  function calculateForeignRepatriationTax(params) {
+    params = params || {};
+    var remittanceAmount = Math.max(0, parseNum(params.remittanceAmount));
+    var pre2024AccumulatedAmount = Math.max(0, parseNum(params.pre2024AccumulatedAmount));
+    var principalCapitalAmount = Math.max(0, parseNum(params.principalCapitalAmount));
+    var daysInThailand = params.daysInThailand !== undefined ? parseNum(params.daysInThailand) : 180;
+    var foreignTaxPaidThb = Math.max(0, parseNum(params.foreignTaxPaidThb));
+    var otherTaxableNetIncome = Math.max(0, parseNum(params.otherTaxableNetIncome));
+
+    var isTaxResident = daysInThailand >= 180;
+    var isExempt = false;
+    var exemptionReason = 'none';
+
+    if (!isTaxResident) {
+      isExempt = true;
+      exemptionReason = 'non_resident_under_180_days';
+      return {
+        remittanceAmount: remittanceAmount,
+        daysInThailand: daysInThailand,
+        isTaxResident: false,
+        isExempt: true,
+        exemptionReason: exemptionReason,
+        pre2024ExemptAmount: 0,
+        capitalPrincipalExemptAmount: 0,
+        taxableRemittance: 0,
+        grossThaiTaxOnRemittance: 0,
+        allowableDtaCredit: 0,
+        netThaiTaxPayable: 0,
+        dtaSavings: 0,
+        effectiveTaxRatePct: 0,
+        totalNetCashRetained: remittanceAmount,
+      };
+    }
+
+    var pre2024ExemptAmount = Math.min(remittanceAmount, pre2024AccumulatedAmount);
+    var remainingAfterPre2024 = Math.max(0, remittanceAmount - pre2024ExemptAmount);
+
+    var capitalPrincipalExemptAmount = Math.min(remainingAfterPre2024, principalCapitalAmount);
+    var taxableRemittance = Math.max(0, remainingAfterPre2024 - capitalPrincipalExemptAmount);
+
+    if (remittanceAmount > 0 && taxableRemittance === 0) {
+      isExempt = true;
+      exemptionReason = pre2024ExemptAmount >= remittanceAmount ? 'pre_2024_grandfathered' : 'principal_capital_return';
+    }
+
+    var baseTax = computeThaiPitTax(otherTaxableNetIncome);
+    var totalTaxWithRemittance = computeThaiPitTax(otherTaxableNetIncome + taxableRemittance);
+    var grossThaiTaxOnRemittance = Math.max(0, totalTaxWithRemittance - baseTax);
+
+    var allowableDtaCredit = Math.min(foreignTaxPaidThb, grossThaiTaxOnRemittance);
+    var netThaiTaxPayable = Math.max(0, grossThaiTaxOnRemittance - allowableDtaCredit);
+
+    var effectiveTaxRatePct =
+      remittanceAmount > 0 ? Math.round((netThaiTaxPayable / remittanceAmount) * 10000) / 100 : 0;
+    var totalNetCashRetained = remittanceAmount - netThaiTaxPayable;
+
+    return {
+      remittanceAmount: remittanceAmount,
+      daysInThailand: daysInThailand,
+      isTaxResident: true,
+      isExempt: isExempt,
+      exemptionReason: exemptionReason,
+      pre2024ExemptAmount: pre2024ExemptAmount,
+      capitalPrincipalExemptAmount: capitalPrincipalExemptAmount,
+      taxableRemittance: taxableRemittance,
+      grossThaiTaxOnRemittance: grossThaiTaxOnRemittance,
+      allowableDtaCredit: allowableDtaCredit,
+      netThaiTaxPayable: netThaiTaxPayable,
+      dtaSavings: allowableDtaCredit,
+      effectiveTaxRatePct: effectiveTaxRatePct,
+      totalNetCashRetained: totalNetCashRetained,
+    };
+  }
+
   // Auto-initialize document theme, shortcuts, and swipe navigation when running in browser
   initTheme();
   initShortcutForwarding();
@@ -1782,6 +1868,7 @@
     calculateThaiDividendTaxCredit: calculateThaiDividendTaxCredit,
     calculateThaiLandAndBuildingTax: calculateThaiLandAndBuildingTax,
     detectAndParseThaiBankStatement: detectAndParseThaiBankStatement,
+    calculateForeignRepatriationTax: calculateForeignRepatriationTax,
   };
 
   // Expose on global window object
@@ -1820,5 +1907,7 @@
       global.calculateThaiLandAndBuildingTax = calculateThaiLandAndBuildingTax;
     if (typeof global.detectAndParseThaiBankStatement === 'undefined')
       global.detectAndParseThaiBankStatement = detectAndParseThaiBankStatement;
+    if (typeof global.calculateForeignRepatriationTax === 'undefined')
+      global.calculateForeignRepatriationTax = calculateForeignRepatriationTax;
   }
 })(typeof window !== 'undefined' ? window : this);
