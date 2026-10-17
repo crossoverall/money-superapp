@@ -4336,4 +4336,204 @@ describe('Financial Math Verification', () => {
       assert.equal(emptyRoad.initialMonthlyInterest, 0);
     });
   });
+
+  describe('Cross-Portfolio Asset Class Correlation Matrix & Diversification Engine', () => {
+    const MACRO_CORRELATIONS = {
+      equities_us: {
+        equities_us: 1.0,
+        equities_world: 0.88,
+        bonds: 0.15,
+        gold: 0.08,
+        real_estate: 0.65,
+        crypto: 0.45,
+        cash: 0.0,
+      },
+      equities_world: {
+        equities_us: 0.88,
+        equities_world: 1.0,
+        bonds: 0.2,
+        gold: 0.12,
+        real_estate: 0.6,
+        crypto: 0.4,
+        cash: 0.0,
+      },
+      bonds: {
+        equities_us: 0.15,
+        equities_world: 0.2,
+        bonds: 1.0,
+        gold: 0.22,
+        real_estate: 0.25,
+        crypto: -0.05,
+        cash: 0.1,
+      },
+      gold: {
+        equities_us: 0.08,
+        equities_world: 0.12,
+        bonds: 0.22,
+        gold: 1.0,
+        real_estate: 0.15,
+        crypto: 0.18,
+        cash: 0.0,
+      },
+      real_estate: {
+        equities_us: 0.65,
+        equities_world: 0.6,
+        bonds: 0.25,
+        gold: 0.15,
+        real_estate: 1.0,
+        crypto: 0.25,
+        cash: 0.0,
+      },
+      crypto: {
+        equities_us: 0.45,
+        equities_world: 0.4,
+        bonds: -0.05,
+        gold: 0.18,
+        real_estate: 0.25,
+        crypto: 1.0,
+        cash: 0.0,
+      },
+      cash: { equities_us: 0.0, equities_world: 0.0, bonds: 0.1, gold: 0.0, real_estate: 0.0, crypto: 0.0, cash: 1.0 },
+    };
+
+    function detectAssetClass(name, ticker = '') {
+      const s = `${name} ${ticker}`.toLowerCase();
+      if (s.includes('gold') || s.includes('ทอง') || s.includes('iau') || s.includes('gld')) return 'gold';
+      if (
+        s.includes('bond') ||
+        s.includes('bnd') ||
+        s.includes('พันธบัตร') ||
+        s.includes('gov') ||
+        s.includes('debt') ||
+        s.includes('ตราสารหนี้')
+      )
+        return 'bonds';
+      if (s.includes('reit') || s.includes('vnq') || s.includes('อสังหา')) return 'real_estate';
+      if (s.includes('btc') || s.includes('eth') || s.includes('crypto') || s.includes('เหรียญ')) return 'crypto';
+      if (s.includes('cash') || s.includes('เงินสด') || s.includes('saving')) return 'cash';
+      if (s.includes('vt') || s.includes('acwi') || s.includes('world') || s.includes('โลก') || s.includes('eunl'))
+        return 'equities_world';
+      return 'equities_us';
+    }
+
+    function calculatePortfolioDiversification(buckets = []) {
+      let totalVal = 0;
+      const classWeights = {};
+
+      for (const b of (buckets || []).filter((b) => b.enabled !== false)) {
+        for (const a of (b.assets || []).filter((a) => a.enabled !== false)) {
+          const val = Math.max(0, Number(a.value) || 0);
+          if (val > 0) {
+            totalVal += val;
+            const cls = detectAssetClass(a.name || '', a.ticker || '');
+            classWeights[cls] = (classWeights[cls] || 0) + val;
+          }
+        }
+      }
+
+      const activeClasses = Object.keys(classWeights);
+      if (totalVal <= 0 || activeClasses.length === 0) {
+        return {
+          totalVal: 0,
+          weightedCorrelation: 1.0,
+          diversificationScore: 0,
+          tier: 'concentrated',
+          classWeights: {},
+          activeClasses: [],
+        };
+      }
+
+      const normWeights = {};
+      for (const cls of activeClasses) {
+        normWeights[cls] = classWeights[cls] / totalVal;
+      }
+
+      let weightedCorrSum = 0;
+      for (const c1 of activeClasses) {
+        const w1 = normWeights[c1];
+        for (const c2 of activeClasses) {
+          const w2 = normWeights[c2];
+          const corr =
+            MACRO_CORRELATIONS[c1] && typeof MACRO_CORRELATIONS[c1][c2] === 'number'
+              ? MACRO_CORRELATIONS[c1][c2]
+              : c1 === c2
+                ? 1.0
+                : 0.5;
+          weightedCorrSum += w1 * w2 * corr;
+        }
+      }
+
+      const weightedCorrelation = Math.round(weightedCorrSum * 100) / 100;
+      const diversificationScore = Math.max(0, Math.min(100, Math.round((1 - weightedCorrelation) * 100)));
+
+      let tier = 'balanced';
+      if (weightedCorrelation <= 0.5) tier = 'excellent';
+      else if (weightedCorrelation <= 0.75) tier = 'balanced';
+      else tier = 'concentrated';
+
+      return {
+        totalVal,
+        weightedCorrelation,
+        diversificationScore,
+        tier,
+        classWeights,
+        activeClasses,
+      };
+    }
+
+    it('proves high diversification score for balanced multi-asset portfolio (Equities, Bonds, Gold)', () => {
+      const buckets = [
+        {
+          id: 'b1',
+          assets: [
+            { name: 'S&P 500 ETF (VOO)', value: 50000 },
+            { name: 'Total Bond Market (BND)', value: 30000 },
+            { name: 'Physical Gold (GLD)', value: 20000 },
+          ],
+        },
+      ];
+
+      const res = calculatePortfolioDiversification(buckets);
+      assert.equal(res.totalVal, 100000);
+      assert.ok(res.weightedCorrelation < 0.5); // Multi-asset correlation is low!
+      assert.ok(res.diversificationScore > 50);
+      assert.equal(res.tier, 'excellent');
+    });
+
+    it('identifies high concentration risk in single-asset or highly correlated tech portfolios', () => {
+      const buckets = [
+        {
+          id: 'b1',
+          assets: [
+            { name: 'US Equities (VOO)', value: 60000 },
+            { name: 'US Tech (QQQ)', value: 40000 },
+          ],
+        },
+      ];
+
+      const res = calculatePortfolioDiversification(buckets);
+      assert.equal(res.totalVal, 100000);
+      assert.equal(res.weightedCorrelation, 1.0); // 100% same asset class!
+      assert.equal(res.diversificationScore, 0);
+      assert.equal(res.tier, 'concentrated');
+    });
+
+    it('proves macro correlation matrix symmetry (rho_ij == rho_ji and rho_ii == 1.0)', () => {
+      const keys = Object.keys(MACRO_CORRELATIONS);
+      for (const k1 of keys) {
+        assert.equal(MACRO_CORRELATIONS[k1][k1], 1.0);
+        for (const k2 of keys) {
+          assert.equal(MACRO_CORRELATIONS[k1][k2], MACRO_CORRELATIONS[k2][k1]);
+        }
+      }
+    });
+
+    it('handles zero or empty portfolios safely without NaN or crashes', () => {
+      const emptyRes = calculatePortfolioDiversification([]);
+      assert.equal(emptyRes.totalVal, 0);
+      assert.equal(emptyRes.weightedCorrelation, 1.0);
+      assert.equal(emptyRes.diversificationScore, 0);
+      assert.equal(emptyRes.tier, 'concentrated');
+    });
+  });
 });

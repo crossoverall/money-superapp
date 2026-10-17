@@ -1488,6 +1488,209 @@ function updatePortfolioDriftUI(tradeOrders = {}) {
 
   renderCurrencyExposure(driftData.assets, driftData.totalVal);
   renderAllocationHeatmap(driftData.assets);
+  renderPortfolioDiversification();
+}
+
+const MACRO_CORRELATIONS = {
+  equities_us: {
+    equities_us: 1.0,
+    equities_world: 0.88,
+    bonds: 0.15,
+    gold: 0.08,
+    real_estate: 0.65,
+    crypto: 0.45,
+    cash: 0.0,
+  },
+  equities_world: {
+    equities_us: 0.88,
+    equities_world: 1.0,
+    bonds: 0.2,
+    gold: 0.12,
+    real_estate: 0.6,
+    crypto: 0.4,
+    cash: 0.0,
+  },
+  bonds: {
+    equities_us: 0.15,
+    equities_world: 0.2,
+    bonds: 1.0,
+    gold: 0.22,
+    real_estate: 0.25,
+    crypto: -0.05,
+    cash: 0.1,
+  },
+  gold: { equities_us: 0.08, equities_world: 0.12, bonds: 0.22, gold: 1.0, real_estate: 0.15, crypto: 0.18, cash: 0.0 },
+  real_estate: {
+    equities_us: 0.65,
+    equities_world: 0.6,
+    bonds: 0.25,
+    gold: 0.15,
+    real_estate: 1.0,
+    crypto: 0.25,
+    cash: 0.0,
+  },
+  crypto: {
+    equities_us: 0.45,
+    equities_world: 0.4,
+    bonds: -0.05,
+    gold: 0.18,
+    real_estate: 0.25,
+    crypto: 1.0,
+    cash: 0.0,
+  },
+  cash: { equities_us: 0.0, equities_world: 0.0, bonds: 0.1, gold: 0.0, real_estate: 0.0, crypto: 0.0, cash: 1.0 },
+};
+
+function detectAssetClass(name, ticker = '') {
+  const s = `${name} ${ticker}`.toLowerCase();
+  if (s.includes('gold') || s.includes('ทอง') || s.includes('iau') || s.includes('gld')) return 'gold';
+  if (
+    s.includes('bond') ||
+    s.includes('bnd') ||
+    s.includes('พันธบัตร') ||
+    s.includes('gov') ||
+    s.includes('debt') ||
+    s.includes('ตราสารหนี้')
+  )
+    return 'bonds';
+  if (s.includes('reit') || s.includes('vnq') || s.includes('อสังหา')) return 'real_estate';
+  if (s.includes('btc') || s.includes('eth') || s.includes('crypto') || s.includes('เหรียญ')) return 'crypto';
+  if (s.includes('cash') || s.includes('เงินสด') || s.includes('saving')) return 'cash';
+  if (s.includes('vt') || s.includes('acwi') || s.includes('world') || s.includes('โลก') || s.includes('eunl'))
+    return 'equities_world';
+  return 'equities_us';
+}
+
+function calculatePortfolioDiversification(buckets = []) {
+  let totalVal = 0;
+  const classWeights = {};
+
+  for (const b of (buckets || []).filter((b) => b.enabled !== false)) {
+    for (const a of (b.assets || []).filter((a) => a.enabled !== false)) {
+      const val = Math.max(0, Number(a.value) || 0);
+      if (val > 0) {
+        totalVal += val;
+        const cls = detectAssetClass(a.name || '', a.ticker || '');
+        classWeights[cls] = (classWeights[cls] || 0) + val;
+      }
+    }
+  }
+
+  const activeClasses = Object.keys(classWeights);
+  if (totalVal <= 0 || activeClasses.length === 0) {
+    return {
+      totalVal: 0,
+      weightedCorrelation: 1.0,
+      diversificationScore: 0,
+      tier: 'concentrated',
+      classWeights: {},
+      activeClasses: [],
+    };
+  }
+
+  const normWeights = {};
+  for (const cls of activeClasses) {
+    normWeights[cls] = classWeights[cls] / totalVal;
+  }
+
+  let weightedCorrSum = 0;
+  for (const c1 of activeClasses) {
+    const w1 = normWeights[c1];
+    for (const c2 of activeClasses) {
+      const w2 = normWeights[c2];
+      const corr =
+        MACRO_CORRELATIONS[c1] && typeof MACRO_CORRELATIONS[c1][c2] === 'number'
+          ? MACRO_CORRELATIONS[c1][c2]
+          : c1 === c2
+            ? 1.0
+            : 0.5;
+      weightedCorrSum += w1 * w2 * corr;
+    }
+  }
+
+  const weightedCorrelation = Math.round(weightedCorrSum * 100) / 100;
+  const diversificationScore = Math.max(0, Math.min(100, Math.round((1 - weightedCorrelation) * 100)));
+
+  let tier = 'balanced';
+  if (weightedCorrelation <= 0.5) tier = 'excellent';
+  else if (weightedCorrelation <= 0.75) tier = 'balanced';
+  else tier = 'concentrated';
+
+  return {
+    totalVal,
+    weightedCorrelation,
+    diversificationScore,
+    tier,
+    classWeights,
+    activeClasses,
+  };
+}
+
+function renderPortfolioDiversification() {
+  const container = document.getElementById('diversificationContainer');
+  const badgeEl = document.getElementById('badgeDiversificationScore');
+  const gridEl = document.getElementById('diversificationMatrixGrid');
+  const adviceEl = document.getElementById('diversificationAdvice');
+  if (!container || !badgeEl || !gridEl) return;
+
+  const res = calculatePortfolioDiversification(state.buckets);
+  if (res.totalVal <= 0 || res.activeClasses.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = 'block';
+
+  const isEn = LANG === 'en';
+  const CLASS_LABELS = {
+    equities_us: isEn ? 'US Stocks' : 'หุ้นสหรัฐฯ',
+    equities_world: isEn ? 'World Stocks' : 'หุ้นโลก',
+    bonds: isEn ? 'Fixed Income' : 'ตราสารหนี้',
+    gold: isEn ? 'Gold' : 'ทองคำ',
+    real_estate: isEn ? 'Real Estate' : 'อสังหาฯ',
+    crypto: isEn ? 'Crypto' : 'คริปโต',
+    cash: isEn ? 'Cash' : 'เงินสด',
+  };
+
+  let badgeColor = '#059669';
+  let badgeBg = 'rgba(16,185,129,0.12)';
+  let verdictText = isEn ? 'Excellent Diversification' : 'กระจายความเสี่ยงยอดเยี่ยม';
+
+  if (res.tier === 'balanced') {
+    badgeColor = '#0284c7';
+    badgeBg = 'rgba(2,132,199,0.12)';
+    verdictText = isEn ? 'Balanced Portfolio' : 'กระจายความเสี่ยงสมดุล';
+  } else if (res.tier === 'concentrated') {
+    badgeColor = '#d97706';
+    badgeBg = 'rgba(217,119,6,0.12)';
+    verdictText = isEn ? 'High Concentration' : 'กระจุกตัวสูง';
+  }
+
+  badgeEl.textContent = `🛡️ ${res.diversificationScore}/100 (${verdictText})`;
+  badgeEl.style.color = badgeColor;
+  badgeEl.style.background = badgeBg;
+
+  let html = '';
+  for (const cls of res.activeClasses) {
+    const wPct = ((res.classWeights[cls] / res.totalVal) * 100).toFixed(1);
+    const label = CLASS_LABELS[cls] || cls;
+    html += `
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:6px; padding:5px 7px;">
+        <div style="font-weight:700; color:var(--ink); font-size:10px;">${label}</div>
+        <div style="color:var(--core); font-size:10.5px; font-weight:700; margin-top:2px;">${wPct}%</div>
+      </div>
+    `;
+  }
+  gridEl.innerHTML = html;
+
+  if (adviceEl) {
+    adviceEl.innerHTML = `
+      <span>💡 ${
+        isEn
+          ? `Effective cross-asset correlation: <strong>${res.weightedCorrelation.toFixed(2)}</strong> (Lower correlation creates a smoother portfolio ride during market drawdowns).`
+          : `ค่าสหสัมพันธ์ถ่วงน้ำหนักรวม: <strong>${res.weightedCorrelation.toFixed(2)}</strong> (ยิ่งต่ำ ยิ่งช่วยดูดซับแรงกระแทกเมื่อตลาดหุ้นผันผวน)`
+      }</span>
+    `;
+  }
 }
 
 function compute() {

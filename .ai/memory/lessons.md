@@ -15,6 +15,19 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-17: Cross-Portfolio Asset Allocation Correlation Matrix & Risk Diversification (v2.2.0)
+
+- **Date & Context:** 2026-10-17, during implementation of cross-portfolio asset allocation correlation matrix and risk diversification visualizer in `rebalance.html` (`v2.2.0`).
+- **Problem:** Users with rebalancing portfolios spanning diverse asset classes (US equities, world equities, government bonds, gold, REITs, crypto, cash) had no quantitative visibility into real portfolio correlation or concentration risk. Portfolios consisting of 100% US equities or 90% tech ETFs appeared "diversified" by count of tickers despite having ~0.90+ cross-asset correlation.
+- **Root Cause:** Rebalancing algorithms optimize towards user-specified percentage weights without analyzing the underlying macro covariance/correlation between asset classes.
+- **Solution & Rule:**
+  1. Implement modern portfolio macro correlation matrix (`MACRO_CORRELATIONS`) classifying assets via keyword heuristics (`detectAssetClass()`).
+  2. Compute weighted portfolio correlation $\rho = \sum_i \sum_j w_i w_j \rho_{ij}$ and diversification score $S = \text{clamp}(0, 100, (1 - \rho) \times 100)$.
+  3. Tier portfolio risk: Excellent ($\rho \le 0.50$, multi-asset uncorrelated ballast like Gold & Bonds), Balanced ($0.50 < \rho \le 0.75$), or Concentrated ($\rho > 0.75$).
+  4. Ensure HTML rendering sanitizes ticker/name outputs, handles empty/single-class portfolios gracefully without NaN, and displays actionable asset class distribution breakdown.
+
+
+
 ### 2026-09-27: Centralized Theme System & PWA Offline Integrity
 
 - **Date & Context:** 2026-09-27, during theme unification across all 7 calculators and `index.html`.
