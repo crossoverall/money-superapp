@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.2.2">
+  <meta name="version" content="2.2.3">
   <title>ภาพรวมการเงิน</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -228,6 +228,86 @@
         <div style="font-size:11px; color:var(--ink-faint); font-weight:600;" id="lbl-tax-pay-label">ประมาณการภาษีที่ต้องจ่าย</div>
         <div style="font-size:14px; font-weight:700; color:var(--danger);" id="kpi-tax-amount">0 บาท</div>
       </div>
+    </div>
+  </div>
+
+  <!-- 360° Financial Health Scorecard & 5-Axis Spider/Radar Chart -->
+  <div class="panel" role="region" aria-label="360 Financial Health Scorecard" id="panelFinancialHealthScore">
+    <div class="panel-title" id="lbl-health-score-title-bar">
+      <span id="lbl-health-score-title">🎯 สุขภาพทางการเงินรอบด้าน 360° (Financial Health Score)</span>
+      <span id="badge-health-score" style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--ok-dim); color:var(--ok); border:1px solid var(--ok);">0/100</span>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div style="display:flex; align-items:center; justify-content:space-around; flex-wrap:wrap; gap:16px;">
+        <!-- SVG Spider/Radar Chart -->
+        <div style="position:relative; width:280px; height:250px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <svg id="svgRadarHealth" viewBox="0 0 300 260" width="100%" height="100%" role="img" aria-label="5-Axis Financial Health Radar Chart">
+            <title id="svgRadarTitle">Financial Health Radar Chart</title>
+            <g id="radarGridGroup" stroke="var(--line)" stroke-width="1" fill="none" opacity="0.6"></g>
+            <g id="radarSpokesGroup" stroke="var(--line)" stroke-width="1" opacity="0.6"></g>
+            <polygon id="radarDataPolygon" points="" fill="rgba(47, 139, 118, 0.22)" stroke="var(--core)" stroke-width="2.5" stroke-linejoin="round" />
+            <g id="radarPointsGroup"></g>
+            <g id="radarLabelsGroup" font-size="10" font-weight="700" fill="var(--ink)" text-anchor="middle"></g>
+          </svg>
+        </div>
+
+        <!-- 5 Pillars Breakdown Mini Cards -->
+        <div style="flex:1; min-width:230px; display:grid; grid-template-columns:1fr; gap:7px;">
+          <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:7px 10px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-size:11px; font-weight:700; color:var(--ink);" id="lbl-pillar-runway">🛡️ สำรองฉุกเฉิน (Emergency Runway)</div>
+              <div style="font-size:9.5px; color:var(--ink-dim);" id="sub-pillar-runway">เป้าหมาย 6 เดือนขึ้นไป</div>
+            </div>
+            <div style="text-align:right;">
+              <span id="score-pillar-runway" style="font-size:12.5px; font-weight:800; color:var(--core);">0/100</span>
+            </div>
+          </div>
+
+          <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:7px 10px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-size:11px; font-weight:700; color:var(--ink);" id="lbl-pillar-savings">💰 วินัยการออม (Savings Discipline)</div>
+              <div style="font-size:9.5px; color:var(--ink-dim);" id="sub-pillar-savings">อัตราการออมต่อรายรับ</div>
+            </div>
+            <div style="text-align:right;">
+              <span id="score-pillar-savings" style="font-size:12.5px; font-weight:800; color:var(--core);">0/100</span>
+            </div>
+          </div>
+
+          <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:7px 10px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-size:11px; font-weight:700; color:var(--ink);" id="lbl-pillar-debt">📉 ภาระหนี้ & ความปลอดภัย (Debt Health)</div>
+              <div style="font-size:9.5px; color:var(--ink-dim);" id="sub-pillar-debt">สัดส่วนหนี้ต่อสินทรัพย์ (D/A)</div>
+            </div>
+            <div style="text-align:right;">
+              <span id="score-pillar-debt" style="font-size:12.5px; font-weight:800; color:var(--core);">0/100</span>
+            </div>
+          </div>
+
+          <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:7px 10px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-size:11px; font-weight:700; color:var(--ink);" id="lbl-pillar-wealth">💎 ความมั่งคั่ง & เกษียณ (FIRE Readiness)</div>
+              <div style="font-size:9.5px; color:var(--ink-dim);" id="sub-pillar-wealth">ความก้าวหน้าสู่เป้าหมายเกษียณ</div>
+            </div>
+            <div style="text-align:right;">
+              <span id="score-pillar-wealth" style="font-size:12.5px; font-weight:800; color:var(--core);">0/100</span>
+            </div>
+          </div>
+
+          <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:7px 10px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-size:11px; font-weight:700; color:var(--ink);" id="lbl-pillar-tax">🧾 ประสิทธิภาพการลดหย่อนภาษี (Tax Efficiency)</div>
+              <div style="font-size:9.5px; color:var(--ink-dim);" id="sub-pillar-tax">การใช้สิทธิประโยชน์ทางภาษี</div>
+            </div>
+            <div style="text-align:right;">
+              <span id="score-pillar-tax" style="font-size:12.5px; font-weight:800; color:var(--core);">0/100</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Verdict Callout -->
+      <div id="healthScoreVerdictCallout" style="padding:9px 12px; border-radius:8px; font-size:11px; line-height:1.45; background:var(--panel-2); border:1px solid var(--line); color:var(--ink-dim);"></div>
     </div>
   </div>
 
@@ -630,7 +710,7 @@
     </div>
   </div>
 
-  <p class="version-tag">Money Superapp v2.2.2</p>
+  <p class="version-tag">Money Superapp v2.2.3</p>
 
 <script src="js/shared.js"></script>
 <script>
@@ -718,7 +798,18 @@
             cardNominalNW: 'ความมั่งคั่งสุทธิปัจจุบัน (Nominal)',
             cardRealPower: 'อำนาจซื้อที่แท้จริงในอนาคต (Real Power)',
             cardRequiredNominal: 'ยอดเงินที่ต้องมีเพื่อรักษาอำนาจซื้อ',
-            deflatorTableTitle: '📊 ตารางเปรียบเทียบอำนาจซื้อลดทอนตามเวลา (Inflation Discount Schedule)'
+            deflatorTableTitle: '📊 ตารางเปรียบเทียบอำนาจซื้อลดทอนตามเวลา (Inflation Discount Schedule)',
+            healthScoreTitle: '🎯 สุขภาพทางการเงินรอบด้าน 360° (Financial Health Score)',
+            pillarRunway: '🛡️ สำรองฉุกเฉิน (Emergency Runway)',
+            subPillarRunway: 'เป้าหมาย 6 เดือนขึ้นไป',
+            pillarSavings: '💰 วินัยการออม (Savings Discipline)',
+            subPillarSavings: 'อัตราการออมต่อรายรับ',
+            pillarDebt: '📉 ภาระหนี้ & ความปลอดภัย (Debt Health)',
+            subPillarDebt: 'สัดส่วนหนี้ต่อสินทรัพย์ (D/A)',
+            pillarWealth: '💎 ความมั่งคั่ง & เกษียณ (FIRE Readiness)',
+            subPillarWealth: 'ความก้าวหน้าสู่เป้าหมายเกษียณ',
+            pillarTax: '🧾 ประสิทธิภาพการลดหย่อนภาษี (Tax Efficiency)',
+            subPillarTax: 'การใช้สิทธิประโยชน์ทางภาษี'
         },
         en: {
             title: 'Financial Dashboard',
@@ -803,7 +894,18 @@
             cardNominalNW: 'Current Net Worth (Nominal)',
             cardRealPower: 'Future Real Purchasing Power',
             cardRequiredNominal: 'Target Needed to Preserve Real Wealth',
-            deflatorTableTitle: '📊 Multi-Year Purchasing Power Discount Schedule'
+            deflatorTableTitle: '📊 Multi-Year Purchasing Power Discount Schedule',
+            healthScoreTitle: '🎯 360° Financial Health Scorecard',
+            pillarRunway: '🛡️ Emergency Runway',
+            subPillarRunway: 'Benchmark: 6+ months of expenses',
+            pillarSavings: '💰 Savings Discipline',
+            subPillarSavings: 'Savings rate of total income',
+            pillarDebt: '📉 Debt Health & Solvency',
+            subPillarDebt: 'Debt-to-Asset ratio (D/A)',
+            pillarWealth: '💎 Wealth & FIRE Readiness',
+            subPillarWealth: 'Progress toward retirement target',
+            pillarTax: '🧾 Tax Deduction Efficiency',
+            subPillarTax: 'Utilization of tax optimization allowances'
         }
     };
 
@@ -877,7 +979,18 @@
             'lbl-card-nominal-nw': t.cardNominalNW,
             'lbl-card-real-power': t.cardRealPower,
             'lbl-card-required-nominal': t.cardRequiredNominal,
-            'lbl-deflator-table-title': t.deflatorTableTitle
+            'lbl-deflator-table-title': t.deflatorTableTitle,
+            'lbl-health-score-title': t.healthScoreTitle,
+            'lbl-pillar-runway': t.pillarRunway,
+            'sub-pillar-runway': t.subPillarRunway,
+            'lbl-pillar-savings': t.pillarSavings,
+            'sub-pillar-savings': t.subPillarSavings,
+            'lbl-pillar-debt': t.pillarDebt,
+            'sub-pillar-debt': t.subPillarDebt,
+            'lbl-pillar-wealth': t.pillarWealth,
+            'sub-pillar-wealth': t.subPillarWealth,
+            'lbl-pillar-tax': t.pillarTax,
+            'sub-pillar-tax': t.subPillarTax
         };
 
         Object.keys(textMapping).forEach(id => {
@@ -1071,6 +1184,234 @@
 
         renderNetWorthComposition(p, t);
         renderInflationDeflator(p.netWorth);
+        renderFinancialHealthScorecard(p, t);
+    }
+
+    function calculateFinancialHealthScore({
+        runwayMonths = 0,
+        savingsRatePct = 0,
+        debt = 0,
+        assets = 0,
+        netWorth = 0,
+        fireTarget = 0,
+        targetNetWorth = 0,
+        annualExpenses = 0,
+        taxDeductionsUtilizedPct = null
+    } = {}) {
+        const safeRunway = Math.max(0, runwayMonths || 0);
+        const runwayScore = Math.min(100, Math.round((safeRunway / 6.0) * 100));
+
+        const safeSavingsRate = Math.max(0, savingsRatePct || 0);
+        const savingsScore = Math.min(100, Math.round((safeSavingsRate / 50.0) * 100));
+
+        const safeDebt = Math.max(0, debt || 0);
+        const safeAssets = Math.max(0, assets || 0);
+        let debtScore = 100;
+        if (safeDebt > 0) {
+            if (safeAssets <= 0) {
+                debtScore = 0;
+            } else {
+                const daRatio = safeDebt / safeAssets;
+                debtScore = Math.max(0, Math.min(100, Math.round((1 - Math.min(1, daRatio)) * 100)));
+            }
+        }
+
+        const safeNetWorth = Math.max(0, netWorth || 0);
+        let wealthScore = 50;
+        if (fireTarget > 0) {
+            wealthScore = Math.min(100, Math.round((safeNetWorth / fireTarget) * 100));
+        } else if (targetNetWorth > 0) {
+            wealthScore = Math.min(100, Math.round((safeNetWorth / targetNetWorth) * 100));
+        } else if (annualExpenses > 0) {
+            wealthScore = Math.min(100, Math.round((safeNetWorth / (annualExpenses * 25)) * 100));
+        } else if (safeAssets > 0) {
+            wealthScore = Math.min(100, Math.max(10, Math.round((safeAssets / 5000000) * 100)));
+        }
+
+        let taxScore = 75;
+        if (typeof taxDeductionsUtilizedPct === 'number' && !Number.isNaN(taxDeductionsUtilizedPct)) {
+            taxScore = Math.max(0, Math.min(100, Math.round(taxDeductionsUtilizedPct)));
+        }
+
+        const pillars = {
+            runway: runwayScore,
+            savings: savingsScore,
+            debt: debtScore,
+            wealth: wealthScore,
+            tax: taxScore
+        };
+
+        const compositeScore = Math.round(
+            (pillars.runway + pillars.savings + pillars.debt + pillars.wealth + pillars.tax) / 5
+        );
+
+        let tier = 'moderate';
+        if (compositeScore >= 80) tier = 'excellent';
+        else if (compositeScore >= 65) tier = 'solid';
+        else if (compositeScore < 50) tier = 'critical';
+
+        return {
+            compositeScore,
+            tier,
+            pillars
+        };
+    }
+
+    function renderFinancialHealthScorecard(p, _t) {
+        const goals = getFinancialGoals();
+        const grossAssets = (p.emergencyReserve || 0) + (p.portfolioVal || 0);
+        const annualExp = (p.monthlyExpense || 0) * 12;
+
+        const health = calculateFinancialHealthScore({
+            runwayMonths: p.runwayMonths,
+            savingsRatePct: p.savingsRate,
+            debt: p.totalDebt,
+            assets: grossAssets,
+            netWorth: p.netWorth,
+            fireTarget: 0,
+            targetNetWorth: goals.netWorthTarget,
+            annualExpenses: annualExp,
+            taxDeductionsUtilizedPct: p.topMarginalRate === 0 && p.estimatedTax === 0 ? 100 : 75
+        });
+
+        const badgeEl = document.getElementById('badge-health-score');
+        const scoreRunwayEl = document.getElementById('score-pillar-runway');
+        const scoreSavingsEl = document.getElementById('score-pillar-savings');
+        const scoreDebtEl = document.getElementById('score-pillar-debt');
+        const scoreWealthEl = document.getElementById('score-pillar-wealth');
+        const scoreTaxEl = document.getElementById('score-pillar-tax');
+        const calloutEl = document.getElementById('healthScoreVerdictCallout');
+
+        if (scoreRunwayEl) scoreRunwayEl.textContent = `${health.pillars.runway}/100`;
+        if (scoreSavingsEl) scoreSavingsEl.textContent = `${health.pillars.savings}/100`;
+        if (scoreDebtEl) scoreDebtEl.textContent = `${health.pillars.debt}/100`;
+        if (scoreWealthEl) scoreWealthEl.textContent = `${health.pillars.wealth}/100`;
+        if (scoreTaxEl) scoreTaxEl.textContent = `${health.pillars.tax}/100`;
+
+        const isEn = LANG === 'en';
+        let tierLabel = isEn ? 'Solid & Balanced' : 'มั่นคงสมดุล';
+        let tierColor = 'var(--core)';
+        let tierBg = 'var(--ok-dim)';
+        let tierBorder = 'var(--core)';
+
+        if (health.tier === 'excellent') {
+            tierLabel = isEn ? '🌟 Excellent Resilience' : '🌟 สุขภาพยอดเยี่ยม';
+            tierColor = '#059669';
+            tierBg = 'rgba(16,185,129,0.12)';
+            tierBorder = '#059669';
+        } else if (health.tier === 'solid') {
+            tierLabel = isEn ? '🛡️ Solid & Well-Balanced' : '🛡️ มั่นคงสมดุล';
+            tierColor = '#0284c7';
+            tierBg = 'rgba(2,132,199,0.12)';
+            tierBorder = '#0284c7';
+        } else if (health.tier === 'moderate') {
+            tierLabel = isEn ? '⚠️ Moderate Vulnerability' : '⚠️ พอใช้ — ควรระวัง';
+            tierColor = '#d97706';
+            tierBg = 'rgba(217,119,6,0.12)';
+            tierBorder = '#d97706';
+        } else {
+            tierLabel = isEn ? '🚨 Critical Action Needed' : '🚨 ปรับปรุงเร่งด่วน';
+            tierColor = 'var(--danger)';
+            tierBg = 'var(--danger-dim)';
+            tierBorder = 'var(--danger)';
+        }
+
+        if (badgeEl) {
+            badgeEl.textContent = `${health.compositeScore}/100 (${tierLabel})`;
+            badgeEl.style.color = tierColor;
+            badgeEl.style.background = tierBg;
+            badgeEl.style.borderColor = tierBorder;
+        }
+
+        if (calloutEl) {
+            let advice = '';
+            if (health.pillars.runway < 60) {
+                advice = isEn 
+                    ? 'Priority: Increase your emergency reserve to 6 months of living expenses.' 
+                    : 'ข้อแนะนำเร่งด่วน: เติมเงินสำรองฉุกเฉินให้ครอบคลุมรายจ่ายอย่างน้อย 6 เดือน เพื่อความปลอดภัย';
+            } else if (health.pillars.debt < 70) {
+                advice = isEn
+                    ? 'Priority: Accelerate debt payoff using the Avalanche method to reduce interest drag.'
+                    : 'ข้อแนะนำเร่งด่วน: ทยอยโปะหนี้ดอกเบี้ยสูงเพื่อลดภาระดอกเบี้ยสะสมและเพิ่มความคล่องตัวทางการเงิน';
+            } else if (health.pillars.savings < 60) {
+                advice = isEn
+                    ? 'Good progress! Look for opportunities to boost your monthly savings rate above 20%.'
+                    : 'การเงินอยู่ในเกณฑ์ดี! มองหาโอกาสประหยัดรายจ่ายผันแปรเพื่อเพิ่มอัตราการออมให้เกิน 20%';
+            } else {
+                advice = isEn
+                    ? 'Outstanding! Your 5 financial pillars are exceptionally resilient and well-balanced.'
+                    : 'ยอดเยี่ยมมาก! เสาหลักทางการเงินทั้ง 5 ด้านของคุณแข็งแกร่งและสมดุลพร้อมรองรับเป้าหมายระยะยาว';
+            }
+            calloutEl.innerHTML = `💡 <strong>${isEn ? 'Advisor Insight:' : 'สรุปคำแนะนำการเงิน:'}</strong> ${advice}`;
+        }
+
+        renderRadarChartSVG(health.pillars);
+    }
+
+    function renderRadarChartSVG(pillars) {
+        const gridGroup = document.getElementById('radarGridGroup');
+        const spokesGroup = document.getElementById('radarSpokesGroup');
+        const polyEl = document.getElementById('radarDataPolygon');
+        const pointsGroup = document.getElementById('radarPointsGroup');
+        const labelsGroup = document.getElementById('radarLabelsGroup');
+        if (!gridGroup || !spokesGroup || !polyEl || !pointsGroup || !labelsGroup) return;
+
+        const centerX = 150;
+        const centerY = 130;
+        const maxR = 85;
+        const isEn = LANG === 'en';
+
+        const axes = [
+            { key: 'runway', label: isEn ? 'Runway' : 'สำรอง' },
+            { key: 'savings', label: isEn ? 'Savings' : 'การออม' },
+            { key: 'debt', label: isEn ? 'Debt-Free' : 'ภาระหนี้' },
+            { key: 'wealth', label: isEn ? 'Wealth' : 'มั่งคั่ง' },
+            { key: 'tax', label: isEn ? 'Tax Opt' : 'ภาษี' }
+        ];
+
+        let gridHtml = '';
+        const rings = [0.25, 0.5, 0.75, 1.0];
+        rings.forEach(k => {
+            const r = maxR * k;
+            const pts = [];
+            for (let i = 0; i < 5; i++) {
+                const angle = -Math.PI / 2 + (i * (2 * Math.PI)) / 5;
+                const x = centerX + r * Math.cos(angle);
+                const y = centerY + r * Math.sin(angle);
+                pts.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+            }
+            gridHtml += `<polygon points="${pts.join(' ')}" />`;
+        });
+        gridGroup.innerHTML = gridHtml;
+
+        let spokesHtml = '';
+        let labelsHtml = '';
+        axes.forEach((ax, i) => {
+            const angle = -Math.PI / 2 + (i * (2 * Math.PI)) / 5;
+            const xOuter = centerX + maxR * Math.cos(angle);
+            const yOuter = centerY + maxR * Math.sin(angle);
+            spokesHtml += `<line x1="${centerX}" y1="${centerY}" x2="${xOuter.toFixed(1)}" y2="${yOuter.toFixed(1)}" />`;
+
+            const xLabel = centerX + (maxR + 20) * Math.cos(angle);
+            const yLabel = centerY + (maxR + 18) * Math.sin(angle) + 4;
+            labelsHtml += `<text x="${xLabel.toFixed(1)}" y="${yLabel.toFixed(1)}">${ax.label}</text>`;
+        });
+        spokesGroup.innerHTML = spokesHtml;
+        labelsGroup.innerHTML = labelsHtml;
+
+        const dataPts = [];
+        let pointsHtml = '';
+        axes.forEach((ax, i) => {
+            const score = Math.max(5, Math.min(100, pillars[ax.key] || 0));
+            const r = maxR * (score / 100);
+            const angle = -Math.PI / 2 + (i * (2 * Math.PI)) / 5;
+            const x = centerX + r * Math.cos(angle);
+            const y = centerY + r * Math.sin(angle);
+            dataPts.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+            pointsHtml += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.5" fill="var(--panel)" stroke="var(--core)" stroke-width="2" />`;
+        });
+        polyEl.setAttribute('points', dataPts.join(' '));
+        pointsGroup.innerHTML = pointsHtml;
     }
 
     function renderNetWorthComposition(p, t) {

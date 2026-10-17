@@ -4799,4 +4799,175 @@ describe('Financial Math Verification', () => {
       assert.equal(Number.isNaN(zeroAmount.realValue), false);
     });
   });
+
+  describe('360° Financial Health Scorecard & 5-Axis Spider/Radar Chart Engine', () => {
+    function calculateFinancialHealthScore({
+      runwayMonths = 0,
+      savingsRatePct = 0,
+      debt = 0,
+      assets = 0,
+      netWorth = 0,
+      fireTarget = 0,
+      targetNetWorth = 0,
+      annualExpenses = 0,
+      taxDeductionsUtilizedPct = null,
+    } = {}) {
+      const safeRunway = Math.max(0, runwayMonths || 0);
+      const runwayScore = Math.min(100, Math.round((safeRunway / 6.0) * 100));
+
+      const safeSavingsRate = Math.max(0, savingsRatePct || 0);
+      const savingsScore = Math.min(100, Math.round((safeSavingsRate / 50.0) * 100));
+
+      const safeDebt = Math.max(0, debt || 0);
+      const safeAssets = Math.max(0, assets || 0);
+      let debtScore = 100;
+      if (safeDebt > 0) {
+        if (safeAssets <= 0) {
+          debtScore = 0;
+        } else {
+          const daRatio = safeDebt / safeAssets;
+          debtScore = Math.max(0, Math.min(100, Math.round((1 - Math.min(1, daRatio)) * 100)));
+        }
+      }
+
+      const safeNetWorth = Math.max(0, netWorth || 0);
+      let wealthScore = 50;
+      if (fireTarget > 0) {
+        wealthScore = Math.min(100, Math.round((safeNetWorth / fireTarget) * 100));
+      } else if (targetNetWorth > 0) {
+        wealthScore = Math.min(100, Math.round((safeNetWorth / targetNetWorth) * 100));
+      } else if (annualExpenses > 0) {
+        wealthScore = Math.min(100, Math.round((safeNetWorth / (annualExpenses * 25)) * 100));
+      } else if (safeAssets > 0) {
+        wealthScore = Math.min(100, Math.max(10, Math.round((safeAssets / 5000000) * 100)));
+      }
+
+      let taxScore = 75;
+      if (typeof taxDeductionsUtilizedPct === 'number' && !Number.isNaN(taxDeductionsUtilizedPct)) {
+        taxScore = Math.max(0, Math.min(100, Math.round(taxDeductionsUtilizedPct)));
+      }
+
+      const pillars = {
+        runway: runwayScore,
+        savings: savingsScore,
+        debt: debtScore,
+        wealth: wealthScore,
+        tax: taxScore,
+      };
+
+      const compositeScore = Math.round(
+        (pillars.runway + pillars.savings + pillars.debt + pillars.wealth + pillars.tax) / 5,
+      );
+
+      let tier = 'moderate';
+      if (compositeScore >= 80) tier = 'excellent';
+      else if (compositeScore >= 65) tier = 'solid';
+      else if (compositeScore < 50) tier = 'critical';
+
+      return {
+        compositeScore,
+        tier,
+        pillars,
+      };
+    }
+
+    function generateRadarPolygonCoordinates({
+      scores = [100, 100, 100, 100, 100],
+      centerX = 150,
+      centerY = 140,
+      radius = 90,
+    } = {}) {
+      const points = [];
+      const numAxes = scores.length || 5;
+
+      for (let i = 0; i < numAxes; i++) {
+        const angle = -Math.PI / 2 + (i * (2 * Math.PI)) / numAxes;
+        const scoreFrac = Math.max(0, Math.min(100, scores[i] || 0)) / 100;
+        const r = radius * scoreFrac;
+        const x = Math.round((centerX + r * Math.cos(angle)) * 10) / 10;
+        const y = Math.round((centerY + r * Math.sin(angle)) * 10) / 10;
+        points.push({ x, y, angle });
+      }
+
+      const polygonPath = points.map((p) => `${p.x},${p.y}`).join(' ');
+      return { points, polygonPath };
+    }
+
+    it('calculates 100/100 composite score for debt-free, 6-month runway, 50% savings, full FIRE target, and 100% tax efficiency', () => {
+      const res = calculateFinancialHealthScore({
+        runwayMonths: 12,
+        savingsRatePct: 55,
+        debt: 0,
+        assets: 5000000,
+        netWorth: 5000000,
+        fireTarget: 5000000,
+        taxDeductionsUtilizedPct: 100,
+      });
+
+      assert.equal(res.compositeScore, 100);
+      assert.equal(res.tier, 'excellent');
+      assert.equal(res.pillars.runway, 100);
+      assert.equal(res.pillars.savings, 100);
+      assert.equal(res.pillars.debt, 100);
+      assert.equal(res.pillars.wealth, 100);
+      assert.equal(res.pillars.tax, 100);
+    });
+
+    it('identifies critical tier when debts exceed assets, zero emergency runway, and low savings rate', () => {
+      const res = calculateFinancialHealthScore({
+        runwayMonths: 0.5,
+        savingsRatePct: 5,
+        debt: 800000,
+        assets: 200000,
+        netWorth: -600000,
+        fireTarget: 10000000,
+        taxDeductionsUtilizedPct: 20,
+      });
+
+      assert.ok(res.compositeScore < 50);
+      assert.equal(res.tier, 'critical');
+      assert.equal(res.pillars.debt, 0); // Debt exceeds assets
+      assert.ok(res.pillars.runway < 15);
+      assert.ok(res.pillars.savings < 15);
+    });
+
+    it('generates valid regular pentagon SVG polygon coordinates with concentric scaling', () => {
+      const maxCoords = generateRadarPolygonCoordinates({
+        scores: [100, 100, 100, 100, 100],
+        centerX: 150,
+        centerY: 140,
+        radius: 100,
+      });
+
+      assert.equal(maxCoords.points.length, 5);
+      // Top vertex at angle -PI/2 should be exactly (150, 40)
+      assert.equal(maxCoords.points[0].x, 150);
+      assert.equal(maxCoords.points[0].y, 40);
+
+      const halfCoords = generateRadarPolygonCoordinates({
+        scores: [50, 50, 50, 50, 50],
+        centerX: 150,
+        centerY: 140,
+        radius: 100,
+      });
+      assert.equal(halfCoords.points[0].x, 150);
+      assert.equal(halfCoords.points[0].y, 90); // 140 - 50 = 90
+    });
+
+    it('handles zero, negative, and missing input properties safely without NaN', () => {
+      const empty = calculateFinancialHealthScore({});
+      assert.equal(Number.isNaN(empty.compositeScore), false);
+      assert.ok(empty.compositeScore >= 0 && empty.compositeScore <= 100);
+
+      const neg = calculateFinancialHealthScore({
+        runwayMonths: -5,
+        savingsRatePct: -10,
+        debt: -20000,
+        assets: -50000,
+        netWorth: -100000,
+      });
+      assert.equal(Number.isNaN(neg.compositeScore), false);
+      assert.ok(neg.compositeScore >= 0 && neg.compositeScore <= 100);
+    });
+  });
 });
