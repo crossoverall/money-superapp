@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.4.1">
+  <meta name="version" content="2.4.2">
   <title>ภาพรวมการเงิน</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -601,6 +601,128 @@
     </div>
   </div>
 
+  <!-- Retirement 3-Bucket Cash Flow & SSO Drawdown Simulator (Roadmap Phase 59) -->
+  <div class="panel" role="region" aria-label="Retirement 3-Bucket Cash Flow &amp; SSO Drawdown Simulator" id="panelRetirementThreeBuckets">
+    <div class="panel-title" id="lbl-three-bucket-panel-title">
+      <span id="lbl-three-bucket-title">📦 กลยุทธ์ 3 ถังเกษียณสุข &amp; บำนาญประกันสังคม (Retirement 3-Bucket Strategy)</span>
+      <span id="badge-three-bucket-runway" style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--ok-dim); color:var(--ok); border:1px solid var(--ok);">🛡️ เกราะกันตลาดหมี 7 ปี</span>
+    </div>
+
+    <!-- Inputs & Assumptions Container -->
+    <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-size:11px;">
+        <span style="font-weight:700; color:var(--ink);" id="lbl-bucket-assumptions-title">📋 สมมติฐานกระแสเงินสดวัยเกษียณ (Cash Flow Assumptions)</span>
+        <button type="button" class="action-btn" onclick="syncThreeBucketsFromTools()" style="padding:2px 8px; font-size:10px;" id="btnSyncThreeBuckets">
+          🔄 <span id="lblSyncThreeBuckets">ดึงข้อมูลอัตโนมัติ</span>
+        </button>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:10px; font-size:11px;">
+        <!-- Annual Living Expenses -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label for="inpBucketExpense" style="font-weight:600; color:var(--ink);" id="lbl-bucket-expense">ค่าใช้จ่ายยังชีพต่อปี (Living Expense/yr):</label>
+            <span style="font-size:9.5px; color:var(--ink-faint);" id="lbl-bucket-expense-sub">รายเดือน x 12</span>
+          </div>
+          <input type="number" id="inpBucketExpense" min="0" step="10000" value="360000" inputmode="decimal" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateThreeBucketsCalculator()">
+        </div>
+
+        <!-- Monthly SSO Pension -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label for="inpBucketSsoPension" style="font-weight:600; color:var(--ink);" id="lbl-bucket-sso">บำนาญประกันสังคมต่อเดือน (SSO Pension):</label>
+            <span style="font-size:9.5px; color:var(--ink-faint);" id="lbl-bucket-sso-sub">ม.33/39</span>
+          </div>
+          <input type="number" id="inpBucketSsoPension" min="0" step="500" value="4125" inputmode="decimal" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateThreeBucketsCalculator()">
+        </div>
+
+        <!-- Monthly Elderly Allowance -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label for="inpBucketElderly" style="font-weight:600; color:var(--ink);" id="lbl-bucket-elderly">เบี้ยผู้สูงอายุต่อเดือน (Elderly Allowance):</label>
+            <span style="font-size:9.5px; color:var(--ink-faint);" id="lbl-bucket-elderly-sub">600–1,000 บ.</span>
+          </div>
+          <input type="number" id="inpBucketElderly" min="0" step="100" value="600" inputmode="decimal" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateThreeBucketsCalculator()">
+        </div>
+
+        <!-- Total Accumulated Retirement Assets -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label for="inpBucketTotalAssets" style="font-weight:600; color:var(--ink);" id="lbl-bucket-assets">มูลค่าพอร์ตเกษียณรวม (Total Assets):</label>
+            <span style="font-size:9.5px; color:var(--ink-faint);" id="lbl-bucket-assets-sub">สินทรัพย์ทั้งหมด</span>
+          </div>
+          <input type="number" id="inpBucketTotalAssets" min="0" step="100000" value="6000000" inputmode="decimal" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateThreeBucketsCalculator()">
+        </div>
+
+        <!-- Bucket 1 Coverage Horizon -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label for="inpBucket1Years" style="font-weight:600; color:var(--ink);" id="lbl-bucket-b1-years">ถังที่ 1: เงินสดครอบคลุม (Cash Years):</label>
+            <span id="valBucket1YearsDisplay" style="font-weight:700; color:var(--ok);">2 ปี</span>
+          </div>
+          <input type="range" id="inpBucket1Years" min="1" max="4" step="0.5" value="2" style="width:100%;" oninput="updateThreeBucketsCalculator()">
+        </div>
+
+        <!-- Bucket 2 Coverage Horizon -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label for="inpBucket2Years" style="font-weight:600; color:var(--ink);" id="lbl-bucket-b2-years">ถังที่ 2: ตราสารหนี้ครอบคลุม (Bonds Years):</label>
+            <span id="valBucket2YearsDisplay" style="font-weight:700; color:var(--blue, #2563eb);">5 ปี</span>
+          </div>
+          <input type="range" id="inpBucket2Years" min="2" max="8" step="1" value="5" style="width:100%;" oninput="updateThreeBucketsCalculator()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Visual 3-Bucket Stacked Allocation Bar -->
+    <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px; margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:11px;">
+        <span style="font-weight:600; color:var(--ink);" id="lbl-bucket-bar-title">สัดส่วนพอร์ต 3 ถังเกษียณสุข (Bucket Allocation Breakdown):</span>
+        <span id="txt-bucket-runway-summary" style="font-weight:700; color:var(--ok);">ถังป้องกันวิกฤตครอบคลุม 7 ปี</span>
+      </div>
+      <div style="height:12px; background:var(--line); border-radius:999px; overflow:hidden; display:flex;">
+        <div id="bar-bucket-1" style="height:100%; width:10.1%; background:var(--ok); transition:width 0.4s ease;" title="Bucket 1: Cash"></div>
+        <div id="bar-bucket-2" style="height:100%; width:25.3%; background:var(--blue); transition:width 0.4s ease;" title="Bucket 2: Bonds"></div>
+        <div id="bar-bucket-3" style="height:100%; width:64.6%; background:var(--warn); transition:width 0.4s ease;" title="Bucket 3: Equities"></div>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:10px; color:var(--ink-dim); flex-wrap:wrap; gap:6px;">
+        <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; border-radius:50%; background:var(--ok); display:inline-block;"></span><span id="leg-bucket-1">ถัง 1: เงินสด 606,600 บาท (10.1%)</span></span>
+        <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; border-radius:50%; background:var(--blue); display:inline-block;"></span><span id="leg-bucket-2">ถัง 2: ตราสารหนี้ 1,516,500 บาท (25.3%)</span></span>
+        <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; border-radius:50%; background:var(--warn); display:inline-block;"></span><span id="leg-bucket-3">ถัง 3: หุ้นเติบโต 3,876,900 บาท (64.6%)</span></span>
+      </div>
+    </div>
+
+    <!-- Key Metrics Cards Grid -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; margin-bottom:12px; font-size:11px;">
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
+        <span style="color:var(--ink-faint); display:block; margin-bottom:2px;" id="lbl-card-b1">ถัง 1: เงินสดสภาพคล่อง</span>
+        <span id="val-card-b1" style="font-size:13.5px; font-weight:800; color:var(--ok);">0 บาท</span>
+        <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="sub-card-b1">คุ้มครอง 2 ปีแรก</div>
+      </div>
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
+        <span style="color:var(--ink-faint); display:block; margin-bottom:2px;" id="lbl-card-b2">ถัง 2: ตราสารหนี้ &amp; SSO</span>
+        <span id="val-card-b2" style="font-size:13.5px; font-weight:800; color:var(--blue);">0 บาท</span>
+        <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="sub-card-b2">คุ้มครองปีที่ 3-7</div>
+      </div>
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
+        <span style="color:var(--ink-faint); display:block; margin-bottom:2px;" id="lbl-card-b3">ถัง 3: หุ้นเติบโตระยะยาว</span>
+        <span id="val-card-b3" style="font-size:13.5px; font-weight:800; color:var(--warn);">0 บาท</span>
+        <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="sub-card-b3">ลงทุนยาว 8+ ปี</div>
+      </div>
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
+        <span style="color:var(--ink-faint); display:block; margin-bottom:2px;" id="lbl-card-b-yield">ปันผล/ดอกเบี้ยต่อปี</span>
+        <span id="val-card-b-yield" style="font-size:13.5px; font-weight:800; color:var(--ink);">0 บาท</span>
+        <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="sub-card-b-yield">ผลตอบแทนเฉลี่ย 0.0%</div>
+      </div>
+    </div>
+
+    <!-- Resilience & Strategy Callout -->
+    <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:8px 12px; font-size:10.5px; color:var(--ink-dim); line-height:1.45;" id="box-bucket-advice">
+      💡 <strong id="lbl-bucket-advice-title">กลไกป้องกัน Sequence of Returns:</strong>
+      <span id="txt-bucket-advice-desc">ถังที่ 1 และ 2 รวมกันสร้างกันชนสภาพคล่อง 7 ปี ทำให้คุณมีกระแสเงินสดใช้จ่ายต่อเนื่องโดยไม่ต้องเทขายหุ้นในยามตลาดหุ้นตกต่ำหรือเกิดวิกฤตเศรษฐกิจ เมื่อตลาดฟื้นตัวจึงค่อยขายทำกำไรจากถังที่ 3 มาเติมถังที่ 1 และ 2 ตามรอบ</span>
+    </div>
+  </div>
+
   <!-- Net Worth Real-Value Inflation Deflator & Purchasing Power Projection Engine -->
   <div class="panel" role="region" aria-label="Inflation Deflator &amp; Real Purchasing Power Engine" id="panelInflationDeflator">
     <div class="panel-title" id="lbl-deflator-panel-title">
@@ -895,7 +1017,7 @@
     </div>
   </div>
 
-  <p class="version-tag">Money Superapp v2.4.1</p>
+  <p class="version-tag">Money Superapp v2.4.2</p>
 
 <script src="js/shared.js"></script>
 <script src="js/dashboard.js"></script>

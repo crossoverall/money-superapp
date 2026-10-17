@@ -128,6 +128,27 @@ const translations = {
     insHlvTitle: 'มุมมองมูลค่าชีวิตมนุษย์ (Human Life Value - HLV):',
     insTaxTitle: '🧾 สิทธิประโยชน์ลดหย่อนภาษี (PIT Deduction)',
     insGotoTaxBtn: 'วางแผนภาษี ➔',
+    threeBucketTitle: '📦 กลยุทธ์ 3 ถังเกษียณสุข & บำนาญประกันสังคม (Retirement 3-Bucket Strategy)',
+    threeBucketAssumptions: '📋 สมมติฐานกระแสเงินสดวัยเกษียณ (Cash Flow Assumptions)',
+    threeBucketSyncBtn: 'ดึงข้อมูลอัตโนมัติ',
+    threeBucketExpenseLabel: 'ค่าใช้จ่ายยังชีพต่อปี (Living Expense/yr):',
+    threeBucketExpenseSub: 'รายเดือน x 12',
+    threeBucketSsoLabel: 'บำนาญประกันสังคมต่อเดือน (SSO Pension):',
+    threeBucketSsoSub: 'ม.33/39',
+    threeBucketElderlyLabel: 'เบี้ยผู้สูงอายุต่อเดือน (Elderly Allowance):',
+    threeBucketElderlySub: '600–1,000 บ.',
+    threeBucketAssetsLabel: 'มูลค่าพอร์ตเกษียณรวม (Total Assets):',
+    threeBucketAssetsSub: 'สินทรัพย์ทั้งหมด',
+    threeBucketB1YearsLabel: 'ถังที่ 1: เงินสดครอบคลุม (Cash Years):',
+    threeBucketB2YearsLabel: 'ถังที่ 2: ตราสารหนี้ครอบคลุม (Bonds Years):',
+    threeBucketBarTitle: 'สัดส่วนพอร์ต 3 ถังเกษียณสุข (Bucket Allocation Breakdown):',
+    cardB1: 'ถัง 1: เงินสดสภาพคล่อง',
+    cardB2: 'ถัง 2: ตราสารหนี้ & SSO',
+    cardB3: 'ถัง 3: หุ้นเติบโตระยะยาว',
+    cardBYield: 'ปันผล/ดอกเบี้ยต่อปี',
+    subCardB1: 'คุ้มครอง 1-2 ปีแรก',
+    subCardB2: 'คุ้มครองปีที่ 3-7',
+    subCardB3: 'ลงทุนยาว 8+ ปี',
   },
   en: {
     title: 'Financial Dashboard',
@@ -258,6 +279,27 @@ const translations = {
     insHlvTitle: 'Human Life Value (HLV) Perspective:',
     insTaxTitle: '🧾 Tax Deduction Opportunity (PIT)',
     insGotoTaxBtn: 'Tax Planning ➔',
+    threeBucketTitle: '📦 Retirement 3-Bucket Strategy & SSO Drawdown',
+    threeBucketAssumptions: '📋 Retirement Cash Flow Assumptions',
+    threeBucketSyncBtn: 'Auto-Sync Data',
+    threeBucketExpenseLabel: 'Annual Living Expenses (Living Expense/yr):',
+    threeBucketExpenseSub: 'Monthly x 12',
+    threeBucketSsoLabel: 'Monthly Social Security Pension (SSO):',
+    threeBucketSsoSub: 'Sec 33/39',
+    threeBucketElderlyLabel: 'Monthly Senior Allowance (Elderly Allowance):',
+    threeBucketElderlySub: '600–1,000 THB',
+    threeBucketAssetsLabel: 'Total Accumulated Retirement Assets:',
+    threeBucketAssetsSub: 'Total Portfolio',
+    threeBucketB1YearsLabel: 'Bucket 1: Cash Horizon (Cash Years):',
+    threeBucketB2YearsLabel: 'Bucket 2: Bonds Horizon (Bonds Years):',
+    threeBucketBarTitle: '3-Bucket Portfolio Allocation Breakdown:',
+    cardB1: 'Bucket 1: Cash Cushion',
+    cardB2: 'Bucket 2: Bonds & SSO',
+    cardB3: 'Bucket 3: Growth Equities',
+    cardBYield: 'Annual Yield/Dividends',
+    subCardB1: 'First 1-2 Years Buffer',
+    subCardB2: 'Years 3-7 Income Engine',
+    subCardB3: 'Long-term 8+ Years Growth',
   },
 };
 
@@ -372,6 +414,27 @@ function applyLocalization() {
     'lbl-ins-hlv-title': t.insHlvTitle,
     'lbl-ins-tax-title': t.insTaxTitle,
     'btn-ins-goto-tax': t.insGotoTaxBtn,
+    'lbl-three-bucket-title': t.threeBucketTitle,
+    'lbl-bucket-assumptions-title': t.threeBucketAssumptions,
+    lblSyncThreeBuckets: t.threeBucketSyncBtn,
+    'lbl-bucket-expense': t.threeBucketExpenseLabel,
+    'lbl-bucket-expense-sub': t.threeBucketExpenseSub,
+    'lbl-bucket-sso': t.threeBucketSsoLabel,
+    'lbl-bucket-sso-sub': t.threeBucketSsoSub,
+    'lbl-bucket-elderly': t.threeBucketElderlyLabel,
+    'lbl-bucket-elderly-sub': t.threeBucketElderlySub,
+    'lbl-bucket-assets': t.threeBucketAssetsLabel,
+    'lbl-bucket-assets-sub': t.threeBucketAssetsSub,
+    'lbl-bucket-b1-years': t.threeBucketB1YearsLabel,
+    'lbl-bucket-b2-years': t.threeBucketB2YearsLabel,
+    'lbl-bucket-bar-title': t.threeBucketBarTitle,
+    'lbl-card-b1': t.cardB1,
+    'lbl-card-b2': t.cardB2,
+    'lbl-card-b3': t.cardB3,
+    'lbl-card-b-yield': t.cardBYield,
+    'sub-card-b1': t.subCardB1,
+    'sub-card-b2': t.subCardB2,
+    'sub-card-b3': t.subCardB3,
   };
 
   const mcExplEl = document.getElementById('lbl-mc-expl');
@@ -1256,6 +1319,213 @@ function updateInsuranceAdequacy() {
     }
   }
 }
+
+// --- Retirement 3-Bucket Cash Flow & SSO Drawdown Simulator (Roadmap Phase 59) ---
+const THREE_BUCKET_STORAGE_KEY = 'moneySuperapp.retirementThreeBuckets.state.v1';
+
+let threeBucketState = {
+  annualLivingExpense: null,
+  monthlySsoPension: 4125,
+  monthlyElderlyAllowance: 600,
+  totalRetirementAssets: null,
+  bucket1Years: 2,
+  bucket2Years: 5,
+};
+
+function initThreeBucketsCalculator() {
+  try {
+    const raw = localStorage.getItem(THREE_BUCKET_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        threeBucketState = { ...threeBucketState, ...parsed };
+      }
+    }
+  } catch (_e) {}
+
+  const p = gatherFinancialProfile();
+  const inpExpense = document.getElementById('inpBucketExpense');
+  const inpSso = document.getElementById('inpBucketSsoPension');
+  const inpElderly = document.getElementById('inpBucketElderly');
+  const inpAssets = document.getElementById('inpBucketTotalAssets');
+  const inpB1Y = document.getElementById('inpBucket1Years');
+  const inpB2Y = document.getElementById('inpBucket2Years');
+
+  if (inpExpense) {
+    inpExpense.value =
+      threeBucketState.annualLivingExpense !== null
+        ? threeBucketState.annualLivingExpense
+        : Math.round(p.monthlyExpense * 12 || 360000);
+  }
+  if (inpSso) {
+    inpSso.value = threeBucketState.monthlySsoPension !== undefined ? threeBucketState.monthlySsoPension : 4125;
+  }
+  if (inpElderly) {
+    inpElderly.value =
+      threeBucketState.monthlyElderlyAllowance !== undefined ? threeBucketState.monthlyElderlyAllowance : 600;
+  }
+  if (inpAssets) {
+    inpAssets.value =
+      threeBucketState.totalRetirementAssets !== null
+        ? threeBucketState.totalRetirementAssets
+        : Math.round(p.portfolioVal + p.emergencyReserve || 6000000);
+  }
+  if (inpB1Y) inpB1Y.value = threeBucketState.bucket1Years || 2;
+  if (inpB2Y) inpB2Y.value = threeBucketState.bucket2Years || 5;
+
+  updateThreeBucketsCalculator();
+}
+
+function syncThreeBucketsFromTools() {
+  const p = gatherFinancialProfile();
+  const inpExpense = document.getElementById('inpBucketExpense');
+  const inpAssets = document.getElementById('inpBucketTotalAssets');
+  if (inpExpense) inpExpense.value = Math.round(p.monthlyExpense * 12 || 360000);
+  if (inpAssets) inpAssets.value = Math.round(p.portfolioVal + p.emergencyReserve || 6000000);
+  updateThreeBucketsCalculator();
+}
+
+function updateThreeBucketsCalculator() {
+  const inpExpense = document.getElementById('inpBucketExpense');
+  const inpSso = document.getElementById('inpBucketSsoPension');
+  const inpElderly = document.getElementById('inpBucketElderly');
+  const inpAssets = document.getElementById('inpBucketTotalAssets');
+  const inpB1Y = document.getElementById('inpBucket1Years');
+  const inpB2Y = document.getElementById('inpBucket2Years');
+
+  const annualLivingExpense = inpExpense ? parseNum(inpExpense.value) : 360000;
+  const monthlySsoPension = inpSso ? parseNum(inpSso.value) : 4125;
+  const monthlyElderlyAllowance = inpElderly ? parseNum(inpElderly.value) : 600;
+  const totalRetirementAssets = inpAssets ? parseNum(inpAssets.value) : 6000000;
+  const bucket1Years = inpB1Y ? parseNum(inpB1Y.value) : 2;
+  const bucket2Years = inpB2Y ? parseNum(inpB2Y.value) : 5;
+
+  threeBucketState = {
+    annualLivingExpense,
+    monthlySsoPension,
+    monthlyElderlyAllowance,
+    totalRetirementAssets,
+    bucket1Years,
+    bucket2Years,
+  };
+
+  try {
+    localStorage.setItem(THREE_BUCKET_STORAGE_KEY, JSON.stringify(threeBucketState));
+  } catch (_e) {}
+
+  const b1Display = document.getElementById('valBucket1YearsDisplay');
+  const b2Display = document.getElementById('valBucket2YearsDisplay');
+  if (b1Display) b1Display.textContent = `${bucket1Years} ${LANG === 'en' ? 'Yrs' : 'ปี'}`;
+  if (b2Display) b2Display.textContent = `${bucket2Years} ${LANG === 'en' ? 'Yrs' : 'ปี'}`;
+
+  const calc = MoneyApp.calculateRetirementThreeBuckets({
+    annualLivingExpense,
+    monthlySsoPension,
+    monthlyElderlyAllowance,
+    totalRetirementAssets,
+    bucket1Years,
+    bucket2Years,
+  });
+
+  const badgeRunway = document.getElementById('badge-three-bucket-runway');
+  if (badgeRunway) {
+    if (calc.isUnderfunded) {
+      badgeRunway.style.background = 'var(--warn-dim)';
+      badgeRunway.style.color = 'var(--warn)';
+      badgeRunway.style.borderColor = 'var(--warn)';
+      badgeRunway.textContent =
+        LANG === 'en'
+          ? `⚠️ Shortfall -${formatMoney(calc.shortfallAmount)} THB`
+          : `⚠️ ขาดเงินสำรอง -${formatMoney(calc.shortfallAmount)} บาท`;
+    } else {
+      badgeRunway.style.background = 'var(--ok-dim)';
+      badgeRunway.style.color = 'var(--ok)';
+      badgeRunway.style.borderColor = 'var(--ok)';
+      badgeRunway.textContent =
+        LANG === 'en'
+          ? `🛡️ Bear-Market Buffer: ${calc.bearMarketRunwayYears} Yrs`
+          : `🛡️ เกราะกันตลาดหมี ${calc.bearMarketRunwayYears} ปี`;
+    }
+  }
+
+  const txtSummary = document.getElementById('txt-bucket-runway-summary');
+  if (txtSummary) {
+    txtSummary.textContent =
+      LANG === 'en'
+        ? `Defensive Cushion: ${calc.bearMarketRunwayYears} Years Protected`
+        : `ถังป้องกันวิกฤตครอบคลุม ${calc.bearMarketRunwayYears} ปี`;
+  }
+
+  const barB1 = document.getElementById('bar-bucket-1');
+  const barB2 = document.getElementById('bar-bucket-2');
+  const barB3 = document.getElementById('bar-bucket-3');
+  const total = calc.totalRetirementAssets || 1;
+  const pct1 = Math.min(100, Math.round((calc.bucket1Target / total) * 1000) / 10);
+  const pct2 = Math.min(100 - pct1, Math.round((calc.bucket2Target / total) * 1000) / 10);
+  const pct3 = Math.max(0, Math.round((calc.bucket3Target / total) * 1000) / 10);
+
+  if (barB1) barB1.style.width = `${pct1}%`;
+  if (barB2) barB2.style.width = `${pct2}%`;
+  if (barB3) barB3.style.width = `${pct3}%`;
+
+  const legB1 = document.getElementById('leg-bucket-1');
+  const legB2 = document.getElementById('leg-bucket-2');
+  const legB3 = document.getElementById('leg-bucket-3');
+  if (legB1) {
+    legB1.textContent =
+      LANG === 'en'
+        ? `Bucket 1: Cash ${formatMoney(calc.bucket1Target)} THB (${pct1}%)`
+        : `ถัง 1: เงินสด ${formatMoney(calc.bucket1Target)} บาท (${pct1}%)`;
+  }
+  if (legB2) {
+    legB2.textContent =
+      LANG === 'en'
+        ? `Bucket 2: Bonds ${formatMoney(calc.bucket2Target)} THB (${pct2}%)`
+        : `ถัง 2: ตราสารหนี้ ${formatMoney(calc.bucket2Target)} บาท (${pct2}%)`;
+  }
+  if (legB3) {
+    legB3.textContent =
+      LANG === 'en'
+        ? `Bucket 3: Equities ${formatMoney(calc.bucket3Target)} THB (${pct3}%)`
+        : `ถัง 3: หุ้นเติบโต ${formatMoney(calc.bucket3Target)} บาท (${pct3}%)`;
+  }
+
+  const valB1 = document.getElementById('val-card-b1');
+  const valB2 = document.getElementById('val-card-b2');
+  const valB3 = document.getElementById('val-card-b3');
+  const valYield = document.getElementById('val-card-b-yield');
+  const subYield = document.getElementById('sub-card-b-yield');
+
+  if (valB1) valB1.textContent = `${formatMoney(calc.bucket1Target)} ${LANG === 'en' ? 'THB' : 'บาท'}`;
+  if (valB2) valB2.textContent = `${formatMoney(calc.bucket2Target)} ${LANG === 'en' ? 'THB' : 'บาท'}`;
+  if (valB3) valB3.textContent = `${formatMoney(calc.bucket3Target)} ${LANG === 'en' ? 'THB' : 'บาท'}`;
+  if (valYield) valYield.textContent = `${formatMoney(calc.annualYieldCashFlow)} ${LANG === 'en' ? 'THB/yr' : 'บาท/ปี'}`;
+  if (subYield) {
+    subYield.textContent =
+      LANG === 'en' ? `Blended Yield: ${calc.blendedYieldPct}% p.a.` : `ผลตอบแทนเฉลี่ย ${calc.blendedYieldPct}% ต่อปี`;
+  }
+
+  const adviceEl = document.getElementById('box-bucket-advice');
+  if (adviceEl) {
+    const ssoAnnual = calc.annualGuaranteedIncome;
+    const netDraw = calc.netAnnualDrawdown;
+    if (calc.isUnderfunded) {
+      adviceEl.innerHTML =
+        LANG === 'en'
+          ? `⚠️ <strong>Asset Shortfall:</strong> Current retirement net worth (${formatMoney(totalRetirementAssets)} THB) is less than the required ${bucket1Years + bucket2Years}-year defensive cushion (${formatMoney(calc.defensiveNeeds)} THB). Recommended to boost savings or extend working years.`
+          : `⚠️ <strong>สินทรัพย์ไม่เพียงพอ:</strong> ทรัพย์สินที่มี (${formatMoney(totalRetirementAssets)} บาท) ยังน้อยกว่าเงินสำรองฉุกเฉิน ${bucket1Years + bucket2Years} ปีที่จำเป็น (${formatMoney(calc.defensiveNeeds)} บาท) แนะนำให้เพิ่มการออมหรือพิจารณาทำงานต่อเพื่อสะสมเงิน`;
+    } else {
+      adviceEl.innerHTML =
+        LANG === 'en'
+          ? `💡 <strong>Resilience Strategy:</strong> Social Security and elderly allowances cover ${formatMoney(ssoAnnual)} THB/year (${calc.guaranteedIncomeCoveragePct}%), leaving net drawdown of ${formatMoney(netDraw)} THB/year. Your ${calc.bearMarketRunwayYears}-year defensive buffer shields you from needing to liquidate stocks during market downturns.`
+          : `💡 <strong>กลยุทธ์ความยืดหยุ่น:</strong> บำนาญประกันสังคมและเบี้ยผู้สูงอายุช่วยลดภาระได้ปีละ ${formatMoney(ssoAnnual)} บาท (${calc.guaranteedIncomeCoveragePct}%) เหลือถอนเงินจากพอร์ตเพียงปีละ ${formatMoney(netDraw)} บาท ด้วยเกราะกำบัง ${calc.bearMarketRunwayYears} ปี ทำให้ไม่ต้องขายหุ้นตัดขาดทุนยามตลาดขาลง`;
+    }
+  }
+}
+
+window.syncThreeBucketsFromTools = syncThreeBucketsFromTools;
+window.updateThreeBucketsCalculator = updateThreeBucketsCalculator;
+window.initThreeBucketsCalculator = initThreeBucketsCalculator;
 
 // --- Inflation Deflator & Purchasing Power Engine ---
 let deflatorState = {
@@ -2711,6 +2981,7 @@ function hideChartTooltip() {
 renderDashboardKPIs();
 renderFinancialGoals();
 initInsuranceAdequacy();
+initThreeBucketsCalculator();
 renderSnapshotsTable();
 renderChart();
 updateStorageQuotaDisplay();
@@ -2720,6 +2991,7 @@ function refreshDashboard() {
   renderDashboardKPIs();
   renderFinancialGoals();
   updateInsuranceAdequacy();
+  updateThreeBucketsCalculator();
   renderSnapshotsTable();
   renderChart();
   updateStorageQuotaDisplay();

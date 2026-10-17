@@ -15,6 +15,40 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-17: Retirement 3-Bucket Cash Flow & SSO Drawdown Simulator (v2.4.2)
+
+- **Date & Context:** 2026-10-17, during implementation of Retirement 3-Bucket Cash Flow Allocation & Social Security Offset Simulator in `dashboard.html` / `js/dashboard.js` (`v2.4.2`).
+- **Problem:** Conventional retirement planning relies exclusively on the 4% Safe Withdrawal Rate (SWR) rule, which fails to account for statutory guaranteed income in Thailand (Social Security Section 33/39 pension and Senior Citizen allowances) and does not protect against Sequence of Returns Risk (forced equity liquidations during bear markets).
+- **Root Cause:** SWR treats the portfolio as a monolithic block, ignoring the psychological and financial necessity of cash and bond cushions during market drawdowns.
+- **Solution & Rule:**
+  1. Implement Harold Evensky's 3-Bucket Allocation Architecture in `js/shared.js`:
+     - **Bucket 1 (Cash / Liquid 1–2 yrs):** Cash & money-market funds guaranteeing immediate living expense drawdown.
+     - **Bucket 2 (Fixed Income 3–7 yrs):** Government bonds and fixed-income assets that continuously replenish Bucket 1.
+     - **Bucket 3 (Equities / Growth 8+ yrs):** Long-term equity index/REITs harvested only during bull markets.
+  2. Offset living expenses with guaranteed Thai public pensions: $\text{Net Drawdown} = \max(0, \text{Annual Living Expenses} - (\text{Monthly SSO} + \text{Elderly Allowance}) \times 12)$.
+  3. Compute bear market runway years: $\frac{\text{Bucket 1} + \text{Bucket 2}}{\text{Net Annual Drawdown}}$ (typically 7 years).
+  4. Integrate automatic hydration from `gatherFinancialProfile()` and enforce 100% bilingual translation symmetry and zero Biome linter errors.
+
+### 2026-10-17: Thai Inheritance & Annual Gift Tax Simulator (v2.4.1)
+
+- **Date & Context:** 2026-10-17, during implementation of Thai Inheritance Tax Act B.E. 2558 and Annual Gift Tax under Revenue Code Sections 42(26)-(28) in `tax-calculator.html` / `js/tax-calculator.js` (`v2.4.1`).
+- **Problem:** Thai high-net-worth individuals and families had no client-side simulator to calculate statutory inheritance tax, evaluate the 100M THB per-heir exemption, or compare testamentary distribution against multi-year lifetime gifting strategies.
+- **Root Cause:** Inheritance tax calculations in Thailand have specific statutory nuances (spousal 100% exemption, 5% rate for ascendants/descendants vs 10% for non-relatives, separate 20M/10M annual gift exemptions) that were not modeled anywhere in the app.
+- **Solution & Rule:**
+  1. Implement `calculateThaiInheritanceAndGiftTax(params)` in `js/shared.js` covering both Inheritance Tax Act B.E. 2558 and Revenue Code Sec. 42(26)-(28).
+  2. Implement wealth transfer optimizer modeling a multi-year phased gift strategy ($\text{Years} \times \text{Exemption}$) to reduce the final estate below the 100M threshold.
+  3. Validate with unit tests in `tests/inheritance-tax.test.mjs` and preserve offline-first privacy.
+
+### 2026-10-17: Thai Gold Bar & Jewelry DCA Calculator (v2.4.0)
+
+- **Date & Context:** 2026-10-17, during implementation of Thai 96.5% Gold Bar & Jewelry DCA Calculator in `rebalance.html` / `js/rebalance.js` (`v2.4.0`).
+- **Problem:** Gold is one of the most popular savings and investment assets in Thailand, but standard DCA calculators use metric grams or troy ounces instead of the traditional Thai Baht-weight standard (1 บาททอง = 15.244g for bars, 15.16g for jewelry) and ignore block/craft fees (ค่าบล็อก / ค่ากำเหน็จ).
+- **Root Cause:** Global financial models do not account for local Thai Gold Traders Association (สมาคมค้าทองคำ) conventions or Revenue Code Section 42(9) capital gains tax exemptions.
+- **Solution & Rule:**
+  1. Implement `calculateThaiGoldMetrics(params)` in `js/shared.js` supporting both 96.5% gold bars (15.244g) and jewelry (15.16g) with block/craft fee modeling.
+  2. Provide live Association quote fetching with fallback manual entry and a direct export bridge to portfolio rebalancing buckets.
+  3. Display legal guidance banner on Revenue Code Section 42(9) capital gains PIT exemption.
+
 ### 2026-10-17: Life Insurance Adequacy & Family Protection Gap Analysis (v2.3.9)
 
 - **Date & Context:** 2026-10-17, during implementation of Life Insurance Adequacy & Family Protection Gap Calculator in `dashboard.html` / `js/dashboard.js` (`v2.3.9`).
