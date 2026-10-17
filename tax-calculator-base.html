@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="1.8.5">
+    <meta name="version" content="1.8.6">
     <meta name="description" content="คำนวณภาษีเงินได้บุคคลธรรมดา — ประมาณการภาษีเงินได้จากเงินเดือนและโบนัส พร้อมแสดงรายละเอียดตามขั้นบันได">
     <title>คำนวณภาษีเงินได้บุคคลธรรมดา</title>
     <link rel="stylesheet" href="css/tailwind-lite.css">
@@ -177,7 +177,10 @@
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
 
     <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
-        <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center" id="lbl-title">คำนวณภาษีเบื้องต้น 📊</h2>
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-semibold text-gray-800" id="lbl-title">คำนวณภาษีเบื้องต้น 📊</h2>
+            <button type="button" onclick="undoTaxChange()" id="btn-undo-tax-top" class="py-1 px-2.5 text-xs font-semibold rounded-lg no-print" style="display:none; color:var(--core); background:var(--panel-2); border:1px solid var(--line); cursor:pointer;" title="เลิกทำ / Undo (Ctrl+Z)" aria-label="Undo last change">↩ <span id="lbl-undo-tax-top">เลิกทำ (Undo)</span></button>
+        </div>
 
         <!-- Income Mode Switcher Tabs (Material Design 3 Segmented Button) -->
         <div class="md-segmented-group mb-5" role="tablist" aria-label="โหมดรายได้">
@@ -393,15 +396,21 @@
         </div>
 
         <div class="flex justify-between items-center mt-4 pt-3 border-t border-gray-200">
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
+                <button type="button" onclick="undoTaxChange()" id="btn-undo-tax" class="py-1.5 px-3 md-btn-outlined text-xs font-semibold rounded-lg flex items-center gap-1.5 no-print" style="display:none; color:var(--core); border:1px solid var(--line); cursor:pointer;" title="เลิกทำ / Undo (Ctrl+Z)">
+                    <span>↩</span> <span id="lbl-undo-tax">เลิกทำ (Undo)</span>
+                </button>
                 <button onclick="copyTaxSummary()" id="btn-copy-tax" class="py-1.5 px-3 md-btn-outlined text-xs font-medium rounded-lg flex items-center gap-1.5" style="color:var(--ink); border:1px solid var(--line);">
                     <span id="lbl-copy-tax">📋 คัดลอกสรุปภาษี</span>
                 </button>
                 <button onclick="window.print()" id="btn-print-tax" class="py-1.5 px-3 md-btn-flat text-white text-xs font-medium rounded-lg flex items-center gap-1.5 no-print" style="background:var(--core);">
                     <span id="lbl-print-tax">🖨️ พิมพ์ / PDF</span>
                 </button>
+                <button type="button" onclick="resetTaxForm()" id="btn-reset-tax" class="py-1.5 px-3 md-btn-outlined text-xs font-medium rounded-lg flex items-center gap-1.5 no-print" style="color:var(--ink-faint); border:1px solid var(--line); cursor:pointer;">
+                    <span id="lbl-reset-tax">ล้างข้อมูล</span>
+                </button>
             </div>
-            <p class="text-xs text-gray-400">v1.8.5</p>
+            <p class="text-xs text-gray-400">v1.8.6</p>
         </div>
     </div>
 
@@ -456,6 +465,9 @@
                 'btn-advisor-revert': '↺ Revert Changes',
                 'lbl-copy-tax': '📋 Copy Tax Summary',
                 'lbl-print-tax': '🖨️ Print / Save PDF',
+                'lbl-undo-tax': 'Undo',
+                'lbl-undo-tax-top': 'Undo',
+                'lbl-reset-tax': 'Clear Form',
             };
             Object.keys(EN).forEach(id => {
                 const el = document.getElementById(id);
@@ -985,6 +997,7 @@
         }
 
         function applyAdvisorDropOne() {
+            undoMgr.push(captureSnapshot());
             if (!advisorState.isApplied) {
                 advisorState.originalFund = document.getElementById('fundDeduct').value;
                 advisorState.originalThaiEsg = document.getElementById('thaiEsgDeduct')?.value || '';
@@ -997,9 +1010,11 @@
             }
             document.getElementById('fundDeduct').value = Math.round(curFund + advisorState.fundDrop);
             calculateTax();
+            updateUndoUI();
         }
 
         function applyAdvisorMax() {
+            undoMgr.push(captureSnapshot());
             if (!advisorState.isApplied) {
                 advisorState.originalFund = document.getElementById('fundDeduct').value;
                 advisorState.originalThaiEsg = document.getElementById('thaiEsgDeduct')?.value || '';
@@ -1012,6 +1027,7 @@
             }
             document.getElementById('fundDeduct').value = Math.round(curFund + advisorState.fundMax);
             calculateTax();
+            updateUndoUI();
         }
 
         function revertAdvisorOptimization() {
@@ -1042,10 +1058,121 @@
             }).catch(() => {});
         }
 
+        const defaultTaxState = {
+            incomeMode: 'monthly',
+            salary: '30000',
+            bonus: '0',
+            yearlyIncome: '',
+            yearlyBonus: '',
+            yearlyPvd: '',
+            yearlySso: '',
+            pvd: '0',
+            ssoCap: '750',
+            fundDeduct: '',
+            thaiEsgDeduct: '',
+            easyReceiptDeduct: '',
+            insuranceDeduct: '',
+            mortgageDeduct: '',
+            otherDeduct: '',
+            monthsBreakdown: Array(12).fill('')
+        };
+
+        function captureSnapshot() {
+            return {
+                incomeMode: incomeMode,
+                salary: document.getElementById('salary')?.value || '',
+                bonus: document.getElementById('bonus')?.value || '',
+                yearlyIncome: document.getElementById('yearlyIncome')?.value || '',
+                yearlyBonus: document.getElementById('yearlyBonus')?.value || '',
+                yearlyPvd: document.getElementById('yearlyPvd')?.value || '',
+                yearlySso: document.getElementById('yearlySso')?.value || '',
+                pvd: document.getElementById('pvd')?.value || '',
+                ssoCap: document.getElementById('ssoCap')?.value || '',
+                fundDeduct: document.getElementById('fundDeduct')?.value || '',
+                thaiEsgDeduct: document.getElementById('thaiEsgDeduct')?.value || '',
+                easyReceiptDeduct: document.getElementById('easyReceiptDeduct')?.value || '',
+                insuranceDeduct: document.getElementById('insuranceDeduct')?.value || '',
+                mortgageDeduct: document.getElementById('mortgageDeduct')?.value || '',
+                otherDeduct: document.getElementById('otherDeduct')?.value || '',
+                monthsBreakdown: Array.from({length: 12}, (_, i) => document.getElementById('m-income-' + (i + 1))?.value || '')
+            };
+        }
+
+        function restoreSnapshot(data) {
+            if (!data) return;
+            if (document.getElementById('salary')) document.getElementById('salary').value = data.salary || '';
+            if (document.getElementById('bonus')) document.getElementById('bonus').value = data.bonus || '';
+            if (document.getElementById('yearlyIncome')) document.getElementById('yearlyIncome').value = data.yearlyIncome || '';
+            if (document.getElementById('yearlyBonus')) document.getElementById('yearlyBonus').value = data.yearlyBonus || '';
+            if (document.getElementById('yearlyPvd')) document.getElementById('yearlyPvd').value = data.yearlyPvd || '';
+            if (document.getElementById('yearlySso')) document.getElementById('yearlySso').value = data.yearlySso || '';
+            if (document.getElementById('pvd')) document.getElementById('pvd').value = data.pvd || '';
+            if (document.getElementById('ssoCap')) document.getElementById('ssoCap').value = data.ssoCap || '';
+
+            if (Array.isArray(data.monthsBreakdown)) {
+                let sum = 0;
+                data.monthsBreakdown.forEach((val, idx) => {
+                    const input = document.getElementById('m-income-' + (idx + 1));
+                    if (input) {
+                        input.value = val || '';
+                        sum += parseNum(val);
+                    }
+                });
+                if (document.getElementById('months-breakdown-total')) {
+                    document.getElementById('months-breakdown-total').textContent = formatMoney(sum) + ' ' + unit;
+                }
+            }
+
+            if (document.getElementById('fundDeduct')) document.getElementById('fundDeduct').value = data.fundDeduct || '';
+            if (document.getElementById('thaiEsgDeduct')) document.getElementById('thaiEsgDeduct').value = data.thaiEsgDeduct || '';
+            if (document.getElementById('easyReceiptDeduct')) document.getElementById('easyReceiptDeduct').value = data.easyReceiptDeduct || '';
+            if (document.getElementById('insuranceDeduct')) document.getElementById('insuranceDeduct').value = data.insuranceDeduct || '';
+            if (document.getElementById('mortgageDeduct')) document.getElementById('mortgageDeduct').value = data.mortgageDeduct || '';
+            if (document.getElementById('otherDeduct')) document.getElementById('otherDeduct').value = data.otherDeduct || '';
+
+            if (data.incomeMode && (data.incomeMode === 'yearly' || data.incomeMode === 'monthly')) {
+                switchIncomeMode(data.incomeMode);
+            } else {
+                calculateTax();
+            }
+            saveState();
+            updateUndoUI();
+        }
+
+        const undoMgr = MoneyApp.createUndoManager({
+            maxDepth: 15,
+            enableShortcuts: true,
+            onUndo: (previous) => {
+                restoreSnapshot(previous);
+            }
+        });
+
+        function updateUndoUI() {
+            const can = undoMgr.canUndo();
+            const btnUndo = document.getElementById('btn-undo-tax');
+            if (btnUndo) btnUndo.style.display = can ? 'inline-flex' : 'none';
+            const btnUndoTop = document.getElementById('btn-undo-tax-top');
+            if (btnUndoTop) btnUndoTop.style.display = can ? 'inline-flex' : 'none';
+        }
+
+        function undoTaxChange() {
+            undoMgr.undo();
+        }
+
+        function resetTaxForm() {
+            const confirmMsg = LANG === 'en'
+                ? 'Clear form data and reset to defaults?'
+                : 'ล้างข้อมูลที่กรอกทั้งหมดและกลับไปใช้ค่าเริ่มต้น?';
+            if (!confirm(confirmMsg)) return;
+            undoMgr.push(captureSnapshot());
+            restoreSnapshot(defaultTaxState);
+            saveState();
+            updateUndoUI();
+        }
+
         function loadState() {
             try {
-                const raw = localStorage.getItem(STORAGE_KEY);
-                const data = raw ? JSON.parse(raw) : null;
+                const data = MoneyApp.safeJsonParse(STORAGE_KEY, null);
                 if (!data) return;
 
                 if (data.salary !== undefined && data.salary !== '') document.getElementById('salary').value = data.salary;

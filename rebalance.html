@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="1.8.5">
+<meta name="version" content="1.8.6">
 <title>คำนวณการเติมเงินรายเดือน</title>
 <link rel="stylesheet" href="css/theme.css">
 <style>
@@ -252,11 +252,26 @@
     font-size: 12px; cursor: pointer; font-family: inherit;
   }
   .settings-btn:hover { background: var(--panel); }
+  .undo-btn {
+    background: var(--panel-2, #f4f4f5);
+    border: 1px solid var(--line, #e4e4e7);
+    color: var(--core, #059669);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .undo-btn:hover { background: var(--line, #e4e4e7); }
 
   @media print {
     body { background: #fff !important; color: #000 !important; padding: 10px; }
     .panel { box-shadow: none !important; border: 1px solid #ddd; break-inside: avoid; }
-    button, .reset-btn, .version-tag, .save-status, .eyebrow, .sub,
+    button, .reset-btn, .undo-btn, .version-tag, .save-status, .eyebrow, .sub,
     #splitForm, #bucketForm, #addBucketBtn, #printRebalanceBtn, #priceBarPanel, #apiSettingsModal { display: none !important; }
     #resultsPanel { display: block !important; }
   }
@@ -265,7 +280,10 @@
 <body>
 
   <div class="eyebrow" id="eyebrow">เครื่องมือ DCA</div>
-  <h1 id="pageTitle">คำนวณการเติมเงินรายเดือน</h1>
+  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+    <h1 id="pageTitle" style="margin:0;">คำนวณการเติมเงินรายเดือน</h1>
+    <button type="button" class="undo-btn no-print" id="btnUndoTop" onclick="undoRebalanceChange()" style="display:none;" title="เลิกทำ / Undo (Ctrl+Z)" aria-label="Undo last change">↩ <span id="lblUndo">เลิกทำ (Undo)</span></button>
+  </div>
   <div class="sub" id="subtitle">แบ่งงบเดือนนี้ตาม Core / Ballast / Satellite แล้วคำนวณว่าแต่ละสินทรัพย์ในแต่ละกลุ่มควรเติมเท่าไหร่ ให้สัดส่วนเข้าใกล้เป้าหมายที่สุด โดยไม่ต้องขายอะไรเลย</div>
 
   <!-- Live Price Control Bar -->
@@ -362,10 +380,11 @@
       <button class="reset-btn" id="copyTradeBtn" onclick="copyTradeOrders()">📋 <span id="lblCopyTrade">คัดลอกรายการสั่งซื้อ</span></button>
       <button class="reset-btn" id="exportCsvBtn" onclick="exportCSV()">📥 <span id="lblExportCsv">ดาวน์โหลด CSV</span></button>
       <button class="reset-btn" id="printRebalanceBtn" onclick="window.print()">🖨️ <span id="lblPrintRebalance">พิมพ์ / บันทึก PDF</span></button>
+      <button class="reset-btn" id="btnUndoBottom" onclick="undoRebalanceChange()" style="display:none; color:var(--core); font-weight:700;">↩ <span id="lblUndoBottom">เลิกทำ (Undo)</span></button>
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v1.8.5</p>
+  <p class="version-tag">v1.8.6</p>
 
 <script src="js/shared.js"></script>
 <script>
@@ -392,6 +411,7 @@ const EN = {
   btnTestApi: '🧪 Test Connection',
   btnCancelModal: 'Cancel',
   btnSaveModal: 'Save',
+  lblUndo: 'Undo',
 };
 if(LANG === 'en'){
   document.title = 'Monthly Top-up Calculator';
@@ -412,6 +432,10 @@ if(LANG === 'en'){
   if (tradeBtnLbl) tradeBtnLbl.textContent = 'Copy Trade Orders';
   const csvBtnLbl = document.getElementById('lblExportCsv');
   if (csvBtnLbl) csvBtnLbl.textContent = 'Export CSV';
+  const undoTopLbl = document.getElementById('lblUndo');
+  if (undoTopLbl) undoTopLbl.textContent = EN.lblUndo;
+  const undoBtmLbl = document.getElementById('lblUndoBottom');
+  if (undoBtmLbl) undoBtmLbl.textContent = EN.lblUndo;
 }
 
 // Small dict for text regenerated on every render (compute/renderSplit/renderBuckets).
@@ -489,7 +513,7 @@ function t(key, ...args){
   return v;
 }
 
-const state = {
+const defaultState = {
   totalBudget: 200000,
   usdThbRate: 33.39,
   lastPriceFetch: 0,
@@ -519,6 +543,7 @@ const state = {
     },
   ]
 };
+const state = JSON.parse(JSON.stringify(defaultState));
 
 const bucketsContainer = document.getElementById('bucketsContainer');
 const totalBudgetEl = document.getElementById('totalBudget');
@@ -630,9 +655,7 @@ function saveState(){
 
 function loadState(){
   try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(!raw) return null;
-    const saved = JSON.parse(raw);
+    const saved = MoneyApp.safeJsonParse(STORAGE_KEY, null);
     if(saved && typeof saved.totalBudget === 'number' && Array.isArray(saved.buckets)){
       return saved;
     }
@@ -653,11 +676,61 @@ if(savedState){
   totalBudgetEl.value = state.totalBudget;
 }
 
+// --- Undo Subsystem ---
+function captureSnapshot(){
+  const minTrade = parseFloat(document.getElementById('minTradeThreshold')?.value) || 0;
+  return {
+    totalBudget: state.totalBudget,
+    buckets: JSON.parse(JSON.stringify(state.buckets || [])),
+    minTradeThreshold: minTrade,
+    usdThbRate: state.usdThbRate || 33.39,
+  };
+}
+
+function restoreSnapshot(snap){
+  if (!snap) return;
+  state.totalBudget = snap.totalBudget;
+  state.buckets = JSON.parse(JSON.stringify(snap.buckets || []));
+  if (snap.usdThbRate) state.usdThbRate = snap.usdThbRate;
+  if (totalBudgetEl) totalBudgetEl.value = state.totalBudget;
+  const minTradeEl = document.getElementById('minTradeThreshold');
+  if (minTradeEl && snap.minTradeThreshold !== undefined) {
+    minTradeEl.value = snap.minTradeThreshold;
+  }
+  renderSplit();
+  renderBuckets();
+  compute();
+  saveState();
+  updateUndoUI();
+}
+
+const undoMgr = MoneyApp.createUndoManager({
+  maxDepth: 15,
+  enableShortcuts: true,
+  onUndo: (previousState) => {
+    restoreSnapshot(previousState);
+  },
+});
+
+function updateUndoUI(){
+  const can = undoMgr.canUndo();
+  const btnTop = document.getElementById('btnUndoTop');
+  if (btnTop) btnTop.style.display = can ? 'inline-flex' : 'none';
+  const btnBottom = document.getElementById('btnUndoBottom');
+  if (btnBottom) btnBottom.style.display = can ? 'inline-block' : 'none';
+}
+
+function undoRebalanceChange(){
+  undoMgr.undo();
+}
+
 if(resetBtn){
   resetBtn.addEventListener('click', () => {
     if(confirm(t('resetConfirm'))){
-      try{ localStorage.removeItem(STORAGE_KEY); } catch(e){}
-      location.reload();
+      undoMgr.push(captureSnapshot());
+      restoreSnapshot(defaultState);
+      saveState();
+      updateUndoUI();
     }
   });
 }
@@ -787,9 +860,12 @@ function updateMinBudgetBanner(){
 }
 
 function applyMinBudget(amt){
+  undoMgr.push(captureSnapshot());
   state.totalBudget = amt;
   totalBudgetEl.value = fmtPlain(amt);
   compute();
+  saveState();
+  updateUndoUI();
 }
 
 function renderSplit(){
@@ -869,10 +945,13 @@ function renderBuckets(){
     renderAssetRows(bucket);
 
     panel.querySelector('.add-btn').addEventListener('click', () => {
+      undoMgr.push(captureSnapshot());
       const newIdx = bucket.assets.length;
       bucket.assets.push({ name: t('assetDefaultName', newIdx+1), ticker: '', units: 0, lastPrice: 0, currency: 'USD', value: 0, weight: 0, enabled: true });
       renderAssetRows(bucket);
       compute();
+      saveState();
+      updateUndoUI();
       const rowsEl = document.getElementById(`rows-${bucket.id}`);
       const nameInput = rowsEl.querySelectorAll('.asset-row-top input.name')[newIdx];
       if(nameInput){ nameInput.focus(); nameInput.select(); }
@@ -1107,11 +1186,14 @@ function renderAssetRows(bucket){
   });
   rowsEl.querySelectorAll('.remove-btn').forEach(btn => {
     btn.addEventListener('click', () => {
+      undoMgr.push(captureSnapshot());
       const b = state.buckets.find(bk => bk.id === btn.dataset.bucket);
       const idx = parseInt(btn.dataset.idx);
       b.assets.splice(idx, 1);
       renderAssetRows(b);
       compute();
+      saveState();
+      updateUndoUI();
     });
   });
 
@@ -1120,9 +1202,11 @@ function renderAssetRows(bucket){
       const b = state.buckets.find(bk => bk.id === btn.dataset.bucket);
       const idx = parseInt(btn.dataset.idx);
       if (idx <= 0) return;
+      undoMgr.push(captureSnapshot());
       [b.assets[idx - 1], b.assets[idx]] = [b.assets[idx], b.assets[idx - 1]];
       renderAssetRows(b);
       saveState();
+      updateUndoUI();
       compute();
     });
   });
@@ -1132,9 +1216,11 @@ function renderAssetRows(bucket){
       const b = state.buckets.find(bk => bk.id === btn.dataset.bucket);
       const idx = parseInt(btn.dataset.idx);
       if (idx >= b.assets.length - 1) return;
+      undoMgr.push(captureSnapshot());
       [b.assets[idx], b.assets[idx + 1]] = [b.assets[idx + 1], b.assets[idx]];
       renderAssetRows(b);
       saveState();
+      updateUndoUI();
       compute();
     });
   });
@@ -1355,10 +1441,12 @@ function checkPendingBudget(){
     if (raw) {
       const budget = parseFloat(raw);
       if (!isNaN(budget) && budget > 0) {
+        undoMgr.push(captureSnapshot());
         state.totalBudget = budget;
         totalBudgetEl.value = fmtPlain(budget);
         localStorage.removeItem('moneySuperapp.pendingBudget');
         saveState();
+        updateUndoUI();
         const alertEl = document.getElementById('pendingBudgetAlert');
         const textEl = document.getElementById('pendingBudgetText');
         if (alertEl && textEl) {
@@ -1503,11 +1591,7 @@ async function fetchThaiGoldPrice() {
 }
 
 function getApiSettings() {
-  try {
-    return JSON.parse(localStorage.getItem('moneySuperapp.apiSettings') || '{}');
-  } catch(e) {
-    return {};
-  }
+  return MoneyApp.safeJsonParse('moneySuperapp.apiSettings', {});
 }
 
 function saveApiSettingsToStorage(settings) {
