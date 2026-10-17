@@ -50,6 +50,12 @@ const EN = {
   lblCashflowTitle: 'Cashflow Allocation',
   lblCfViewWaterfall: 'Waterfall Stream',
   lblCfViewBar: 'Proportions Bar',
+  lblCfView503020: '50/30/20 Rule',
+  lblDonutTitle: 'Rule 50/30/20',
+  lbl503020Needs: 'Needs:',
+  lbl503020Wants: 'Wants:',
+  lbl503020Savings: 'Savings & Invest:',
+  lbl503020Runway: '🛡️ Emergency Runway:',
   lblCfIncome: 'Gross Income:',
   lblCfDeductions: 'Statutory (Tax/SSO/PVD):',
   lblCfExpenses: 'Living Expenses:',
@@ -264,6 +270,18 @@ if (LANG === 'en') {
   if (cfVwW) cfVwW.textContent = EN.lblCfViewWaterfall;
   const cfVwB = document.getElementById('lblCfViewBar');
   if (cfVwB) cfVwB.textContent = EN.lblCfViewBar;
+  const cfVw50 = document.getElementById('lblCfView503020');
+  if (cfVw50) cfVw50.textContent = EN.lblCfView503020;
+  const dnT = document.getElementById('lblDonutTitle');
+  if (dnT) dnT.textContent = EN.lblDonutTitle;
+  const nL = document.getElementById('lbl503020Needs');
+  if (nL) nL.textContent = EN.lbl503020Needs;
+  const wL = document.getElementById('lbl503020Wants');
+  if (wL) wL.textContent = EN.lbl503020Wants;
+  const sL = document.getElementById('lbl503020Savings');
+  if (sL) sL.textContent = EN.lbl503020Savings;
+  const rL = document.getElementById('lbl503020Runway');
+  if (rL) rL.textContent = EN.lbl503020Runway;
   const cfI = document.getElementById('lblCfIncome');
   if (cfI) cfI.textContent = EN.lblCfIncome;
   const cfD = document.getElementById('lblCfDeductions');
@@ -1507,6 +1525,9 @@ function updateCashflowVisual(totalIncome, totalExpense, totalSavings, remaining
 
   // 4. Render SVG Waterfall
   renderCashflowWaterfall(totalIncome, deductions, generalExpenses, totalSavings, remaining);
+
+  // 5. Render 50/30/20 Budget Rule Donut & Runway
+  renderBudgetRule503020(totalIncome, totalExpense, totalSavings, remaining);
 }
 
 /**
@@ -1671,18 +1692,318 @@ function renderCashflowWaterfall(totalIncome, deductions, generalExpenses, total
   svg.innerHTML = svgHtml;
 }
 
-// ── Cashflow View Mode Toggle (Waterfall vs Bar) ───────────────────────────
+// ── 50/30/20 Budget Rule Compliance Donut & Runway Engine ───────────────────
+const NEEDS_KEYWORDS = [
+  'บ้าน',
+  'เช่า',
+  'หอ',
+  'คอนโด',
+  'ผ่อน',
+  'ไฟ',
+  'น้ำ',
+  'เน็ต',
+  'โทร',
+  'เดินทาง',
+  'น้ำมัน',
+  'รถ',
+  'bts',
+  'mrt',
+  'อาหาร',
+  'กับข้าว',
+  'ยา',
+  'ประกัน',
+  'ดอกเบี้ย',
+  'กู้',
+  'บัตร',
+  'rent',
+  'mortgage',
+  'utility',
+  'electric',
+  'water',
+  'internet',
+  'phone',
+  'transport',
+  'fuel',
+  'grocery',
+  'food',
+  'insurance',
+  'loan',
+  'bill',
+];
+
+const WANTS_KEYWORDS = [
+  'เที่ยว',
+  'กาแฟ',
+  'คาเฟ่',
+  'กินนอก',
+  'ช้อป',
+  'เสื้อผ้า',
+  'เกม',
+  'หนัง',
+  'สตรีมมิ่ง',
+  'ปาร์ตี้',
+  'บุฟเฟต์',
+  'ของเล่น',
+  'dining',
+  'coffee',
+  'cafe',
+  'shopping',
+  'entertainment',
+  'netflix',
+  'game',
+  'travel',
+  'vacation',
+  'hobby',
+  'party',
+];
+
+function classifyBudgetType(item, defaultType = 'expense') {
+  if (!item) return 'want';
+  if (item.budgetType === 'need' || item.budgetType === 'want' || item.budgetType === 'saving') {
+    return item.budgetType;
+  }
+  if (defaultType === 'saving') return 'saving';
+  const name = String(item.name || '').toLowerCase();
+  if (name.includes('tax') || name.includes('ภาษี') || name.includes('sso') || name.includes('ประกันสังคม')) {
+    return 'need';
+  }
+  if (name.includes('pvd') || name.includes('สำรองเลี้ยงชีพ') || name.includes('ออม') || name.includes('ลงทุน')) {
+    return 'saving';
+  }
+  if (WANTS_KEYWORDS.some((kw) => name.includes(kw))) {
+    return 'want';
+  }
+  if (NEEDS_KEYWORDS.some((kw) => name.includes(kw)) && !name.includes('นอกบ้าน')) {
+    return 'need';
+  }
+  return 'want';
+}
+
+function calculateBudgetRule503020({ totalIncome = 0, expenses = [], savings = [], remaining = 0 } = {}) {
+  let needsTotal = 0;
+  let wantsTotal = 0;
+  let savingsTotal = 0;
+
+  for (const item of expenses) {
+    const val = Math.max(0, Number(item.value) || 0);
+    const bType = classifyBudgetType(item, 'expense');
+    if (bType === 'need') needsTotal += val;
+    else if (bType === 'saving') savingsTotal += val;
+    else wantsTotal += val;
+  }
+
+  for (const item of savings) {
+    const val = Math.max(0, Number(item.value) || 0);
+    savingsTotal += val;
+  }
+
+  if (remaining > 0) {
+    savingsTotal += remaining;
+  }
+
+  const totalBudget = needsTotal + wantsTotal + savingsTotal;
+  const base = Math.max(Number(totalIncome) || 0, totalBudget, 0.0001);
+
+  const needsPct = Math.round((needsTotal / base) * 100 * 10) / 10;
+  const wantsPct = Math.round((wantsTotal / base) * 100 * 10) / 10;
+  const savingsPct = Math.round((savingsTotal / base) * 100 * 10) / 10;
+
+  let status = 'moderate';
+  if (savingsPct >= 30) {
+    status = 'excellent_savings';
+  } else if (needsPct <= 55 && wantsPct <= 35 && savingsPct >= 18) {
+    status = 'balanced';
+  } else if (needsPct > 60) {
+    status = 'high_needs';
+  } else if (wantsPct > 40) {
+    status = 'high_wants';
+  } else if (savingsPct < 10) {
+    status = 'low_savings';
+  }
+
+  const radius = 70;
+  const circumference = 2 * Math.PI * radius; // ~439.82
+  const needsArc = (needsPct / 100) * circumference;
+  const wantsArc = (wantsPct / 100) * circumference;
+  const savingsArc = (savingsPct / 100) * circumference;
+
+  return {
+    needsTotal,
+    wantsTotal,
+    savingsTotal,
+    totalBudget,
+    base,
+    needsPct,
+    wantsPct,
+    savingsPct,
+    status,
+    donut: {
+      radius,
+      circumference: Math.round(circumference * 100) / 100,
+      needsArc: Math.round(needsArc * 100) / 100,
+      wantsArc: Math.round(wantsArc * 100) / 100,
+      savingsArc: Math.round(savingsArc * 100) / 100,
+      needsOffset: 0,
+      wantsOffset: -Math.round(needsArc * 100) / 100,
+      savingsOffset: -Math.round((needsArc + wantsArc) * 100) / 100,
+    },
+  };
+}
+
+function calculateEmergencyRunway({ reserve = 0, monthlyExpenses = 0 } = {}) {
+  const res = Math.max(0, Number(reserve) || 0);
+  const exp = Math.max(0, Number(monthlyExpenses) || 0);
+
+  const months = exp > 0 ? res / exp : 0;
+  const monthsClamped = Math.round(months * 10) / 10;
+
+  let tier = 'danger';
+  if (res <= 0 || exp <= 0) {
+    tier = 'unspecified';
+  } else if (monthsClamped < 3) {
+    tier = 'danger';
+  } else if (monthsClamped <= 6) {
+    tier = 'healthy';
+  } else {
+    tier = 'solid';
+  }
+
+  const target3M = exp * 3;
+  const target6M = exp * 6;
+  const deficit6M = Math.max(0, target6M - res);
+
+  return {
+    reserve: res,
+    monthlyExpenses: exp,
+    months: monthsClamped,
+    tier,
+    target3M,
+    target6M,
+    deficit6M,
+  };
+}
+
+function renderBudgetRule503020(totalIncome, totalExpense, totalSavings, remaining) {
+  const container = document.getElementById('cashflow503020Container');
+  if (!container) return;
+
+  const b = calculateBudgetRule503020({
+    totalIncome,
+    expenses: state.expenses || [],
+    savings: state.savings || [],
+    remaining,
+  });
+
+  const isEN = LANG === 'en';
+  const unit = isEN ? 'THB' : 'บาท';
+
+  // 1. Update SVG Donut Circles
+  const cNeeds = document.getElementById('donutCircleNeeds');
+  const cWants = document.getElementById('donutCircleWants');
+  const cSavings = document.getElementById('donutCircleSavings');
+
+  if (cNeeds) {
+    cNeeds.setAttribute('stroke-dasharray', `${b.donut.needsArc} ${b.donut.circumference}`);
+    cNeeds.setAttribute('stroke-dashoffset', String(b.donut.needsOffset));
+  }
+  if (cWants) {
+    cWants.setAttribute('stroke-dasharray', `${b.donut.wantsArc} ${b.donut.circumference}`);
+    cWants.setAttribute('stroke-dashoffset', String(b.donut.wantsOffset));
+  }
+  if (cSavings) {
+    cSavings.setAttribute('stroke-dasharray', `${b.donut.savingsArc} ${b.donut.circumference}`);
+    cSavings.setAttribute('stroke-dashoffset', String(b.donut.savingsOffset));
+  }
+
+  // 2. Status Badge
+  const badge = document.getElementById('badge503020Status');
+  if (badge) {
+    let text = isEN ? 'Balanced 50/30/20 🎉' : 'สมดุล 50/30/20 🎉';
+    let bg = 'rgba(16, 185, 129, 0.12)';
+    let color = '#059669';
+
+    if (b.status === 'excellent_savings') {
+      text = isEN ? 'Super Saver 💎' : 'ออมดีเยี่ยม 💎';
+      bg = 'rgba(16, 185, 129, 0.15)';
+      color = '#047857';
+    } else if (b.status === 'high_needs') {
+      text = isEN ? 'High Needs ⚠️' : 'จำเป็นสูงเกิน ⚠️';
+      bg = 'rgba(245, 158, 11, 0.12)';
+      color = '#d97706';
+    } else if (b.status === 'high_wants') {
+      text = isEN ? 'High Wants ⚠️' : 'ตามใจสูงเกิน ⚠️';
+      bg = 'rgba(239, 68, 68, 0.12)';
+      color = '#dc2626';
+    } else if (b.status === 'low_savings') {
+      text = isEN ? 'Low Savings ⚠️' : 'ออมน้อยเกิน ⚠️';
+      bg = 'rgba(239, 68, 68, 0.12)';
+      color = '#dc2626';
+    } else if (b.status === 'moderate') {
+      text = isEN ? 'Moderate' : 'ปานกลาง';
+      bg = 'rgba(100, 116, 139, 0.12)';
+      color = 'var(--ink-faint)';
+    }
+
+    badge.textContent = text;
+    badge.style.background = bg;
+    badge.style.color = color;
+  }
+
+  // 3. Category Value labels & Mini Progress bars
+  const vNeeds = document.getElementById('val503020Needs');
+  const bNeeds = document.getElementById('bar503020Needs');
+  if (vNeeds) vNeeds.textContent = `${fmt(b.needsTotal)} ${unit} (${b.needsPct}%)`;
+  if (bNeeds) bNeeds.style.width = `${Math.min(100, (b.needsPct / 50) * 100)}%`;
+
+  const vWants = document.getElementById('val503020Wants');
+  const bWants = document.getElementById('bar503020Wants');
+  if (vWants) vWants.textContent = `${fmt(b.wantsTotal)} ${unit} (${b.wantsPct}%)`;
+  if (bWants) bWants.style.width = `${Math.min(100, (b.wantsPct / 30) * 100)}%`;
+
+  const vSavings = document.getElementById('val503020Savings');
+  const bSavings = document.getElementById('bar503020Savings');
+  if (vSavings) vSavings.textContent = `${fmt(b.savingsTotal)} ${unit} (${b.savingsPct}%)`;
+  if (bSavings) bSavings.style.width = `${Math.min(100, (b.savingsPct / 20) * 100)}%`;
+
+  // 4. Mini Runway Callout inside 50/30/20
+  const vRunway = document.getElementById('val503020Runway');
+  if (vRunway) {
+    const reserve = Number(state.currentEmergencyReserve) || 0;
+    const expBase = b.needsTotal > 0 ? b.needsTotal : totalExpense;
+    const r = calculateEmergencyRunway({ reserve, monthlyExpenses: expBase });
+    const monthsText = `${r.months.toFixed(1)} ${isEN ? 'months' : 'เดือน'}`;
+
+    let color = 'var(--ink-dim)';
+    if (r.tier === 'danger') color = '#dc2626';
+    else if (r.tier === 'healthy') color = '#d97706';
+    else if (r.tier === 'solid') color = '#059669';
+
+    vRunway.textContent = monthsText;
+    vRunway.style.color = color;
+  }
+}
+
+// ── Cashflow View Mode Toggle (Waterfall vs Bar vs 50/30/20) ────────────────
 const btnCfWaterfall = document.getElementById('btnCfViewWaterfall');
 const btnCfBar = document.getElementById('btnCfViewBar');
+const btnCf503020 = document.getElementById('btnCfView503020');
 const cfWaterfallContainer = document.getElementById('cashflowWaterfallContainer');
 const cfBarContainer = document.getElementById('cashflowBarContainer');
+const cf503020Container = document.getElementById('cashflow503020Container');
 
 function setCashflowView(view) {
   const isWf = view === 'waterfall';
+  const isBar = view === 'bar';
+  const is50 = view === '503020';
+
   if (btnCfWaterfall) btnCfWaterfall.classList.toggle('active', isWf);
-  if (btnCfBar) btnCfBar.classList.toggle('active', !isWf);
+  if (btnCfBar) btnCfBar.classList.toggle('active', isBar);
+  if (btnCf503020) btnCf503020.classList.toggle('active', is50);
+
   if (cfWaterfallContainer) cfWaterfallContainer.style.display = isWf ? 'block' : 'none';
-  if (cfBarContainer) cfBarContainer.style.display = isWf ? 'none' : 'flex';
+  if (cfBarContainer) cfBarContainer.style.display = isBar ? 'flex' : 'none';
+  if (cf503020Container) cf503020Container.style.display = is50 ? 'block' : 'none';
+
   try {
     localStorage.setItem('moneySuperapp.cashflowView', view);
   } catch (_e) {}
@@ -1693,6 +2014,9 @@ if (btnCfWaterfall) {
 }
 if (btnCfBar) {
   btnCfBar.addEventListener('click', () => setCashflowView('bar'));
+}
+if (btnCf503020) {
+  btnCf503020.addEventListener('click', () => setCashflowView('503020'));
 }
 
 const savedCfView = (() => {

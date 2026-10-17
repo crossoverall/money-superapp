@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.1.1">
+  <meta name="version" content="2.1.2">
   <title>คำนวณเงินคงเหลือ</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -362,6 +362,7 @@
         <div class="view-toggle-group" style="display:inline-flex; background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:2px;">
           <button type="button" id="btnCfViewWaterfall" class="btn-cf-view active" title="Waterfall Stream">🌊 <span id="lblCfViewWaterfall">น้ำตก (Waterfall)</span></button>
           <button type="button" id="btnCfViewBar" class="btn-cf-view" title="Proportion Bar">📊 <span id="lblCfViewBar">แถบสัดส่วน (Bar)</span></button>
+          <button type="button" id="btnCfView503020" class="btn-cf-view" title="50/30/20 Rule">🎯 <span id="lblCfView503020">กฎ 50/30/20</span></button>
         </div>
       </div>
       <span id="cashflowSurplusBadge" style="font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px;"></span>
@@ -378,6 +379,85 @@
       <div id="cfSegExpenses" class="cf-seg" style="background:#f43f5e; width:0%;" title="ค่าใช้จ่ายทั่วไป"></div>
       <div id="cfSegSavings" class="cf-seg" style="background:#0284c7; width:0%;" title="เงินออม"></div>
       <div id="cfSegRemaining" class="cf-seg" style="background:#10b981; width:0%;" title="คงเหลือลงทุน"></div>
+    </div>
+
+    <!-- 3. 50/30/20 Budget Rule Compliance Donut & Runway Visualizer -->
+    <div id="cashflow503020Container" style="display:none; padding:10px 0;">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px; align-items:center;">
+        <!-- Left: Donut Chart with central status -->
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+          <div style="position:relative; width:160px; height:160px;">
+            <svg viewBox="0 0 180 180" style="width:100%; height:100%; transform: rotate(-90deg);" id="svg503020Donut" aria-label="50/30/20 Budget Donut">
+              <!-- Background base circle -->
+              <circle cx="90" cy="90" r="70" fill="transparent" stroke="var(--line, #e2e8f0)" stroke-width="16" />
+              <!-- Needs circle (Blue) -->
+              <circle id="donutCircleNeeds" cx="90" cy="90" r="70" fill="transparent" stroke="#3b82f6" stroke-width="16" stroke-dasharray="0 439.82" stroke-dashoffset="0" stroke-linecap="round" />
+              <!-- Wants circle (Purple) -->
+              <circle id="donutCircleWants" cx="90" cy="90" r="70" fill="transparent" stroke="#8b5cf6" stroke-width="16" stroke-dasharray="0 439.82" stroke-dashoffset="0" stroke-linecap="round" />
+              <!-- Savings circle (Emerald) -->
+              <circle id="donutCircleSavings" cx="90" cy="90" r="70" fill="transparent" stroke="#10b981" stroke-width="16" stroke-dasharray="0 439.82" stroke-dashoffset="0" stroke-linecap="round" />
+            </svg>
+            <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none;">
+              <span style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--ink-faint); letter-spacing:0.05em;" id="lblDonutTitle">Rule 50/30/20</span>
+              <span id="badge503020Status" style="font-size:11px; font-weight:800; margin-top:2px; padding:2px 8px; border-radius:999px; background:rgba(16,185,129,0.12); color:#059669;">สมดุล 🎉</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: 3 Category Benchmark Bars & Runway Score -->
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <!-- Needs Card -->
+          <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:8px 12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; margin-bottom:4px;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="width:8px; height:8px; border-radius:50%; background:#3b82f6;"></span>
+                <b style="color:var(--ink);" id="lbl503020Needs">จำเป็น (Needs):</b>
+                <span style="color:var(--ink-faint); font-size:10px;">เป้า 50%</span>
+              </div>
+              <span style="font-weight:700; color:#3b82f6;" id="val503020Needs">0 บาท (0%)</span>
+            </div>
+            <div style="width:100%; height:5px; background:var(--line); border-radius:999px; overflow:hidden;">
+              <div id="bar503020Needs" style="height:100%; background:#3b82f6; width:0%; transition:width 0.3s;"></div>
+            </div>
+          </div>
+
+          <!-- Wants Card -->
+          <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:8px 12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; margin-bottom:4px;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="width:8px; height:8px; border-radius:50%; background:#8b5cf6;"></span>
+                <b style="color:var(--ink);" id="lbl503020Wants">ตามใจ (Wants):</b>
+                <span style="color:var(--ink-faint); font-size:10px;">เป้า 30%</span>
+              </div>
+              <span style="font-weight:700; color:#8b5cf6;" id="val503020Wants">0 บาท (0%)</span>
+            </div>
+            <div style="width:100%; height:5px; background:var(--line); border-radius:999px; overflow:hidden;">
+              <div id="bar503020Wants" style="height:100%; background:#8b5cf6; width:0%; transition:width 0.3s;"></div>
+            </div>
+          </div>
+
+          <!-- Savings Card -->
+          <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:8px 12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; margin-bottom:4px;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="width:8px; height:8px; border-radius:50%; background:#10b981;"></span>
+                <b style="color:var(--ink);" id="lbl503020Savings">ออม & ลงทุน (Savings):</b>
+                <span style="color:var(--ink-faint); font-size:10px;">เป้า 20%</span>
+              </div>
+              <span style="font-weight:700; color:#10b981;" id="val503020Savings">0 บาท (0%)</span>
+            </div>
+            <div style="width:100%; height:5px; background:var(--line); border-radius:999px; overflow:hidden;">
+              <div id="bar503020Savings" style="height:100%; background:#10b981; width:0%; transition:width 0.3s;"></div>
+            </div>
+          </div>
+
+          <!-- Mini Runway Callout inside 50/30/20 -->
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:6px 10px; background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.15); border-radius:8px;">
+            <span style="color:var(--ink-dim);" id="lbl503020Runway">🛡️ กระสุนเงินสำรองฉุกเฉิน (Runway):</span>
+            <span style="font-weight:700;" id="val503020Runway">0.0 เดือน</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="cashflow-legend">
@@ -494,7 +574,7 @@
       <button class="reset-btn" id="resetBtn" style="color:var(--ink-faint);">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v2.1.1</p>
+  <p class="version-tag">v2.1.2</p>
 
   <!-- Import Preview Modal -->
   <div id="importModal" role="dialog" aria-modal="true" aria-labelledby="importModalTitle" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; display:none; align-items:center; justify-content:center; backdrop-filter:blur(2px);" onclick="if(event.target===this)closeImportModal()">

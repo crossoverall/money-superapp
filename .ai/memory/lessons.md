@@ -463,3 +463,19 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
   4. Implemented `applyCurrentSimulation()` distributing extra funds prioritized by ThaiESG -> SSF/RMF -> Insurance -> Easy E-Receipt, with full snapshot state capture for undo (`Ctrl+Z`) and dedicated revert button.
   5. Added 4 unit tests in `tests/financial-math.test.mjs` verifying category capacity limits, income percentage capping, marginal ROI, and total room bounds.
 - **Rule:** When advising on progressive personal income tax deductions, pair remaining legal allowance meters with an interactive What-If simulator and marginal ROI badge, ensuring extra funds cascade through statutory priority buckets and original user inputs can be safely reverted.
+
+### 2026-10-17: 50/30/20 Budget Rule Compliance Donut & Financial Runway Health Score Visualizer
+
+- **Date & Context:** 2026-10-17, implementing 50/30/20 Budget Rule Compliance Donut & Financial Runway Visualizer in `remaining-money.html` (`v2.1.2`).
+- **Problem:**
+  1. The Remaining Money / Monthly Cashflow tool provided a raw waterfall and proportion bar of gross income versus expenses, but lacked high-level strategic financial hygiene benchmarks like the classic 50/30/20 budget framework (50% Needs, 30% Wants, 20% Savings/Investments).
+  2. Expenses in personal budgeting are often recorded with Thai or English natural names (e.g. `ผ่อนบ้าน`, `ค่าไฟ`, `กินข้าวนอกบ้าน`, `กาแฟ`). Thai keyword collisions (such as `กินข้าวนอกบ้าน` containing `บ้าน` / home) can cause dining out to be erroneously classified as a basic Need rather than a discretionary Want.
+  3. Visualizing 3 contiguous circular segments in a native zero-dependency SVG donut chart requires exact trigonometry and cumulative stroke-dashoffsets to prevent gaps or overlapping strokes.
+- **Resolution:**
+  1. Built `classifyBudgetType(item, defaultType)` with explicit keyword priority: checking discretionary Wants keywords first before essential Needs keywords, and guarding substring overlaps like `'บ้าน'` with `!name.includes('นอกบ้าน')`.
+  2. Implemented `calculateBudgetRule503020()` computing total and percentage allocations across Needs, Wants, and Savings relative to total net income, alongside health compliance classifications (`balanced`, `high_needs`, `high_wants`, `low_savings`).
+  3. Created native SVG donut chart with three `<circle>` elements using radius $r = 70$ (circumference $C \approx 439.82$) and negative cumulative offsets (`needsOffset = 0`, `wantsOffset = -needsArc`, `savingsOffset = -(needsArc + wantsArc)`), paired with a central dynamic compliance badge and 3 category benchmark progress cards.
+  4. Integrated emergency runway duration directly into the 50/30/20 visualizer with color-coded safety tiers (< 3 mos Danger, 3–6 mos Healthy, > 6 mos Solid).
+  5. Added 4 automated unit tests in `tests/financial-math.test.mjs` verifying classification accuracy, balanced/unbalanced states, SVG arc math, and runway safety tiers.
+- **Rule:** When auto-classifying natural language expenses into financial planning categories (Needs vs. Wants), prioritize specific discretionary/entertainment keywords before broad basic-need keywords, and construct multi-segment SVG donuts with negative cumulative stroke offsets to ensure seamless circular arcs without external libraries.
+

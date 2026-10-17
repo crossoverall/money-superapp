@@ -2802,4 +2802,321 @@ describe('Financial Math Verification', () => {
       assert.equal(sim.effectiveRoiPct, 0);
     });
   });
+
+  describe('50/30/20 Budget Rule Compliance Donut & Financial Runway Engine', () => {
+    const NEEDS_KEYWORDS = [
+      'บ้าน',
+      'เช่า',
+      'หอ',
+      'คอนโด',
+      'ผ่อน',
+      'ไฟ',
+      'น้ำ',
+      'เน็ต',
+      'โทร',
+      'เดินทาง',
+      'น้ำมัน',
+      'รถ',
+      'bts',
+      'mrt',
+      'อาหาร',
+      'กับข้าว',
+      'ยา',
+      'ประกัน',
+      'ดอกเบี้ย',
+      'กู้',
+      'บัตร',
+      'rent',
+      'mortgage',
+      'utility',
+      'electric',
+      'water',
+      'internet',
+      'phone',
+      'transport',
+      'fuel',
+      'grocery',
+      'food',
+      'insurance',
+      'loan',
+      'bill',
+    ];
+
+    const WANTS_KEYWORDS = [
+      'เที่ยว',
+      'กาแฟ',
+      'คาเฟ่',
+      'กินนอก',
+      'ช้อป',
+      'เสื้อผ้า',
+      'เกม',
+      'หนัง',
+      'สตรีมมิ่ง',
+      'ปาร์ตี้',
+      'บุฟเฟต์',
+      'ของเล่น',
+      'dining',
+      'coffee',
+      'cafe',
+      'shopping',
+      'entertainment',
+      'netflix',
+      'game',
+      'travel',
+      'vacation',
+      'hobby',
+      'party',
+    ];
+
+    function classifyBudgetType(item, defaultType = 'expense') {
+      if (!item) return 'want';
+      if (item.budgetType === 'need' || item.budgetType === 'want' || item.budgetType === 'saving') {
+        return item.budgetType;
+      }
+      if (defaultType === 'saving') return 'saving';
+      const name = String(item.name || '').toLowerCase();
+      if (name.includes('tax') || name.includes('ภาษี') || name.includes('sso') || name.includes('ประกันสังคม')) {
+        return 'need';
+      }
+      if (name.includes('pvd') || name.includes('สำรองเลี้ยงชีพ') || name.includes('ออม') || name.includes('ลงทุน')) {
+        return 'saving';
+      }
+      if (WANTS_KEYWORDS.some((kw) => name.includes(kw))) {
+        return 'want';
+      }
+      if (NEEDS_KEYWORDS.some((kw) => name.includes(kw)) && !name.includes('นอกบ้าน')) {
+        return 'need';
+      }
+      return 'want';
+    }
+
+    function calculateBudgetRule503020({ totalIncome = 0, expenses = [], savings = [], remaining = 0 } = {}) {
+      let needsTotal = 0;
+      let wantsTotal = 0;
+      let savingsTotal = 0;
+
+      for (const item of expenses) {
+        const val = Math.max(0, Number(item.value) || 0);
+        const bType = classifyBudgetType(item, 'expense');
+        if (bType === 'need') needsTotal += val;
+        else if (bType === 'saving') savingsTotal += val;
+        else wantsTotal += val;
+      }
+
+      for (const item of savings) {
+        const val = Math.max(0, Number(item.value) || 0);
+        savingsTotal += val;
+      }
+
+      if (remaining > 0) {
+        savingsTotal += remaining;
+      }
+
+      const totalBudget = needsTotal + wantsTotal + savingsTotal;
+      const base = Math.max(Number(totalIncome) || 0, totalBudget, 0.0001);
+
+      const needsPct = Math.round((needsTotal / base) * 100 * 10) / 10;
+      const wantsPct = Math.round((wantsTotal / base) * 100 * 10) / 10;
+      const savingsPct = Math.round((savingsTotal / base) * 100 * 10) / 10;
+
+      let status = 'moderate';
+      if (savingsPct >= 30) {
+        status = 'excellent_savings';
+      } else if (needsPct <= 55 && wantsPct <= 35 && savingsPct >= 18) {
+        status = 'balanced';
+      } else if (needsPct > 60) {
+        status = 'high_needs';
+      } else if (wantsPct > 40) {
+        status = 'high_wants';
+      } else if (savingsPct < 10) {
+        status = 'low_savings';
+      }
+
+      const radius = 70;
+      const circumference = 2 * Math.PI * radius; // ~439.82
+      const needsArc = (needsPct / 100) * circumference;
+      const wantsArc = (wantsPct / 100) * circumference;
+      const savingsArc = (savingsPct / 100) * circumference;
+
+      return {
+        needsTotal,
+        wantsTotal,
+        savingsTotal,
+        totalBudget,
+        base,
+        needsPct,
+        wantsPct,
+        savingsPct,
+        status,
+        donut: {
+          radius,
+          circumference: Math.round(circumference * 100) / 100,
+          needsArc: Math.round(needsArc * 100) / 100,
+          wantsArc: Math.round(wantsArc * 100) / 100,
+          savingsArc: Math.round(savingsArc * 100) / 100,
+          needsOffset: 0,
+          wantsOffset: -Math.round(needsArc * 100) / 100,
+          savingsOffset: -Math.round((needsArc + wantsArc) * 100) / 100,
+        },
+      };
+    }
+
+    function calculateEmergencyRunway({ reserve = 0, monthlyExpenses = 0 } = {}) {
+      const res = Math.max(0, Number(reserve) || 0);
+      const exp = Math.max(0, Number(monthlyExpenses) || 0);
+
+      const months = exp > 0 ? res / exp : 0;
+      const monthsClamped = Math.round(months * 10) / 10;
+
+      let tier = 'danger';
+      if (res <= 0 || exp <= 0) {
+        tier = 'unspecified';
+      } else if (monthsClamped < 3) {
+        tier = 'danger';
+      } else if (monthsClamped <= 6) {
+        tier = 'healthy';
+      } else {
+        tier = 'solid';
+      }
+
+      const target3M = exp * 3;
+      const target6M = exp * 6;
+      const deficit6M = Math.max(0, target6M - res);
+
+      return {
+        reserve: res,
+        monthlyExpenses: exp,
+        months: monthsClamped,
+        tier,
+        target3M,
+        target6M,
+        deficit6M,
+      };
+    }
+
+    it('classifies expenses accurately into Needs, Wants, and Savings', () => {
+      const expenses = [
+        { name: 'ค่าเช่าห้อง / คอนโด', value: 12000 }, // Need
+        { name: 'ค่าน้ำ ค่าไฟ อินเทอร์เน็ต', value: 2500 }, // Need
+        { name: 'ค่าเดินทาง BTS / MRT', value: 2500 }, // Need
+        { name: 'กินบุฟเฟต์ และคาเฟ่', value: 6000 }, // Want
+        { name: 'ช้อปปิ้ง เสื้อผ้า', value: 4000 }, // Want
+      ];
+      const savings = [
+        { name: 'กองทุนสำรองเลี้ยงชีพ PVD', value: 2500 },
+        { name: 'DCA หุ้นปันผล', value: 5000 },
+      ];
+
+      const res = calculateBudgetRule503020({
+        totalIncome: 40000,
+        expenses,
+        savings,
+        remaining: 5500, // Surplus added to savings
+      });
+
+      // Needs: 12k + 2.5k + 2.5k = 17,000 (42.5%)
+      assert.equal(res.needsTotal, 17000);
+      assert.equal(res.needsPct, 42.5);
+
+      // Wants: 6k + 4k = 10,000 (25%)
+      assert.equal(res.wantsTotal, 10000);
+      assert.equal(res.wantsPct, 25);
+
+      // Savings: 2.5k + 5k + 5.5k surplus = 13,000 (32.5%)
+      assert.equal(res.savingsTotal, 13000);
+      assert.equal(res.savingsPct, 32.5);
+
+      // Status: Savings >= 30% -> excellent_savings
+      assert.equal(res.status, 'excellent_savings');
+    });
+
+    it('identifies balanced 50/30/20 budget state and generates valid SVG arcs', () => {
+      const res = calculateBudgetRule503020({
+        totalIncome: 50000,
+        expenses: [
+          { name: 'ค่าผ่อนบ้าน', value: 25000 }, // 50%
+          { name: 'กินข้าวนอกบ้าน & ช้อปปิ้ง', value: 15000 }, // 30%
+        ],
+        savings: [
+          { name: 'เงินออมฉุกเฉิน', value: 10000 }, // 20%
+        ],
+        remaining: 0,
+      });
+
+      assert.equal(res.needsPct, 50);
+      assert.equal(res.wantsPct, 30);
+      assert.equal(res.savingsPct, 20);
+      assert.equal(res.status, 'balanced');
+
+      // Check SVG arcs
+      assert.ok(res.donut.circumference > 439 && res.donut.circumference < 440);
+      assert.equal(Math.round(res.donut.needsArc), Math.round(res.donut.circumference * 0.5));
+      assert.equal(Math.round(res.donut.wantsArc), Math.round(res.donut.circumference * 0.3));
+      assert.equal(Math.round(res.donut.savingsArc), Math.round(res.donut.circumference * 0.2));
+      assert.equal(res.donut.needsOffset, 0);
+    });
+
+    it('flags high needs or high wants imbalances accurately', () => {
+      const highNeeds = calculateBudgetRule503020({
+        totalIncome: 30000,
+        expenses: [
+          { name: 'ค่าผ่อนคอนโดและรถ', value: 22000 }, // 73.3%
+          { name: 'กินดื่มทั่วไป', value: 5000 }, // 16.7%
+        ],
+        savings: [{ name: 'ออม', value: 3000 }],
+        remaining: 0,
+      });
+      assert.equal(highNeeds.status, 'high_needs');
+
+      const highWants = calculateBudgetRule503020({
+        totalIncome: 30000,
+        expenses: [
+          { name: 'ค่าเช่าห้อง', value: 8000 }, // 26.7%
+          { name: 'ช้อปปิ้ง ท่องเที่ยว และปาร์ตี้', value: 18000 }, // 60%
+        ],
+        savings: [{ name: 'ออม', value: 4000 }],
+        remaining: 0,
+      });
+      assert.equal(highWants.status, 'high_wants');
+    });
+
+    it('calculates emergency runway duration and safety tiers safely', () => {
+      // 1. Danger tier (< 3 months)
+      const danger = calculateEmergencyRunway({
+        reserve: 40000,
+        monthlyExpenses: 20000,
+      });
+      assert.equal(danger.months, 2);
+      assert.equal(danger.tier, 'danger');
+      assert.equal(danger.target3M, 60000);
+      assert.equal(danger.target6M, 120000);
+      assert.equal(danger.deficit6M, 80000);
+
+      // 2. Healthy tier (3-6 months)
+      const healthy = calculateEmergencyRunway({
+        reserve: 100000,
+        monthlyExpenses: 25000,
+      });
+      assert.equal(healthy.months, 4);
+      assert.equal(healthy.tier, 'healthy');
+      assert.equal(healthy.deficit6M, 50000);
+
+      // 3. Solid tier (> 6 months)
+      const solid = calculateEmergencyRunway({
+        reserve: 240000,
+        monthlyExpenses: 30000,
+      });
+      assert.equal(solid.months, 8);
+      assert.equal(solid.tier, 'solid');
+      assert.equal(solid.deficit6M, 0);
+
+      // 4. Zero expenses edge case
+      const zeroExp = calculateEmergencyRunway({
+        reserve: 50000,
+        monthlyExpenses: 0,
+      });
+      assert.equal(zeroExp.months, 0);
+      assert.equal(zeroExp.tier, 'unspecified');
+    });
+  });
 });
