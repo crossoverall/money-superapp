@@ -406,5 +406,16 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
   2. Guarded non-positive denominators and logarithmic boundaries, returning `Infinity` when contributions cannot overcome compounding debt or capping horizons at 600 months (50 years).
   3. Added one-click scenario toggle pills (0% Cash, 3% Conservative, 6% Moderate, 9% Aggressive) with live on-card recalculation, alongside custom rate configuration in `#goalsModal`.
   4. Formatted projected completion dates with bilingual Thai Buddhist and English Gregorian calendars (`ต.ค. 2570 (~12 เดือน)` / `Oct 2027 (~12 mos)`).
-- **Rule:** For financial goal horizon projections, always use closed-form compound formulas with $r \approx 0$ linear fallbacks, explicitly guard $PV \cdot r + PMT \le 0$ against negative log arguments, and clamp horizons safely at 50 years.
+### 2026-10-17: Accelerated Debt Payoff Lump-Sum Windfall Simulator & Dynamic Visual Overlays
 
+- **Date & Context:** 2026-10-17, implementing Lump-Sum / Bonus Windfall Simulator & Comparative Payoff Visual Overlays in `debt-calculator.html` (`v2.0.8`).
+- **Problem:**
+  1. Borrowers often receive one-off capital injections (such as annual work bonuses, tax refunds, asset liquidation, or inheritance) and need to simulate how directing this windfall toward debt accelerates their debt-free horizon and saves interest.
+  2. Without a baseline comparison curve, users cannot visually perceive the difference between standard monthly payments and the accelerated trajectory resulting from the capital injection.
+  3. When injecting a large windfall, the capital may exceed the highest-priority debt's balance. Without cascading logic, excess funds would either be wasted or drive balances into negative numbers.
+- **Resolution:**
+  1. Enhanced `simulateDebt()` / `simulate()` to accept an optional `windfall = { amount, month }` parameter. When `months === wfMonth`, the windfall amount is added to `totalAvailableBudget` and cascades cleanly across debts sorted by the active strategy (Snowball or Avalanche), preventing negative balances.
+  2. Simulated both `simCurrent` (with windfall) and `simBaseline` (without windfall) simultaneously to calculate exact time saved (`monthsSavedWf`) and interest saved (`interestSavedWf`), presenting them in a prominent bilingual impact callout badge.
+  3. Extended SVG trajectory rendering to include `simBaseline.months` in coordinate scaling, plot a dashed slate comparative baseline path, and display an interactive purple gift marker (`🎁 +${amount}`) at the exact injection point.
+  4. Synchronized windfall inputs on page load (`syncWindfallInputs()`), undo operations (`undoMgr.onUndo`), and state resets (`resetDefaults()`).
+- **Rule:** When simulating one-off financial capital injections (windfalls/bonuses), always run comparative dual simulations (with and without windfall) to compute marginal savings, ensure surplus capital cascades properly through the prioritization strategy without negative balances, and render the comparative baseline trajectory on chart overlays.

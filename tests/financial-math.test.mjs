@@ -307,7 +307,7 @@ describe('Financial Math Verification', () => {
       assert.equal(avalanche[2].id, 3); // 3.5%
     });
 
-    function simulateDebt(debtsList, extra, strategy) {
+    function simulateDebt(debtsList, extra, strategy, windfall = null) {
       const debts = debtsList.map((d) => ({
         ...d,
         initialBalance: d.balance,
@@ -319,6 +319,10 @@ describe('Financial Math Verification', () => {
       const payoffOrder = [];
       const initialTotal = debts.reduce((sum, d) => sum + d.initialBalance, 0);
       const trajectory = [{ month: 0, balance: initialTotal }];
+
+      const wfAmount = windfall && typeof windfall.amount === 'number' && windfall.amount > 0 ? windfall.amount : 0;
+      const wfMonth =
+        windfall && typeof windfall.month === 'number' && windfall.month >= 1 ? Math.floor(windfall.month) : 1;
 
       while (debts.some((d) => d.balance > 0.01) && months < 360) {
         months++;
@@ -333,6 +337,10 @@ describe('Financial Math Verification', () => {
         });
 
         let avail = extra;
+        if (wfAmount > 0 && months === wfMonth) {
+          avail += wfAmount;
+        }
+
         debts.forEach((d) => {
           if (d.balance > 0) {
             const pay = Math.min(d.balance, d.minPayment);
@@ -452,6 +460,61 @@ describe('Financial Math Verification', () => {
           assert.ok(y >= padding.top - 1e-4 && y <= height - padding.bottom + 1e-4);
         });
       });
+    });
+
+    it('accelerates debt payoff and reduces total interest when one-time windfall is applied', () => {
+      const debts = [
+        { id: 1, name: 'Card', balance: 40000, rate: 20, minPayment: 1500 },
+        { id: 2, name: 'Loan', balance: 60000, rate: 12, minPayment: 2500 },
+      ];
+      const baseline = simulateDebt(debts, 2000, 'avalanche');
+      const withWindfall = simulateDebt(debts, 2000, 'avalanche', { amount: 30000, month: 1 });
+
+      assert.ok(withWindfall.months < baseline.months);
+      assert.ok(withWindfall.totalInterest < baseline.totalInterest);
+      assert.ok(withWindfall.totalPaid < baseline.totalPaid);
+      // Windfall reduces balance at month 1
+      assert.ok(withWindfall.trajectory[1].balance < baseline.trajectory[1].balance);
+    });
+
+    it('proves earlier windfall injection saves more interest than later injection', () => {
+      const debts = [
+        { id: 1, name: 'Credit Card', balance: 50000, rate: 24, minPayment: 2000 },
+        { id: 2, name: 'Personal Loan', balance: 80000, rate: 15, minPayment: 3000 },
+      ];
+      const m1 = simulateDebt(debts, 2500, 'avalanche', { amount: 40000, month: 1 });
+      const m6 = simulateDebt(debts, 2500, 'avalanche', { amount: 40000, month: 6 });
+
+      // Month 1 windfall prevents more compound interest accrual than month 6 windfall
+      assert.ok(m1.totalInterest < m6.totalInterest);
+      assert.ok(m1.months <= m6.months);
+    });
+
+    it('handles windfall exceeding remaining debt balance safely without negative balance', () => {
+      const debts = [{ id: 1, name: 'Small Debt', balance: 15000, rate: 18, minPayment: 1000 }];
+      // Windfall 30,000 THB when only 15,000 THB remains
+      const res = simulateDebt(debts, 1000, 'avalanche', { amount: 30000, month: 1 });
+
+      assert.equal(res.months, 1);
+      assert.equal(res.trajectory[1].balance, 0);
+      assert.ok(res.trajectory.every((pt) => pt.balance >= 0));
+    });
+
+    it('routes windfall capital in accordance with active strategy (Snowball vs Avalanche)', () => {
+      const debts = [
+        { id: 1, name: 'Small Card', balance: 15000, rate: 10, minPayment: 1000 },
+        { id: 2, name: 'High Card', balance: 20000, rate: 25, minPayment: 1000 },
+      ];
+      // 15,000 THB windfall at Month 1
+      const av = simulateDebt(debts, 500, 'avalanche', { amount: 15000, month: 1 });
+      const sb = simulateDebt(debts, 500, 'snowball', { amount: 15000, month: 1 });
+
+      // In Snowball, Small Card (smallest balance) gets eliminated in month 1
+      assert.equal(sb.payoffOrder[0].name, 'Small Card');
+      assert.equal(sb.payoffOrder[0].month, 1);
+
+      // In Avalanche, High Card (highest rate) gets attacked first and saves more total interest
+      assert.ok(av.totalInterest < sb.totalInterest);
     });
   });
 

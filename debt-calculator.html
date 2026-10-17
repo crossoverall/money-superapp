@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.0.7">
+  <meta name="version" content="2.0.8">
   <title>วางแผนปลดหนี้ (Debt Payoff)</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -259,6 +259,37 @@
         <span class="unit" id="lbl-unit-monthly">บาท/เดือน</span>
       </div>
     </div>
+
+    <!-- Lump-Sum / Bonus Windfall Injection -->
+    <div style="margin-top:16px; padding-top:14px; border-top:1px dashed var(--line);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div class="panel-title" style="margin-bottom:0;" id="lbl-windfall-title">🎁 เงินก้อนโปะหนี้ครั้งเดียว (Lump-Sum / Bonus)</div>
+        <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; font-weight:600; color:var(--ink);">
+          <input type="checkbox" id="chkEnableWindfall" onchange="onToggleWindfall(this.checked)" style="cursor:pointer;">
+          <span id="lbl-enable-windfall">เปิดใช้งาน</span>
+        </label>
+      </div>
+      <div id="windfallInputsContainer" style="display:none; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:12px; margin-top:8px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div>
+            <label for="txtWindfallAmount" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-windfall-amt">จำนวนเงินก้อน (บาท)</label>
+            <input type="number" id="txtWindfallAmount" value="50000" min="0" step="1000" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onWindfallChange()">
+          </div>
+          <div>
+            <label for="txtWindfallMonth" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-windfall-month">โปะในเดือนที่</label>
+            <input type="number" id="txtWindfallMonth" value="1" min="1" max="120" step="1" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onWindfallChange()">
+          </div>
+        </div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;">
+          <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setWindfallPreset(20000, 1)">20K (ด.1)</button>
+          <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setWindfallPreset(50000, 3)">50K (ด.3)</button>
+          <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setWindfallPreset(100000, 6)">100K (ด.6)</button>
+          <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setWindfallPreset(200000, 12)">200K (ด.12)</button>
+        </div>
+        <div id="windfallImpactBadge" style="display:none; margin-top:10px; padding:8px 10px; border-radius:8px; font-size:11px; font-weight:600; background:var(--ok-dim); border:1px solid var(--ok); color:var(--ok);"></div>
+      </div>
+    </div>
+
     <div style="font-size:11px; color:var(--ink-faint); margin-top:12px; line-height:1.4;" id="strategy-explanation">
       <strong>Avalanche Method:</strong> นำเงินส่วนเกินโปะหนี้ดอกเบี้ยสูงสุด ประหยัดเงินมากที่สุด
     </div>
@@ -336,6 +367,10 @@
         <span id="milestoneLegendDot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; border:2px solid #fff; box-shadow:0 0 2px rgba(0,0,0,0.3);"></span>
         <span id="lbl-leg-milestone">จุดปลดหนี้ (Milestone)</span>
       </div>
+      <div class="debt-chart-legend-item" id="leg-windfall" style="display:none;">
+        <span style="display:inline-block; width:14px; height:4px; border-radius:2px; background:#8b5cf6;"></span>
+        <span id="lbl-leg-windfall">โปะเงินก้อน (Windfall)</span>
+      </div>
     </div>
   </div>
 
@@ -364,7 +399,7 @@
     <span id="saveStatus">&nbsp;</span>
     <button class="reset-btn" id="btn-reset-debts" onclick="resetDefaults()">รีเซ็ตค่าเริ่มต้น</button>
   </div>
-  <p class="version-tag">v2.0.7</p>
+  <p class="version-tag">v2.0.8</p>
 
 <script src="js/shared.js"></script>
 <script>
@@ -419,7 +454,12 @@
             legAvalanche: 'Avalanche (ดอกสูงสุดก่อน)',
             legSnowball: 'Snowball (ยอดน้อยสุดก่อน)',
             legMinOnly: 'จ่ายขั้นต่ำเท่านั้น (Minimum Only)',
-            legMilestone: 'จุดปลดหนี้ (Milestone)'
+            legMilestone: 'จุดปลดหนี้ (Milestone)',
+            windfallTitle: '🎁 เงินก้อนโปะหนี้ครั้งเดียว (Lump-Sum / Bonus)',
+            enableWindfall: 'เปิดใช้งาน',
+            windfallAmt: 'จำนวนเงินก้อน (บาท)',
+            windfallMonth: 'โปะในเดือนที่',
+            legWindfall: 'โปะเงินก้อน (Windfall)'
         },
                 en: {
             title: 'Debt Payoff Calculator',
@@ -471,7 +511,12 @@
             legAvalanche: 'Avalanche (Highest Rate First)',
             legSnowball: 'Snowball (Smallest Bal First)',
             legMinOnly: 'Minimum Payment Only',
-            legMilestone: 'Debt-Free Milestone'
+            legMilestone: 'Debt-Free Milestone',
+            windfallTitle: '🎁 One-Time Lump-Sum / Bonus Payoff',
+            enableWindfall: 'Enable',
+            windfallAmt: 'Lump-Sum Amount (THB)',
+            windfallMonth: 'Inject in Month #',
+            legWindfall: 'Lump-Sum (Windfall)'
         }
     };
 
@@ -492,6 +537,10 @@
             'lbl-strategy-title': t.strategyTitle,
             'lbl-extra-pay': t.extraPay,
             'lbl-unit-monthly': t.unitMonthly,
+            'lbl-windfall-title': t.windfallTitle,
+            'lbl-enable-windfall': t.enableWindfall,
+            'lbl-windfall-amt': t.windfallAmt,
+            'lbl-windfall-month': t.windfallMonth,
             'lbl-debt-list-title': t.debtListTitle,
             'lbl-btn-add-debt': t.btnAddDebt,
             'td-total-label': t.tdTotalLabel,
@@ -519,7 +568,8 @@
             'lbl-leg-avalanche': t.legAvalanche,
             'lbl-leg-snowball': t.legSnowball,
             'lbl-leg-min': t.legMinOnly,
-            'lbl-leg-milestone': t.legMilestone
+            'lbl-leg-milestone': t.legMilestone,
+            'lbl-leg-windfall': t.legWindfall
         };
         for (let id in map) {
             const el = document.getElementById(id);
@@ -532,6 +582,9 @@
     const defaultState = {
         strategy: 'avalanche',
         extraPayment: 5000,
+        windfallEnabled: false,
+        windfallAmount: 50000,
+        windfallMonth: 1,
         debts: [
             { id: 1, name: LANG === 'en' ? 'Credit Card A' : 'บัตรเครดิต KBank', balance: 45000, rate: 16, minPayment: 2500 },
             { id: 2, name: LANG === 'en' ? 'Personal Loan' : 'สินเชื่อส่วนบุคคล', balance: 120000, rate: 18, minPayment: 4200 },
@@ -541,12 +594,24 @@
 
     let state = JSON.parse(JSON.stringify(defaultState));
 
+    function syncWindfallInputs() {
+        const chk = document.getElementById('chkEnableWindfall');
+        const amt = document.getElementById('txtWindfallAmount');
+        const m = document.getElementById('txtWindfallMonth');
+        const box = document.getElementById('windfallInputsContainer');
+        if (chk) chk.checked = Boolean(state.windfallEnabled);
+        if (amt) amt.value = state.windfallAmount ?? 50000;
+        if (m) m.value = state.windfallMonth ?? 1;
+        if (box) box.style.display = state.windfallEnabled ? 'block' : 'none';
+    }
+
     const undoMgr = MoneyApp.createUndoManager({
         maxDepth: 15,
         enableShortcuts: true,
         onUndo: (previousState) => {
             state = JSON.parse(JSON.stringify(previousState));
             document.getElementById('txtExtraPayment').value = state.extraPayment;
+            syncWindfallInputs();
             renderTable();
             setStrategy(state.strategy);
             saveState();
@@ -574,8 +639,32 @@
     function loadState() {
         const parsed = MoneyApp.safeJsonParse(STORAGE_KEY, null);
         if (parsed && Array.isArray(parsed.debts)) {
-            state = parsed;
+            state = Object.assign({}, defaultState, parsed);
         }
+    }
+
+    function onToggleWindfall(checked) {
+        state.windfallEnabled = checked;
+        syncWindfallInputs();
+        saveState();
+        computePayoff();
+    }
+
+    function onWindfallChange() {
+        const amt = Math.max(0, parseNum(document.getElementById('txtWindfallAmount').value));
+        const m = Math.max(1, parseNum(document.getElementById('txtWindfallMonth').value));
+        state.windfallAmount = amt;
+        state.windfallMonth = m;
+        saveState();
+        computePayoff();
+    }
+
+    function setWindfallPreset(amount, month) {
+        state.windfallAmount = amount;
+        state.windfallMonth = month;
+        syncWindfallInputs();
+        saveState();
+        computePayoff();
     }
 
     function setStrategy(strat) {
@@ -708,7 +797,7 @@
     /**
      * Run simulation for a given debt list, extra monthly payment, and strategy
      */
-    function simulate(debtsList, extra, strategy) {
+    function simulate(debtsList, extra, strategy, windfall = null) {
         let debts = debtsList.map(d => ({
             id: d.id,
             name: d.name,
@@ -731,6 +820,9 @@
         const initialTotal = debts.reduce((sum, d) => sum + d.initialBalance, 0);
         const trajectory = [{ month: 0, balance: initialTotal }];
 
+        const wfAmount = windfall && typeof windfall.amount === 'number' && windfall.amount > 0 ? windfall.amount : 0;
+        const wfMonth = windfall && typeof windfall.month === 'number' && windfall.month >= 1 ? Math.floor(windfall.month) : 1;
+
         const MAX_MONTHS = 360; // 30 years safety limit
 
         while (debts.some(d => d.balance > 0.01) && months < MAX_MONTHS) {
@@ -751,6 +843,10 @@
 
             // 2. Pay minimums
             let totalAvailableBudget = extra;
+            if (wfAmount > 0 && months === wfMonth) {
+                totalAvailableBudget += wfAmount;
+            }
+
             debts.forEach(d => {
                 if (d.balance > 0) {
                     const pay = Math.min(d.balance, d.minPayment);
@@ -824,11 +920,31 @@
         if (document.getElementById('kpi-total-debt')) document.getElementById('kpi-total-debt').textContent = formatMoney(totalDebt) + ' ' + unit;
         if (document.getElementById('kpi-debt-count')) document.getElementById('kpi-debt-count').textContent = debts.length + (LANG === 'en' ? ' accounts' : ' รายการ');
 
+        const windfall = state.windfallEnabled && state.windfallAmount > 0
+            ? { amount: state.windfallAmount, month: Math.max(1, state.windfallMonth) }
+            : null;
+
         // Simulations
-        const simCurrent = simulate(debts, state.extraPayment, state.strategy);
-        const simAvalanche = simulate(debts, state.extraPayment, 'avalanche');
-        const simSnowball = simulate(debts, state.extraPayment, 'snowball');
-        const simMinOnly = simulate(debts, 0, 'avalanche');
+        const simCurrent = simulate(debts, state.extraPayment, state.strategy, windfall);
+        const simBaseline = simulate(debts, state.extraPayment, state.strategy, null);
+        const simAvalanche = simulate(debts, state.extraPayment, 'avalanche', windfall);
+        const simSnowball = simulate(debts, state.extraPayment, 'snowball', windfall);
+        const simMinOnly = simulate(debts, 0, 'avalanche', null);
+
+        // Windfall Impact badge
+        const wfImpact = document.getElementById('windfallImpactBadge');
+        if (wfImpact) {
+            if (windfall) {
+                const monthsSavedWf = Math.max(0, simBaseline.months - simCurrent.months);
+                const interestSavedWf = Math.max(0, simBaseline.totalInterest - simCurrent.totalInterest);
+                wfImpact.innerHTML = LANG === 'en'
+                    ? `✨ <strong>Windfall Impact:</strong> Injecting <strong>${formatMoney(windfall.amount)} ${unit}</strong> in Month ${windfall.month} frees you <strong>${monthsSavedWf} months sooner</strong> and saves <strong>${formatMoney(interestSavedWf)} ${unit}</strong> in interest!`
+                    : `✨ <strong>ผลลัพธ์เงินก้อน:</strong> โปะ <strong>${formatMoney(windfall.amount)} ${unit}</strong> ในเดือนที่ ${windfall.month} ช่วยปลดหนี้เร็วขึ้น <strong>${monthsSavedWf} เดือน</strong> และประหยัดดอกเบี้ยได้ <strong>${formatMoney(interestSavedWf)} ${unit}</strong>!`;
+                wfImpact.style.display = 'block';
+            } else {
+                wfImpact.style.display = 'none';
+            }
+        }
 
         // Current strategy outputs
         const now = new Date();
@@ -893,18 +1009,20 @@
         `).join('');
 
         updateOrderBadges();
-        renderPayoffChart(simCurrent, simMinOnly, totalDebt, simAvalanche, simSnowball);
+        renderPayoffChart(simCurrent, simMinOnly, totalDebt, simAvalanche, simSnowball, windfall, simBaseline);
     }
 
     /**
      * Render SVG Debt Payoff Trajectory Chart offline without external libraries
      * Comparing Avalanche, Snowball, and Minimum Payments Only
      */
-    function renderPayoffChart(simCurrent, simMinOnly, totalDebt, simAvalanche, simSnowball) {
+    function renderPayoffChart(simCurrent, simMinOnly, totalDebt, simAvalanche, simSnowball, windfall = null, simBaseline = null) {
         const svg = document.getElementById('svgDebtChart');
         if (!svg) return;
 
         const deltaBadge = document.getElementById('debtStrategyDeltaBadge');
+        const legWf = document.getElementById('leg-windfall');
+        if (legWf) legWf.style.display = windfall ? 'inline-flex' : 'none';
 
         if (!totalDebt || totalDebt <= 0 || !simCurrent || simCurrent.months === 0) {
             if (deltaBadge) deltaBadge.style.display = 'none';
@@ -956,6 +1074,7 @@
             simMinOnly ? simMinOnly.months : 0,
             simAvalanche ? simAvalanche.months : 0,
             simSnowball ? simSnowball.months : 0,
+            simBaseline ? simBaseline.months : 0,
             1,
         );
         const maxBalance = totalDebt > 0 ? totalDebt : 1;
@@ -1034,6 +1153,16 @@
             </path>`;
         }
 
+        // 1.5. Plot Baseline Trajectory (Dashed slate line when windfall is active)
+        if (windfall && simBaseline && Array.isArray(simBaseline.trajectory) && simBaseline.trajectory.length > 0) {
+            const baseLinePathD = simBaseline.trajectory
+                .map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${mapX(p.month).toFixed(1)} ${mapY(p.balance).toFixed(1)}`)
+                .join(' ');
+            svgHtml += `<path d="${baseLinePathD}" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="3,3" opacity="0.75">
+              <title>${LANG === 'en' ? 'Baseline without windfall: ' + simBaseline.months + ' months' : 'เส้นทางปกติก่อนโปะเงินก้อน: ' + simBaseline.months + ' เดือน'}</title>
+            </path>`;
+        }
+
         // 2. Plot Secondary Strategy Trajectory (Alternative comparative line)
         if (secondarySim && Array.isArray(secondarySim.trajectory) && secondarySim.trajectory.length > 0) {
             const secPathD = secondarySim.trajectory
@@ -1077,6 +1206,28 @@
                       </g>
                     `;
                 });
+            }
+
+            // 5. Windfall Injection Marker along the active trajectory
+            if (windfall && Array.isArray(simCurrent.trajectory) && simCurrent.trajectory.length > 0) {
+                const wfPt = simCurrent.trajectory.find(p => p.month === windfall.month) ||
+                    simCurrent.trajectory.reduce((prev, curr) => Math.abs(curr.month - windfall.month) < Math.abs(prev.month - windfall.month) ? curr : prev, simCurrent.trajectory[0]);
+                if (wfPt) {
+                    const cx = mapX(wfPt.month);
+                    const cy = mapY(wfPt.balance);
+                    const tipText = LANG === 'en'
+                        ? `🎁 Lump-sum windfall +${formatMoney(windfall.amount)} ${unit} injected in month ${windfall.month}`
+                        : `🎁 โปะเงินก้อน +${formatMoney(windfall.amount)} ${unit} ในเดือนที่ ${windfall.month}`;
+                    const labelY = cy - 10 < padding.top ? cy + 18 : cy - 10;
+                    svgHtml += `
+                      <g class="windfall-marker">
+                        <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="7" fill="#8b5cf6" stroke="#ffffff" stroke-width="2.5" style="cursor:pointer;">
+                          <title>${tipText}</title>
+                        </circle>
+                        <text x="${cx.toFixed(1)}" y="${labelY.toFixed(1)}" fill="#8b5cf6" font-size="11" font-weight="bold" text-anchor="middle" font-family="inherit">🎁 +${formatMoney(windfall.amount)}</text>
+                      </g>
+                    `;
+                }
             }
         }
 
@@ -1153,6 +1304,7 @@
         undoMgr.push(state);
         state = JSON.parse(JSON.stringify(defaultState));
         document.getElementById('txtExtraPayment').value = state.extraPayment;
+        syncWindfallInputs();
         renderTable();
         setStrategy(state.strategy);
         saveState();
@@ -1178,6 +1330,7 @@
     // Initialize
     loadState();
     document.getElementById('txtExtraPayment').value = state.extraPayment;
+    syncWindfallInputs();
     renderTable();
     setStrategy(state.strategy);
 </script>
