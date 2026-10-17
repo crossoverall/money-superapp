@@ -549,6 +549,18 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
 - **Rule:** When adding template/preset profile switchers to budgeting applications, provide a persistent top-level quick switcher for primary scenarios, bind template IDs into undo snapshots so reverting preserves active highlights, and mathematically validate template category distributions against budgeting benchmarks (e.g. 50/30/20).
 
 
+### 2026-10-17: Multi-Stage Cash Flow Sankey Stream & Visual Allocation Diagram
 
-
-
+- **Date & Context:** 2026-10-17, implementing interactive Cash Flow Sankey Stream in `remaining-money.html` and `js/remaining-money.js` (`v2.1.7`).
+- **Problem:**
+  1. Personal budgeting users often struggle to grasp multi-stage money movement — specifically how Gross Income is first reduced by statutory deductions (Tax, Social Security, Provident Fund) to produce Net Disposable Income, and how that Disposable Income is subsequently distributed across Living Needs, Lifestyle Wants, Savings, and Investable Free Cash Flow.
+  2. While Waterfall and Proportions Bar charts show 1-dimensional stacks, personal finance enthusiasts rely on Sankey flow streams to visualize branch-level volume conservation.
+- **Resolution:**
+  1. Implemented a deterministic mathematical coordinate solver `calculateSankeyFlows()` calculating node $X/Y$ geometries and slice heights across 3 sequential stages:
+     - Stage 1 (Source): Gross Inflow (รายได้รวม)
+     - Stage 2 (Intermediate Split): Statutory Deductions (หักตามกฎหมาย) and Take-Home Net Income (รับสุทธิ)
+     - Stage 3 (Destination Allocations): Statutory Taxes & SSO, Living Needs (จำเป็น), Lifestyle Wants (ผันแปร), Savings & Investments (ออมและลงทุน), and Investable Net Surplus (คงเหลือลงทุน).
+  2. Built `generateSankeyRibbonPath()` using cubic Bézier curves (`M ... C ... L ... C ... Z`) connecting source slices to destination slices with smooth, symmetric width conservation and translucent linear gradients.
+  3. Integrated a 4th view mode (`🔀 สายธาร (Sankey)`) into the `.cashflow-view-switcher` toolbar with full `localStorage` persistence, responsive SVG scaling (`viewBox="0 0 600 240"`), and automatic deficit overspending warnings (`remaining < 0`).
+  4. Added 4 unit tests in `tests/financial-math.test.mjs` verifying ribbon path syntax, 3-stage flow conservation, zero deductions/income edge cases, and deficit state detection (**131 automated unit tests passing, 0 Biome linter errors**).
+- **Rule:** When implementing client-side Sankey flow visualizers without heavy 3rd-party graph libraries (ADR-001), use a 3-stage vertical slice solver with cubic Bézier ribbon paths, enforce strict node height conservation ($H_{\text{source}} = \sum H_{\text{dest}}$), and gracefully render negative net cash flow as a dedicated deficit indicator.

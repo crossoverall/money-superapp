@@ -51,6 +51,7 @@ const EN = {
   lblCfViewWaterfall: 'Waterfall Stream',
   lblCfViewBar: 'Proportions Bar',
   lblCfView503020: '50/30/20 Rule',
+  lblCfViewSankey: 'Sankey Stream',
   lblDonutTitle: 'Rule 50/30/20',
   lbl503020Needs: 'Needs:',
   lbl503020Wants: 'Wants:',
@@ -274,6 +275,8 @@ if (LANG === 'en') {
   if (cfVwB) cfVwB.textContent = EN.lblCfViewBar;
   const cfVw50 = document.getElementById('lblCfView503020');
   if (cfVw50) cfVw50.textContent = EN.lblCfView503020;
+  const cfVwSk = document.getElementById('lblCfViewSankey');
+  if (cfVwSk) cfVwSk.textContent = EN.lblCfViewSankey;
   const dnT = document.getElementById('lblDonutTitle');
   if (dnT) dnT.textContent = EN.lblDonutTitle;
   const nL = document.getElementById('lbl503020Needs');
@@ -1537,6 +1540,19 @@ function updateCashflowVisual(totalIncome, totalExpense, totalSavings, remaining
 
   // 5. Render 50/30/20 Budget Rule Donut & Runway
   renderBudgetRule503020(totalIncome, totalExpense, totalSavings, remaining);
+
+  // 6. Render SVG Sankey Stream
+  let livingNeeds = 0;
+  let lifestyleWants = 0;
+  (state.expenses || []).forEach((item) => {
+    const val = item.value || 0;
+    if (getAutoType(item) === null) {
+      const bType = classifyBudgetType(item, 'expense');
+      if (bType === 'need') livingNeeds += val;
+      else lifestyleWants += val;
+    }
+  });
+  renderCashflowSankey(totalIncome, deductions, livingNeeds, lifestyleWants, totalSavings, remaining);
 }
 
 /**
@@ -1992,26 +2008,347 @@ function renderBudgetRule503020(totalIncome, totalExpense, totalSavings, remaini
   }
 }
 
-// ── Cashflow View Mode Toggle (Waterfall vs Bar vs 50/30/20) ────────────────
+// ── Cash Flow Sankey Stream Multi-Stage Visualizer ─────────────────────────
+function generateSankeyRibbonPath(x0, y0Top, y0Bot, x1, y1Top, y1Bot) {
+  const dx = x1 - x0;
+  const cx1 = x0 + dx * 0.5;
+  const cx2 = x1 - dx * 0.5;
+  return (
+    `M ${x0.toFixed(1)} ${y0Top.toFixed(1)} ` +
+    `C ${cx1.toFixed(1)} ${y0Top.toFixed(1)}, ${cx2.toFixed(1)} ${y1Top.toFixed(1)}, ${x1.toFixed(1)} ${y1Top.toFixed(1)} ` +
+    `L ${x1.toFixed(1)} ${y1Bot.toFixed(1)} ` +
+    `C ${cx2.toFixed(1)} ${y1Bot.toFixed(1)}, ${cx1.toFixed(1)} ${y0Bot.toFixed(1)}, ${x0.toFixed(1)} ${y0Bot.toFixed(1)} Z`
+  );
+}
+
+function calculateSankeyFlows({
+  totalIncome = 0,
+  deductions = 0,
+  needs = 0,
+  wants = 0,
+  savings = 0,
+  remaining = 0,
+  width = 600,
+  height = 240,
+} = {}) {
+  const hasData = totalIncome > 0 || deductions > 0 || needs > 0 || wants > 0 || savings > 0;
+  if (!hasData) {
+    return { hasData: false, nodes: [], links: [] };
+  }
+
+  const isDeficit = remaining < 0;
+  const deficitAmount = isDeficit ? Math.abs(remaining) : 0;
+  const surplus = Math.max(0, remaining);
+  const takeHome = Math.max(0, totalIncome - deductions);
+
+  const totalVolume = Math.max(totalIncome, deductions + needs + wants + savings, 0.0001);
+
+  const padding = { top: 32, right: 140, bottom: 25, left: 100 };
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+
+  const colX = [padding.left, padding.left + plotWidth * 0.44, padding.left + plotWidth];
+  const nodeWidth = 14;
+  const nodeGap = 10;
+  const maxGaps = 4;
+  const availableBarHeight = Math.max(plotHeight - maxGaps * nodeGap, 40);
+  const scale = availableBarHeight / totalVolume;
+
+  const h = (val) => Math.max(val > 0 ? 3 : 0, val * scale);
+
+  const hGross = h(totalIncome);
+  const nodeGross = {
+    id: 'gross',
+    name: 'รายได้รวม',
+    nameEn: 'Gross Income',
+    x: colX[0],
+    y: padding.top,
+    width: nodeWidth,
+    height: Math.max(hGross, 6),
+    value: totalIncome,
+    color: '#10b981',
+  };
+
+  const hDed = h(deductions);
+  const hTakeHome = h(takeHome);
+
+  const nodeDed = {
+    id: 'deductions',
+    name: 'หักตามกฎหมาย',
+    nameEn: 'Deductions',
+    x: colX[1],
+    y: padding.top,
+    width: nodeWidth,
+    height: Math.max(hDed, deductions > 0 ? 4 : 0),
+    value: deductions,
+    color: '#8b5cf6',
+  };
+
+  const nodeTakeHome = {
+    id: 'takeHome',
+    name: 'รับสุทธิ',
+    nameEn: 'Take-Home Pay',
+    x: colX[1],
+    y: nodeDed.y + nodeDed.height + (deductions > 0 ? nodeGap : 0),
+    width: nodeWidth,
+    height: Math.max(hTakeHome, takeHome > 0 ? 4 : 0),
+    value: takeHome,
+    color: '#0ea5e9',
+  };
+
+  const destSpecs = [
+    { id: 'statutory', name: 'ภาษี & สังคม', nameEn: 'Tax & SSO', val: deductions, color: '#8b5cf6', from: 'deductions' },
+    { id: 'needs', name: 'จำเป็น (Needs)', nameEn: 'Needs', val: needs, color: '#f43f5e', from: 'takeHome' },
+    { id: 'wants', name: 'ตามใจ (Wants)', nameEn: 'Wants', val: wants, color: '#ec4899', from: 'takeHome' },
+    { id: 'savings', name: 'ออม & ลงทุน', nameEn: 'Savings & Invest', val: savings, color: '#0284c7', from: 'takeHome' },
+    { id: 'surplus', name: 'คงเหลือลงทุน', nameEn: 'Net Surplus', val: surplus, color: '#059669', from: 'takeHome' },
+  ];
+
+  let currDestY = padding.top;
+  const rightNodes = [];
+  for (const spec of destSpecs) {
+    if (spec.val > 0) {
+      const nodeH = Math.max(h(spec.val), 4);
+      rightNodes.push({
+        id: spec.id,
+        name: spec.name,
+        nameEn: spec.nameEn,
+        x: colX[2],
+        y: currDestY,
+        width: nodeWidth,
+        height: nodeH,
+        value: spec.val,
+        color: spec.color,
+        from: spec.from,
+      });
+      currDestY += nodeH + nodeGap;
+    }
+  }
+
+  const links = [];
+  let grossSourceY = nodeGross.y;
+
+  if (deductions > 0) {
+    const linkH = nodeDed.height;
+    links.push({
+      source: 'gross',
+      target: 'deductions',
+      path: generateSankeyRibbonPath(
+        nodeGross.x + nodeGross.width,
+        grossSourceY,
+        grossSourceY + linkH,
+        nodeDed.x,
+        nodeDed.y,
+        nodeDed.y + nodeDed.height,
+      ),
+      color: '#8b5cf6',
+      value: deductions,
+    });
+    grossSourceY += linkH;
+  }
+
+  if (takeHome > 0) {
+    const linkH = Math.min(nodeTakeHome.height, nodeGross.y + nodeGross.height - grossSourceY);
+    links.push({
+      source: 'gross',
+      target: 'takeHome',
+      path: generateSankeyRibbonPath(
+        nodeGross.x + nodeGross.width,
+        grossSourceY,
+        grossSourceY + linkH,
+        nodeTakeHome.x,
+        nodeTakeHome.y,
+        nodeTakeHome.y + nodeTakeHome.height,
+      ),
+      color: '#0ea5e9',
+      value: takeHome,
+    });
+  }
+
+  const statutoryNode = rightNodes.find((n) => n.id === 'statutory');
+  if (statutoryNode && deductions > 0) {
+    links.push({
+      source: 'deductions',
+      target: 'statutory',
+      path: generateSankeyRibbonPath(
+        nodeDed.x + nodeDed.width,
+        nodeDed.y,
+        nodeDed.y + nodeDed.height,
+        statutoryNode.x,
+        statutoryNode.y,
+        statutoryNode.y + statutoryNode.height,
+      ),
+      color: '#8b5cf6',
+      value: deductions,
+    });
+  }
+
+  let takeHomeSourceY = nodeTakeHome.y;
+  for (const rNode of rightNodes.filter((n) => n.from === 'takeHome')) {
+    const linkH = Math.min(rNode.height, nodeTakeHome.y + nodeTakeHome.height - takeHomeSourceY);
+    links.push({
+      source: 'takeHome',
+      target: rNode.id,
+      path: generateSankeyRibbonPath(
+        nodeTakeHome.x + nodeTakeHome.width,
+        takeHomeSourceY,
+        takeHomeSourceY + linkH,
+        rNode.x,
+        rNode.y,
+        rNode.y + rNode.height,
+      ),
+      color: rNode.color,
+      value: rNode.value,
+    });
+    takeHomeSourceY += linkH;
+  }
+
+  const nodes = [nodeGross, nodeDed, nodeTakeHome, ...rightNodes];
+
+  return {
+    hasData: true,
+    isDeficit,
+    deficitAmount,
+    totalVolume,
+    nodes,
+    links,
+  };
+}
+
+function renderCashflowSankey(totalIncome, deductions, livingNeeds, lifestyleWants, totalSavings, remaining) {
+  const svg = document.getElementById('svgCashflowSankey');
+  if (!svg) return;
+
+  const isEN = LANG === 'en';
+  const flow = calculateSankeyFlows({
+    totalIncome,
+    deductions,
+    needs: livingNeeds,
+    wants: lifestyleWants,
+    savings: totalSavings,
+    remaining,
+    width: 600,
+    height: 240,
+  });
+
+  if (!flow.hasData) {
+    const msg = isEN
+      ? 'Enter income and expenses to visualize cashflow Sankey stream'
+      : 'ระบุรายได้และค่าใช้จ่ายเพื่อดูแผนผังสายธารการเงิน (Sankey)';
+    svg.innerHTML = `<text x="300" y="120" text-anchor="middle" fill="#94a3b8" font-size="13" font-family="inherit">${msg}</text>`;
+    return;
+  }
+
+  let html = '';
+
+  // 1. Defs: Linear Gradients for Ribbons
+  html += '<defs>';
+  flow.links.forEach((link, idx) => {
+    const gradId = `sankeyGrad_${idx}`;
+    html += `
+      <linearGradient id="${gradId}" gradientUnits="userSpaceOnUse" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="${link.color}" stop-opacity="0.38" />
+        <stop offset="100%" stop-color="${link.color}" stop-opacity="0.38" />
+      </linearGradient>
+    `;
+  });
+  html += '</defs>';
+
+  // 2. Ribbons (Links)
+  flow.links.forEach((link, idx) => {
+    const gradId = `sankeyGrad_${idx}`;
+    const pct = flow.totalVolume > 0 ? ((link.value / flow.totalVolume) * 100).toFixed(1) : 0;
+    const titleVal = `${fmtCurrency(link.value)} (${pct}%)`;
+    html += `
+      <path d="${link.path}" fill="url(#${gradId})" class="sankey-ribbon" style="cursor:pointer;">
+        <title>${link.source} → ${link.target}: ${titleVal}</title>
+      </path>
+    `;
+  });
+
+  // 3. Nodes (Rectangles) & Text Labels
+  const incBase = flow.totalVolume > 0 ? flow.totalVolume : 1;
+  const pctStr = (v) => `${((v / incBase) * 100).toFixed(1)}%`;
+
+  flow.nodes.forEach((node) => {
+    html += `
+      <rect x="${node.x.toFixed(1)}" y="${node.y.toFixed(1)}" width="${node.width}" height="${node.height.toFixed(1)}" rx="3" ry="3" fill="${node.color}" style="cursor:pointer;">
+        <title>${isEN ? node.nameEn : node.name}: ${fmtCurrency(node.value)} (${pctStr(node.value)})</title>
+      </rect>
+    `;
+
+    const nodeMidY = node.y + node.height / 2;
+    if (node.id === 'gross') {
+      const labelText = isEN ? node.nameEn : node.name;
+      html += `
+        <text x="${(node.x - 8).toFixed(1)}" y="${(nodeMidY - 3).toFixed(1)}" text-anchor="end" fill="var(--ink)" font-size="11" font-weight="700" font-family="inherit">${labelText}</text>
+        <text x="${(node.x - 8).toFixed(1)}" y="${(nodeMidY + 11).toFixed(1)}" text-anchor="end" fill="#059669" font-size="11" font-weight="700" font-family="inherit">${fmtCurrency(node.value)}</text>
+      `;
+    } else if (node.id === 'deductions' || node.id === 'takeHome') {
+      const labelText = isEN ? node.nameEn : node.name;
+      const textX = node.x + node.width / 2;
+      const displayVal = fmtCurrency(node.value);
+
+      if (node.height < 18) {
+        html += `
+          <text x="${textX.toFixed(1)}" y="${(node.y - 4).toFixed(1)}" text-anchor="middle" fill="var(--ink-dim)" font-size="10" font-weight="600" font-family="inherit">${labelText} (${displayVal})</text>
+        `;
+      } else {
+        html += `
+          <text x="${textX.toFixed(1)}" y="${(nodeMidY - 3).toFixed(1)}" text-anchor="middle" fill="var(--ink)" font-size="10" font-weight="700" font-family="inherit">${labelText}</text>
+          <text x="${textX.toFixed(1)}" y="${(nodeMidY + 10).toFixed(1)}" text-anchor="middle" fill="${node.color}" font-size="10" font-weight="700" font-family="inherit">${displayVal}</text>
+        `;
+      }
+    } else {
+      const labelText = isEN ? node.nameEn : node.name;
+      const textX = (node.x + node.width + 8).toFixed(1);
+      html += `
+        <text x="${textX}" y="${(nodeMidY - 2).toFixed(1)}" text-anchor="start" fill="var(--ink)" font-size="10.5" font-weight="600" font-family="inherit">${labelText}</text>
+        <text x="${textX}" y="${(nodeMidY + 10).toFixed(1)}" text-anchor="start" fill="${node.color}" font-size="10" font-weight="700" font-family="inherit">${fmtCurrency(node.value)} <tspan fill="var(--ink-faint)" font-weight="400">(${pctStr(node.value)})</tspan></text>
+      `;
+    }
+  });
+
+  if (flow.isDeficit) {
+    const defMsg = isEN
+      ? `⚠️ Overspending Deficit: -${fmtCurrency(flow.deficitAmount)}`
+      : `⚠️ ขาดดุล / ค่าใช้จ่ายเกินรายได้: -${fmtCurrency(flow.deficitAmount)}`;
+    html += `
+      <g>
+        <rect x="230" y="218" width="240" height="18" rx="4" fill="rgba(239,68,68,0.12)" stroke="rgba(239,68,68,0.3)" />
+        <text x="350" y="231" text-anchor="middle" fill="#dc2626" font-size="10" font-weight="700" font-family="inherit">${defMsg}</text>
+      </g>
+    `;
+  }
+
+  svg.innerHTML = html;
+}
+
+// ── Cashflow View Mode Toggle (Waterfall vs Bar vs 50/30/20 vs Sankey) ────────
 const btnCfWaterfall = document.getElementById('btnCfViewWaterfall');
 const btnCfBar = document.getElementById('btnCfViewBar');
 const btnCf503020 = document.getElementById('btnCfView503020');
+const btnCfSankey = document.getElementById('btnCfViewSankey');
 const cfWaterfallContainer = document.getElementById('cashflowWaterfallContainer');
 const cfBarContainer = document.getElementById('cashflowBarContainer');
 const cf503020Container = document.getElementById('cashflow503020Container');
+const cfSankeyContainer = document.getElementById('cashflowSankeyContainer');
 
 function setCashflowView(view) {
   const isWf = view === 'waterfall';
   const isBar = view === 'bar';
   const is50 = view === '503020';
+  const isSk = view === 'sankey';
 
   if (btnCfWaterfall) btnCfWaterfall.classList.toggle('active', isWf);
   if (btnCfBar) btnCfBar.classList.toggle('active', isBar);
   if (btnCf503020) btnCf503020.classList.toggle('active', is50);
+  if (btnCfSankey) btnCfSankey.classList.toggle('active', isSk);
 
   if (cfWaterfallContainer) cfWaterfallContainer.style.display = isWf ? 'block' : 'none';
   if (cfBarContainer) cfBarContainer.style.display = isBar ? 'flex' : 'none';
   if (cf503020Container) cf503020Container.style.display = is50 ? 'block' : 'none';
+  if (cfSankeyContainer) cfSankeyContainer.style.display = isSk ? 'block' : 'none';
 
   try {
     localStorage.setItem('moneySuperapp.cashflowView', view);
@@ -2026,6 +2363,9 @@ if (btnCfBar) {
 }
 if (btnCf503020) {
   btnCf503020.addEventListener('click', () => setCashflowView('503020'));
+}
+if (btnCfSankey) {
+  btnCfSankey.addEventListener('click', () => setCashflowView('sankey'));
 }
 
 const savedCfView = (() => {

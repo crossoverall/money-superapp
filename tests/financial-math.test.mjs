@@ -3752,4 +3752,328 @@ describe('Financial Math Verification', () => {
       assert.throws(() => createCustomTemplate({ name: '' }), /cannot be empty/);
     });
   });
+
+  describe('Cash Flow Sankey Multi-Stage Allocation Mathematical Engine', () => {
+    function generateSankeyRibbonPath(x0, y0Top, y0Bot, x1, y1Top, y1Bot) {
+      const dx = x1 - x0;
+      const cx1 = x0 + dx * 0.5;
+      const cx2 = x1 - dx * 0.5;
+      return (
+        `M ${x0.toFixed(1)} ${y0Top.toFixed(1)} ` +
+        `C ${cx1.toFixed(1)} ${y0Top.toFixed(1)}, ${cx2.toFixed(1)} ${y1Top.toFixed(1)}, ${x1.toFixed(1)} ${y1Top.toFixed(1)} ` +
+        `L ${x1.toFixed(1)} ${y1Bot.toFixed(1)} ` +
+        `C ${cx2.toFixed(1)} ${y1Bot.toFixed(1)}, ${cx1.toFixed(1)} ${y0Bot.toFixed(1)}, ${x0.toFixed(1)} ${y0Bot.toFixed(1)} Z`
+      );
+    }
+
+    function calculateSankeyFlows({
+      totalIncome = 0,
+      deductions = 0,
+      needs = 0,
+      wants = 0,
+      savings = 0,
+      remaining = 0,
+      width = 600,
+      height = 240,
+    } = {}) {
+      const hasData = totalIncome > 0 || deductions > 0 || needs > 0 || wants > 0 || savings > 0;
+      if (!hasData) {
+        return { hasData: false, nodes: [], links: [] };
+      }
+
+      const isDeficit = remaining < 0;
+      const deficitAmount = isDeficit ? Math.abs(remaining) : 0;
+      const surplus = Math.max(0, remaining);
+      const takeHome = Math.max(0, totalIncome - deductions);
+
+      const totalVolume = Math.max(totalIncome, deductions + needs + wants + savings, 0.0001);
+
+      const padding = { top: 32, right: 140, bottom: 25, left: 100 };
+      const plotWidth = width - padding.left - padding.right;
+      const plotHeight = height - padding.top - padding.bottom;
+
+      const colX = [padding.left, padding.left + plotWidth * 0.44, padding.left + plotWidth];
+      const nodeWidth = 14;
+      const nodeGap = 10;
+      const maxGaps = 4;
+      const availableBarHeight = Math.max(plotHeight - maxGaps * nodeGap, 40);
+      const scale = availableBarHeight / totalVolume;
+
+      const h = (val) => Math.max(val > 0 ? 3 : 0, val * scale);
+
+      const hGross = h(totalIncome);
+      const nodeGross = {
+        id: 'gross',
+        name: 'รายได้รวม',
+        nameEn: 'Gross Income',
+        x: colX[0],
+        y: padding.top,
+        width: nodeWidth,
+        height: Math.max(hGross, 6),
+        value: totalIncome,
+        color: '#10b981',
+      };
+
+      const hDed = h(deductions);
+      const hTakeHome = h(takeHome);
+
+      const nodeDed = {
+        id: 'deductions',
+        name: 'หักตามกฎหมาย',
+        nameEn: 'Deductions',
+        x: colX[1],
+        y: padding.top,
+        width: nodeWidth,
+        height: Math.max(hDed, deductions > 0 ? 4 : 0),
+        value: deductions,
+        color: '#8b5cf6',
+      };
+
+      const nodeTakeHome = {
+        id: 'takeHome',
+        name: 'รับสุทธิ',
+        nameEn: 'Take-Home Pay',
+        x: colX[1],
+        y: nodeDed.y + nodeDed.height + (deductions > 0 ? nodeGap : 0),
+        width: nodeWidth,
+        height: Math.max(hTakeHome, takeHome > 0 ? 4 : 0),
+        value: takeHome,
+        color: '#0ea5e9',
+      };
+
+      const destSpecs = [
+        {
+          id: 'statutory',
+          name: 'ภาษี & สังคม',
+          nameEn: 'Tax & SSO',
+          val: deductions,
+          color: '#8b5cf6',
+          from: 'deductions',
+        },
+        { id: 'needs', name: 'ค่าใช้จ่ายจำเป็น', nameEn: 'Living Needs', val: needs, color: '#f43f5e', from: 'takeHome' },
+        {
+          id: 'wants',
+          name: 'ค่าใช้จ่ายผันแปร',
+          nameEn: 'Lifestyle Wants',
+          val: wants,
+          color: '#ec4899',
+          from: 'takeHome',
+        },
+        {
+          id: 'savings',
+          name: 'เงินออมและลงทุน',
+          nameEn: 'Savings & Invest',
+          val: savings,
+          color: '#0284c7',
+          from: 'takeHome',
+        },
+        {
+          id: 'surplus',
+          name: 'เงินคงเหลือสุทธิ',
+          nameEn: 'Net Surplus',
+          val: surplus,
+          color: '#059669',
+          from: 'takeHome',
+        },
+      ];
+
+      let currDestY = padding.top;
+      const rightNodes = [];
+      for (const spec of destSpecs) {
+        if (spec.val > 0) {
+          const nodeH = Math.max(h(spec.val), 4);
+          rightNodes.push({
+            id: spec.id,
+            name: spec.name,
+            nameEn: spec.nameEn,
+            x: colX[2],
+            y: currDestY,
+            width: nodeWidth,
+            height: nodeH,
+            value: spec.val,
+            color: spec.color,
+            from: spec.from,
+          });
+          currDestY += nodeH + nodeGap;
+        }
+      }
+
+      const links = [];
+      let grossSourceY = nodeGross.y;
+
+      if (deductions > 0) {
+        const linkH = nodeDed.height;
+        links.push({
+          source: 'gross',
+          target: 'deductions',
+          path: generateSankeyRibbonPath(
+            nodeGross.x + nodeGross.width,
+            grossSourceY,
+            grossSourceY + linkH,
+            nodeDed.x,
+            nodeDed.y,
+            nodeDed.y + nodeDed.height,
+          ),
+          color: '#8b5cf6',
+          value: deductions,
+        });
+        grossSourceY += linkH;
+      }
+
+      if (takeHome > 0) {
+        const linkH = Math.min(nodeTakeHome.height, nodeGross.y + nodeGross.height - grossSourceY);
+        links.push({
+          source: 'gross',
+          target: 'takeHome',
+          path: generateSankeyRibbonPath(
+            nodeGross.x + nodeGross.width,
+            grossSourceY,
+            grossSourceY + linkH,
+            nodeTakeHome.x,
+            nodeTakeHome.y,
+            nodeTakeHome.y + nodeTakeHome.height,
+          ),
+          color: '#0ea5e9',
+          value: takeHome,
+        });
+      }
+
+      const statutoryNode = rightNodes.find((n) => n.id === 'statutory');
+      if (statutoryNode && deductions > 0) {
+        links.push({
+          source: 'deductions',
+          target: 'statutory',
+          path: generateSankeyRibbonPath(
+            nodeDed.x + nodeDed.width,
+            nodeDed.y,
+            nodeDed.y + nodeDed.height,
+            statutoryNode.x,
+            statutoryNode.y,
+            statutoryNode.y + statutoryNode.height,
+          ),
+          color: '#8b5cf6',
+          value: deductions,
+        });
+      }
+
+      let takeHomeSourceY = nodeTakeHome.y;
+      for (const rNode of rightNodes.filter((n) => n.from === 'takeHome')) {
+        const linkH = Math.min(rNode.height, nodeTakeHome.y + nodeTakeHome.height - takeHomeSourceY);
+        links.push({
+          source: 'takeHome',
+          target: rNode.id,
+          path: generateSankeyRibbonPath(
+            nodeTakeHome.x + nodeTakeHome.width,
+            takeHomeSourceY,
+            takeHomeSourceY + linkH,
+            rNode.x,
+            rNode.y,
+            rNode.y + rNode.height,
+          ),
+          color: rNode.color,
+          value: rNode.value,
+        });
+        takeHomeSourceY += linkH;
+      }
+
+      const nodes = [nodeGross, nodeDed, nodeTakeHome, ...rightNodes];
+
+      return {
+        hasData: true,
+        isDeficit,
+        deficitAmount,
+        totalVolume,
+        nodes,
+        links,
+      };
+    }
+
+    it('generates valid closed SVG cubic Bézier ribbon paths', () => {
+      const path = generateSankeyRibbonPath(50, 40, 80, 250, 60, 100);
+      assert.ok(path.startsWith('M 50.0 40.0'));
+      assert.ok(path.includes('C 150.0 40.0, 150.0 60.0, 250.0 60.0'));
+      assert.ok(path.includes('L 250.0 100.0'));
+      assert.ok(path.endsWith('Z'));
+    });
+
+    it('computes 3-stage multi-column flow coordinates with node conservation', () => {
+      const budget = {
+        totalIncome: 50000,
+        deductions: 3500,
+        needs: 20000,
+        wants: 12000,
+        savings: 8000,
+        remaining: 6500,
+      };
+
+      const flow = calculateSankeyFlows(budget);
+      assert.equal(flow.hasData, true);
+      assert.equal(flow.isDeficit, false);
+      assert.equal(flow.totalVolume, 50000);
+
+      // Verify Nodes
+      const grossNode = flow.nodes.find((n) => n.id === 'gross');
+      const dedNode = flow.nodes.find((n) => n.id === 'deductions');
+      const thNode = flow.nodes.find((n) => n.id === 'takeHome');
+      const needsNode = flow.nodes.find((n) => n.id === 'needs');
+      const surplusNode = flow.nodes.find((n) => n.id === 'surplus');
+
+      assert.ok(grossNode);
+      assert.ok(dedNode);
+      assert.ok(thNode);
+      assert.ok(needsNode);
+      assert.ok(surplusNode);
+
+      // Verify Column X positions
+      assert.ok(grossNode.x < dedNode.x);
+      assert.ok(dedNode.x === thNode.x);
+      assert.ok(dedNode.x < needsNode.x);
+
+      // Verify links
+      assert.equal(flow.links.length, 7); // gross->ded, gross->th, ded->stat, th->needs, th->wants, th->savings, th->surplus
+      for (const link of flow.links) {
+        assert.ok(link.path.startsWith('M '));
+        assert.ok(link.path.endsWith('Z'));
+        assert.ok(link.value > 0);
+      }
+    });
+
+    it('handles zero deductions and zero income edge cases safely', () => {
+      const zeroFlow = calculateSankeyFlows({ totalIncome: 0 });
+      assert.equal(zeroFlow.hasData, false);
+      assert.equal(zeroFlow.nodes.length, 0);
+
+      const noDedFlow = calculateSankeyFlows({
+        totalIncome: 30000,
+        deductions: 0,
+        needs: 15000,
+        wants: 5000,
+        savings: 5000,
+        remaining: 5000,
+      });
+      assert.equal(noDedFlow.hasData, true);
+      const dedLink = noDedFlow.links.find((l) => l.target === 'deductions');
+      assert.equal(dedLink, undefined);
+    });
+
+    it('detects deficit overspending states and flags negative cash flow', () => {
+      const deficitBudget = {
+        totalIncome: 30000,
+        deductions: 2000,
+        needs: 22000,
+        wants: 10000,
+        savings: 2000,
+        remaining: -6000,
+      };
+
+      const flow = calculateSankeyFlows(deficitBudget);
+      assert.equal(flow.hasData, true);
+      assert.equal(flow.isDeficit, true);
+      assert.equal(flow.deficitAmount, 6000);
+      assert.equal(
+        flow.nodes.find((n) => n.id === 'surplus'),
+        undefined,
+      );
+    });
+  });
 });

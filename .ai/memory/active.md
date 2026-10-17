@@ -1,61 +1,35 @@
 ---
-task_id: "FEAT-BUDGET-TEMPLATES-01"
-status: "in_progress"
-current_stage: "coder"
+task_id: "FEAT-SANKEY-CASHFLOW-01"
+status: "completed"
+current_stage: "release"
 complexity: "level_2"
 iteration_count: 0
 pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Completed Feature: Annual Tax Withholding (50 Tawi) vs PIT Liability Refund & Additional Payable Estimator (Phase 32 / v2.1.5)
-- **Status:** Completed & Verified (123 automated tests passing, 0 linter errors).
+### Completed Feature: Cash Flow Sankey Stream & Visual Allocation Diagram (Phase 34 / v2.1.7)
+- **Status:** Completed & Verified (131 automated unit tests passing, 0 Biome linter errors).
 - **Summary:**
-  1. Built `calculateTaxRefundOrPayable()` computing:
-     $$\text{Net Balance} = \text{Withheld Tax (50 Tawi)} - \text{Calculated PIT Liability}$$
-     with automated detection of `refund` (> 0), `payable` (< 0), and `exact` (= 0) states.
-  2. Implemented Revenue Department 3-month interest-free installment scheduler ($\text{Installment} = \lceil\text{Amount} / 3\rceil$) for payable amounts $\ge 3,000$ THB.
-  3. Added Withholding Tax at Source (ใบ 50 ทวิ) input field with one-click inter-tool bridge (`importWithholdingFromPayslip()`) auto-calculating annual cumulative tax withheld from `moneySuperapp.monthsSlips`.
-  4. Built high-visibility dynamic verdict card (`#taxRefundCard`) with bilingual status badges, breakdown metrics, PromptPay National ID readiness tips, and full integration into the print-ready Form P.N.D. 90/91 summary table.
-  5. Added 6 comprehensive automated unit tests in `tests/financial-math.test.mjs` verifying refund math, payable installment thresholds, zero/edge cases, and payslip payroll withholding integration.
+  1. Built deterministic mathematical coordinate solver `calculateSankeyFlows()` calculating node $X/Y$ geometries and slice heights across 3 sequential stages:
+     - Stage 1 (Source): Gross Inflow (รายได้รวม)
+     - Stage 2 (Intermediate Split): Statutory Deductions (หักตามกฎหมาย) and Take-Home Net Income (รับสุทธิ)
+     - Stage 3 (Destination Allocations): Statutory Taxes & SSO, Living Needs (จำเป็น), Lifestyle Wants (ผันแปร), Savings & Investments (ออมและลงทุน), and Investable Net Surplus (คงเหลือลงทุน).
+  2. Built `generateSankeyRibbonPath()` using cubic Bézier curves (`M ... C ... L ... C ... Z`) connecting source slices to destination slices with smooth width conservation and translucent linear gradients.
+  3. Integrated 4th view mode (`🔀 สายธาร (Sankey)`) into the `.cashflow-view-switcher` toolbar with full `localStorage` persistence, responsive SVG scaling (`viewBox="0 0 600 240"`), and automatic deficit overspending warnings (`remaining < 0`).
+  4. Added 4 automated unit tests in `tests/financial-math.test.mjs` verifying ribbon path syntax, 3-stage flow conservation, zero deductions/income edge cases, and deficit state detection (expanding test suite to 131 passing tests).
+  5. Cleanly bumped project version to `v2.1.7` across all 11 tool manifests.
 
 ---
 
-### Proposed Feature Specification: Recurring Budget Templates & Monthly Expense Category Profile Presets (Phase 33 / Roadmap Item 3.3)
+### Proposed Feature Specification: Multi-Year Personal Income Tax Scenario Comparator & Bracket Inflation Stress-Tester (Phase 35 / Roadmap Item 3.2)
 
 #### 1. Goal & Scope Limits
-- **Objective:** Add an interactive **Recurring Budget Templates & Monthly Expense Category Profile Presets Engine** to [`remaining-money.html`](file:///home/l2okii/Document/money-superapp/remaining-money.html) and [`js/remaining-money.js`](file:///home/l2okii/Document/money-superapp/js/remaining-money.js).
+- **Objective:** Add an interactive **Multi-Year PIT Scenario Comparator & Bracket Inflation Stress-Tester** to [`tax-calculator-base.html`](file:///home/l2okii/Document/money-superapp/tax-calculator-base.html).
 - **Key Capabilities & Benefits:**
-  1. **Template Preset Switcher & Custom Templates:**
-     - Quick preset buttons for realistic life scenarios:
-       - **Standard Month (เดือนปกติทั่วไป):** Balanced baseline configuration.
-       - **Frugal / Savings Sprint (ประหยัดเข้มงวด / เน้นออม):** Scaled down discretionary/wants expenses.
-       - **High Discretionary / Holiday Season (เดือนท่องเที่ยว / เทศกาล):** Seasonal adjustment for gifts, flights, dining.
-     - **"Save Current as Template" (บันทึกเป็นเทมเพลตใหม่):** Custom user-named budget profiles saved in local storage.
-  2. **One-Click Apply with Instant Recalculation:**
-     - Applying a template immediately updates fixed expenses, daily food allowance, discretionary expenses, runs 50/30/20 compliance calculation, and captures an undo snapshot (`undoMgr.push(captureSnapshot())`).
+  1. **Side-by-Side Tax Scenario Comparison (Scenario A vs B):**
+     - Compare current tax year vs prospective salary increase, bonus payout, or tax reform brackets.
+     - Live delta comparison: Marginal tax rate shift, additional tax liability, and effective tax rate differential.
+  2. **Bracket Inflation & Bracket Creep Stress-Tester:**
+     - Simulates purchasing power erosion vs nominal bracket creep.
   3. **Zero External Dependencies (ADR-001):**
-     - 100% offline client-side storage, zero server-side dependencies.
-- **Target Files (<= 5 files, ~160-200 lines total):**
-  1. `remaining-money.html` (Template selector toolbar & modal)
-  2. `js/remaining-money.js` (Preset logic, template storage, and application)
-  3. `tests/financial-math.test.mjs` (Unit tests for template schemas, preset mathematical validations, and profile transitions)
-  4. `.ai/memory/active.md`
-- **Explicit Out of Scope:**
-  - Cloud server profile synchronization (preserves ADR-001 100% client-side privacy).
-
-#### 2. Architecture & Decision Alignment
-- **ADR-001 (Zero-Build Static PWA / Privacy):** All budget template state resides in `localStorage`.
-- **Conventions:** Follows existing patterns in `js/remaining-money.js` (`MoneyApp.safeJsonParse()`, `createUndoManager()`, bilingual `t()`).
-
-#### 3. Step-by-Step Implementation Plan
-1. **Mathematical & Schema Verification (`tests/financial-math.test.mjs`):**
-   - Write unit tests for template presets, validation of schema invariants, and 50/30/20 compliance delta across templates.
-2. **Template Switcher & Preset Toolbar (`remaining-money.html` / `js/remaining-money.js`):**
-   - Implement built-in presets (Standard, Frugal, Holiday) and custom template persistence (`moneySuperapp.budgetTemplates.v1`).
-3. **Verification & Quality Gate:**
-   - Run `npm test` (verify 125+ passing tests).
-   - Run `npm run lint` (0 errors).
-4. **Release & Bump:**
-   - Log lessons in `.ai/memory/lessons.md`.
-   - Bump version to `v2.1.6` via `node scripts/bump.mjs patch`.
-
+     - 100% offline client-side calculation, zero CDN or backend servers.
