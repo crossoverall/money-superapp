@@ -229,4 +229,38 @@ describe('Financial Math Verification', () => {
       assert.equal(avalanche[2].id, 3); // 3.5%
     });
   });
+
+  describe('Cashflow Allocation Proportions', () => {
+    function computeCashflowShares(income, deductions, expenses, savings) {
+      const outflow = deductions + expenses + savings;
+      const base = Math.max(income, outflow, 0.0001);
+      const remaining = income - outflow;
+      return {
+        pctDeductions: (deductions / base) * 100,
+        pctExpenses: (expenses / base) * 100,
+        pctSavings: (savings / base) * 100,
+        pctRemaining: remaining > 0 ? (remaining / base) * 100 : 0,
+        remaining,
+        isDeficit: remaining < 0,
+      };
+    }
+
+    it('calculates correct proportional shares for surplus cashflow', () => {
+      const res = computeCashflowShares(100000, 10000, 40000, 20000);
+      assert.equal(res.pctDeductions, 10);
+      assert.equal(res.pctExpenses, 40);
+      assert.equal(res.pctSavings, 20);
+      assert.equal(res.pctRemaining, 30);
+      assert.equal(res.remaining, 30000);
+      assert.equal(res.isDeficit, false);
+    });
+
+    it('handles deficit when outflows exceed income', () => {
+      const res = computeCashflowShares(50000, 10000, 50000, 0);
+      assert.equal(res.remaining, -10000);
+      assert.equal(res.isDeficit, true);
+      assert.equal(res.pctRemaining, 0);
+      assert.equal(Math.round(res.pctDeductions + res.pctExpenses), 100);
+    });
+  });
 });

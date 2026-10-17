@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="1.8.6">
+  <meta name="version" content="1.8.7">
   <title>คำนวณเงินคงเหลือ</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -210,7 +210,50 @@
     .version-tag{ font-size: 10px; color: var(--ink-faint); text-align: center; margin-top: 14px; }
 
     .summary-strip{
-      display:flex; gap: 8px; margin-bottom: 18px;
+      display:flex; gap: 8px; margin-bottom: 12px;
+    }
+    .cashflow-panel {
+      margin-bottom: 18px;
+      padding: 13px 15px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+    .cashflow-bar-container {
+      height: 14px;
+      border-radius: 7px;
+      overflow: hidden;
+      background: var(--panel-2, #f4f4f5);
+      display: flex;
+      margin-bottom: 12px;
+      border: 1px solid var(--line);
+    }
+    .cf-seg {
+      height: 100%;
+      transition: width 0.3s ease;
+      position: relative;
+    }
+    .cf-seg:hover {
+      filter: brightness(1.12);
+    }
+    .cashflow-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 11px;
+      color: var(--ink-dim);
+    }
+    .cf-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .cf-legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      display: inline-block;
+      flex-shrink: 0;
     }
     .summary-card{
       flex:1; min-width: 0; background: var(--panel); border: 1px solid var(--line);
@@ -279,6 +322,42 @@
     <div class="summary-card saving">
       <div class="sc-label" id="scSavingLabel">รวมเงินออม</div>
       <div class="sc-value" id="scSavingValue">0 บาท</div>
+    </div>
+  </div>
+
+  <!-- Visual Cashflow Allocation Bar -->
+  <div class="cashflow-panel" id="cashflowPanel">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <span style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-dim);" id="lblCashflowTitle">สัดส่วนกระแสเงินสด (Cashflow Allocation)</span>
+      <span id="cashflowSurplusBadge" style="font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px;"></span>
+    </div>
+    <div class="cashflow-bar-container">
+      <div id="cfSegDeductions" class="cf-seg" style="background:#8b5cf6; width:0%;" title="หักตามกฎหมาย (ภาษี/SSO/PVD)"></div>
+      <div id="cfSegExpenses" class="cf-seg" style="background:#f43f5e; width:0%;" title="ค่าใช้จ่ายทั่วไป"></div>
+      <div id="cfSegSavings" class="cf-seg" style="background:#0284c7; width:0%;" title="เงินออม"></div>
+      <div id="cfSegRemaining" class="cf-seg" style="background:#10b981; width:0%;" title="คงเหลือลงทุน"></div>
+    </div>
+    <div class="cashflow-legend">
+      <div class="cf-legend-item">
+        <span class="cf-legend-dot" style="background:#8b5cf6;"></span>
+        <span id="lblCfDeductions">หักตามกฎหมาย:</span>
+        <b id="cfValDeductions" style="color:var(--ink);">0 บาท (0%)</b>
+      </div>
+      <div class="cf-legend-item">
+        <span class="cf-legend-dot" style="background:#f43f5e;"></span>
+        <span id="lblCfExpenses">ค่าใช้จ่ายทั่วไป:</span>
+        <b id="cfValExpenses" style="color:var(--ink);">0 บาท (0%)</b>
+      </div>
+      <div class="cf-legend-item">
+        <span class="cf-legend-dot" style="background:#0284c7;"></span>
+        <span id="lblCfSavings">เงินออม:</span>
+        <b id="cfValSavings" style="color:var(--ink);">0 บาท (0%)</b>
+      </div>
+      <div class="cf-legend-item">
+        <span class="cf-legend-dot" style="background:#10b981;"></span>
+        <span id="lblCfRemaining">คงเหลือลงทุน:</span>
+        <b id="cfValRemaining" style="color:var(--ink);">0 บาท (0%)</b>
+      </div>
     </div>
   </div>
 
@@ -366,7 +445,7 @@
       <button class="reset-btn" id="resetBtn" style="color:var(--ink-faint);">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v1.8.6</p>
+  <p class="version-tag">v1.8.7</p>
 
   <!-- Import Preview Modal -->
   <div id="importModal" role="dialog" aria-modal="true" aria-labelledby="importModalTitle" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; display:none; align-items:center; justify-content:center; backdrop-filter:blur(2px);" onclick="if(event.target===this)closeImportModal()">
@@ -482,6 +561,11 @@ const EN = {
   lblExportJson: 'Download JSON',
   lblPrint: 'Print / PDF',
   lblUndo: 'Undo',
+  lblCashflowTitle: 'Cashflow Allocation',
+  lblCfDeductions: 'Statutory (Tax/SSO/PVD):',
+  lblCfExpenses: 'Living Expenses:',
+  lblCfSavings: 'Savings:',
+  lblCfRemaining: 'Investable Surplus:',
   copiedSuccess: '✓ Copied!',
   lblImport: 'Import Data',
   importModalTitle: 'Import Data Preview',
@@ -656,6 +740,16 @@ if(LANG === 'en'){
   if (lblU) lblU.textContent = EN.lblUndo;
   const lblUB = document.getElementById('lblUndoBottom');
   if (lblUB) lblUB.textContent = EN.lblUndo;
+  const cfT = document.getElementById('lblCashflowTitle');
+  if (cfT) cfT.textContent = EN.lblCashflowTitle;
+  const cfD = document.getElementById('lblCfDeductions');
+  if (cfD) cfD.textContent = EN.lblCfDeductions;
+  const cfE = document.getElementById('lblCfExpenses');
+  if (cfE) cfE.textContent = EN.lblCfExpenses;
+  const cfS = document.getElementById('lblCfSavings');
+  if (cfS) cfS.textContent = EN.lblCfSavings;
+  const cfR = document.getElementById('lblCfRemaining');
+  if (cfR) cfR.textContent = EN.lblCfRemaining;
 }
 
 // ── Canonical names & Translation helper ──────────────────────────────────
@@ -1669,6 +1763,74 @@ function compute(){
     }
   } else if (runwayContent) {
     runwayContent.style.display = 'none';
+  }
+
+  updateCashflowVisual(totalIncome, totalExpense, totalSavings, remaining);
+}
+
+// ── Visual Cashflow Allocation Bar ─────────────────────────────────────────
+function updateCashflowVisual(totalIncome, totalExpense, totalSavings, remaining) {
+  const panel = document.getElementById('cashflowPanel');
+  if (!panel) return;
+
+  let deductions = 0;
+  let generalExpenses = 0;
+  (state.expenses || []).forEach(item => {
+    const val = item.value || 0;
+    if (getAutoType(item) !== null) {
+      deductions += val;
+    } else {
+      generalExpenses += val;
+    }
+  });
+
+  const isEN = (LANG === 'en');
+  const base = Math.max(totalIncome, deductions + generalExpenses + totalSavings, 0.0001);
+
+  const segDeductions = document.getElementById('cfSegDeductions');
+  const segExpenses = document.getElementById('cfSegExpenses');
+  const segSavings = document.getElementById('cfSegSavings');
+  const segRemaining = document.getElementById('cfSegRemaining');
+
+  const hasData = totalIncome > 0 || deductions > 0 || generalExpenses > 0 || totalSavings > 0;
+  const pctDeductions = hasData ? ((deductions / base) * 100).toFixed(1) : '0';
+  const pctExpenses = hasData ? ((generalExpenses / base) * 100).toFixed(1) : '0';
+  const pctSavings = hasData ? ((totalSavings / base) * 100).toFixed(1) : '0';
+  const pctRemaining = hasData && remaining > 0 ? ((remaining / base) * 100).toFixed(1) : '0';
+
+  if (segDeductions) segDeductions.style.width = pctDeductions + '%';
+  if (segExpenses) segExpenses.style.width = pctExpenses + '%';
+  if (segSavings) segSavings.style.width = pctSavings + '%';
+  if (segRemaining) segRemaining.style.width = pctRemaining + '%';
+
+  const valDeductions = document.getElementById('cfValDeductions');
+  const valExpenses = document.getElementById('cfValExpenses');
+  const valSavings = document.getElementById('cfValSavings');
+  const valRemaining = document.getElementById('cfValRemaining');
+
+  const incBase = totalIncome > 0 ? totalIncome : (deductions + generalExpenses + totalSavings || 1);
+  const incPct = (v) => (totalIncome > 0 || v > 0) ? ((v / incBase) * 100).toFixed(1) + '%' : '0%';
+
+  if (valDeductions) valDeductions.textContent = `${fmtCurrency(deductions)} (${incPct(deductions)})`;
+  if (valExpenses) valExpenses.textContent = `${fmtCurrency(generalExpenses)} (${incPct(generalExpenses)})`;
+  if (valSavings) valSavings.textContent = `${fmtCurrency(totalSavings)} (${incPct(totalSavings)})`;
+  if (valRemaining) valRemaining.textContent = `${fmtCurrency(remaining)} (${incPct(remaining)})`;
+
+  const badge = document.getElementById('cashflowSurplusBadge');
+  if (badge) {
+    if (remaining > 0) {
+      badge.textContent = isEN ? `+${fmt(remaining)} THB Surplus` : `+${fmt(remaining)} บาท กระแสเงินสดบวก`;
+      badge.style.background = 'rgba(16, 185, 129, 0.12)';
+      badge.style.color = '#059669';
+    } else if (remaining === 0) {
+      badge.textContent = isEN ? '0 THB Balanced' : '0 บาท สมดุลพอดี';
+      badge.style.background = 'rgba(100, 116, 139, 0.12)';
+      badge.style.color = 'var(--ink-faint)';
+    } else {
+      badge.textContent = isEN ? `${fmt(remaining)} THB Deficit` : `${fmt(remaining)} บาท ติดลบ`;
+      badge.style.background = 'rgba(239, 68, 68, 0.12)';
+      badge.style.color = '#dc2626';
+    }
   }
 }
 
