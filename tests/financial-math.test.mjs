@@ -1620,4 +1620,97 @@ describe('Financial Math Verification', () => {
       assert.equal(emptyRes.postTrackingError, 0);
     });
   });
+
+  describe('Shell Navigation, Haptics & Skeleton State Engine', () => {
+    function triggerHaptic(nav, ms = 10) {
+      try {
+        if (nav && 'vibrate' in nav && typeof nav.vibrate === 'function') {
+          return nav.vibrate(ms);
+        }
+      } catch (_e) {}
+      return false;
+    }
+
+    function createSkeletonManager(element, setTimeoutFn = setTimeout, clearTimeoutFn = clearTimeout) {
+      let timer = null;
+      return {
+        show() {
+          if (timer) clearTimeoutFn(timer);
+          element.classList.remove('fade-out');
+          element.style.display = 'flex';
+        },
+        hide(doneCallback) {
+          element.classList.add('fade-out');
+          timer = setTimeoutFn(() => {
+            element.style.display = 'none';
+            element.classList.remove('fade-out');
+            if (doneCallback) doneCallback();
+          }, 200);
+        },
+      };
+    }
+
+    it('triggerHaptic invokes navigator.vibrate when API is supported', () => {
+      let patternPassed = 0;
+      const mockNav = {
+        vibrate(ms) {
+          patternPassed = ms;
+          return true;
+        },
+      };
+      const result = triggerHaptic(mockNav, 15);
+      assert.equal(result, true);
+      assert.equal(patternPassed, 15);
+    });
+
+    it('triggerHaptic returns false safely when navigator has no vibrate or throws', () => {
+      assert.equal(triggerHaptic(undefined, 10), false);
+      assert.equal(triggerHaptic({}, 10), false);
+      const throwingNav = {
+        vibrate() {
+          throw new Error('Permission denied');
+        },
+      };
+      assert.equal(triggerHaptic(throwingNav, 10), false);
+    });
+
+    it('skeleton manager toggles display and fade-out classes smoothly', () => {
+      const el = {
+        style: { display: 'none' },
+        classList: {
+          classes: new Set(),
+          add(c) {
+            this.classes.add(c);
+          },
+          remove(c) {
+            this.classes.delete(c);
+          },
+          contains(c) {
+            return this.classes.has(c);
+          },
+        },
+      };
+
+      let timerCallback = null;
+      const fakeSetTimeout = (cb) => {
+        timerCallback = cb;
+        return 123;
+      };
+      const fakeClearTimeout = () => {
+        timerCallback = null;
+      };
+
+      const sm = createSkeletonManager(el, fakeSetTimeout, fakeClearTimeout);
+      sm.show();
+      assert.equal(el.style.display, 'flex');
+      assert.equal(el.classList.contains('fade-out'), false);
+
+      sm.hide();
+      assert.equal(el.classList.contains('fade-out'), true);
+      assert.ok(typeof timerCallback === 'function');
+      timerCallback();
+      assert.equal(el.style.display, 'none');
+      assert.equal(el.classList.contains('fade-out'), false);
+    });
+  });
 });

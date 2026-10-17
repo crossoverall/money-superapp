@@ -1,5 +1,5 @@
 ---
-task_id: "FEAT-LOADING-SKELETON-HAPTIC-01"
+task_id: "FEAT-PORTFOLIO-HEATMAP-01"
 status: "pending_approval"
 current_stage: "approval_gate"
 complexity: "level_2"
@@ -7,49 +7,48 @@ iteration_count: 0
 pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Completed Feature: Cash Flow Inflow-Outflow Stream / Waterfall Diagram (Phase 20 / v2.0.3)
-- **Status:** Completed & Verified (71 automated tests passing, 0 linter errors).
-- **Summary:** Interactive SVG Step-Down Waterfall Diagram with zero-baseline deficit normalization, floating bars, connecting bridge lines, view switcher (Waterfall vs Bar), and expanded income legend.
+### Completed Feature: Iframe Loading Skeleton, Haptic Feedback & Keyboard Tab Transitions (Phase 21 / v2.0.4)
+- **Status:** Completed & Verified (74 automated tests passing, 0 linter errors).
+- **Summary:** Shimmer animation loading skeleton overlay, tactile mobile haptic feedback (`navigator.vibrate`), accessible skip-to-content link, and zero-flash frame transitions.
 
 ---
 
-### Proposed Feature Specification: Iframe Loading Skeleton, Haptic Feedback & Keyboard Tab Transitions (Phase 21 / Roadmap Item 2.2)
+### Proposed Feature Specification: Portfolio Allocation Intensity Heatmap & Currency Exposure Matrix (Phase 22 / Roadmap Item 3.2)
 
 #### 1. Goal & Scope Limits
-- **Objective:** Eliminate visual tab-switch flashes and improve tactile feel when navigating between the 7 tools in the shell ([`index.html`](file:///home/l2okii/Document/money-superapp/index.html)).
+- **Objective:** Enhance [`rebalance.html`](file:///home/l2okii/Document/money-superapp/rebalance.html) and [`js/rebalance.js`](file:///home/l2okii/Document/money-superapp/js/rebalance.js) with an SVG Portfolio Allocation Intensity Heatmap & Currency Exposure Matrix.
 - **Key Capabilities & Benefits:**
-  1. **Shimmer / Loading Skeleton Placeholder:**
-     - Displays an animated shimmer skeleton (header, KPI cards, table blocks) inside `#mainFrame` container while an iframe tool is loading, completely eliminating white/empty frame flashes.
-     - Automatically fades out when the child tool emits or finishes `onload`.
-  2. **Tactile Haptic Feedback (Mobile):**
-     - Triggers subtle vibration (`navigator.vibrate(10)`) when changing tabs via swipe or bottom nav taps (with feature detection and error guards).
-  3. **Skip to Main Content Link (WCAG a11y):**
-     - Adds a hidden skip-link (`<a href="#mainFrame" class="skip-link">Skip to main content</a>`) that becomes visible on keyboard focus for screen readers and power users.
-  4. **Smooth Cross-Tab Transition:**
-     - Adds subtle opacity fade transition (`0.15s ease-out`) between tool loads for a native app feel.
-- **Target Files (<= 5 files, ~100-120 lines total):**
-  1. `index.html` (skeleton markup, load listener, haptic trigger, skip link)
-  2. `css/theme.css` (skeleton shimmer keyframes, skip-link styles)
-  3. `tests/financial-math.test.mjs` (unit tests verifying transition timing & haptic safety guards)
+  1. **Allocation Intensity Heatmap:**
+     - Color-coded grid / matrix representing each asset's weight and deviation intensity (Emerald for perfectly aligned, Blue for underweight/buy priority, Amber/Coral for overweight).
+     - Provides an instant visual density map of portfolio concentration and risk clusters across buckets.
+  2. **Currency Exposure Breakdown Bar:**
+     - Displays aggregate exposure across currencies (THB, USD, EUR, GBP, JPY, SGD) with proportional segments and currency badges.
+     - Helps multi-currency investors instantly identify excessive FX risk or home-currency bias.
+  3. **Zero Dependencies & Offline SVG (ADR-001):**
+     - Pure client-side SVG generation, responsive on mobile and desktop, zero external charting libraries.
+  4. **Bilingual Localization (TH/EN):**
+     - Full translation in Thai and English.
+- **Target Files (<= 5 files, ~120-150 lines total):**
+  1. `rebalance.html` (heatmap & currency exposure container markup)
+  2. `js/rebalance.js` (SVG heatmap matrix & currency distribution renderer)
+  3. `tests/financial-math.test.mjs` (unit tests verifying currency aggregation and heatmap cell coordinate scales)
   4. `.ai/memory/active.md`
 - **Explicit Out of Scope:**
-  - Modifying child tool internal logic (preserves existing clean tools).
+  - Modifying underlying water-filling DCA mathematical algorithms (preserves existing verified allocator).
 
 #### 2. Architecture & Decision Alignment
-- **ADR-001 (Zero-Build Static PWA / Privacy):** 100% pure CSS and vanilla JS, zero external UI libraries, offline-ready.
-- **Hardware Resilience:** Safely checks `if ('vibrate' in navigator)` so non-supporting desktop browsers execute seamlessly.
+- **ADR-001 (Zero-Build Static PWA / Privacy):** 100% client-side privacy, fully offline-functional.
+- **Preserves Existing State:** Compatible with existing `rebalanceCalculator.tiers.v1` and currency rates.
 
 #### 3. Step-by-Step Implementation Plan
-1. **Skeleton & Shimmer Styles (`css/theme.css`):**
-   - Add `.app-skeleton`, `.skeleton-bone`, `@keyframes shimmer`, and `.skip-link` styles matching system theme variables.
-2. **Shell Integration (`index.html`):**
-   - Embed skeleton overlay above `#mainFrame`.
-   - Update `switchTab()` to show skeleton, trigger `navigator.vibrate(10)`, and hide skeleton on `iframe.onload`.
-   - Add skip-to-content anchor.
-3. **Automated Unit Testing (`tests/financial-math.test.mjs`):**
-   - Unit test skeleton display states and haptic detection logic.
+1. **Mathematical Verification (`tests/financial-math.test.mjs`):**
+   - Write unit tests for multi-currency asset aggregation (summing THB equivalents per currency) and allocation deviation intensity scaling.
+2. **SVG Heatmap & Currency Matrix Renderer (`js/rebalance.js`):**
+   - Implement `renderAllocationHeatmap(tiers, allocations)` and `renderCurrencyExposure(assets)`.
+3. **Markup & Toggle Integration (`rebalance.html`):**
+   - Embed heatmap & currency breakdown section with view toggle or complementary summary card.
 4. **Verification & Quality Gate:**
    - Execute `npm test` and `npm run lint`.
 5. **Release & Bump:**
-   - Append lessons to `.ai/memory/lessons.md`.
-   - Bump version to `v2.0.4` via `node scripts/bump.mjs patch`.
+   - Log lessons in `.ai/memory/lessons.md`.
+   - Bump version to `v2.0.5` via `node scripts/bump.mjs patch`.

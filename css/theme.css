@@ -253,3 +253,95 @@ html { line-height: 1.5; -webkit-text-size-adjust: 100%; }
   border-color: var(--warn);
   color: var(--warn);
 }
+
+/* Accessibility Skip Link */
+.skip-link {
+  position: absolute;
+  top: -60px;
+  left: 12px;
+  background: var(--ok, #2F8B76);
+  color: #FFFFFF !important;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm, 8px);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  z-index: 10000;
+  transition: top 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+.skip-link:focus {
+  top: 12px;
+  outline: 2px solid #FFFFFF;
+}
+
+/* Iframe Loading Skeleton & Shimmer */
+.app-viewport {
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.app-skeleton {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg);
+  z-index: 10;
+  padding: 24px 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.2s ease-out;
+  overflow: hidden;
+}
+
+.app-skeleton.fade-out {
+  opacity: 0;
+}
+
+.skeleton-bone {
+  background: linear-gradient(
+    90deg,
+    var(--panel-2) 0%,
+    var(--line) 50%,
+    var(--panel-2) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.5s infinite linear;
+  border-radius: 8px;
+}
+
+@keyframes skeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 480px;
+}
+.skeleton-pill { width: 90px; height: 16px; border-radius: 999px; }
+.skeleton-title { width: 260px; height: 26px; border-radius: 6px; }
+.skeleton-desc { width: 100%; height: 14px; border-radius: 4px; }
+
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 4px;
+}
+.skeleton-card { height: 72px; border-radius: 12px; }
+.skeleton-main-panel { height: 220px; border-radius: 14px; margin-top: 6px; }
+

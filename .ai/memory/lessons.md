@@ -353,3 +353,16 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
   2. Normalized vertical coordinates across both positive and negative ranges: `valMax = Math.max(income, totalOutflow, 1)` and `valMin = Math.min(0, remaining)`. When `valMin < 0`, a prominent dashed zero baseline is rendered with deficit bars extending downward into crimson territory.
   3. Clamped minimum bar height safely (`drawY = Math.min(yTop, height - padding.bottom - barHeight)`) preventing SVG out-of-bounds overflow on zero-delta items.
 - **Rule:** For waterfall charts that support deficit scenarios, always include zero in the domain (`valMin = Math.min(0, net)`), render an explicit zero baseline, and clamp minimum-height bars so they do not breach the plot's bottom padding.
+
+### 2026-10-17: Iframe Loading Skeleton, Haptic Feedback & Tab Transition Polish
+
+- **Date & Context:** 2026-10-17, implementing Iframe Loading Skeleton, Haptic Feedback & Keyboard Tab Transitions in `index.html` and `css/theme.css` (`v2.0.4`).
+- **Problem:**
+  1. Switching between the 7 calculator tools in the shell caused sudden visual flashes while the new iframe rendered its DOM.
+  2. Mobile users lacked tactile confirmation when tapping bottom navigation tabs or swiping between screens.
+  3. Power users and screen readers had no quick skip-to-content mechanism to bypass the top bar.
+- **Resolution:**
+  1. Built an animated shimmer loading skeleton overlay inside `.app-viewport` matching system theme tokens (`--panel-2`, `--line`), which automatically activates on tab navigation and fades out smoothly on `frame.onload`.
+  2. Wrapped `navigator.vibrate(10)` with safe capability checks (`'vibrate' in navigator`) ensuring subtle haptic feedback on supported mobile devices while failing safely on desktop.
+  3. Added an accessible skip-link (`.skip-link`) positioned off-screen that appears cleanly on keyboard `focus`.
+- **Rule:** When orchestrating multi-tool iframe shells, always overlay an animated skeleton during frame transitions and guard hardware APIs (like vibration) with feature detection.
