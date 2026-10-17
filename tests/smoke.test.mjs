@@ -343,6 +343,14 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(taxContent.includes('id="valLandTotalTax"'), 'tax-calculator.html must define #valLandTotalTax');
       assert.ok(taxContent.includes('id="boxLandInstallment"'), 'tax-calculator.html must define #boxLandInstallment');
     });
+
+    it('verifies MoneyApp exports detectAndParseThaiBankStatement', () => {
+      const sharedContent = fs.readFileSync(path.join(ROOT_DIR, 'js/shared.js'), 'utf8');
+      assert.ok(
+        sharedContent.includes('detectAndParseThaiBankStatement: detectAndParseThaiBankStatement'),
+        'MoneyApp must export detectAndParseThaiBankStatement',
+      );
+    });
   });
 
   describe('Bilingual Localization Structural Symmetry', () => {

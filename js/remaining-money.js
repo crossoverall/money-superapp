@@ -3004,6 +3004,17 @@ function parseImportCSV(text, fileName = 'data.csv') {
     );
     return null;
   }
+
+  // Thai Mobile Banking Statement Auto-Parser (KBank, SCB, Krungthai, KKP, etc.)
+  if (typeof MoneyApp !== 'undefined' && typeof MoneyApp.detectAndParseThaiBankStatement === 'function') {
+    const bankRes = MoneyApp.detectAndParseThaiBankStatement(text, fileName);
+    if (bankRes && bankRes.isBankStatement && bankRes.candidate) {
+      const formatLabel = `${bankRes.bankName} CSV`;
+      showImportPreview(bankRes.candidate, fileName, formatLabel);
+      return bankRes.candidate;
+    }
+  }
+
   const rows = parseCSVRows(text);
   if (rows.length === 0) {
     showBridgeNotification(

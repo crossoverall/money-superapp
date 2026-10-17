@@ -840,5 +840,20 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
 - **Resolution:**
   1. Built `MoneyApp.calculateThaiLandAndBuildingTax(params)` implementing exact progressive brackets for all 4 categories and vacant land penalty escalation.
   2. Integrated `#land-building-tax-card` in `tax-calculator.html` with preset appraisal buttons, vacant land penalty toggle, progressive tier breakdown accordion, and 3-month installment calculation banner.
-  3. Added comprehensive test suite (`tests/land-building-tax.test.mjs`) and smoke test assertions (**266 tests passing, 0 Biome errors**).
 - **Rule:** When modeling Thai real estate taxation, base calculations strictly on official Treasury Department appraisal values (not market transactions), check house registration status for 50M/10M residential exemptions, and enforce the 3-year +0.3% penalty progression on vacant parcels up to the 3.0% legal cap.
+
+### 2026-10-17: Thai Mobile Banking CSV Statement Offline Auto-Parser (KBank, SCB, Krungthai, KKP)
+
+- **Date & Context:** 2026-10-17, implementing Thai Mobile Banking Statement Auto-Parser in `remaining-money.html` and `js/shared.js` (`v2.4.5`).
+- **Problem:**
+  1. Users exporting CSV bank statements from Thai mobile banking apps (K PLUS, SCB Easy, Krungthai NEXT, KKP Mobile/Dime) could not import them directly into Remaining Money because each bank uses distinct column naming conventions (e.g. `Withdrawal` vs `จำนวนเงินที่ถอน` vs `Debit`, or single signed amounts).
+  2. Manual reformatting of banking statements into Money Superapp's `[Category, Item, Amount, Note]` format is tedious, frustrating, and prone to copy-paste errors.
+- **Resolution:**
+  1. Built `MoneyApp.detectAndParseThaiBankStatement(csvText, fileName)` in `js/shared.js`:
+     - Tokenizes RFC 4180 CSVs with embedded quotes and comma delimiters without any external dependencies.
+     - Auto-detects Thai bank brands (Kasikornbank KBank, Siam Commercial Bank SCB, Krungthai KTB, KKP Mobile/Dime) via filename and header keyword fingerprints.
+     - Dynamically maps Date, Description, Debit/Withdrawal, and Credit/Deposit columns.
+     - Separates debits into `expenses` and credits into `incomes`, auto-populating candidates with net inflow/outflow summaries.
+  2. Wired seamlessly into `parseImportCSV()` in `js/remaining-money.js`, automatically popping the interactive preview modal with detected bank format badges (`[Kasikornbank (KBank) CSV]`).
+  3. Added comprehensive test suite (`tests/bank-statement-parser.test.mjs`) and smoke test assertions (**273 tests passing, 0 Biome errors**).
+- **Rule:** Never force users to format bank statements manually; inspect header rows for known banking debit/credit signatures and auto-bifurcate inflows and outflows with bank brand detection prior to standard CSV parsing.
