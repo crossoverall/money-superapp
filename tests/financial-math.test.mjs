@@ -308,4 +308,49 @@ describe('Financial Math Verification', () => {
       assert.equal(Math.round(res.pctDeductions + res.pctExpenses), 100);
     });
   });
+
+  describe('Budget Template Serialization & Presets', () => {
+    function computeTemplateNet(tmplState) {
+      const incTot = (tmplState.incomes || []).reduce((s, i) => s + (i.value || 0), 0);
+      const expTot = (tmplState.expenses || []).reduce((s, i) => s + (i.value || 0), 0);
+      const savTot = (tmplState.savings || []).reduce((s, i) => s + (i.value || 0), 0);
+      return { incTot, expTot, savTot, net: incTot - expTot - savTot };
+    }
+
+    it('validates First Jobber starter preset balanced cashflow', () => {
+      const firstJobber = {
+        incomes: [{ name: 'Salary', value: 25000 }],
+        expenses: [
+          { name: 'Rent', value: 6000 },
+          { name: 'Utilities', value: 1200 },
+          { name: 'Food', value: 7000 },
+          { name: 'Travel', value: 2500 },
+          { name: 'Phone', value: 600 },
+        ],
+        savings: [{ name: 'Buffer', value: 2500 }],
+      };
+      const res = computeTemplateNet(firstJobber);
+      assert.equal(res.incTot, 25000);
+      assert.equal(res.expTot, 17300);
+      assert.equal(res.savTot, 2500);
+      assert.equal(res.net, 5200);
+    });
+
+    it('safely serializes and restores custom template state', () => {
+      const customTmpl = {
+        id: 'tmpl-12345',
+        name: 'My Frugal Budget',
+        state: {
+          incomes: [{ name: 'Job', value: 30000 }],
+          expenses: [{ name: 'Fixed', value: 12000 }],
+          savings: [{ name: 'Vault', value: 5000 }],
+        },
+      };
+      const serialized = JSON.stringify([customTmpl]);
+      const restored = JSON.parse(serialized);
+      assert.equal(restored.length, 1);
+      assert.equal(restored[0].name, 'My Frugal Budget');
+      assert.equal(computeTemplateNet(restored[0].state).net, 13000);
+    });
+  });
 });

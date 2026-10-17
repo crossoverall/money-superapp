@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="1.8.9">
+  <meta name="version" content="1.9.0">
   <title>คำนวณเงินคงเหลือ</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -436,6 +436,7 @@
     <span id="saveStatus">&nbsp;</span>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
       <input type="file" id="importFileInput" accept=".json,.csv,text/csv,application/json" onchange="handleImportFile(this)" style="display:none;">
+      <button class="reset-btn" id="btnTemplates" onclick="openTemplateModal()">📋 <span id="lblTemplates">แม่แบบงบประมาณ</span></button>
       <button class="reset-btn" id="importBtn" onclick="document.getElementById('importFileInput').click()">📤 <span id="lblImport">นำเข้าข้อมูล</span></button>
       <button class="reset-btn" id="copySummaryBtn" onclick="copySummary()">📋 <span id="lblCopySummary">คัดลอกสรุป</span></button>
       <button class="reset-btn" id="exportCsvBtn" onclick="exportCSV()">📥 <span id="lblExportCsv">ดาวน์โหลด CSV</span></button>
@@ -445,7 +446,7 @@
       <button class="reset-btn" id="resetBtn" style="color:var(--ink-faint);">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v1.8.9</p>
+  <p class="version-tag">v1.9.0</p>
 
   <!-- Import Preview Modal -->
   <div id="importModal" role="dialog" aria-modal="true" aria-labelledby="importModalTitle" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; display:none; align-items:center; justify-content:center; backdrop-filter:blur(2px);" onclick="if(event.target===this)closeImportModal()">
@@ -507,6 +508,51 @@
       <div style="display:flex; justify-content:flex-end; gap:10px;">
         <button type="button" id="btnCancelImportModal" onclick="closeImportModal()" style="padding:8px 16px; border-radius:8px; border:1px solid var(--line); background:var(--panel-2); color:var(--ink); font-size:13px; font-weight:600; cursor:pointer;">ยกเลิก</button>
         <button type="button" id="btnConfirmImport" onclick="confirmImport()" style="padding:8px 16px; border-radius:8px; border:none; background:var(--brand, #059669); color:#fff; font-size:13px; font-weight:600; cursor:pointer;">ยืนยันการนำเข้า</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Budget Templates Modal -->
+  <div id="templateModal" role="dialog" aria-modal="true" aria-labelledby="templateModalTitle" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; display:none; align-items:center; justify-content:center; backdrop-filter:blur(2px);" onclick="if(event.target===this)closeTemplateModal()">
+    <div style="background:var(--panel); border:1px solid var(--line); border-radius:16px; width:92%; max-width:520px; padding:20px; box-shadow:0 12px 30px rgba(0,0,0,0.3); color:var(--ink); font-family:inherit; max-height:90vh; overflow-y:auto;">
+      <!-- Header -->
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; border-bottom:1px solid var(--line); padding-bottom:12px;">
+        <h3 id="templateModalTitle" style="margin:0; font-size:16px; font-weight:700; display:flex; align-items:center; gap:6px;">
+          <span>📋</span>
+          <span id="lblTemplateTitle">แม่แบบงบประมาณ (Budget Templates)</span>
+        </h3>
+        <button type="button" onclick="closeTemplateModal()" style="background:none; border:none; font-size:22px; line-height:1; color:var(--ink-faint); cursor:pointer; padding:0 4px;" aria-label="Close">&times;</button>
+      </div>
+
+      <!-- Save Current Budget Section -->
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:16px;">
+        <div style="font-size:12px; font-weight:700; color:var(--ink); margin-bottom:6px;" id="lblSaveCurrentTitle">💾 บันทึกงบประมาณปัจจุบันเป็นแม่แบบ</div>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="txtNewTemplateName" placeholder="เช่น งบเดือนปกติ, งบประหยัดพิเศษ" style="flex:1; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:13px; color:var(--ink); font-family:inherit; outline:none;">
+          <button type="button" onclick="saveCurrentBudgetAsTemplate()" style="background:var(--brand, #059669); color:#fff; border:none; padding:6px 14px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;" id="btnSaveTemplate">บันทึก</button>
+        </div>
+      </div>
+
+      <!-- Custom Saved Templates List -->
+      <div style="margin-bottom:16px;">
+        <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint); margin-bottom:8px;" id="lblCustomTemplatesHeader">แม่แบบที่คุณบันทึกไว้</div>
+        <div id="customTemplatesContainer" style="display:flex; flex-direction:column; gap:8px;">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Curated Starter Presets -->
+      <div style="margin-bottom:16px;">
+        <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint); margin-bottom:8px;" id="lblPresetTemplatesHeader">แม่แบบมาตรฐานแนะนำ</div>
+        <div id="starterPresetsContainer" style="display:flex; flex-direction:column; gap:8px;">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Footer Info -->
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--line); padding-top:12px; font-size:11.5px; color:var(--ink-faint);">
+        <span id="lblTemplateUndoNotice">💡 นำแม่แบบมาใช้แล้ว สามารถกด ↩ เลิกทำ (Ctrl+Z) ได้ตลอดเวลา</span>
+        <button type="button" onclick="closeTemplateModal()" style="background:none; border:1px solid var(--line); color:var(--ink-dim); padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;" id="btnCloseTemplate">ปิด</button>
       </div>
     </div>
   </div>
@@ -583,6 +629,18 @@ const EN = {
   importSummarySaving: 'Savings',
   importSummaryNet: 'Net Cash Flow',
   importSummaryRunway: 'Emergency Reserve',
+  lblTemplates: 'Templates',
+  templateModalTitle: 'Budget Templates',
+  lblSaveCurrentTitle: '💾 Save Current Budget as Template',
+  placeholderTemplateName: 'e.g. Regular Month, Frugal Budget',
+  btnSaveTemplate: 'Save',
+  lblCustomTemplatesHeader: 'Your Saved Templates',
+  lblPresetTemplatesHeader: 'Recommended Starter Templates',
+  lblTemplateUndoNotice: '💡 After applying a template, you can press ↩ Undo (Ctrl+Z) anytime.',
+  btnCloseTemplate: 'Close',
+  btnApplyTemplate: 'Apply',
+  btnDeleteTemplate: 'Delete',
+  noCustomTemplates: 'No saved templates yet. Enter a name above to save your current budget.',
 };
 
 const T = {
@@ -750,6 +808,25 @@ if(LANG === 'en'){
   if (cfS) cfS.textContent = EN.lblCfSavings;
   const cfR = document.getElementById('lblCfRemaining');
   if (cfR) cfR.textContent = EN.lblCfRemaining;
+
+  const tmplBtn = document.getElementById('lblTemplates');
+  if (tmplBtn) tmplBtn.textContent = EN.lblTemplates;
+  const tmplTitle = document.getElementById('lblTemplateTitle');
+  if (tmplTitle) tmplTitle.textContent = EN.templateModalTitle;
+  const tmplSaveTitle = document.getElementById('lblSaveCurrentTitle');
+  if (tmplSaveTitle) tmplSaveTitle.textContent = EN.lblSaveCurrentTitle;
+  const tmplNameInp = document.getElementById('txtNewTemplateName');
+  if (tmplNameInp) tmplNameInp.placeholder = EN.placeholderTemplateName;
+  const tmplSaveBtn = document.getElementById('btnSaveTemplate');
+  if (tmplSaveBtn) tmplSaveBtn.textContent = EN.btnSaveTemplate;
+  const tmplCustomHeader = document.getElementById('lblCustomTemplatesHeader');
+  if (tmplCustomHeader) tmplCustomHeader.textContent = EN.lblCustomTemplatesHeader;
+  const tmplPresetHeader = document.getElementById('lblPresetTemplatesHeader');
+  if (tmplPresetHeader) tmplPresetHeader.textContent = EN.lblPresetTemplatesHeader;
+  const tmplUndoNotice = document.getElementById('lblTemplateUndoNotice');
+  if (tmplUndoNotice) tmplUndoNotice.textContent = EN.lblTemplateUndoNotice;
+  const tmplCloseBtn = document.getElementById('btnCloseTemplate');
+  if (tmplCloseBtn) tmplCloseBtn.textContent = EN.btnCloseTemplate;
 }
 
 // ── Canonical names & Translation helper ──────────────────────────────────
@@ -2736,11 +2813,226 @@ function closeImportModal() {
   pendingImportData = null;
 }
 
+// ── Budget Templates & Starter Presets ────────────────────────────────────
+const BUDGET_PRESETS = [
+  {
+    id: 'preset-first-jobber',
+    nameTh: '💼 พนักงานเริ่มทำงานใหม่ (First Jobber)',
+    nameEn: '💼 First Jobber',
+    descTh: 'เงินเดือน 25k, หัก ปกส./ภาษี, ค่าเช่า 6k, น้ำไฟ 1.2k, อาหาร 7k, ออม 2.5k',
+    descEn: 'Salary 25k, Rent 6k, Utilities 1.2k, Food 7k, Savings 2.5k',
+    state: {
+      incomes: [
+        { name: 'เงินเดือน', value: 25000, isSalary: true },
+      ],
+      expenses: [
+        { name: AUTO_TAX_NAME_TH, value: 0, auto: true, autoType: 'tax' },
+        { name: AUTO_SSO_NAME_TH, value: 0, auto: true, autoType: 'sso' },
+        { name: AUTO_PVD_NAME_TH, value: 0, auto: true, autoType: 'pvd' },
+        { name: 'ค่าเช่าห้อง / ที่พัก', value: 6000 },
+        { name: 'ค่าน้ำ + ค่าไฟฟ้า', value: 1200 },
+        { name: 'ค่าอาหารและเครื่องดื่ม', value: 7000 },
+        { name: 'ค่าเดินทาง / BTS / น้ำมัน', value: 2500 },
+        { name: 'ค่าโทรศัพท์ / อินเทอร์เน็ต', value: 600 },
+      ],
+      savings: [
+        { name: 'เงินออมฉุกเฉิน (Emergency Buffer)', value: 2500 },
+      ],
+    }
+  },
+  {
+    id: 'preset-mid-career',
+    nameTh: '👨‍👩‍👧 ครอบครัว / วัยทำงาน (Family & Mid-Career)',
+    nameEn: '👨‍👩‍👧 Family & Mid-Career',
+    descTh: 'เงินเดือน 60k, ผ่อนบ้าน/คอนโด 15k, น้ำไฟเน็ต 3.5k, อุปโภคบริโภค 12k, ออม 10k',
+    descEn: 'Salary 60k, Mortgage 15k, Utilities 3.5k, Groceries 12k, Savings 10k',
+    state: {
+      incomes: [
+        { name: 'เงินเดือน', value: 60000, isSalary: true },
+        { name: 'เงิน allowances / อื่นๆ', value: 5000 },
+      ],
+      expenses: [
+        { name: AUTO_TAX_NAME_TH, value: 0, auto: true, autoType: 'tax' },
+        { name: AUTO_SSO_NAME_TH, value: 0, auto: true, autoType: 'sso' },
+        { name: AUTO_PVD_NAME_TH, value: 0, auto: true, autoType: 'pvd' },
+        { name: 'ผ่อนบ้าน / คอนโด', value: 15000 },
+        { name: 'ค่าน้ำ + ค่าไฟฟ้า + เน็ต', value: 3500 },
+        { name: 'ค่ากินอยู่และของใช้ในบ้าน', value: 12000 },
+        { name: 'ประกันชีวิต / ประกันสุขภาพ', value: 3000 },
+        { name: 'ค่าใช้จ่ายส่วนตัว / สันทนาการ', value: 4000 },
+      ],
+      savings: [
+        { name: 'เงินออมฉุกเฉิน / สำรองเลี้ยงชีพ', value: 10000 },
+      ],
+    }
+  },
+  {
+    id: 'preset-freelancer',
+    nameTh: '🌴 ฟรีแลนซ์ / รายได้ไม่ประจำ (Freelancer)',
+    nameEn: '🌴 Freelancer / Variable',
+    descTh: 'รายได้โปรเจกต์ 45k, หักภาษี 3%, ค่าเครื่องมือ 3k, ค่าเช่า 8k, อาหาร 9k, ออม 10k',
+    descEn: 'Project income 45k, Biz expense 3k, Rent 8k, Living 9k, Safety fund 10k',
+    state: {
+      incomes: [
+        { name: 'รายได้จากงานฟรีแลนซ์ / สัญญาจ้าง', value: 45000 },
+      ],
+      expenses: [
+        { name: 'ภาษีหัก ณ ที่จ่าย 3% (ประมาณการ)', value: 1350 },
+        { name: 'ประกันสังคม มาตรา 39/40', value: 432 },
+        { name: 'ค่าเครื่องมือ / ซอฟต์แวร์ทำงาน', value: 3000 },
+        { name: 'ค่าเช่าและสาธารณูปโภค', value: 8000 },
+        { name: 'ค่าอาหารและครองชีพ', value: 9000 },
+        { name: 'ประกันสุขภาพส่วนบุคคล', value: 2500 },
+      ],
+      savings: [
+        { name: 'กองทุนสำรองฉุกเฉิน 6-12 เดือน', value: 10000 },
+      ],
+    }
+  }
+];
+
+const TEMPLATES_STORAGE_KEY = 'moneySuperapp.budgetTemplates.v1';
+
+function getCustomTemplates() {
+  return MoneyApp.safeJsonParse(TEMPLATES_STORAGE_KEY, []);
+}
+
+function saveCustomTemplates(list) {
+  try {
+    localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(list));
+  } catch(e) {}
+}
+
+function openTemplateModal() {
+  renderTemplatesModal();
+  const modal = document.getElementById('templateModal');
+  if (modal) modal.style.display = 'flex';
+  const inp = document.getElementById('txtNewTemplateName');
+  if (inp) inp.focus();
+}
+
+function closeTemplateModal() {
+  const modal = document.getElementById('templateModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function saveCurrentBudgetAsTemplate() {
+  const inp = document.getElementById('txtNewTemplateName');
+  const name = inp ? inp.value.trim() : '';
+  if (!name) {
+    alert(LANG === 'en' ? 'Please enter a template name.' : 'กรุณาระบุชื่อแม่แบบ');
+    if (inp) inp.focus();
+    return;
+  }
+  const templates = getCustomTemplates();
+  const newTmpl = {
+    id: 'tmpl-' + Date.now(),
+    name: name,
+    createdAt: new Date().toISOString(),
+    state: {
+      incomes: JSON.parse(JSON.stringify(state.incomes || [])),
+      expenses: JSON.parse(JSON.stringify(state.expenses || [])),
+      savings: JSON.parse(JSON.stringify(state.savings || [])),
+    }
+  };
+  templates.push(newTmpl);
+  saveCustomTemplates(templates);
+  if (inp) inp.value = '';
+  renderTemplatesModal();
+  showBridgeNotification(LANG === 'en' ? `✓ Template "${name}" saved!` : `✓ บันทึกแม่แบบ "${name}" เรียบร้อยแล้ว`);
+}
+
+function deleteCustomTemplate(id) {
+  const isEN = LANG === 'en';
+  if (!confirm(isEN ? 'Delete this template?' : 'ต้องการลบแม่แบบนี้หรือไม่?')) return;
+  const templates = getCustomTemplates().filter(t => t.id !== id);
+  saveCustomTemplates(templates);
+  renderTemplatesModal();
+}
+
+function applyBudgetTemplate(tmplState, tmplName) {
+  if (!tmplState) return;
+  undoMgr.push(captureSnapshot());
+
+  state.incomes = JSON.parse(JSON.stringify(tmplState.incomes || []));
+  state.expenses = JSON.parse(JSON.stringify(tmplState.expenses || []));
+  state.savings = JSON.parse(JSON.stringify(tmplState.savings || []));
+
+  updateAutoExpenses(pvdPercent);
+  renderRows();
+  renderPvdRow();
+  compute();
+  saveState();
+  updateUndoUI();
+  closeTemplateModal();
+
+  const msg = LANG === 'en'
+    ? `✓ Applied template "${tmplName}" (Press Ctrl+Z to undo)`
+    : `✓ นำแม่แบบ "${tmplName}" มาใช้แล้ว (กด Ctrl+Z เพื่อเลิกทำ)`;
+  showBridgeNotification(msg);
+}
+
+function renderTemplatesModal() {
+  const isEN = LANG === 'en';
+  const customContainer = document.getElementById('customTemplatesContainer');
+  const presetsContainer = document.getElementById('starterPresetsContainer');
+
+  // 1. Render Custom Templates
+  if (customContainer) {
+    const templates = getCustomTemplates();
+    if (templates.length === 0) {
+      customContainer.innerHTML = `<div style="font-size:12px; color:var(--ink-faint); padding:10px; text-align:center; background:var(--panel-2); border-radius:8px;">${isEN ? EN.noCustomTemplates : 'ยังไม่มีแม่แบบที่คุณบันทึกไว้ ระบุชื่อด้านบนเพื่อบันทึกงบประมาณปัจจุบัน'}</div>`;
+    } else {
+      customContainer.innerHTML = templates.map(t => {
+        const incTot = (t.state.incomes || []).reduce((s, i) => s + (i.value || 0), 0);
+        const expTot = (t.state.expenses || []).reduce((s, i) => s + (i.value || 0), 0);
+        const savTot = (t.state.savings || []).reduce((s, i) => s + (i.value || 0), 0);
+        const rem = incTot - expTot - savTot;
+        return `
+          <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+            <div style="flex:1; min-width:0;">
+              <div style="font-weight:700; font-size:13px; color:var(--ink);">${escapeAttr(t.name)}</div>
+              <div style="font-size:11px; color:var(--ink-dim); margin-top:2px;">
+                ${isEN ? 'Income' : 'รายได้'}: <strong>${fmt(incTot)}</strong> | ${isEN ? 'Expense' : 'จ่าย'}: <strong>${fmt(expTot)}</strong> | ${isEN ? 'Net' : 'คงเหลือ'}: <strong style="color:${rem >= 0 ? 'var(--core)' : 'var(--danger)'};">${fmt(rem)} ${unit}</strong>
+              </div>
+            </div>
+            <div style="display:flex; gap:6px; flex-shrink:0;">
+              <button type="button" onclick="applyBudgetTemplate(getCustomTemplates().find(x=>x.id==='${t.id}').state, '${escapeAttr(t.name)}')" style="background:var(--brand, #059669); color:#fff; border:none; padding:5px 10px; border-radius:6px; font-size:11.5px; font-weight:600; cursor:pointer;">${isEN ? EN.btnApplyTemplate : 'นำไปใช้'}</button>
+              <button type="button" onclick="deleteCustomTemplate('${t.id}')" style="background:none; border:1px solid var(--line); color:var(--danger); padding:5px 8px; border-radius:6px; font-size:11.5px; cursor:pointer;" title="${isEN ? EN.btnDeleteTemplate : 'ลบแม่แบบ'}">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  // 2. Render Starter Presets
+  if (presetsContainer) {
+    presetsContainer.innerHTML = BUDGET_PRESETS.map((p, idx) => {
+      const name = isEN ? p.nameEn : p.nameTh;
+      const desc = isEN ? p.descEn : p.descTh;
+      return `
+        <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+          <div style="flex:1; min-width:0;">
+            <div style="font-weight:700; font-size:13px; color:var(--ink);">${name}</div>
+            <div style="font-size:11px; color:var(--ink-dim); margin-top:2px;">${desc}</div>
+          </div>
+          <button type="button" onclick="applyBudgetTemplate(BUDGET_PRESETS[${idx}].state, '${escapeAttr(name)}')" style="background:rgba(5, 150, 105, 0.12); border:1px solid var(--brand, #059669); color:var(--core); padding:5px 12px; border-radius:6px; font-size:11.5px; font-weight:600; cursor:pointer; flex-shrink:0;">${isEN ? EN.btnApplyTemplate : 'นำไปใช้'}</button>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
-    const modal = document.getElementById('importModal');
-    if (modal && modal.style.display !== 'none') {
+    const importMod = document.getElementById('importModal');
+    if (importMod && importMod.style.display !== 'none') {
       closeImportModal();
+    }
+    const tmplMod = document.getElementById('templateModal');
+    if (tmplMod && tmplMod.style.display !== 'none') {
+      closeTemplateModal();
     }
   }
 });
@@ -2754,6 +3046,11 @@ window.confirmImport = confirmImport;
 window.closeImportModal = closeImportModal;
 window.parseImportJSON = parseImportJSON;
 window.parseImportCSV = parseImportCSV;
+window.openTemplateModal = openTemplateModal;
+window.closeTemplateModal = closeTemplateModal;
+window.saveCurrentBudgetAsTemplate = saveCurrentBudgetAsTemplate;
+window.deleteCustomTemplate = deleteCustomTemplate;
+window.applyBudgetTemplate = applyBudgetTemplate;
 
 // ── Init ───────────────────────────────────────────────────────────────────
 checkPendingLumpSum();

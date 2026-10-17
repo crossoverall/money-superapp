@@ -1,5 +1,5 @@
 ---
-task_id: "FEAT-ONBOARDING-01"
+task_id: "FEAT-BUDGET-TEMPLATES-01"
 status: "completed"
 current_stage: "release"
 complexity: "level_2"
@@ -7,50 +7,45 @@ iteration_count: 0
 pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Feature / Task Specification: First-Run Onboarding Guide & Inter-Tool Workflow Tour (Phase 6 Item 2.3)
+### Feature / Task Specification: Recurring Budget Profiles & Templates (Phase 7 Item 3.3)
 
 #### 1. Goal & Scope Limits
-- **Objective:** Add an intuitive, lightweight first-run onboarding tour modal in `index.html` explaining the 7 tools, privacy model, and recommended financial flow (`Payslip` -> `Remaining` -> `Rebalance` -> `Dashboard`).
+- **Objective:** Add customizable recurring budget templates ("Save as Template" / "Load Template") and curated financial presets (First Jobber, Mid-Career, Freelancer) in `remaining-money.html` to streamline monthly budgeting without tedious data re-entry.
 - **Target Files (<= 5 files):**
-  1. `index.html` (Onboarding modal dialog, topbar `❓` guide button, settings modal guide link, first-run detection)
-  2. `tests/shared.test.mjs` (Add test for onboarding localStorage state helper)
+  1. `remaining-money.html` (Template modal, preset loader, custom template persistence, undo snapshot integration)
+  2. `tests/financial-math.test.mjs` (Unit test for budget template serialization/hydration and preset schema integrity)
   3. `.ai/memory/active.md`
 - **Explicit Out of Scope:**
-  - Heavy multi-step walkthrough libraries (remains 100% vanilla JS and CSS).
-  - Disruptive popups on recurring sessions.
+  - Complex multi-month recurring scheduling or external calendar sync.
+  - Third-party template libraries.
 
 #### 2. Architecture & Decision Alignment
-- **ADR-001 (Zero-Build Static PWA / Privacy):** 100% client-side, zero tracking, pure HTML/CSS/JS.
-- **ADR-002 (Iframe Isolation):** Lives in the parent `index.html` shell.
-- **Theme & Design Consistency:** Matches `#131E19` dark topbar aesthetic, fully responsive, keyboard accessible.
+- **ADR-001 (Zero-Build Static PWA / Privacy):** 100% offline, stored in client-side `localStorage.getItem('moneySuperapp.budgetTemplates.v1')`.
+- **ADR-002 (Iframe Isolation):** Self-contained in `remaining-money.html`.
+- **Undo Integration:** Loading any template captures an in-memory snapshot in `undoMgr` first for instant rollback (`Ctrl+Z`).
 
 #### 3. Step-by-Step Implementation Summary
-1. **Top Bar & Navigation Integration:**
-   - Added `❓` help button (`#btn-help-modal`) next to settings (`⚙️`) in topbar.
-   - Added "📖 คู่มือเริ่มต้นใช้งาน (Quick Tour)" shortcut inside `#settingsModal`.
-2. **Onboarding Tour Modal (`#onboardingModal`):**
-   - 5-step recommended financial workflow with direct "เปิดใช้ (Open)" action buttons:
-     1. 💵 **สลิปเงินเดือน (Payslip)**: Net pay, tax/SSO/PVD deductions.
-     2. 💰 **เงินคงเหลือ (Remaining Money)**: Living expenses, emergency reserve, investable surplus.
-     3. ⚖️ **ปรับพอร์ต (Rebalance)**: Multi-asset allocation & zero-drift DCA projections.
-     4. 📉 **วางแผนปลดหนี้ (Debt Payoff)**: Snowball & Avalanche payoff timeline simulations.
-     5. 📊 **แดชบอร์ด (Dashboard)**: Monthly net worth snapshots & milestones.
-   - Highlights 100% offline privacy, Google Drive sync, and keyboard shortcuts (`Alt+1..7`).
-3. **First-Run Trigger & Persistence:**
-   - Detects `moneySuperapp.hasSeenOnboarding` in `localStorage`.
-   - Opens automatically on first visit after 350ms.
-   - Marks flag when closed or on "🚀 เริ่มต้นใช้งานเลย (Get Started)".
+1. **Curated Starter Presets:**
+   - 💼 **First Jobber**: Salary 25k, Rent 6k, Utilities 1.2k, Food 7k, Travel 2.5k, Emergency Fund 2.5k.
+   - 👨‍👩‍👧 **Family & Mid-Career**: Salary 60k, Allowance 5k, Mortgage 15k, Utilities 3.5k, Groceries 12k, Insurance 3k, Savings 10k.
+   - 🌴 **Freelancer / Variable**: Project Income 45k, Withholding Tax 3%, Tech Tools 3k, Rent 8k, Living 9k, Health 2.5k, Safety Fund 10k.
+2. **Custom User Templates:**
+   - Saved in `localStorage.getItem('moneySuperapp.budgetTemplates.v1')`.
+   - Name input, quick save, item summary badges (incomes, expenses, net cashflow).
+   - "นำไปใช้ (Apply)" and "🗑️ (Delete)" with user confirmation.
+3. **Undo Integration:**
+   - Automatic snapshot capture in `undoMgr` prior to applying any template, allowing one-key rollback via `Ctrl+Z` or ↩ Undo.
 4. **Bilingual Localization:**
-   - Complete Thai and English copy wired into `translations` and updated live via `applyLang()`.
+   - Complete Thai and English strings for modal header, placeholders, buttons, and preset descriptions.
 5. **Verification & Tests:**
-   - Added unit test `Onboarding State Management` in `tests/shared.test.mjs`.
-   - 31 unit tests pass in 72ms.
+   - Added unit test `Budget Template Serialization & Presets` in `tests/financial-math.test.mjs`.
+   - All 33 unit tests pass in 61ms.
    - Biome linter passes with 0 errors.
-   - Bumped to `v1.8.9` via `node scripts/bump.mjs patch`.
+   - Bumped to `v1.9.0` via `node scripts/bump.mjs minor`.
 
 #### 4. Acceptance Criteria
-- [x] First-time users are greeted with the onboarding tour modal automatically.
-- [x] Users can reopen the guide anytime using the `❓` button or via Settings (`⚙️`).
-- [x] Step buttons directly navigate to the respective tool iframe.
+- [x] Users can save their current custom budget under any custom name.
+- [x] Users can load starter presets or saved custom templates with 1 click.
+- [x] Instant rollback via `Ctrl+Z` undo is preserved.
 - [x] Both Thai and English languages are fully supported.
-- [x] Passes all automated tests and Biome linting checks.
+- [x] All 33 automated tests pass and Biome check passes cleanly.
