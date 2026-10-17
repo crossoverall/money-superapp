@@ -4536,4 +4536,168 @@ describe('Financial Math Verification', () => {
       assert.equal(emptyRes.tier, 'concentrated');
     });
   });
+
+  describe('Annual Cumulative Payslip Withholding vs PIT Reconciliation Bridge Engine', () => {
+    function computeStandardThaiTax(taxableIncome) {
+      let remaining = Math.max(0, Number(taxableIncome) || 0);
+      let tax = 0;
+      const brackets = [
+        { limit: 150000, rate: 0 },
+        { limit: 150000, rate: 0.05 },
+        { limit: 200000, rate: 0.1 },
+        { limit: 250000, rate: 0.15 },
+        { limit: 250000, rate: 0.2 },
+        { limit: 1000000, rate: 0.25 },
+        { limit: 3000000, rate: 0.3 },
+        { limit: Infinity, rate: 0.35 },
+      ];
+      for (const b of brackets) {
+        if (remaining <= 0) break;
+        const taxable = Math.min(remaining, b.limit);
+        tax += taxable * b.rate;
+        remaining -= taxable;
+      }
+      return tax;
+    }
+
+    function reconcilePayslipTaxWithholding({
+      annualGrossIncome = 0,
+      annualSso = 0,
+      annualPvd = 0,
+      additionalDeductions = 0,
+      cumulativeWithheld = 0,
+      baseAnnualNetTakeHome = 0,
+    } = {}) {
+      const gross = Math.max(0, Number(annualGrossIncome) || 0);
+      const sso = Math.max(0, Number(annualSso) || 0);
+      const pvd = Math.max(0, Number(annualPvd) || 0);
+      const extraDed = Math.max(0, Number(additionalDeductions) || 0);
+      const withheld = Math.max(0, Number(cumulativeWithheld) || 0);
+      const baseNet = Math.max(0, Number(baseAnnualNetTakeHome) || 0);
+
+      const expense = Math.min(gross * 0.5, 100000);
+      const personal = 60000;
+      const baseTaxable = Math.max(0, gross - expense - personal - sso - pvd);
+      const finalTaxable = Math.max(0, baseTaxable - extraDed);
+
+      const finalPitLiability = computeStandardThaiTax(finalTaxable);
+      const baseTaxWithoutExtra = computeStandardThaiTax(baseTaxable);
+      const taxSavingsFromExtra = Math.max(0, baseTaxWithoutExtra - finalPitLiability);
+
+      const netDelta = withheld - finalPitLiability;
+      let status = 'exact';
+      if (netDelta > 0.01) {
+        status = 'refund';
+      } else if (netDelta < -0.01) {
+        status = 'payable';
+      }
+
+      const diffAmount = Math.abs(netDelta);
+      const canInstallment = status === 'payable' && diffAmount >= 3000;
+      const installmentMonths = canInstallment ? 3 : 1;
+      const installmentMonthlyAmount = canInstallment ? Math.ceil(diffAmount / 3) : diffAmount;
+
+      const adjustedAnnualTakeHome = status === 'refund' ? baseNet + diffAmount : Math.max(0, baseNet - diffAmount);
+
+      return {
+        gross,
+        baseTaxable,
+        finalTaxable,
+        baseTaxWithoutExtra,
+        finalPitLiability,
+        taxSavingsFromExtra,
+        cumulativeWithheld: withheld,
+        netDelta,
+        diffAmount,
+        status,
+        canInstallment,
+        installmentMonths,
+        installmentMonthlyAmount,
+        adjustedAnnualTakeHome,
+      };
+    }
+
+    it('identifies tax refund from additional year-end deductions and increases net take-home', () => {
+      // Annual salary 600,000 THB + 100,000 bonus = 700,000 gross
+      // SSO = 9,000, PVD (5%) = 30,000
+      // Employer withheld ~35,000 THB throughout the year
+      // User adds 100,000 THB in ThaiESG & Insurance deductions
+      const res = reconcilePayslipTaxWithholding({
+        annualGrossIncome: 700000,
+        annualSso: 9000,
+        annualPvd: 30000,
+        additionalDeductions: 100000,
+        cumulativeWithheld: 35000,
+        baseAnnualNetTakeHome: 626000,
+      });
+
+      assert.equal(res.status, 'refund');
+      assert.ok(res.diffAmount > 0);
+      assert.ok(res.taxSavingsFromExtra > 0);
+      assert.ok(res.adjustedAnnualTakeHome > 626000);
+      assert.equal(res.canInstallment, false);
+    });
+
+    it('identifies additional tax payable with 3-month interest-free installment when liability exceeds withholding by >= 3,000 THB', () => {
+      // Withheld: 10,000 THB, but true final tax is 25,000 THB -> payable = 15,000 THB
+      const res = reconcilePayslipTaxWithholding({
+        annualGrossIncome: 600000,
+        annualSso: 9000,
+        annualPvd: 0,
+        additionalDeductions: 0,
+        cumulativeWithheld: 10000,
+        baseAnnualNetTakeHome: 581000,
+      });
+
+      assert.equal(res.status, 'payable');
+      assert.ok(res.diffAmount >= 3000);
+      assert.equal(res.canInstallment, true);
+      assert.equal(res.installmentMonths, 3);
+      assert.equal(res.installmentMonthlyAmount, Math.ceil(res.diffAmount / 3));
+    });
+
+    it('disallows installment plan when under-withheld tax difference is less than 3,000 THB', () => {
+      const res = reconcilePayslipTaxWithholding({
+        annualGrossIncome: 300000,
+        annualSso: 9000,
+        annualPvd: 0,
+        additionalDeductions: 0,
+        cumulativeWithheld: 1500,
+        baseAnnualNetTakeHome: 290000,
+      });
+
+      // Taxable = 300,000 - 100,000 - 60,000 - 9,000 = 131,000 -> tax = 0 (under 150k bracket)
+      // If withheld was 1500, that's actually a refund of 1500. Let's test a case where tax is ~2,000 and withheld is 0.
+      const underPayRes = reconcilePayslipTaxWithholding({
+        annualGrossIncome: 350000, // taxable = 350k - 100k - 60k - 9k = 181k -> tax = 31k * 5% = 1550 THB
+        annualSso: 9000,
+        annualPvd: 0,
+        additionalDeductions: 0,
+        cumulativeWithheld: 0, // difference = 1,550 THB (< 3,000)
+        baseAnnualNetTakeHome: 341000,
+      });
+
+      assert.equal(underPayRes.status, 'payable');
+      assert.equal(underPayRes.diffAmount, 1550);
+      assert.equal(underPayRes.canInstallment, false);
+      assert.equal(underPayRes.installmentMonths, 1);
+    });
+
+    it('handles exact withholding match and edge cases with zero inputs safely without NaN', () => {
+      const exactRes = reconcilePayslipTaxWithholding({
+        annualGrossIncome: 0,
+        annualSso: 0,
+        annualPvd: 0,
+        additionalDeductions: 0,
+        cumulativeWithheld: 0,
+        baseAnnualNetTakeHome: 0,
+      });
+
+      assert.equal(exactRes.status, 'exact');
+      assert.equal(exactRes.diffAmount, 0);
+      assert.equal(exactRes.finalPitLiability, 0);
+      assert.equal(exactRes.adjustedAnnualTakeHome, 0);
+      assert.equal(Number.isNaN(exactRes.adjustedAnnualTakeHome), false);
+    });
+  });
 });

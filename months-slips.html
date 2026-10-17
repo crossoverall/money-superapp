@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="2.2.0">
+    <meta name="version" content="2.2.1">
     <meta name="description" content="จำลองสลิปเงินเดือนรวมโบนัส — คำนวณรายได้ ภาษี เงินสมทบประกันสังคม และกองทุนสำรองเลี้ยงชีพ per เดือน">
     <title>จำลองสลิปเงินเดือน (รวมโบนัส)</title>
     <link rel="stylesheet" href="css/tailwind-lite.css">
@@ -250,7 +250,7 @@
                         <button onclick="window.print()" id="btn-print-slip" class="py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all flex items-center gap-1.5">
                             <span id="lbl-print-slip">🖨️ พิมพ์ / บันทึก PDF</span>
                         </button>
-                        <p class="text-xs text-gray-400 ml-auto">v2.2.0</p>
+                        <p class="text-xs text-gray-400 ml-auto">v2.2.1</p>
                     </div>
                 </div>
             </div>
@@ -306,6 +306,77 @@
                 <span style="width:10px; height:10px; border-radius:2px; background:var(--danger, #ef4444);" class="inline-block"></span>
                 <span id="leg-stream-tax">ภาษี (Tax)</span>
             </div>
+        </div>
+    </div>
+
+    <!-- Annual Cumulative Payslip Withholding vs PIT Reconciliation Bridge & Refund Direct Deposit Tracker -->
+    <div class="w-full bg-white dark:bg-slate-900 rounded-xl shadow-lg p-5 border border-gray-200 dark:border-slate-800 mt-6 mb-6 no-print" id="pitReconciliationCard">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div>
+                <h3 class="text-sm font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider flex items-center gap-1.5" id="lbl-reconcile-title">
+                    🔄 การกระทบยอดภาษีสิ้นปี ภ.ง.ด.91 &amp; ขอคืนเงินภาษี (Year-End PIT Reconciliation &amp; Refund Tracker)
+                </h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5" id="lbl-reconcile-sub">
+                    เปรียบเทียบภาษีหัก ณ ที่จ่ายสะสมทั้งปี (50 ทวิ) กับภาษีที่ต้องจ่ายจริงหลังหักลดหย่อนเพิ่มเติม พร้อมจำลองสิทธิ์ขอคืนภาษีผ่านพร้อมเพย์
+                </p>
+            </div>
+            <div id="badgeReconcileStatus">
+                <!-- Status badge dynamically injected -->
+            </div>
+        </div>
+
+        <!-- Input controls grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-3.5 bg-gray-50 dark:bg-slate-800/60 rounded-lg border border-gray-200 dark:border-slate-700 text-xs mb-4">
+            <div>
+                <div class="flex justify-between items-center mb-1">
+                    <label class="font-semibold text-gray-700 dark:text-gray-200" id="lbl-recon-withheld">
+                        ภาษีหัก ณ ที่จ่ายสะสมทั้งปี (50 ทวิ):
+                    </label>
+                    <button type="button" onclick="syncWithholdingFromStream()" class="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline font-medium" id="btn-recon-sync">
+                        🔄 ใช้ยอดจากสลิป 12 เดือน
+                    </button>
+                </div>
+                <div class="relative">
+                    <input type="number" id="reconWithheldInput" min="0" step="100" class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm font-semibold text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:outline-none" oninput="onWithheldManualInput()">
+                    <span class="absolute right-3 top-2.5 text-xs text-gray-400" id="lbl-recon-unit1">บาท</span>
+                </div>
+                <p class="text-[11px] text-gray-400 mt-1" id="lbl-recon-withheld-hint">ยอดภาษีสะสมที่นายจ้างหักส่งกรมสรรพากรตลอดทั้งปี</p>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center mb-1">
+                    <label class="font-semibold text-gray-700 dark:text-gray-200" id="lbl-recon-extraded">
+                        ค่าลดหย่อนภาษีเพิ่มเติมสิ้นปี (Extra Deductions):
+                    </label>
+                    <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold" id="lbl-recon-ded-save">ประหยัดภาษีได้: 0.00 บาท</span>
+                </div>
+                <div class="relative">
+                    <input type="number" id="reconExtraDeductionsInput" min="0" step="1000" value="0" placeholder="0" class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm font-semibold text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:outline-none" oninput="runReconciliation()">
+                    <span class="absolute right-3 top-2.5 text-xs text-gray-400" id="lbl-recon-unit2">บาท</span>
+                </div>
+                <p class="text-[11px] text-gray-400 mt-1" id="lbl-recon-extraded-hint">เช่น ประกันชีวิต/สุขภาพ, กองทุนลดหย่อน ThaiESG/SSF/RMF, ดอกเบี้ยบ้าน, บริจาค</p>
+            </div>
+        </div>
+
+        <!-- Metric Cards Result -->
+        <div id="reconResultPanel" class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs mb-3">
+            <div class="p-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-sm">
+                <span class="text-gray-500 dark:text-gray-400 block mb-0.5" id="lbl-recon-card-withheld">ภาษีที่ถูกหักไว้แล้ว (50 ทวิ)</span>
+                <span id="reconCardWithheld" class="text-sm font-bold text-gray-800 dark:text-gray-100">0.00 บาท</span>
+            </div>
+            <div class="p-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-sm">
+                <span class="text-gray-500 dark:text-gray-400 block mb-0.5" id="lbl-recon-card-liability">ภาษีที่ต้องจ่ายจริงสิ้นปี</span>
+                <span id="reconCardLiability" class="text-sm font-bold text-gray-800 dark:text-gray-100">0.00 บาท</span>
+            </div>
+            <div class="p-3 rounded-lg border shadow-sm transition-colors" id="reconCardSettlementBox">
+                <span class="text-gray-500 dark:text-gray-400 block mb-0.5" id="lbl-recon-card-settlement">ผลลัพธ์การกระทบยอด</span>
+                <span id="reconCardSettlement" class="text-sm font-black">0.00 บาท</span>
+            </div>
+        </div>
+
+        <!-- PromptPay Direct Deposit / Settlement Detail Banner -->
+        <div id="reconSettlementBanner" class="p-3.5 rounded-lg border text-xs leading-relaxed transition-all">
+            <!-- Dynamic promptpay or installment info -->
         </div>
     </div>
 
@@ -393,6 +464,19 @@
                 'leg-stream-pvd': 'PVD',
                 'leg-stream-sso': 'SSO',
                 'leg-stream-tax': 'Tax',
+                'lbl-reconcile-title': '🔄 Year-End PIT Reconciliation &amp; Refund Tracker',
+                'lbl-reconcile-sub': 'Compare annual payroll withholding (50 Tawi) against final tax liability with additional deductions and simulate PromptPay direct deposit refund',
+                'lbl-recon-withheld': 'Cumulative Annual Withholding (50 Tawi):',
+                'btn-recon-sync': '🔄 Use 12-Month Payslip Sum',
+                'lbl-recon-withheld-hint': 'Total tax withheld by employer reported to the Revenue Department',
+                'lbl-recon-extraded': 'Additional Year-End Deductions (Extra):',
+                'lbl-recon-ded-save': 'Tax Savings: 0.00 THB',
+                'lbl-recon-extraded-hint': 'e.g. Life &amp; Health Insurance, ThaiESG, SSF/RMF, Home loan interest, Donations',
+                'lbl-recon-unit1': 'THB',
+                'lbl-recon-unit2': 'THB',
+                'lbl-recon-card-withheld': 'Total Withheld (50 Tawi)',
+                'lbl-recon-card-liability': 'Final Tax Liability',
+                'lbl-recon-card-settlement': 'Reconciliation Result',
             };
             Object.keys(EN).forEach(id => {
                 const el = document.getElementById(id);
@@ -400,6 +484,7 @@
             });
             const placeholders = {
                 salary: 'e.g. 50000', allowance: 'e.g. 7000', bonus: 'e.g. 100000', pvd: 'e.g. 15',
+                reconExtraDeductionsInput: 'e.g. 50000',
                 cmpSalaryA: 'e.g. 60000', cmpBonusA: 'e.g. 2 (months)', cmpPvdA: 'e.g. 5',
                 cmpSalaryB: 'e.g. 70000', cmpBonusB: 'e.g. 1 (month)', cmpPvdB: 'e.g. 7'
             };
@@ -410,6 +495,11 @@
         }
 
         const STORAGE_KEY = 'moneySuperapp.monthsSlips';
+        let isWithheldUserEdited = false;
+        let lastAnnualIncome = 0;
+        let lastNetAnnualIncome = 0;
+        let lastAnnualTax = 0;
+        let lastTotalAnnualNet = 0;
 
         function saveState() {
             const data = {
@@ -418,7 +508,10 @@
                 bonus: document.getElementById('bonus').value,
                 pvd: document.getElementById('pvd').value,
                 ssoCap: document.getElementById('ssoCap').value,
-                bonusMonth: document.getElementById('bonusMonth') ? document.getElementById('bonusMonth').value : '12'
+                bonusMonth: document.getElementById('bonusMonth') ? document.getElementById('bonusMonth').value : '12',
+                reconWithheld: document.getElementById('reconWithheldInput') ? document.getElementById('reconWithheldInput').value : '',
+                reconExtraDeductions: document.getElementById('reconExtraDeductionsInput') ? document.getElementById('reconExtraDeductionsInput').value : '',
+                isWithheldUserEdited: Boolean(isWithheldUserEdited)
             };
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -545,7 +638,18 @@
                 totalAnnualNet
             };
 
+            lastAnnualIncome = annualIncome;
+            lastNetAnnualIncome = netAnnualIncome;
+            lastAnnualTax = annualTax;
+            lastTotalAnnualNet = totalAnnualNet;
+
+            const withheldInput = document.getElementById('reconWithheldInput');
+            if (withheldInput && (!isWithheldUserEdited || withheldInput.value === '')) {
+                withheldInput.value = Math.round(annualTax);
+            }
+
             renderStreamChart(currentStreamData);
+            runReconciliation();
         }
 
         function copySlipSummary() {
@@ -719,6 +823,194 @@
             }
         }
 
+        function onWithheldManualInput() {
+            isWithheldUserEdited = true;
+            saveState();
+            runReconciliation();
+        }
+
+        function syncWithholdingFromStream() {
+            isWithheldUserEdited = false;
+            const withheldInput = document.getElementById('reconWithheldInput');
+            if (withheldInput) {
+                withheldInput.value = Math.round(lastAnnualTax);
+            }
+            saveState();
+            runReconciliation();
+        }
+
+        function computeTaxFromBrackets(taxableIncome) {
+            let rem = Math.max(0, Number(taxableIncome) || 0);
+            let tax = 0;
+            const brackets = [
+                { limit: 150000, rate: 0 },
+                { limit: 150000, rate: 0.05 },
+                { limit: 200000, rate: 0.10 },
+                { limit: 250000, rate: 0.15 },
+                { limit: 250000, rate: 0.20 },
+                { limit: 1000000, rate: 0.25 },
+                { limit: 3000000, rate: 0.30 },
+                { limit: Infinity, rate: 0.35 }
+            ];
+            for (let i = 0; i < brackets.length; i++) {
+                if (rem <= 0) break;
+                const cur = Math.min(rem, brackets[i].limit);
+                tax += cur * brackets[i].rate;
+                rem -= cur;
+            }
+            return tax;
+        }
+
+        function runReconciliation() {
+            const withheldEl = document.getElementById('reconWithheldInput');
+            const extraDedEl = document.getElementById('reconExtraDeductionsInput');
+            const badgeEl = document.getElementById('badgeReconcileStatus');
+            const cardWithheldEl = document.getElementById('reconCardWithheld');
+            const cardLiabilityEl = document.getElementById('reconCardLiability');
+            const cardSettlementBox = document.getElementById('reconCardSettlementBox');
+            const cardSettlementEl = document.getElementById('reconCardSettlement');
+            const bannerEl = document.getElementById('reconSettlementBanner');
+            const dedSaveEl = document.getElementById('lbl-recon-ded-save');
+
+            if (!withheldEl || !cardWithheldEl || !cardLiabilityEl) return;
+
+            const isEN = LANG === 'en';
+            const curUnit = isEN ? 'THB' : 'บาท';
+            const fmt = (n) => Number(n).toLocaleString(isEN ? 'en-US' : 'th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            const withheld = Math.max(0, parseNum(withheldEl.value));
+            const extraDed = Math.max(0, parseNum(extraDedEl ? extraDedEl.value : 0));
+
+            // Recompute final taxable income after extra deductions
+            const finalTaxable = Math.max(0, lastNetAnnualIncome - extraDed);
+            const finalTaxLiability = computeTaxFromBrackets(finalTaxable);
+            const taxSavings = Math.max(0, lastAnnualTax - finalTaxLiability);
+
+            if (dedSaveEl) {
+                dedSaveEl.innerText = isEN
+                    ? `Tax Savings: ${fmt(taxSavings)} ${curUnit}`
+                    : `ประหยัดภาษีได้: ${fmt(taxSavings)} บาท`;
+            }
+
+            cardWithheldEl.innerText = `${fmt(withheld)} ${curUnit}`;
+            cardLiabilityEl.innerText = `${fmt(finalTaxLiability)} ${curUnit}`;
+
+            const delta = withheld - finalTaxLiability;
+            const absDelta = Math.abs(delta);
+
+            if (delta > 0.01) {
+                // Refund
+                if (badgeEl) {
+                    badgeEl.innerHTML = `<span class="py-1 px-3 bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 text-xs font-bold rounded-lg flex items-center gap-1">
+                        🎉 ${isEN ? 'Tax Refund' : 'ได้รับเงินคืนภาษี'}: +${fmt(absDelta)} ${curUnit}
+                    </span>`;
+                }
+                if (cardSettlementBox) {
+                    cardSettlementBox.className = 'p-3 rounded-lg border bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 shadow-sm';
+                }
+                if (cardSettlementEl) {
+                    cardSettlementEl.className = 'text-sm font-black text-emerald-600 dark:text-emerald-400';
+                    cardSettlementEl.innerText = `+${fmt(absDelta)} ${curUnit} (${isEN ? 'Refund' : 'ขอคืน'})`;
+                }
+                const adjAnnualNet = lastTotalAnnualNet + absDelta;
+                if (bannerEl) {
+                    bannerEl.className = 'p-3.5 rounded-lg border bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-xs leading-relaxed text-emerald-900 dark:text-emerald-200';
+                    bannerEl.innerHTML = `
+                        <div class="flex items-start gap-2.5">
+                            <span class="text-xl">💳</span>
+                            <div class="flex-1">
+                                <div class="font-bold text-sm mb-1 text-emerald-800 dark:text-emerald-200 flex items-center gap-1.5 flex-wrap">
+                                    <span>${isEN ? 'Direct Deposit via PromptPay Ready' : 'พร้อมรับเงินคืนภาษีตรงผ่าน PromptPay (เลขบัตรประชาชน)'}</span>
+                                    <span class="text-[10px] bg-emerald-200 dark:bg-emerald-800 text-emerald-900 dark:text-emerald-100 px-2 py-0.5 rounded font-semibold">${isEN ? 'AUTO REFUND' : 'โอนคืนไว'}</span>
+                                </div>
+                                <p class="mb-1.5">
+                                    ${isEN 
+                                        ? `Your employer withheld <strong>${fmt(withheld)} ${curUnit}</strong>, but your true liability is only <strong>${fmt(finalTaxLiability)} ${curUnit}</strong>. The Revenue Department will refund <strong>${fmt(absDelta)} ${curUnit}</strong> directly to your ID-linked PromptPay bank account.`
+                                        : `ภาษีที่ถูกหัก ณ ที่จ่ายสะสม <strong>${fmt(withheld)} บาท</strong> สูงกว่าภาษีที่ต้องจ่ายจริงหลังหักลดหย่อน <strong>${fmt(finalTaxLiability)} บาท</strong> คุณจะได้รับเงินคืนภาษี <strong>+${fmt(absDelta)} บาท</strong> จากกรมสรรพากรโดยตรง`}
+                                </p>
+                                <div class="pt-1.5 border-t border-emerald-200 dark:border-emerald-800/60 text-[11.5px] font-medium text-emerald-800 dark:text-emerald-300">
+                                    💰 ${isEN ? 'Adjusted Total Annual Take-Home' : 'รายรับสุทธิรวมทั้งปีสุทธิหลังคืนภาษี'}: <strong>${fmt(adjAnnualNet)} ${curUnit}</strong> (${isEN ? 'Payroll Net' : 'เงินเดือนสุทธิ'} + ${isEN ? 'Refund' : 'เงินคืนภาษี'})
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else if (delta < -0.01) {
+                // Additional Tax Payable
+                const canInstallment = absDelta >= 3000;
+                const installmentAmt = canInstallment ? Math.ceil(absDelta / 3) : absDelta;
+
+                if (badgeEl) {
+                    badgeEl.innerHTML = `<span class="py-1 px-3 bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 text-xs font-bold rounded-lg flex items-center gap-1">
+                        ⚠️ ${isEN ? 'Tax Payable' : 'ต้องชำระเพิ่ม'}: ${fmt(absDelta)} ${curUnit}
+                    </span>`;
+                }
+                if (cardSettlementBox) {
+                    cardSettlementBox.className = 'p-3 rounded-lg border bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 shadow-sm';
+                }
+                if (cardSettlementEl) {
+                    cardSettlementEl.className = 'text-sm font-black text-rose-600 dark:text-rose-400';
+                    cardSettlementEl.innerText = `-${fmt(absDelta)} ${curUnit} (${isEN ? 'Payable' : 'ชำระเพิ่ม'})`;
+                }
+                const adjAnnualNet = Math.max(0, lastTotalAnnualNet - absDelta);
+                if (bannerEl) {
+                    bannerEl.className = 'p-3.5 rounded-lg border bg-rose-50/70 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800 text-xs leading-relaxed text-rose-900 dark:text-rose-200';
+                    bannerEl.innerHTML = `
+                        <div class="flex items-start gap-2.5">
+                            <span class="text-xl">⚠️</span>
+                            <div class="flex-1">
+                                <div class="font-bold text-sm mb-1 text-rose-800 dark:text-rose-200 flex items-center gap-1.5 flex-wrap">
+                                    <span>${isEN ? 'Additional Tax Payment Required' : 'มียอดภาษีที่ต้องชำระเพิ่มเติม'}</span>
+                                    ${canInstallment ? `<span class="text-[10px] bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100 px-2 py-0.5 rounded font-semibold">${isEN ? '0% 3-MONTH INSTALLMENT ELIGIBLE' : 'ผ่อนได้ 3 งวด ดอกเบี้ย 0%'}</span>` : ''}
+                                </div>
+                                <p class="mb-1.5">
+                                    ${isEN 
+                                        ? `Your employer withheld <strong>${fmt(withheld)} ${curUnit}</strong>, but your true annual tax is <strong>${fmt(finalTaxLiability)} ${curUnit}</strong>. You need to pay an additional <strong>${fmt(absDelta)} ${curUnit}</strong> upon filing ภ.ง.ด.91.`
+                                        : `นายจ้างหักภาษีไว้ <strong>${fmt(withheld)} บาท</strong> แต่มียอดภาษีจริง <strong>${fmt(finalTaxLiability)} บาท</strong> คุณจะต้องชำระภาษีเพิ่มเติม <strong>${fmt(absDelta)} บาท</strong>`}
+                                </p>
+                                ${canInstallment ? `
+                                    <div class="mt-2 p-2 bg-white/80 dark:bg-slate-900/80 rounded border border-rose-200 dark:border-rose-800 text-[11px]">
+                                        💳 <strong>${isEN ? '3-Month Interest-Free Installment Option:' : 'สิทธิเลือกผ่อนชำระ 3 งวด (ดอกเบี้ย 0%):'}</strong>
+                                        <div class="grid grid-cols-3 gap-2 mt-1 text-center font-semibold">
+                                            <div class="p-1 bg-amber-50 dark:bg-amber-950/50 rounded border border-amber-200 dark:border-amber-800">งวด 1: ${fmt(installmentAmt)} ${curUnit}<div class="text-[9.5px] font-normal text-gray-500">${isEN ? 'By Apr 8' : 'ภายใน 8 เม.ย.'}</div></div>
+                                            <div class="p-1 bg-amber-50 dark:bg-amber-950/50 rounded border border-amber-200 dark:border-amber-800">งวด 2: ${fmt(installmentAmt)} ${curUnit}<div class="text-[9.5px] font-normal text-gray-500">${isEN ? 'By May 8' : 'ภายใน 8 พ.ค.'}</div></div>
+                                            <div class="p-1 bg-amber-50 dark:bg-amber-950/50 rounded border border-amber-200 dark:border-amber-800">งวด 3: ${fmt(absDelta - installmentAmt * 2)} ${curUnit}<div class="text-[9.5px] font-normal text-gray-500">${isEN ? 'By Jun 8' : 'ภายใน 8 มิ.ย.'}</div></div>
+                                        </div>
+                                    </div>
+                                ` : ''}
+                                <div class="pt-1.5 mt-2 border-t border-rose-200 dark:border-rose-800/60 text-[11.5px] font-medium text-rose-800 dark:text-rose-300">
+                                    💰 ${isEN ? 'Adjusted Net Annual Income' : 'รายรับสุทธิรวมทั้งปีหลังหักภาษีส่วนเพิ่ม'}: <strong>${fmt(adjAnnualNet)} ${curUnit}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                // Exact Match
+                if (badgeEl) {
+                    badgeEl.innerHTML = `<span class="py-1 px-3 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-700 text-xs font-bold rounded-lg flex items-center gap-1">
+                        ✅ ${isEN ? 'Exact Balance' : 'ภาษีหักไว้พอดี'}
+                    </span>`;
+                }
+                if (cardSettlementBox) {
+                    cardSettlementBox.className = 'p-3 rounded-lg border bg-gray-50 dark:bg-slate-800/50 border-gray-200 dark:border-slate-700 shadow-sm';
+                }
+                if (cardSettlementEl) {
+                    cardSettlementEl.className = 'text-sm font-black text-gray-700 dark:text-gray-300';
+                    cardSettlementEl.innerText = `0.00 ${curUnit}`;
+                }
+                if (bannerEl) {
+                    bannerEl.className = 'p-3 rounded-lg border bg-gray-50 dark:bg-slate-800/50 border-gray-200 dark:border-slate-700 text-xs leading-relaxed text-gray-600 dark:text-gray-300';
+                    bannerEl.innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <span>✅</span>
+                            <span>${isEN ? 'Employer withholding matches your calculated annual PIT liability exactly. No additional payment or refund needed.' : 'ยอดภาษีหัก ณ ที่จ่ายสะสมตรงกับภาษีที่ต้องชำระจริงสิ้นปีพอดี ไม่มียอดต้องจ่ายเพิ่มหรือขอคืน'}</span>
+                        </div>
+                    `;
+                }
+            }
+        }
+
         function loadState() {
             try {
                 const raw = localStorage.getItem(STORAGE_KEY);
@@ -737,6 +1029,18 @@
                 if (pvd !== '') document.getElementById('pvd').value = pvd;
                 if (ssoCap !== '') document.getElementById('ssoCap').value = ssoCap;
                 if (document.getElementById('bonusMonth')) document.getElementById('bonusMonth').value = bonusMonth;
+
+                if (data?.reconWithheld !== undefined && data.reconWithheld !== '') {
+                    const rwh = document.getElementById('reconWithheldInput');
+                    if (rwh) rwh.value = data.reconWithheld;
+                }
+                if (data?.reconExtraDeductions !== undefined && data.reconExtraDeductions !== '') {
+                    const red = document.getElementById('reconExtraDeductionsInput');
+                    if (red) red.value = data.reconExtraDeductions;
+                }
+                if (data?.isWithheldUserEdited !== undefined) {
+                    isWithheldUserEdited = Boolean(data.isWithheldUserEdited);
+                }
 
                 calculateSlip();
             } catch(e){}

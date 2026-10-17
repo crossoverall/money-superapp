@@ -15,6 +15,19 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-17: Annual Cumulative Payslip Withholding vs PIT Reconciliation Bridge (v2.2.1)
+
+- **Date & Context:** 2026-10-17, during implementation of annual cumulative payslip withholding vs statutory PIT reconciliation bridge with PromptPay direct deposit refund simulation in `months-slips.html` (`v2.2.1`).
+- **Problem:** Monthly payslip estimates calculate average monthly withholding based strictly on base salary and bonus, but employees file ภ.ง.ด.91 with additional year-end deductions (insurance, ThaiESG, SSF/RMF, mortgage interest, donations) or have actual 50 Tawi certificates differing from annualized estimates. Users had no bridge connecting monthly payroll withholding to year-end tax refunds or installment liabilities.
+- **Root Cause:** Monthly payroll calculation and annual PIT reconciliation were treated as disconnected lifecycle stages.
+- **Solution & Rule:**
+  1. Add Year-End PIT Reconciliation & Refund Tracker (`runReconciliation()`) computing true statutory liability after extra deductions and comparing it against cumulative withholding.
+  2. Simulate PromptPay direct deposit refund eligibility when withheld > liability, displaying adjusted annual net income (`payroll net + refund`).
+  3. Offer 3-month interest-free installment schedule when liability > withheld by $\ge 3,000$ THB (March/April/May deadlines).
+  4. Preserve user state in localStorage with dirty-checking (`isWithheldUserEdited`) so custom 50 Tawi inputs are not overwritten by monthly slider recalculations unless explicitly requested via "🔄 Use 12-Month Payslip Sum".
+
+
+
 ### 2026-10-17: Cross-Portfolio Asset Allocation Correlation Matrix & Risk Diversification (v2.2.0)
 
 - **Date & Context:** 2026-10-17, during implementation of cross-portfolio asset allocation correlation matrix and risk diversification visualizer in `rebalance.html` (`v2.2.0`).
