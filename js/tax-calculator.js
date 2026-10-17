@@ -60,6 +60,37 @@ if (LANG === 'en') {
     'lbl-sso-years': 'Contribution period (Years)',
     'lbl-sso-res-pension': 'Lifetime Monthly Pension:',
     'lbl-sso-res-lump': 'Lump-sum (if < 15 yrs) / 20-Year Total:',
+    'lbl-inher-title': '🏛️ Thai Inheritance &amp; Annual Gift Tax Simulator',
+    'lbl-inher-subtitle': 'Inheritance Tax Act B.E. 2558 &amp; Revenue Code Sec. 42(26)-(28)',
+    lblSubTabInher: 'Inheritance Tax',
+    lblSubTabGift: 'Annual Gift Tax',
+    lblSubTabStrategy: 'Wealth Transfer',
+    lblEstateValue: 'Total Estate Value (THB)',
+    lblHeirRel: 'Heir Relationship to Testator',
+    optHeirChild: 'Ascendant / Descendant (5% tax on excess > 100M)',
+    optHeirSpouse: 'Legally Registered Spouse (100% Tax-Exempt)',
+    optHeirOther: 'Other Relatives / Beneficiaries (10% tax on excess > 100M)',
+    lblHeirCount: 'Number of Equal Heirs',
+    lblCardInherPortion: 'Portion per Heir:',
+    lblCardInherTax: 'Total Inheritance Tax:',
+    lblGiftType: 'Lifetime Gift Category',
+    optGiftMovable: 'Sec. 42(27) Family cash / movable gift (Exempt 20M/yr)',
+    optGiftRealestate: 'Sec. 42(26) Parent giving real estate to child (Exempt 20M/yr)',
+    optGiftOther: 'Sec. 42(28) Other customary / moral gifts (Exempt 10M/yr)',
+    lblAnnualGiftValue: 'Annual Gift Value in Tax Year (THB)',
+    lblCardGiftExempt: 'Annual Statutory Exemption:',
+    lblCardGiftTax: 'Gift Tax (5% Final Tax):',
+    lblStrategyYears: 'Planned Lifetime Gifting Horizon (Years)',
+    lblStrategyOptATitle: 'Option 1: Lump-Sum Inheritance',
+    lblStrategyTaxALbl: 'Inheritance Tax Payable:',
+    lblStrategyNetALbl: 'Net Wealth Received by Heirs:',
+    lblStrategyOptBTitle: 'Option 2: Phased Gifting + Inheritance',
+    lblStrategyGiftsBLbl: 'Total Tax-Free Gifts:',
+    lblStrategyTaxBLbl: 'Tax on Residual Inheritance:',
+    lblStrategySavingsTitle: '🎉 Maximum Tax Savings:',
+    lblInherLawTitle: 'Statutory Legal Reference:',
+    txtInherLawDesc:
+      'The Inheritance Tax Act B.E. 2558 exempts the first 100M THB per heir. Excess is taxed at 5% for parents/children or 10% for others. Spouses are 100% exempt. Form P.M.1 must be filed within 150 days.',
   };
   Object.keys(EN).forEach((id) => {
     const el = document.getElementById(id);
@@ -671,6 +702,195 @@ function calculateSsoBenefits() {
   }
 }
 
+// ==========================================
+// Thai Inheritance & Annual Gift Tax Simulator
+// ==========================================
+
+const INHER_STORAGE_KEY = 'moneySuperapp.inheritanceTax.state.v1';
+
+let inherState = {
+  estateValue: 160000000,
+  heirRelationship: 'ascendant_descendant',
+  numberOfHeirs: 1,
+  giftType: 'family_movable',
+  annualGiftValue: 25000000,
+  giftingYears: 3,
+  activeSubTab: 'inher',
+  isExpanded: false,
+};
+
+function toggleInheritanceTaxCard() {
+  const panel = document.getElementById('inher-panel-body');
+  const arrow = document.getElementById('inher-toggle-arrow');
+  const btn = document.getElementById('btn-toggle-inher');
+  if (!panel || !arrow) return;
+
+  const willShow = panel.style.display === 'none';
+  panel.style.display = willShow ? 'block' : 'none';
+  arrow.textContent = willShow ? '▲' : '▼';
+  if (btn) btn.setAttribute('aria-expanded', willShow ? 'true' : 'false');
+  inherState.isExpanded = willShow;
+  saveInherState();
+  if (willShow) {
+    updateInheritanceTaxUI();
+  }
+}
+
+function setInherSubTab(tab) {
+  inherState.activeSubTab = tab;
+  ['inher', 'gift', 'strategy'].forEach((t) => {
+    const subpanel = document.getElementById(`subpanel-${t}`);
+    const tabBtn = document.getElementById(`btnSubTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+    if (subpanel) subpanel.style.display = t === tab ? 'block' : 'none';
+    if (tabBtn) tabBtn.classList.toggle('active', t === tab);
+  });
+  saveInherState();
+  updateInheritanceTaxUI();
+}
+
+function setEstatePreset(val) {
+  const inp = document.getElementById('txtEstateValue');
+  if (inp) {
+    inp.value = val;
+    updateInheritanceTaxUI();
+  }
+}
+
+function loadInherState() {
+  try {
+    const saved = MoneyApp.safeJsonParse(INHER_STORAGE_KEY, null);
+    if (saved && typeof saved === 'object') {
+      inherState = Object.assign({}, inherState, saved);
+    }
+  } catch (_e) {}
+}
+
+function saveInherState() {
+  try {
+    localStorage.setItem(INHER_STORAGE_KEY, JSON.stringify(inherState));
+  } catch (_e) {}
+}
+
+function updateInheritanceTaxUI() {
+  const estateValEl = document.getElementById('txtEstateValue');
+  const heirRelEl = document.getElementById('selHeirRel');
+  const heirCountEl = document.getElementById('txtHeirCount');
+  const giftTypeEl = document.getElementById('selGiftType');
+  const giftValEl = document.getElementById('txtAnnualGiftValue');
+  const stratYearsEl = document.getElementById('txtStrategyYears');
+
+  const estateValue = parseFloat(estateValEl?.value) || 0;
+  const heirRel = heirRelEl?.value || 'ascendant_descendant';
+  const heirCount = parseInt(heirCountEl?.value, 10) || 1;
+  const giftType = giftTypeEl?.value || 'family_movable';
+  const annualGiftValue = parseFloat(giftValEl?.value) || 0;
+  const giftingYears = parseInt(stratYearsEl?.value, 10) || 3;
+
+  inherState.estateValue = estateValue;
+  inherState.heirRelationship = heirRel;
+  inherState.numberOfHeirs = heirCount;
+  inherState.giftType = giftType;
+  inherState.annualGiftValue = annualGiftValue;
+  inherState.giftingYears = giftingYears;
+
+  const res = MoneyApp.calculateThaiInheritanceAndGiftTax({
+    estateValue: estateValue,
+    heirRelationship: heirRel,
+    numberOfHeirs: heirCount,
+    annualGiftValue: annualGiftValue,
+    giftType: giftType,
+    giftingYears: giftingYears,
+  });
+
+  const isEn = LANG === 'en';
+  const unitStr = isEn ? 'THB' : 'บาท';
+
+  // 1. Inheritance outputs
+  const valPortionEl = document.getElementById('valInherPortion');
+  const valExemptEl = document.getElementById('valInherExempt');
+  const valTotalTaxEl = document.getElementById('valInherTotalTax');
+  const valNetEl = document.getElementById('valInherNet');
+
+  if (valPortionEl) valPortionEl.textContent = `${formatMoney(res.portionPerHeir, 2)} ${unitStr}`;
+  if (valExemptEl) {
+    if (res.heirRelationship === 'spouse') {
+      valExemptEl.textContent = isEn ? 'Spouse 100% Tax-Exempt' : 'คู่สมรสยกเว้นภาษี 100%';
+    } else {
+      valExemptEl.textContent = isEn
+        ? `Exempt: ${formatMoney(res.exemptionPerHeir, 2)} ${unitStr}`
+        : `ยกเว้น: ${formatMoney(res.exemptionPerHeir, 2)} บาท`;
+    }
+  }
+  if (valTotalTaxEl) valTotalTaxEl.textContent = `${formatMoney(res.totalInheritanceTax, 2)} ${unitStr}`;
+  if (valNetEl) {
+    valNetEl.textContent = isEn
+      ? `Net Legacy: ${formatMoney(res.netLegacyReceived, 2)} ${unitStr}`
+      : `มรดกสุทธิ: ${formatMoney(res.netLegacyReceived, 2)} บาท`;
+  }
+
+  // 2. Gift outputs
+  const valGiftExemptEl = document.getElementById('valGiftExempt');
+  const valGiftTaxableEl = document.getElementById('valGiftTaxable');
+  const valGiftTaxEl = document.getElementById('valGiftTax');
+  const valGiftNetEl = document.getElementById('valGiftNet');
+
+  if (valGiftExemptEl) valGiftExemptEl.textContent = `${formatMoney(res.annualGiftExemption, 2)} ${unitStr}`;
+  if (valGiftTaxableEl) {
+    valGiftTaxableEl.textContent = isEn
+      ? `Taxable excess: ${formatMoney(res.taxableAnnualGift, 2)} ${unitStr}`
+      : `ส่วนเกินเสียภาษี: ${formatMoney(res.taxableAnnualGift, 2)} บาท`;
+  }
+  if (valGiftTaxEl) valGiftTaxEl.textContent = `${formatMoney(res.annualGiftTax, 2)} ${unitStr}`;
+  if (valGiftNetEl) {
+    valGiftNetEl.textContent = isEn
+      ? `Net received: ${formatMoney(res.netAnnualGift, 2)} ${unitStr}`
+      : `ยอดรับสุทธิ: ${formatMoney(res.netAnnualGift, 2)} บาท`;
+  }
+
+  // 3. Strategy outputs
+  const valTaxAEl = document.getElementById('valStrategyTaxA');
+  const valNetAEl = document.getElementById('valStrategyNetA');
+  const valGiftsBEl = document.getElementById('valStrategyGiftsB');
+  const valTaxBEl = document.getElementById('valStrategyTaxB');
+  const valSavingsEl = document.getElementById('valStrategySavings');
+
+  if (valTaxAEl) valTaxAEl.textContent = `${formatMoney(res.totalInheritanceTax, 2)} ${unitStr}`;
+  if (valNetAEl) valNetAEl.textContent = `${formatMoney(res.netLegacyReceived, 2)} ${unitStr}`;
+  if (valGiftsBEl) valGiftsBEl.textContent = `${formatMoney(res.plannedLifetimeGifts, 2)} ${unitStr}`;
+  if (valTaxBEl) valTaxBEl.textContent = `${formatMoney(res.strategyTaxOnResidual, 2)} ${unitStr}`;
+  if (valSavingsEl) {
+    valSavingsEl.textContent = isEn
+      ? `${formatMoney(res.strategyTaxSavings, 2)} ${unitStr} (-${res.strategyTaxSavingsPct.toFixed(1)}%)`
+      : `${formatMoney(res.strategyTaxSavings, 2)} บาท (ลดลง ${res.strategyTaxSavingsPct.toFixed(1)}%)`;
+  }
+
+  saveInherState();
+}
+
+function initInheritanceTaxCard() {
+  loadInherState();
+  const estateValEl = document.getElementById('txtEstateValue');
+  const heirRelEl = document.getElementById('selHeirRel');
+  const heirCountEl = document.getElementById('txtHeirCount');
+  const giftTypeEl = document.getElementById('selGiftType');
+  const giftValEl = document.getElementById('txtAnnualGiftValue');
+  const stratYearsEl = document.getElementById('txtStrategyYears');
+
+  if (estateValEl && inherState.estateValue != null) estateValEl.value = inherState.estateValue;
+  if (heirRelEl && inherState.heirRelationship) heirRelEl.value = inherState.heirRelationship;
+  if (heirCountEl && inherState.numberOfHeirs) heirCountEl.value = inherState.numberOfHeirs;
+  if (giftTypeEl && inherState.giftType) giftTypeEl.value = inherState.giftType;
+  if (giftValEl && inherState.annualGiftValue != null) giftValEl.value = inherState.annualGiftValue;
+  if (stratYearsEl && inherState.giftingYears) stratYearsEl.value = inherState.giftingYears;
+
+  if (inherState.activeSubTab) {
+    setInherSubTab(inherState.activeSubTab);
+  }
+  if (inherState.isExpanded) {
+    toggleInheritanceTaxCard();
+  }
+}
+
 // Expose functions called by HTML onclick handlers
 window.setTab = setTab;
 window.toggleSeveranceCalc = toggleSeveranceCalc;
@@ -682,6 +902,11 @@ window.toggleSsoSimulator = toggleSsoSimulator;
 window.onSsoSectionChange = onSsoSectionChange;
 window.calculateSsoBenefits = calculateSsoBenefits;
 window.calculateSocialSecurityPensionAndBenefits = calculateSocialSecurityPensionAndBenefits;
+window.toggleInheritanceTaxCard = toggleInheritanceTaxCard;
+window.setInherSubTab = setInherSubTab;
+window.setEstatePreset = setEstatePreset;
+window.updateInheritanceTaxUI = updateInheritanceTaxUI;
 
 // Restore state if available
 loadState();
+initInheritanceTaxCard();

@@ -741,3 +741,20 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
   4. Added prominent tax guidance banner clarifying that under **Section 42(9) of the Thai Revenue Code (ประมวลรัษฎากร มาตรา 42(9))**, capital gains from individual buying and selling of physical gold bullion and jewelry for personal investment are 100% exempt from Thai Personal Income Tax.
   5. Added comprehensive test suite (`tests/gold-calculator.test.mjs`) and smoke tests (**237 tests passing, 0 Biome errors**).
 - **Rule:** When modeling Thai physical gold, never use a single flat gram weight or standard spot price: always bifurcate 96.5% bar (15.244g) vs jewelry (15.16g with 5% melting loss discount), factor in block/craft fees, and note PIT exemption under Section 42(9).
+
+### 2026-10-17: Thai Inheritance Tax Act B.E. 2558 & Annual Lifetime Gifting Optimization
+
+- **Date & Context:** 2026-10-17, implementing Thai Inheritance & Annual Gift Tax Simulator in `tax-calculator.html` (`v2.4.1`).
+- **Problem:**
+  1. Wealthy Thai families and estate planners frequently default to transferring large estates as a lump sum upon death, incurring substantial 5% to 10% statutory inheritance tax on portions exceeding 100M THB per heir.
+  2. Users lack clarity regarding the per-heir nature of the 100M THB exemption and the 100% statutory exemption granted to legally registered spouses under Section 3(2) of the Inheritance Tax Act B.E. 2558.
+  3. Taxpayers underutilize annual gift tax exemptions under Revenue Code Section 42(26)-(28) (20M THB/year for family movable/real estate, 10M THB/year for others) with the 5% Final Tax option under Section 48(6).
+- **Resolution:**
+  1. Built `MoneyApp.calculateThaiInheritanceAndGiftTax(params)` modeling the exact Thai statutory rules:
+     - 100M THB exemption per heir per testator.
+     - 5% tax on excess for ascendants/descendants, 10% for other beneficiaries, 0% (100% exempt) for legal spouses.
+     - Annual gift tax with 20M/10M THB exemptions and 5% Final Tax on excess.
+  2. Built **Wealth Transfer Strategy Optimizer** comparing Option 1 (Lump-Sum Inheritance) vs Option 2 (Phased Lifetime Gifting over $N$ years + Residual Inheritance), calculating exact legal tax savings (e.g. eliminating 3,000,000 THB tax on 160M THB estate).
+  3. Integrated interactive `#inheritance-tax-card` in `tax-calculator.html` with preset pills, heir count scaling, and statutory compliance guidance (150-day filing deadline, 5-year installment rules).
+  4. Added test suite (`tests/inheritance-tax.test.mjs`) and smoke tests (**246 tests passing, 0 Biome errors**).
+- **Rule:** In Thai estate planning, calculate tax at the per-heir level (not aggregate estate), account for 100% spouse exemption, and leverage phased multi-year lifetime gifting (20M/yr family allowance) to legally minimize or eliminate inheritance tax liabilities.

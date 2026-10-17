@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="version" content="2.4.0">
+  <meta name="version" content="2.4.1">
   <meta name="description" content="คำนวณภาษีเงินชดเชยและเงินสะสมกองทุนสำรองเลี้ยงชีพ (PVD) — ครอบคลุมสมาชิกไม่เกิน 5 ปี, 5 ปีขึ้นไปอายุไม่ถึง 55, และ 5 ปีขึ้นไปอายุ 55 ปีขึ้นไป">
   <title>คำนวณภาษีเงินชดเชย + PVD</title>
   <link rel="stylesheet" href="css/theme.css">
@@ -608,12 +608,170 @@
         </div>
       </div>
 
+      <!-- Thai Inheritance & Annual Gift Tax Simulator (Roadmap Phase 58) -->
+      <div id="inheritance-tax-card" style="margin-top: 14px; padding: 14px; background: var(--surface-2); border: 1px solid var(--accent); border-radius: 10px;" role="region" aria-label="Thai Inheritance & Gift Tax Simulator">
+        <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleInheritanceTaxCard()" id="btn-toggle-inher" role="button" tabindex="0" aria-expanded="false">
+          <div>
+            <div style="font-size: 0.88rem; font-weight: 700; color: var(--ink);" id="lbl-inher-title">
+              🏛️ จำลองภาษีการรับมรดก &amp; ภาษีการรับการให้ (Thai Inheritance &amp; Gift Tax)
+            </div>
+            <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-inher-subtitle">
+              พ.ร.บ. ภาษีการรับมรดก พ.ศ. 2558 &amp; ประมวลรัษฎากร ม.42(26)-(28)
+            </div>
+          </div>
+          <span id="inher-toggle-arrow" style="font-size: 14px; color: var(--accent); font-weight: 700;">▼</span>
+        </div>
+
+        <div id="inher-panel-body" style="display: none; margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px;">
+          <!-- Sub-mode Selector -->
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: var(--card-bg); border: 1px solid var(--line); border-radius: 8px; padding: 3px; margin-bottom: 12px;">
+            <button type="button" class="tab active" id="btnSubTabInher" onclick="setInherSubTab('inher')" style="font-size: 0.70rem; padding: 6px 2px;">
+              <span id="lblSubTabInher">ภาษีมรดก</span>
+            </button>
+            <button type="button" class="tab" id="btnSubTabGift" onclick="setInherSubTab('gift')" style="font-size: 0.70rem; padding: 6px 2px;">
+              <span id="lblSubTabGift">ภาษีการให้</span>
+            </button>
+            <button type="button" class="tab" id="btnSubTabStrategy" onclick="setInherSubTab('strategy')" style="font-size: 0.70rem; padding: 6px 2px;">
+              <span id="lblSubTabStrategy">กลยุทธ์ส่งต่อ</span>
+            </button>
+          </div>
+
+          <!-- Sub-panel 1: Inheritance Tax -->
+          <div id="subpanel-inher" style="display: block;">
+            <div style="margin-bottom: 10px;">
+              <label for="txtEstateValue" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lblEstateValue">
+                มูลค่าทรัพย์สินมรดกสุทธิ (Total Estate Value)
+              </label>
+              <input type="number" id="txtEstateValue" value="160000000" min="0" step="1000000" class="input-field" style="width: 100%; font-size: 0.82rem; padding: 6px;" oninput="updateInheritanceTaxUI()" />
+              <div style="display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap;">
+                <button type="button" class="tab" onclick="setEstatePreset(50000000)" style="width: auto; padding: 2px 8px; font-size: 0.68rem; background: var(--card-bg); border: 1px solid var(--line);">50M</button>
+                <button type="button" class="tab" onclick="setEstatePreset(100000000)" style="width: auto; padding: 2px 8px; font-size: 0.68rem; background: var(--card-bg); border: 1px solid var(--line);">100M</button>
+                <button type="button" class="tab" onclick="setEstatePreset(150000000)" style="width: auto; padding: 2px 8px; font-size: 0.68rem; background: var(--card-bg); border: 1px solid var(--line);">150M</button>
+                <button type="button" class="tab" onclick="setEstatePreset(200000000)" style="width: auto; padding: 2px 8px; font-size: 0.68rem; background: var(--card-bg); border: 1px solid var(--line);">200M</button>
+                <button type="button" class="tab" onclick="setEstatePreset(300000000)" style="width: auto; padding: 2px 8px; font-size: 0.68rem; background: var(--card-bg); border: 1px solid var(--line);">300M</button>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 12px;">
+              <div>
+                <label for="selHeirRel" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lblHeirRel">
+                  ความสัมพันธ์ของผู้รับมรดก
+                </label>
+                <select id="selHeirRel" class="input-field" style="width: 100%; font-size: 0.82rem; padding: 6px;" onchange="updateInheritanceTaxUI()">
+                  <option value="ascendant_descendant" selected id="optHeirChild">บุพการี / ผู้สืบสันดาน (เสีย 5% ส่วนเกิน)</option>
+                  <option value="spouse" id="optHeirSpouse">คู่สมรสตามกฎหมาย (ยกเว้น 100%)</option>
+                  <option value="other" id="optHeirOther">บุคคลอื่น / ญาติพี่น้อง (เสีย 10% ส่วนเกิน)</option>
+                </select>
+              </div>
+              <div>
+                <label for="txtHeirCount" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lblHeirCount">
+                  จำนวนผู้รับมรดก (แบ่งเท่ากัน)
+                </label>
+                <input type="number" id="txtHeirCount" value="1" min="1" max="20" step="1" class="input-field" style="width: 100%; font-size: 0.82rem; padding: 6px;" oninput="updateInheritanceTaxUI()" />
+              </div>
+            </div>
+
+            <!-- Inheritance Cards Grid -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+              <div style="background: var(--card-bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px;">
+                <div style="font-size: 0.70rem; color: var(--ink-dim);" id="lblCardInherPortion">ส่วนแบ่งมรดกต่อคน:</div>
+                <div style="font-size: 0.95rem; font-weight: 700; color: var(--ink);" id="valInherPortion">0.00 บาท</div>
+                <div style="font-size: 0.68rem; color: var(--ok); margin-top: 2px;" id="valInherExempt">ยกเว้น 100,000,000 บาท</div>
+              </div>
+              <div style="background: var(--card-bg); border: 1px solid var(--danger); border-radius: 8px; padding: 8px;">
+                <div style="font-size: 0.70rem; color: var(--danger);" id="lblCardInherTax">ภาษีมรดกที่ต้องจ่ายรวม:</div>
+                <div style="font-size: 0.95rem; font-weight: 700; color: var(--danger);" id="valInherTotalTax">0.00 บาท</div>
+                <div style="font-size: 0.68rem; color: var(--ink-dim); margin-top: 2px;" id="valInherNet">มรดกสุทธิ: 0.00 บาท</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub-panel 2: Annual Gift Tax -->
+          <div id="subpanel-gift" style="display: none;">
+            <div style="margin-bottom: 10px;">
+              <label for="selGiftType" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lblGiftType">
+                ประเภทการให้ระหว่างมีชีวิต (Gift Category)
+              </label>
+              <select id="selGiftType" class="input-field" style="width: 100%; font-size: 0.82rem; padding: 6px;" onchange="updateInheritanceTaxUI()">
+                <option value="family_movable" selected id="optGiftMovable">ม.42(27) ครอบครัวให้เงิน/สังหาริมทรัพย์ (ยกเว้น 20M/ปี)</option>
+                <option value="parent_to_child_realestate" id="optGiftRealestate">ม.42(26) พ่อแม่ยกอสังหาฯ ให้บุตรชอบด้วย กม. (ยกเว้น 20M/ปี)</option>
+                <option value="other_customary" id="optGiftOther">ม.42(28) บุคคลอื่นให้ตามประเพณี/เสน่หา (ยกเว้น 10M/ปี)</option>
+              </select>
+            </div>
+            <div style="margin-bottom: 10px;">
+              <label for="txtAnnualGiftValue" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lblAnnualGiftValue">
+                มูลค่าทรัพย์สินที่ให้ในรอบปีภาษี (Annual Gift Value)
+              </label>
+              <input type="number" id="txtAnnualGiftValue" value="25000000" min="0" step="500000" class="input-field" style="width: 100%; font-size: 0.82rem; padding: 6px;" oninput="updateInheritanceTaxUI()" />
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+              <div style="background: var(--card-bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px;">
+                <div style="font-size: 0.70rem; color: var(--ink-dim);" id="lblCardGiftExempt">สิทธิยกเว้นภาษีประจำปี:</div>
+                <div style="font-size: 0.95rem; font-weight: 700; color: var(--ok);" id="valGiftExempt">20,000,000.00 บาท</div>
+                <div style="font-size: 0.68rem; color: var(--ink-dim); margin-top: 2px;" id="valGiftTaxable">ส่วนเกินเสียภาษี: 0.00 บาท</div>
+              </div>
+              <div style="background: var(--card-bg); border: 1px solid var(--warn); border-radius: 8px; padding: 8px;">
+                <div style="font-size: 0.70rem; color: var(--warn);" id="lblCardGiftTax">ภาษีการให้ (5% Final Tax):</div>
+                <div style="font-size: 0.95rem; font-weight: 700; color: var(--danger);" id="valGiftTax">250,000.00 บาท</div>
+                <div style="font-size: 0.68rem; color: var(--ink-dim); margin-top: 2px;" id="valGiftNet">ยอดรับสุทธิ: 24,750,000.00 บาท</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub-panel 3: Wealth Transfer Strategy Optimizer -->
+          <div id="subpanel-strategy" style="display: none;">
+            <div style="margin-bottom: 10px;">
+              <label for="txtStrategyYears" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lblStrategyYears">
+                ระยะเวลาวางแผนทยอยให้ก่อนเสียชีวิต (ปี)
+              </label>
+              <input type="number" id="txtStrategyYears" value="3" min="1" max="20" step="1" class="input-field" style="width: 100%; font-size: 0.82rem; padding: 6px;" oninput="updateInheritanceTaxUI()" />
+            </div>
+
+            <!-- Strategy Comparison Grid -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+              <div style="background: var(--card-bg); border: 1px solid var(--danger); border-radius: 8px; padding: 8px;">
+                <div style="font-size: 0.72rem; font-weight: 700; color: var(--danger); margin-bottom: 4px;" id="lblStrategyOptATitle">
+                  ทางเลือก 1: มรดกทีเดียว
+                </div>
+                <div style="font-size: 0.68rem; color: var(--ink-dim);" id="lblStrategyTaxALbl">ภาษีมรดกที่ต้องจ่าย:</div>
+                <div style="font-size: 0.90rem; font-weight: 700; color: var(--danger); margin-bottom: 4px;" id="valStrategyTaxA">0.00 บาท</div>
+                <div style="font-size: 0.68rem; color: var(--ink-dim);" id="lblStrategyNetALbl">มรดกสุทธิส่งถึงทายาท:</div>
+                <div style="font-size: 0.82rem; font-weight: 700; color: var(--ink);" id="valStrategyNetA">0.00 บาท</div>
+              </div>
+
+              <div style="background: var(--card-bg); border: 1px solid var(--ok); border-radius: 8px; padding: 8px;">
+                <div style="font-size: 0.72rem; font-weight: 700; color: var(--ok); margin-bottom: 4px;" id="lblStrategyOptBTitle">
+                  ทางเลือก 2: ทยอยให้ + มรดก
+                </div>
+                <div style="font-size: 0.68rem; color: var(--ink-dim);" id="lblStrategyGiftsBLbl">ทยอยให้ปลอดภาษีรวม:</div>
+                <div style="font-size: 0.82rem; font-weight: 700; color: var(--accent); margin-bottom: 4px;" id="valStrategyGiftsB">0.00 บาท</div>
+                <div style="font-size: 0.68rem; color: var(--ink-dim);" id="lblStrategyTaxBLbl">ภาษีมรดกส่วนที่เหลือ:</div>
+                <div style="font-size: 0.90rem; font-weight: 700; color: var(--ok);" id="valStrategyTaxB">0.00 บาท</div>
+              </div>
+            </div>
+
+            <!-- Tax Savings Banner -->
+            <div style="background: var(--ok-dim, rgba(47, 139, 118, 0.12)); border: 1px solid var(--ok); border-radius: 8px; padding: 8px 10px; margin-bottom: 10px; text-align: center;">
+              <span style="font-size: 0.72rem; color: var(--ok); font-weight: 600;" id="lblStrategySavingsTitle">🎉 ประหยัดภาษีได้สูงสุด:</span>
+              <div style="font-size: 1.15rem; font-weight: 800; color: var(--ok); margin-top: 2px;" id="valStrategySavings">3,000,000.00 บาท (ลดลง 100%)</div>
+            </div>
+          </div>
+
+          <!-- Statutory Guidance Note -->
+          <div style="background: var(--card-bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 0.70rem; line-height: 1.45; color: var(--ink-dim);" id="boxInheritanceGuidance">
+            ⚖️ <strong id="lblInherLawTitle">ข้อมูลทางกฎหมาย:</strong>
+            <span id="txtInherLawDesc">พ.ร.บ. ภาษีการรับมรดก พ.ศ. 2558 กำหนดให้ผู้รับมรดกแต่ละคนได้รับยกเว้น 100 ล้านบาทแรก ส่วนเกินเสียภาษี 5% (บุพการี/ผู้สืบสันดาน) หรือ 10% (บุคคลอื่น) โดยคู่สมรสตามกฎหมายได้รับยกเว้น 100% ต้องยื่นแบบ ภ.ม.1 ภายใน 150 วันนับแต่วันรับมรดก</span>
+          </div>
+        </div>
+      </div>
+
       <button type="button" class="calc-btn" id="btn-export-to-remaining" onclick="exportPayoutToRemaining()" style="background: var(--core); margin-top: 10px; width: 100%;">
         📤 <span id="lbl-export-remaining">ส่งยอดสุทธินี้ไปยัง เงินคงเหลือ (Remaining Money)</span>
       </button>
       <button class="reset-btn" onclick="reset()" id="btn-reset">ล้างข้อมูล</button>
     </div>
-    <p style="text-align:center;font-size:0.72rem;color:#94a3b8;margin-top:16px;">v2.4.0</p>
+    <p style="text-align:center;font-size:0.72rem;color:#94a3b8;margin-top:16px;">v2.4.1</p>
   </div>
 
   <script src="js/shared.js"></script>

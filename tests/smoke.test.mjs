@@ -366,5 +366,36 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(rebalJs.includes('exportGoldToPortfolio'), 'js/rebalance.js must define exportGoldToPortfolio');
       assert.ok(rebalJs.includes('lblGoldTitle'), 'js/rebalance.js EN must contain lblGoldTitle');
     });
+
+    it('verifies tax-calculator.html contains Thai Inheritance & Annual Gift Tax card and controls', () => {
+      const taxHtml = fs.readFileSync(path.join(ROOT_DIR, 'tax-calculator.html'), 'utf8');
+      assert.ok(
+        taxHtml.includes('id="inheritance-tax-card"'),
+        'tax-calculator.html must contain #inheritance-tax-card',
+      );
+      assert.ok(taxHtml.includes('id="txtEstateValue"'), 'tax-calculator.html must contain #txtEstateValue');
+      assert.ok(taxHtml.includes('id="selHeirRel"'), 'tax-calculator.html must contain #selHeirRel');
+      assert.ok(taxHtml.includes('id="txtHeirCount"'), 'tax-calculator.html must contain #txtHeirCount');
+      assert.ok(taxHtml.includes('id="selGiftType"'), 'tax-calculator.html must contain #selGiftType');
+      assert.ok(taxHtml.includes('id="txtAnnualGiftValue"'), 'tax-calculator.html must contain #txtAnnualGiftValue');
+      assert.ok(taxHtml.includes('id="txtStrategyYears"'), 'tax-calculator.html must contain #txtStrategyYears');
+      assert.ok(
+        taxHtml.includes('id="boxInheritanceGuidance"'),
+        'tax-calculator.html must contain #boxInheritanceGuidance',
+      );
+
+      const taxJs = fs.readFileSync(path.join(ROOT_DIR, 'js/tax-calculator.js'), 'utf8');
+      assert.ok(
+        taxJs.includes('toggleInheritanceTaxCard'),
+        'js/tax-calculator.js must define toggleInheritanceTaxCard',
+      );
+      assert.ok(taxJs.includes('updateInheritanceTaxUI'), 'js/tax-calculator.js must define updateInheritanceTaxUI');
+      assert.ok(taxJs.includes('initInheritanceTaxCard'), 'js/tax-calculator.js must define initInheritanceTaxCard');
+      assert.ok(
+        taxJs.includes('calculateThaiInheritanceAndGiftTax'),
+        'js/tax-calculator.js must call calculateThaiInheritanceAndGiftTax',
+      );
+      assert.ok(taxJs.includes('lbl-inher-title'), 'js/tax-calculator.js EN must define lbl-inher-title');
+    });
   });
 });
