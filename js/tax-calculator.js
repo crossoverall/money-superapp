@@ -1,0 +1,488 @@
+// Language: read once from localStorage (shared origin with the shell nav's toggle).
+if (LANG === 'en') {
+  document.title = 'Severance & PVD Tax Calculator';
+  const EN = {
+    'lbl-h1': 'Severance & PVD Tax Calculator',
+    'lbl-subtitle': 'Choose the condition that matches your situation',
+    'lbl-severance': 'Severance Pay',
+    'lbl-severanceLegal': 'Statutory severance',
+    'badge-severanceLegal': 'Exempt up to 600,000 THB',
+    'lbl-severanceExtra': 'Extra severance (beyond statutory)',
+    'badge-severanceExtra': 'Fully taxable',
+    'badge-pvdEmpContrib': 'Exempt',
+    'lbl-pvdSection': 'Provident Fund (PVD)',
+    'lbl-pvdEmpContrib': "Accumulated contribution (employee's)",
+    'lbl-pvdEmpReturn': 'Return on accumulated contribution',
+    'lbl-pvdEmrContrib': "Contribution (employer's)",
+    'lbl-pvdEmrReturn': 'Return on employer contribution',
+    'lbl-years': 'Years of service',
+    'btn-calc': 'Calculate Tax',
+    'lbl-res-legal-excess': 'Statutory severance (excess)',
+    'lbl-res-extra': 'Extra severance',
+    'lbl-res-pvd': 'Taxable PVD',
+    'lbl-res-taxable': 'Total taxable amount',
+    'lbl-res-tax': 'Tax payable',
+    'btn-reset': 'Clear',
+    'tip-legal-excess':
+      'Statutory severance minus the 600,000 THB exemption<br>= statutory severance − 600,000 (not below 0)',
+    'tip-extra': 'Severance beyond statutory amount has no exemption<br>fully taxed',
+    'tip-pvd':
+      "= return on accumulated contribution + employer contribution<br>+ return on employer contribution<br>(excludes the employee's own accumulated contribution, which is exempt)",
+    'tip-tax':
+      'Calculated using progressive tax brackets<br>0–150k: 0% / 150k–300k: 5%<br>300k–500k: 10% / 500k–750k: 15% / 750k–1M: 20%<br>1M–2M: 25% / 2M–5M: 30% / &gt;5M: 35%',
+    'btn-toggle-sev-calc': '🧮 Auto-calc by tenure',
+    'lbl-sev-calc-title': 'Statutory Severance Calculator (Labor Act)',
+    'lbl-last-wage': 'Last Monthly Wage (THB)',
+    'lbl-tenure-bracket': 'Statutory Tenure Bracket',
+    'lbl-sev-calc-result': 'Statutory Severance:',
+    'btn-apply-sev': '✓ Apply to Statutory Severance',
+    'lbl-res-net': 'Net payout after tax',
+    'tip-net': '= Total severance + Total PVD − Tax payable',
+    'lbl-export-remaining': 'Export Net Payout to Remaining Money',
+    'lbl-rmf-opt-title': '🔄 Compare: Cash Lump-Sum vs Transfer to RMF',
+    'lbl-rmf-opt-subtitle': 'Tax optimization for PVD members ≥ 5 yrs and age < 55',
+    'lbl-opt-lump-title': 'Option A: Take Full Lump Sum',
+    'lbl-opt-lump-tax-lbl': 'Tax payable (Sec. 48(5)):',
+    'lbl-opt-lump-net-lbl': 'Immediate net cash:',
+    'lbl-opt-rmf-title': 'Option B: Transfer PVD to RMF',
+    'lbl-opt-rmf-tax-lbl': 'Tax payable (severance only):',
+    'lbl-opt-rmf-invested-lbl': 'Retained in RMF for growth:',
+    'lbl-opt-rmf-total-lbl': 'Total retained net wealth:',
+    'lbl-opt-note':
+      '💡 <strong>Recommendation:</strong> Rolling over PVD into an RMF for PVD within 30 days keeps 100% of PVD funds tax-exempt, compounding tax-free until age 55 for tax-exempt withdrawals.',
+  };
+  Object.keys(EN).forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = EN[id];
+  });
+  const bracketSelect = document.getElementById('tenureBracket');
+  if (bracketSelect) {
+    const enBrackets = [
+      '< 120 days (0 days)',
+      '120 days – < 1 yr (30 days / 1 mo)',
+      '1 yr – < 3 yrs (90 days / 3 mos)',
+      '3 yrs – < 6 yrs (180 days / 6 mos)',
+      '6 yrs – < 10 yrs (240 days / 8 mos)',
+      '10 yrs – < 20 yrs (300 days / 10 mos)',
+      '≥ 20 yrs (400 days / 13.33 mos)',
+    ];
+    Array.from(bracketSelect.options).forEach((opt, idx) => {
+      if (enBrackets[idx]) opt.textContent = enBrackets[idx];
+    });
+  }
+  document.getElementById('tab0').innerHTML = 'Member<br>&lt; 5 yrs';
+  document.getElementById('tab1').innerHTML = '≥ 5 yrs<br>age &lt; 55';
+  document.getElementById('tab2').innerHTML = '≥ 5 yrs<br>age ≥ 55';
+}
+
+let activeTab = 0;
+
+const condNotes = {
+  th: [
+    'สมาชิก PVD <strong>น้อยกว่า 5 ปี</strong> — PVD ส่วนที่ต้องเสียภาษีถูกนำมาคิดแบบปกติ ไม่ได้รับสิทธิ์หักค่าใช้จ่ายพิเศษ',
+    'สมาชิก PVD <strong>5 ปีขึ้นไป อายุน้อยกว่า 55 ปี</strong> — ได้รับสิทธิ์คำนวณแบบพิเศษ (มาตรา 48(5)) แยกจากเงินได้อื่น',
+    'สมาชิก PVD <strong>5 ปีขึ้นไป และอายุ 55 ปีบริบูรณ์ขึ้นไป</strong> — PVD ได้รับ<strong>ยกเว้นภาษีทั้งหมด</strong> คำนวณภาษีเฉพาะเงินชดเชยส่วนเกิน',
+  ],
+  en: [
+    'PVD member <strong>less than 5 years</strong> — the taxable PVD portion is taxed normally, with no special expense deduction.',
+    'PVD member <strong>5+ years, age under 55</strong> — eligible for the special calculation (Section 48(5)), separate from other income.',
+    'PVD member <strong>5+ years and age 55 or over</strong> — PVD is <strong>fully tax-exempt</strong>; tax is calculated only on excess severance.',
+  ],
+};
+
+const pvdTaxableIds = ['pvdEmpReturn', 'pvdEmrContrib', 'pvdEmrReturn'];
+const pvdBadgeIds = ['badge2', 'badge3', 'badge4'];
+
+function setTab(n) {
+  activeTab = n;
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    const isActive = i === n;
+    t.classList.toggle('active', isActive);
+    t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  });
+  document.getElementById('condNote').innerHTML = (condNotes[LANG] || condNotes.th)[n];
+
+  const pvdExempt = n === 2;
+  pvdTaxableIds.forEach((id) => {
+    document.getElementById(id).classList.toggle('dimmed', pvdExempt);
+  });
+  pvdBadgeIds.forEach((id) => {
+    const el = document.getElementById(id);
+    if (pvdExempt) {
+      el.textContent = LANG === 'en' ? 'Exempt' : 'ยกเว้นภาษี';
+      el.className = 'badge-exempt';
+    } else {
+      el.textContent = LANG === 'en' ? 'Taxable' : 'ต้องเสียภาษี';
+      el.className = 'badge-taxable';
+    }
+  });
+
+  document.getElementById('results').classList.remove('show');
+  const rmfOptEl = document.getElementById('rmf-optimizer-card');
+  if (rmfOptEl) rmfOptEl.style.display = 'none';
+  document.getElementById('errorMsg').style.display = 'none';
+}
+
+// Sync the default tab's condition note and PVD badges to the current language —
+// setTab() is otherwise only called on click, so without this the initial badges
+// (badge2/3/4) stay in whatever language was hardcoded in the markup (Thai).
+setTab(0);
+
+function fmt(n) {
+  return (
+    n.toLocaleString(LANG === 'en' ? 'en-US' : 'th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
+    ' ' +
+    unit
+  );
+}
+
+// Standard PIT progressive rates (with 0-150k @ 0% exemption) for Tab 0 (< 5 years)
+function progressiveTaxPIT(income) {
+  if (income <= 0) return 0;
+  if (income <= 150000) return 0;
+  if (income <= 300000) return (income - 150000) * 0.05;
+  if (income <= 500000) return 150000 * 0.05 + (income - 300000) * 0.1;
+  if (income <= 750000) return 150000 * 0.05 + 200000 * 0.1 + (income - 500000) * 0.15;
+  if (income <= 1000000) return 150000 * 0.05 + 200000 * 0.1 + 250000 * 0.15 + (income - 750000) * 0.2;
+  if (income <= 2000000) return 150000 * 0.05 + 200000 * 0.1 + 250000 * 0.15 + 250000 * 0.2 + (income - 1000000) * 0.25;
+  if (income <= 5000000)
+    return 150000 * 0.05 + 200000 * 0.1 + 250000 * 0.15 + 250000 * 0.2 + 1000000 * 0.25 + (income - 2000000) * 0.3;
+  return (
+    150000 * 0.05 +
+    200000 * 0.1 +
+    250000 * 0.15 +
+    250000 * 0.2 +
+    1000000 * 0.25 +
+    3000000 * 0.3 +
+    (income - 5000000) * 0.35
+  );
+}
+
+// Section 48(5) separate calculation rates (no 0-150k exemption; starts at 5% from 0 to 300k)
+function progressiveTax48_5(income) {
+  if (income <= 0) return 0;
+  if (income <= 300000) return income * 0.05;
+  if (income <= 500000) return 300000 * 0.05 + (income - 300000) * 0.1;
+  if (income <= 750000) return 300000 * 0.05 + 200000 * 0.1 + (income - 500000) * 0.15;
+  if (income <= 1000000) return 300000 * 0.05 + 200000 * 0.1 + 250000 * 0.15 + (income - 750000) * 0.2;
+  if (income <= 2000000) return 300000 * 0.05 + 200000 * 0.1 + 250000 * 0.15 + 250000 * 0.2 + (income - 1000000) * 0.25;
+  if (income <= 5000000)
+    return 300000 * 0.05 + 200000 * 0.1 + 250000 * 0.15 + 250000 * 0.2 + 1000000 * 0.25 + (income - 2000000) * 0.3;
+  return (
+    300000 * 0.05 +
+    200000 * 0.1 +
+    250000 * 0.15 +
+    250000 * 0.2 +
+    1000000 * 0.25 +
+    3000000 * 0.3 +
+    (income - 5000000) * 0.35
+  );
+}
+
+const STORAGE_KEY = 'moneySuperapp.pvdTax';
+const inputIds = [
+  'severanceLegal',
+  'severanceExtra',
+  'pvdEmpContrib',
+  'pvdEmpReturn',
+  'pvdEmrContrib',
+  'pvdEmrReturn',
+  'years',
+  'lastMonthlyWage',
+  'tenureBracket',
+];
+
+function getSeveranceDays(bracket) {
+  switch (String(bracket)) {
+    case '0':
+      return 0;
+    case '1':
+      return 30;
+    case '2':
+      return 90;
+    case '3':
+      return 180;
+    case '4':
+      return 240;
+    case '5':
+      return 300;
+    case '6':
+      return 400;
+    default:
+      return 0;
+  }
+}
+
+function calculateSeveranceAmount(wage, bracket) {
+  const days = getSeveranceDays(bracket);
+  if (days === 0) return 0;
+  if (days === 30) return wage * 1;
+  if (days === 90) return wage * 3;
+  if (days === 180) return wage * 6;
+  if (days === 240) return wage * 8;
+  if (days === 300) return wage * 10;
+  if (days === 400) return Math.round((wage / 30) * 400 * 100) / 100;
+  return 0;
+}
+
+function updateSeveranceCalc() {
+  const wage = parseFloat(document.getElementById('lastMonthlyWage').value) || 0;
+  const bracket = document.getElementById('tenureBracket').value;
+  const days = getSeveranceDays(bracket);
+  const amount = calculateSeveranceAmount(wage, bracket);
+  const previewEl = document.getElementById('sev-calc-preview');
+  if (previewEl) {
+    previewEl.textContent = fmt(amount) + ` (${days} ` + (LANG === 'en' ? 'days' : 'วัน') + `)`;
+  }
+  return amount;
+}
+
+function applySeveranceCalc() {
+  const amount = updateSeveranceCalc();
+  document.getElementById('severanceLegal').value = amount > 0 ? amount : '';
+  saveState();
+  if (parseFloat(document.getElementById('years').value) > 0) {
+    calculate();
+  }
+}
+
+function syncBracketFromYears(yrs) {
+  const bracketEl = document.getElementById('tenureBracket');
+  if (!bracketEl) return;
+  if (yrs >= 20) bracketEl.value = '6';
+  else if (yrs >= 10) bracketEl.value = '5';
+  else if (yrs >= 6) bracketEl.value = '4';
+  else if (yrs >= 3) bracketEl.value = '3';
+  else if (yrs >= 1) bracketEl.value = '2';
+  else if (yrs >= 0.33) bracketEl.value = '1';
+  else bracketEl.value = '0';
+  updateSeveranceCalc();
+}
+
+function toggleSeveranceCalc() {
+  const panel = document.getElementById('severance-calc-panel');
+  const isHidden = panel.style.display === 'none';
+  panel.style.display = isHidden ? 'block' : 'none';
+  if (isHidden) {
+    const yrs = parseFloat(document.getElementById('years').value);
+    if (!isNaN(yrs) && yrs > 0) {
+      syncBracketFromYears(yrs);
+    }
+    if (!document.getElementById('lastMonthlyWage').value) {
+      try {
+        const base = JSON.parse(localStorage.getItem('moneySuperapp.taxBase') || '{}');
+        const slip = JSON.parse(localStorage.getItem('moneySuperapp.monthsSlips') || '{}');
+        const defaultWage = base.salary || slip.salary;
+        if (defaultWage) {
+          document.getElementById('lastMonthlyWage').value = defaultWage;
+        }
+      } catch (e) {}
+    }
+    updateSeveranceCalc();
+  }
+}
+
+function saveState() {
+  const data = { activeTab };
+  inputIds.forEach((id) => {
+    data[id] = document.getElementById(id).value;
+  });
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {}
+}
+
+function calculate() {
+  const severanceLegal = parseFloat(document.getElementById('severanceLegal').value) || 0;
+  const severanceExtra = parseFloat(document.getElementById('severanceExtra').value) || 0;
+  const pvdEmpReturn = parseFloat(document.getElementById('pvdEmpReturn').value) || 0;
+  const pvdEmrContrib = parseFloat(document.getElementById('pvdEmrContrib').value) || 0;
+  const pvdEmrReturn = parseFloat(document.getElementById('pvdEmrReturn').value) || 0;
+  const years = parseFloat(document.getElementById('years').value) || 0;
+
+  const errorEl = document.getElementById('errorMsg');
+  if (years <= 0) {
+    errorEl.textContent = LANG === 'en' ? 'Please enter years of service' : 'กรุณากรอกจำนวนปีที่ทำงาน';
+    errorEl.style.display = 'block';
+    return;
+  }
+  errorEl.style.display = 'none';
+
+  saveState();
+
+  const legalExcess = Math.max(0, severanceLegal - 600000);
+  const pvdTaxable = pvdEmpReturn + pvdEmrContrib + pvdEmrReturn;
+  const totalExcess = legalExcess + severanceExtra;
+
+  let taxable,
+    tax,
+    pvdDisplay,
+    pvdClass = '';
+
+  const tipTaxable = {
+    th: [
+      '= เงินชดเชยส่วนเกิน + เงินชดเชยพิเศษ + PVD ส่วนที่ต้องเสียภาษี<br>(ไม่มีสิทธิ์หักค่าใช้จ่ายพิเศษตาม ม.48(5))',
+      '= (เงินชดเชยส่วนเกิน + PVD − ค่าใช้จ่าย) × 0.5<br>ค่าใช้จ่าย = 7,000 × จำนวนปีที่ทำงาน',
+      '= (เงินชดเชยส่วนเกิน − ค่าใช้จ่าย) × 0.5<br>PVD ได้รับยกเว้นภาษีทั้งหมด',
+    ],
+    en: [
+      '= excess severance + extra severance + taxable PVD<br>(no special expense deduction under Sec. 48(5))',
+      '= (excess severance + PVD − expense) × 0.5<br>expense = 7,000 × years of service',
+      '= (excess severance − expense) × 0.5<br>PVD is fully tax-exempt',
+    ],
+  };
+
+  const tipTax = {
+    th: [
+      'อัตราภาษีเงินได้บุคคลธรรมดาปกติ (รวมส่วนยกเว้น 0–150,000 บาทแรก 0%)<br>0–150k: 0% / 150k–300k: 5%<br>300k–500k: 10% / 500k–750k: 15%<br>750k–1M: 20% / 1M–2M: 25%<br>2M–5M: 30% / >5M: 35%',
+      'อัตราภาษีแยกคำนวณตามมาตรา 48(5)<br><strong>ไม่ได้รับยกเว้น 150,000 บาทแรก</strong><br>0–300k: 5% / 300k–500k: 10%<br>500k–750k: 15% / 750k–1M: 20%<br>1M–2M: 25% / 2M–5M: 30% / >5M: 35%',
+      'อัตราภาษีแยกคำนวณตามมาตรา 48(5)<br><strong>ไม่ได้รับยกเว้น 150,000 บาทแรก</strong><br>0–300k: 5% / 300k–500k: 10%<br>500k–750k: 15% / 750k–1M: 20%<br>1M–2M: 25% / 2M–5M: 30% / >5M: 35%',
+    ],
+    en: [
+      'Standard progressive PIT brackets (with 0-150k @ 0% exemption)<br>0–150k: 0% / 150k–300k: 5%<br>300k–500k: 10% / 500k–750k: 15%<br>750k–1M: 20% / 1M–2M: 25%<br>2M–5M: 30% / >5M: 35%',
+      'Section 48(5) separate calculation rates<br><strong>(No 150,000 THB initial exemption)</strong><br>0–300k: 5% / 300k–500k: 10%<br>500k–750k: 15% / 750k–1M: 20%<br>1M–2M: 25% / 2M–5M: 30% / >5M: 35%',
+      'Section 48(5) separate calculation rates<br><strong>(No 150,000 THB initial exemption)</strong><br>0–300k: 5% / 300k–500k: 10%<br>500k–750k: 15% / 750k–1M: 20%<br>1M–2M: 25% / 2M–5M: 30% / >5M: 35%',
+    ],
+  };
+
+  const exemptLabel = LANG === 'en' ? 'Exempt' : 'ยกเว้นภาษี';
+
+  if (activeTab === 0) {
+    // Tab 0: member < 5 yrs; totalExcess (legalExcess + severanceExtra) and taxable PVD are taxed at regular rates
+    taxable = pvdTaxable + totalExcess;
+    tax = progressiveTaxPIT(taxable);
+    pvdDisplay = fmt(pvdTaxable);
+    document.getElementById('tip-taxable').innerHTML = (tipTaxable[LANG] || tipTaxable.th)[0];
+    document.getElementById('tip-tax').innerHTML = (tipTax[LANG] || tipTax.th)[0];
+  } else if (activeTab === 1) {
+    // Tab 1: >= 5 yrs, age < 55; Section 48(5) separate calculation
+    taxable = Math.max(0, (totalExcess + pvdTaxable - 7000 * years) * 0.5);
+    tax = progressiveTax48_5(taxable);
+    pvdDisplay = fmt(pvdTaxable);
+    document.getElementById('tip-taxable').innerHTML = (tipTaxable[LANG] || tipTaxable.th)[1];
+    document.getElementById('tip-tax').innerHTML = (tipTax[LANG] || tipTax.th)[1];
+  } else {
+    // Tab 2: >= 5 yrs, age >= 55; PVD is fully exempt; severance excess taxed under Sec. 48(5)
+    taxable = Math.max(0, (totalExcess - 7000 * years) * 0.5);
+    tax = progressiveTax48_5(taxable);
+    pvdDisplay = exemptLabel;
+    pvdClass = 'exempt-badge';
+    document.getElementById('tip-taxable').innerHTML = (tipTaxable[LANG] || tipTaxable.th)[2];
+    document.getElementById('tip-tax').innerHTML = (tipTax[LANG] || tipTax.th)[2];
+  }
+
+  document.getElementById('res-legal-excess').textContent = fmt(legalExcess);
+  document.getElementById('res-extra').textContent = fmt(severanceExtra);
+  const pvdEl = document.getElementById('res-pvd');
+  pvdEl.textContent = pvdDisplay;
+  pvdEl.className = 'result-value' + (pvdClass ? ' ' + pvdClass : '');
+  document.getElementById('res-taxable').textContent = fmt(taxable);
+  document.getElementById('res-tax').textContent = fmt(tax);
+
+  const pvdEmpContrib = parseFloat(document.getElementById('pvdEmpContrib').value) || 0;
+  const totalGrossPayout =
+    severanceLegal + severanceExtra + pvdEmpContrib + pvdEmpReturn + pvdEmrContrib + pvdEmrReturn;
+  const netPayout = Math.max(0, totalGrossPayout - tax);
+  currentNetPayout = netPayout;
+  document.getElementById('res-net').textContent = fmt(netPayout);
+
+  const rmfOptEl = document.getElementById('rmf-optimizer-card');
+  if (activeTab === 1 && pvdTaxable > 0) {
+    const lumpTax = tax;
+    const lumpNet = netPayout;
+    const rmfTaxable = Math.max(0, (totalExcess - 7000 * years) * 0.5);
+    const rmfTax = progressiveTax48_5(rmfTaxable);
+    const rmfInvested = pvdEmpContrib + pvdTaxable;
+    const rmfImmediateCash = Math.max(0, severanceLegal + severanceExtra - rmfTax);
+    const rmfTotalWealth = rmfImmediateCash + rmfInvested;
+    const taxSaved = Math.max(0, lumpTax - rmfTax);
+
+    document.getElementById('opt-lump-tax').textContent = fmt(lumpTax);
+    document.getElementById('opt-lump-net').textContent = fmt(lumpNet);
+    document.getElementById('opt-rmf-tax').textContent = fmt(rmfTax);
+    document.getElementById('opt-rmf-invested').textContent = fmt(rmfInvested);
+    document.getElementById('opt-rmf-total').textContent = fmt(rmfTotalWealth);
+
+    const badgeEl = document.getElementById('opt-savings-badge');
+    if (taxSaved > 0) {
+      badgeEl.textContent = (LANG === 'en' ? 'Save ' : 'ประหยัดภาษี ') + fmt(taxSaved);
+    } else {
+      badgeEl.textContent = LANG === 'en' ? 'Equal Tax' : 'ภาษีเท่ากัน';
+    }
+    if (rmfOptEl) rmfOptEl.style.display = 'block';
+  } else if (rmfOptEl) {
+    rmfOptEl.style.display = 'none';
+  }
+
+  document.getElementById('results').classList.add('show');
+}
+
+let currentNetPayout = 0;
+
+function exportPayoutToRemaining() {
+  if (currentNetPayout <= 0) return;
+  const lump = {
+    name: LANG === 'en' ? 'Net Severance & PVD Payout' : 'เงินชดเชยและ PVD สุทธิ',
+    value: Math.round(currentNetPayout),
+    timestamp: Date.now(),
+  };
+  try {
+    localStorage.setItem('moneySuperapp.pendingLumpSum', JSON.stringify(lump));
+  } catch (e) {}
+  if (window.parent && typeof window.parent.switchToTab === 'function') {
+    window.parent.switchToTab('remaining-money');
+  } else {
+    window.parent.postMessage({ action: 'switchToTab', target: 'remaining-money' }, '*');
+  }
+}
+
+function reset() {
+  currentNetPayout = 0;
+  inputIds.forEach((id) => {
+    document.getElementById(id).value = '';
+  });
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (e) {}
+  document.getElementById('results').classList.remove('show');
+  const rmfOptEl = document.getElementById('rmf-optimizer-card');
+  if (rmfOptEl) rmfOptEl.style.display = 'none';
+  document.getElementById('errorMsg').style.display = 'none';
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (typeof data.activeTab === 'number' && data.activeTab >= 0 && data.activeTab <= 2) {
+      setTab(data.activeTab);
+    }
+    inputIds.forEach((id) => {
+      if (data[id] !== undefined && data[id] !== '') {
+        document.getElementById(id).value = data[id];
+      }
+    });
+    if (parseFloat(document.getElementById('years').value) > 0) {
+      calculate();
+    }
+  } catch (e) {}
+}
+
+inputIds.forEach((id) => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.addEventListener('input', () => saveState());
+    el.addEventListener('change', () => saveState());
+  }
+});
+
+document.getElementById('years').addEventListener('input', (e) => {
+  const yrs = parseFloat(e.target.value);
+  if (!isNaN(yrs) && yrs > 0) {
+    syncBracketFromYears(yrs);
+  }
+});
+
+// Restore state if available
+loadState();
