@@ -1,4 +1,4 @@
-const CACHE_NAME = 'money-superapp-v1.9.7';
+const CACHE_NAME = 'money-superapp-v1.9.8';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -10,6 +10,7 @@ const ASSETS_TO_CACHE = [
   './remaining-money.html',
   './debt-calculator.html',
   './js/shared.js',
+  './js/remaining-money.js',
   './css/tailwind-lite.css',
   './css/theme.css',
   './manifest.json',
