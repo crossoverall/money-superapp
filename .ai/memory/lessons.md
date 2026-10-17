@@ -15,6 +15,36 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-17: Cross-Tool Integration Bridges & Unit Testing Verification (v2.3.7)
+
+- **Date & Context:** 2026-10-17, during implementation of cross-tool storage contracts and automated integration test suites (`v2.3.7`).
+- **Problem:** Cross-calculator bridges relied on localStorage conventions (`moneySuperapp.pendingBudget`, `pendingSlipImport`, `pendingLumpSum`, `taxBase`, `debtCalculator.state.v1`, `taxCalendar.state.v1`) that could silently drift between releases without build-time integration verification.
+- **Root Cause:** Unit tests evaluated math helper functions in isolation rather than end-to-end data serialization and deserialization across producer and consumer modules.
+- **Solution & Rule:**
+  1. Create `tests/integration-bridges.test.mjs` executing simulated producer/consumer contracts using Node's native test runner (`node:test`).
+  2. Test both happy-path transfers and corrupt/unparseable payload recovery to ensure calculators never crash when encountering malformed state.
+  3. Adhere to Biome rules: use `Object.hasOwn(obj, prop)` instead of `Object.prototype.hasOwnProperty.call`, and avoid returning values in `.forEach()` loops.
+
+### 2026-10-17: Accessibility ARIA Landmarks & WCAG Contrast Calibration (v2.3.6)
+
+- **Date & Context:** 2026-10-17, during accessibility audit and color token calibration (`v2.3.6`).
+- **Problem:** Sub-pages (`rebalance.html` and `months-slips.html`) lacked explicit ARIA landmark roles (`role="main"`, `role="region"`, `aria-label`), while the muted ink token `--ink-faint` had a 3.8:1 contrast ratio against `--paper`, failing WCAG 2.1 AA requirements (minimum 4.5:1).
+- **Root Cause:** Legacy CSS used softer sage/gray tones (`#7A8E85`) optimized visually on desktop OLEDs but lacking sufficient photometric contrast for low-vision accessibility.
+- **Solution & Rule:**
+  1. Recalibrate `--ink-faint` in `css/theme.css`: light mode `#5E7169` (5.12:1) and dark mode `#7F968B` (5.52:1), both passing WCAG AA.
+  2. Verify all modal dialogs declare `role="dialog"` or `aria-modal="true"`.
+  3. Validate semantic ARIA structure via automated smoke test assertions in `tests/smoke.test.mjs`.
+
+### 2026-10-17: Thai Statutory Tax Calendar & Deadline Compliance Tracker (v2.3.5)
+
+- **Date & Context:** 2026-10-17, during integration of statutory tax deadline calculation in `js/shared.js`, `tax-calculator-base.html`, and `dashboard.html` (`v2.3.5`).
+- **Problem:** Users frequently miss statutory filing deadlines (ภ.ง.ด.90/91 e-filing cutoff of April 8 vs paper filing cutoff of March 31, ภ.ง.ด.94 mid-year installment on Oct 8, and year-end deduction investment windows on Dec 31).
+- **Root Cause:** Financial calculations were static and lacked dynamic time-awareness or proactive deadline countdowns.
+- **Solution & Rule:**
+  1. Provide `MoneyApp.calculateThaiTaxDeadlines(now)` in `js/shared.js` calculating days remaining, elapsed status, and urgent badges ($\le 14$ days, $\le 30$ days).
+  2. Synchronize interactive compliance checklists across tools via `moneySuperapp.taxCalendar.state.v1`.
+  3. Export structured calendar events with bilingual descriptions and official Revenue Department e-filing links.
+
 ### 2026-10-17: Script Modularization & Decomposition (v2.2.6)
 
 - **Date & Context:** 2026-10-17, during modularization of inline scripts in `debt-calculator.html` and `dashboard.html` (`v2.2.6`).
