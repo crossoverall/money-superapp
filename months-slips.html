@@ -972,9 +972,9 @@
                                     <div class="mt-2 p-2 bg-white/80 dark:bg-slate-900/80 rounded border border-rose-200 dark:border-rose-800 text-[11px]">
                                         💳 <strong>${isEN ? '3-Month Interest-Free Installment Option:' : 'สิทธิเลือกผ่อนชำระ 3 งวด (ดอกเบี้ย 0%):'}</strong>
                                         <div class="grid grid-cols-3 gap-2 mt-1 text-center font-semibold">
-                                            <div class="p-1 bg-amber-50 dark:bg-amber-950/50 rounded border border-amber-200 dark:border-amber-800">งวด 1: ${fmt(installmentAmt)} ${curUnit}<div class="text-[9.5px] font-normal text-gray-500">${isEN ? 'By Apr 8' : 'ภายใน 8 เม.ย.'}</div></div>
-                                            <div class="p-1 bg-amber-50 dark:bg-amber-950/50 rounded border border-amber-200 dark:border-amber-800">งวด 2: ${fmt(installmentAmt)} ${curUnit}<div class="text-[9.5px] font-normal text-gray-500">${isEN ? 'By May 8' : 'ภายใน 8 พ.ค.'}</div></div>
-                                            <div class="p-1 bg-amber-50 dark:bg-amber-950/50 rounded border border-amber-200 dark:border-amber-800">งวด 3: ${fmt(absDelta - installmentAmt * 2)} ${curUnit}<div class="text-[9.5px] font-normal text-gray-500">${isEN ? 'By Jun 8' : 'ภายใน 8 มิ.ย.'}</div></div>
+                                            <div class="p-1 bg-amber-50 dark:bg-amber-950/50 rounded border border-amber-200 dark:border-amber-800">${isEN ? 'Inst 1:' : 'งวด 1:'} ${fmt(installmentAmt)} ${curUnit}<div class="text-[9.5px] font-normal text-gray-500">${isEN ? 'By Apr 8' : 'ภายใน 8 เม.ย.'}</div></div>
+                                            <div class="p-1 bg-amber-50 dark:bg-amber-950/50 rounded border border-amber-200 dark:border-amber-800">${isEN ? 'Inst 2:' : 'งวด 2:'} ${fmt(installmentAmt)} ${curUnit}<div class="text-[9.5px] font-normal text-gray-500">${isEN ? 'By May 8' : 'ภายใน 8 พ.ค.'}</div></div>
+                                            <div class="p-1 bg-amber-50 dark:bg-amber-950/50 rounded border border-amber-200 dark:border-amber-800">${isEN ? 'Inst 3:' : 'งวด 3:'} ${fmt(absDelta - installmentAmt * 2)} ${curUnit}<div class="text-[9.5px] font-normal text-gray-500">${isEN ? 'By Jun 8' : 'ภายใน 8 มิ.ย.'}</div></div>
                                         </div>
                                     </div>
                                 ` : ''}

@@ -516,7 +516,7 @@
                         <span>📊</span> <span>เปรียบเทียบ Scenario A (ปัจจุบัน) vs Scenario B (เปรียบเทียบ)</span>
                     </span>
                     <button type="button" onclick="copyCurrentToScenarioB()" class="py-1 px-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded text-[11px] transition-all">
-                        📋 คัดลอกค่าปัจจุบันไป B
+                        <span id="lbl-copy-curr-b">📋 คัดลอกค่าปัจจุบันไป B</span>
                     </button>
                 </div>
 
@@ -790,6 +790,12 @@
                 'lbl-card-withheld-tax': 'Withheld (50 Tawi):',
                 'print-lbl-withheld': 'Tax Withheld to Date (50 Tawi): ',
                 'print-lbl-netbalance': 'Net Return Balance: ',
+                'lbl-toggle-scenario': '⚖️ Tax Scenario Comparator & Inflation Stress-Tester (Bracket Creep)',
+                'lbl-compare-header': '📊 Scenario A (Current) vs Scenario B (Comparison)',
+                'lbl-copy-curr-b': '📋 Copy Current to B',
+                'lbl-scen-income': 'Scenario B Gross Income (THB/yr):',
+                'lbl-scen-ded': 'Scenario B Other Deductions (THB/yr):',
+                'lbl-scen-infl': 'Annual Inflation Rate (%):'
             };
             Object.keys(EN).forEach(id => {
                 const el = document.getElementById(id);
@@ -817,7 +823,10 @@
                 yearlyBonus: 'e.g. 50000',
                 yearlyPvd: 'e.g. 30000 (0 if none)',
                 yearlySso: 'e.g. 9000 (0 if freelance/uninsured)',
-                withheldTax: 'e.g. 25000'
+                withheldTax: 'e.g. 25000',
+                scenIncome: 'e.g. 600000',
+                scenDeductions: 'e.g. 100000',
+                scenInflation: 'e.g. 4'
             };
             Object.keys(placeholders).forEach(id => {
                 const el = document.getElementById(id);

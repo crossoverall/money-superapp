@@ -533,7 +533,8 @@
             refinanceTermLabel: 'ระยะเวลาผ่อน (เดือน)',
             refinancePmtLabel: 'ค่างวดใหม่/เดือน',
             refinanceSavedLabel: 'ประหยัดดอกเบี้ย',
-            refinanceReliefLabel: 'ภาระผ่อน/เดือน'
+            refinanceReliefLabel: 'ภาระผ่อน/เดือน',
+            milestoneRoadTitle: '🛣️ แผนที่สู่เสรีภาพทางการเงิน (Payoff Milestone Road)'
         },
                 en: {
             title: 'Debt Payoff Calculator',
@@ -598,7 +599,8 @@
             refinanceTermLabel: 'Loan Term (Months)',
             refinancePmtLabel: 'New Payment / Mo',
             refinanceSavedLabel: 'Interest Saved',
-            refinanceReliefLabel: 'Monthly Cash Flow'
+            refinanceReliefLabel: 'Monthly Cash Flow',
+            milestoneRoadTitle: '🛣️ Payoff Milestone Road & Financial Freedom'
         }
     };
 
@@ -659,7 +661,8 @@
             'lbl-refinance-term': t.refinanceTermLabel,
             'lbl-refinance-pmt': t.refinancePmtLabel,
             'lbl-refinance-interest-saved': t.refinanceSavedLabel,
-            'lbl-refinance-cashflow-relief': t.refinanceReliefLabel
+            'lbl-refinance-cashflow-relief': t.refinanceReliefLabel,
+            'lbl-milestone-road-title': t.milestoneRoadTitle
         };
         for (let id in map) {
             const el = document.getElementById(id);
@@ -1225,9 +1228,9 @@
                     <span style="color:#059669; font-weight:700;">${isEn ? 'Total Saved:' : 'ประหยัดดอกเบี้ยสะสม:'} ${formatMoney(interestSaved)} ${unit}</span>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px; font-size:10.5px; color:var(--ink-dim);">
-                    <span>${isEn ? 'Start:' : 'เดือนแรก:'} <b style="color:var(--danger);">${formatMoney(initialMonthlyInterest)} ${unit}/ด.</b></span>
+                    <span>${isEn ? 'Start:' : 'เดือนแรก:'} <b style="color:var(--danger);">${formatMoney(initialMonthlyInterest)} ${unit}${isEn ? '/mo' : '/ด.'}</b></span>
                     <span>→</span>
-                    <span>${isEn ? 'Final Month:' : 'เดือนสุดท้าย:'} <b style="color:var(--ok);">0 ${unit} (เสรีภาพ 🎉)</b></span>
+                    <span>${isEn ? 'Final Month:' : 'เดือนสุดท้าย:'} <b style="color:var(--ok);">0 ${unit} ${isEn ? '(Freedom 🎉)' : '(เสรีภาพ 🎉)'}</b></span>
                 </div>
             `;
         }

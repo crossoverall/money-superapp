@@ -33,6 +33,7 @@ const EN = {
   btnCancelModal: 'Cancel',
   btnSaveModal: 'Save',
   lblUndo: 'Undo',
+  lblDivTitle: '🌐 Asset Class Correlation & Risk Diversification',
 };
 if (LANG === 'en') {
   document.title = 'Monthly Top-up Calculator';
@@ -64,6 +65,7 @@ if (LANG === 'en') {
     'btnTestApi',
     'btnCancelModal',
     'btnSaveModal',
+    'lblDivTitle',
   ].forEach((id) => {
     const el = document.getElementById(id);
     if (el && EN[id]) el.textContent = EN[id];
