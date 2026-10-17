@@ -841,4 +841,197 @@ describe('Financial Math Verification', () => {
       assert.equal(freshReport.corruptedCount, 0);
     });
   });
+
+  describe('Net Worth Trend Chart Coordinate Mapping & Growth Metrics', () => {
+    function calculateGrowthMetrics(snapshots, mode = 'networth') {
+      if (!snapshots || snapshots.length === 0) {
+        return { firstVal: 0, lastVal: 0, totalDelta: 0, totalPct: 0, momDelta: 0, momPct: 0, count: 0 };
+      }
+
+      const values = snapshots.map((s) => {
+        if (mode === 'savings') return s.savingsRate || 0;
+        if (mode === 'emergency') return s.emergencyReserve || 0;
+        if (mode === 'debt') return s.totalDebt || 0;
+        return s.netWorth || 0;
+      });
+
+      const firstVal = values[0];
+      const lastVal = values[values.length - 1];
+      const totalDelta = lastVal - firstVal;
+      const totalPct = firstVal !== 0 ? parseFloat(((totalDelta / Math.abs(firstVal)) * 100).toFixed(1)) : 0;
+
+      let momDelta = 0;
+      let momPct = 0;
+      if (values.length >= 2) {
+        const prevVal = values[values.length - 2];
+        momDelta = lastVal - prevVal;
+        momPct = prevVal !== 0 ? parseFloat(((momDelta / Math.abs(prevVal)) * 100).toFixed(1)) : 0;
+      }
+
+      return {
+        firstVal,
+        lastVal,
+        totalDelta,
+        totalPct,
+        momDelta,
+        momPct,
+        count: values.length,
+      };
+    }
+
+    function buildSmoothSvgPath(points) {
+      if (!points || points.length === 0) return '';
+      if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+      if (points.length === 2) return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
+
+      let path = `M ${points[0].x} ${points[0].y}`;
+      for (let i = 0; i < points.length - 1; i++) {
+        const p0 = points[i === 0 ? i : i - 1];
+        const p1 = points[i];
+        const p2 = points[i + 1];
+        const p3 = points[i + 2] || p2;
+
+        const cp1x = p1.x + (p2.x - p0.x) / 6;
+        const cp1y = p1.y + (p2.y - p0.y) / 6;
+        const cp2x = p2.x - (p3.x - p1.x) / 6;
+        const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+        path += ` C ${Math.round(cp1x * 10) / 10} ${Math.round(cp1y * 10) / 10}, ${Math.round(cp2x * 10) / 10} ${Math.round(cp2y * 10) / 10}, ${p2.x} ${p2.y}`;
+      }
+      return path;
+    }
+
+    function calculateChartCoordinates(snapshots, mode = 'networth', width = 600, height = 220) {
+      const padding = { top: 25, right: 30, bottom: 35, left: 65 };
+      const plotWidth = width - padding.left - padding.right;
+      const plotHeight = height - padding.top - padding.bottom;
+
+      const values = snapshots.map((s) => {
+        if (mode === 'savings') return s.savingsRate || 0;
+        if (mode === 'emergency') return s.emergencyReserve || 0;
+        if (mode === 'debt') return s.totalDebt || 0;
+        return s.netWorth || 0;
+      });
+
+      let minVal = Math.min(...values);
+      let maxVal = Math.max(...values);
+      if (minVal === maxVal) {
+        minVal = Math.max(0, minVal * 0.8);
+        maxVal = maxVal * 1.2 || 100;
+      }
+      const range = maxVal - minVal || 1;
+
+      return snapshots.map((s, idx) => {
+        const x = padding.left + (snapshots.length === 1 ? plotWidth / 2 : (idx / (snapshots.length - 1)) * plotWidth);
+        const y = padding.top + plotHeight - ((values[idx] - minVal) / range) * plotHeight;
+        return {
+          x: Math.round(x * 10) / 10,
+          y: Math.round(y * 10) / 10,
+          val: values[idx],
+          date: s.date,
+        };
+      });
+    }
+
+    it('returns zeroed growth metrics for empty or missing snapshots', () => {
+      const empty = calculateGrowthMetrics([]);
+      assert.equal(empty.count, 0);
+      assert.equal(empty.totalDelta, 0);
+      assert.equal(empty.totalPct, 0);
+      assert.equal(empty.momDelta, 0);
+      assert.equal(empty.momPct, 0);
+
+      const nil = calculateGrowthMetrics(null);
+      assert.equal(nil.count, 0);
+    });
+
+    it('calculates total growth and MoM deltas correctly for multiple snapshots', () => {
+      const sampleSnapshots = [
+        { date: '2026-01-15', netWorth: 1000000, savingsRate: 20, emergencyReserve: 150000, totalDebt: 500000 },
+        { date: '2026-02-15', netWorth: 1100000, savingsRate: 25, emergencyReserve: 180000, totalDebt: 450000 },
+        { date: '2026-03-15', netWorth: 1300000, savingsRate: 30, emergencyReserve: 210000, totalDebt: 380000 },
+      ];
+
+      // Net worth mode
+      const nw = calculateGrowthMetrics(sampleSnapshots, 'networth');
+      assert.equal(nw.count, 3);
+      assert.equal(nw.firstVal, 1000000);
+      assert.equal(nw.lastVal, 1300000);
+      assert.equal(nw.totalDelta, 300000);
+      assert.equal(nw.totalPct, 30.0);
+      assert.equal(nw.momDelta, 200000);
+      assert.equal(nw.momPct, 18.2);
+
+      // Debt reduction mode (reduction is negative delta)
+      const debt = calculateGrowthMetrics(sampleSnapshots, 'debt');
+      assert.equal(debt.firstVal, 500000);
+      assert.equal(debt.lastVal, 380000);
+      assert.equal(debt.totalDelta, -120000);
+      assert.equal(debt.totalPct, -24.0);
+      assert.equal(debt.momDelta, -70000);
+      assert.equal(debt.momPct, -15.6);
+
+      // Verify debt financial progress polarity: debt reduction is good
+      const isGoodDebt = debt.totalDelta <= 0;
+      assert.equal(isGoodDebt, true);
+    });
+
+    it('handles single snapshot edge-case without NaN or division by zero', () => {
+      const single = [{ date: '2026-01-01', netWorth: 500000 }];
+      const res = calculateGrowthMetrics(single, 'networth');
+      assert.equal(res.count, 1);
+      assert.equal(res.totalDelta, 0);
+      assert.equal(res.totalPct, 0);
+      assert.equal(res.momDelta, 0);
+      assert.equal(res.momPct, 0);
+
+      // Coordinate mapping for single snapshot centers point
+      const coords = calculateChartCoordinates(single, 'networth', 600, 220);
+      assert.equal(coords.length, 1);
+      // plotWidth = 600 - 65 - 30 = 505. centerX = 65 + 505/2 = 317.5
+      assert.equal(coords[0].x, 317.5);
+    });
+
+    it('generates SVG paths correctly for 0, 1, 2, and 3+ points using Catmull-Rom cubic Bezier', () => {
+      assert.equal(buildSmoothSvgPath([]), '');
+      assert.equal(buildSmoothSvgPath([{ x: 50, y: 100 }]), 'M 50 100');
+      assert.equal(
+        buildSmoothSvgPath([
+          { x: 50, y: 100 },
+          { x: 150, y: 80 },
+        ]),
+        'M 50 100 L 150 80',
+      );
+
+      const threePoints = [
+        { x: 50, y: 100 },
+        { x: 150, y: 50 },
+        { x: 250, y: 120 },
+      ];
+      const splinePath = buildSmoothSvgPath(threePoints);
+      assert.ok(splinePath.startsWith('M 50 100'));
+      assert.ok(splinePath.includes(' C '));
+      // Contains coordinates ending at the final point
+      assert.ok(splinePath.endsWith(' 250 120'));
+    });
+
+    it('scales coordinates safely within chart viewBox even when all values are equal', () => {
+      const flatSnapshots = [
+        { date: '2026-01-01', netWorth: 200000 },
+        { date: '2026-02-01', netWorth: 200000 },
+        { date: '2026-03-01', netWorth: 200000 },
+      ];
+      const coords = calculateChartCoordinates(flatSnapshots, 'networth', 600, 220);
+      assert.equal(coords.length, 3);
+      coords.forEach((pt) => {
+        assert.ok(!Number.isNaN(pt.x));
+        assert.ok(!Number.isNaN(pt.y));
+        assert.ok(pt.x >= 65 && pt.x <= 600 - 30);
+        assert.ok(pt.y >= 25 && pt.y <= 220 - 35);
+      });
+      // Start is at leftmost padding (65), end is at rightmost boundary (570)
+      assert.equal(coords[0].x, 65);
+      assert.equal(coords[2].x, 570);
+    });
+  });
 });
