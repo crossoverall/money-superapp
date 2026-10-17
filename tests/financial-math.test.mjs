@@ -3119,4 +3119,174 @@ describe('Financial Math Verification', () => {
       assert.equal(zeroExp.tier, 'unspecified');
     });
   });
+
+  describe('Debt Consolidation & Refinance Interest Savings Engine', () => {
+    function calculateDebtConsolidation({
+      debts = [],
+      currentTotalInterest = 0,
+      currentTotalMinPayment = 0,
+      refinanceRate = 9.9,
+      refinanceTermMonths = 36,
+    } = {}) {
+      const validDebts = (debts || [])
+        .map((d) => ({
+          balance: Math.max(0, Number(d.balance) || 0),
+          rate: Math.max(0, Number(d.rate) || 0),
+          minPayment: Math.max(0, Number(d.minPayment) || 0),
+        }))
+        .filter((d) => d.balance > 0);
+
+      const totalBalance = validDebts.reduce((sum, d) => sum + d.balance, 0);
+      const totalMin =
+        currentTotalMinPayment > 0 ? currentTotalMinPayment : validDebts.reduce((sum, d) => sum + d.minPayment, 0);
+
+      if (totalBalance <= 0) {
+        return {
+          totalBalance: 0,
+          weightedRate: 0,
+          newMonthlyPayment: 0,
+          totalRefinanceInterest: 0,
+          totalRefinancePaid: 0,
+          interestSaved: 0,
+          monthlyPaymentDiff: 0,
+          verdict: 'no_debt',
+        };
+      }
+
+      const weightedRate = validDebts.reduce((sum, d) => sum + d.balance * d.rate, 0) / totalBalance;
+
+      const n = Math.max(1, Math.floor(Number(refinanceTermMonths) || 36));
+      const annualR = Math.max(0, Number(refinanceRate) || 0);
+      const monthlyR = annualR / 100 / 12;
+
+      let pmt = 0;
+      if (monthlyR > 0) {
+        pmt = (totalBalance * monthlyR) / (1 - Math.pow(1 + monthlyR, -n));
+      } else {
+        pmt = totalBalance / n;
+      }
+
+      const totalRefinancePaid = pmt * n;
+      const totalRefinanceInterest = Math.max(0, totalRefinancePaid - totalBalance);
+      const interestSaved = Math.round(currentTotalInterest - totalRefinanceInterest);
+      const monthlyPaymentDiff = Math.round(totalMin - pmt);
+
+      let verdict = 'optimal';
+      if (interestSaved <= 0) {
+        verdict = 'higher_interest';
+      } else if (monthlyPaymentDiff < 0) {
+        verdict = 'faster_payoff';
+      }
+
+      return {
+        totalBalance: Math.round(totalBalance),
+        weightedRate: parseFloat(weightedRate.toFixed(2)),
+        refinanceRate: annualR,
+        refinanceTermMonths: n,
+        newMonthlyPayment: Math.round(pmt),
+        totalRefinanceInterest: Math.round(totalRefinanceInterest),
+        totalRefinancePaid: Math.round(totalRefinancePaid),
+        interestSaved,
+        monthlyPaymentDiff,
+        verdict,
+      };
+    }
+
+    it('calculates weighted average interest rate accurately across multiple debts', () => {
+      const debts = [
+        { balance: 50000, rate: 16, minPayment: 2500 },
+        { balance: 150000, rate: 20, minPayment: 6000 },
+      ];
+      const res = calculateDebtConsolidation({
+        debts,
+        currentTotalInterest: 45000,
+        refinanceRate: 9.9,
+        refinanceTermMonths: 36,
+      });
+
+      assert.equal(res.totalBalance, 200000);
+      assert.equal(res.weightedRate, 19.0);
+    });
+
+    it('computes monthly payment, interest savings, and optimal verdict for refinance loan', () => {
+      const debts = [
+        { balance: 50000, rate: 16, minPayment: 2500 },
+        { balance: 150000, rate: 20, minPayment: 6000 },
+      ];
+      // 36 months at 9.9% APR
+      const res = calculateDebtConsolidation({
+        debts,
+        currentTotalInterest: 50000,
+        currentTotalMinPayment: 8500,
+        refinanceRate: 9.9,
+        refinanceTermMonths: 36,
+      });
+
+      // PMT ~ 6,445 THB
+      assert.ok(res.newMonthlyPayment >= 6440 && res.newMonthlyPayment <= 6450);
+      // Monthly savings: 8,500 - 6,445 ~ 2,055 THB
+      assert.ok(res.monthlyPaymentDiff >= 2050 && res.monthlyPaymentDiff <= 2060);
+      // Total interest: ~32,000 THB vs 50,000 THB = ~18,000 saved
+      assert.ok(res.interestSaved >= 17900 && res.interestSaved <= 18100);
+      assert.equal(res.verdict, 'optimal');
+    });
+
+    it('identifies faster-payoff verdict when higher monthly payment is required for shorter term', () => {
+      const debts = [
+        { balance: 50000, rate: 16, minPayment: 2500 },
+        { balance: 150000, rate: 20, minPayment: 6000 },
+      ];
+      // 12 months at 9.9% APR (requires ~17,500/mo vs current 8,500 min)
+      const res = calculateDebtConsolidation({
+        debts,
+        currentTotalInterest: 50000,
+        currentTotalMinPayment: 8500,
+        refinanceRate: 9.9,
+        refinanceTermMonths: 12,
+      });
+
+      assert.ok(res.newMonthlyPayment > 17000);
+      assert.ok(res.monthlyPaymentDiff < 0);
+      assert.ok(res.interestSaved > 35000);
+      assert.equal(res.verdict, 'faster_payoff');
+    });
+
+    it('identifies higher_interest warning when loan term is excessively stretched', () => {
+      const debts = [{ balance: 100000, rate: 16, minPayment: 5000 }];
+      // If current remaining interest under aggressive strategy is only 5,000 THB,
+      // but refinancing at 10% for 60 months accrues ~27,482 THB interest:
+      const res = calculateDebtConsolidation({
+        debts,
+        currentTotalInterest: 5000,
+        currentTotalMinPayment: 5000,
+        refinanceRate: 10.0,
+        refinanceTermMonths: 60,
+      });
+
+      assert.ok(res.totalRefinanceInterest > 25000);
+      assert.ok(res.interestSaved < 0);
+      assert.equal(res.verdict, 'higher_interest');
+    });
+
+    it('handles zero balance or 0% interest promotion edge cases safely without NaN', () => {
+      const zeroDebt = calculateDebtConsolidation({
+        debts: [],
+        currentTotalInterest: 0,
+      });
+      assert.equal(zeroDebt.totalBalance, 0);
+      assert.equal(zeroDebt.verdict, 'no_debt');
+
+      const zeroRate = calculateDebtConsolidation({
+        debts: [{ balance: 120000, rate: 18, minPayment: 5000 }],
+        currentTotalInterest: 20000,
+        currentTotalMinPayment: 5000,
+        refinanceRate: 0,
+        refinanceTermMonths: 24,
+      });
+      assert.equal(zeroRate.newMonthlyPayment, 5000);
+      assert.equal(zeroRate.totalRefinanceInterest, 0);
+      assert.equal(zeroRate.interestSaved, 20000);
+      assert.equal(zeroRate.verdict, 'optimal');
+    });
+  });
 });

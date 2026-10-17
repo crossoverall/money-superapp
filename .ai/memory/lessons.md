@@ -479,3 +479,21 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
   5. Added 4 automated unit tests in `tests/financial-math.test.mjs` verifying classification accuracy, balanced/unbalanced states, SVG arc math, and runway safety tiers.
 - **Rule:** When auto-classifying natural language expenses into financial planning categories (Needs vs. Wants), prioritize specific discretionary/entertainment keywords before broad basic-need keywords, and construct multi-segment SVG donuts with negative cumulative stroke offsets to ensure seamless circular arcs without external libraries.
 
+### 2026-10-17: Interactive Debt Consolidation & Refinance Interest Savings Engine
+
+- **Date & Context:** 2026-10-17, implementing Interactive Debt Consolidation & Refinance Simulator in `debt-calculator.html` (`v2.1.3`).
+- **Problem:**
+  1. Borrowers managing multiple debts (such as credit cards at 16% and personal loans at 18–25%) lack clarity on their true blended APR ($\bar{r} = \sum B_i r_i / \sum B_i$) and often struggle to evaluate whether refinancing into a single consolidated personal/installment loan saves money.
+  2. Simply comparing interest rates can mislead borrowers: refinancing to a lower APR (e.g., 9.9% vs 18%) but stretching the amortization term excessively (e.g., to 60 months) can paradoxically increase the *total interest paid* over the life of the loan.
+  3. Borrowers need immediate visibility into two distinct financial dimensions: long-term total interest savings ($\Delta I$) and short-term monthly cash flow relief ($\Delta PMT$).
+- **Resolution:**
+  1. Built `calculateDebtConsolidation()` engine computing combined debt balance, weighted average baseline APR, monthly installment $PMT$ via standard amortization formula $PMT = \frac{B \cdot (r/12)}{1 - (1 + r/12)^{-n}}$, total refinance interest, and net savings deltas.
+  2. Implemented intelligent multi-tier financial verdicts:
+     - `optimal`: Both saves total interest ($\Delta I > 0$) and lowers monthly payment ($\Delta PMT \ge 0$).
+     - `faster_payoff`: Saves substantial interest ($\Delta I > 0$) by paying slightly more each month ($\Delta PMT < 0$) over a compressed timeline.
+     - `higher_interest`: Warns when stretching the loan term results in higher total interest despite a lower nominal rate.
+  3. Integrated dedicated UI panel in `debt-calculator.html` with toggle switch, weighted APR readout, quick-select term pills (12m, 24m, 36m, 48m, 60m), real-time comparison cards, and full undo stack integration (`Ctrl+Z`).
+  4. Added 5 comprehensive automated unit tests in `tests/financial-math.test.mjs` verifying weighted rate math, amortization payments, monthly cash flow differences, and term-stretching warnings.
+- **Rule:** When modeling debt consolidation loans, always evaluate both total lifetime interest savings ($\Delta I$) and monthly cash flow delta ($\Delta PMT$), and provide an explicit warning badge if an extended repayment duration inflates total interest despite a lower headline interest rate.
+
+

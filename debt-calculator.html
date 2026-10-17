@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.1.2">
+  <meta name="version" content="2.1.3">
   <title>วางแผนปลดหนี้ (Debt Payoff)</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -342,6 +342,60 @@
     </div>
   </div>
 
+  <!-- Debt Consolidation & Refinance Simulator -->
+  <div class="panel" id="panelDebtRefinance">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <div class="panel-title" style="margin-bottom:0;" id="lbl-refinance-title">🔄 จำลองรวมหนี้ &amp; รีไฟแนนซ์ (Refinance Simulator)</div>
+      <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; font-weight:600; color:var(--ink);">
+        <input type="checkbox" id="chkEnableRefinance" onchange="onToggleRefinance(this.checked)" style="cursor:pointer;">
+        <span id="lbl-enable-refinance">เปิดใช้งาน</span>
+      </label>
+    </div>
+    
+    <div id="refinanceInputsContainer" style="display:none; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:12px; margin-top:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:4px 8px; background:var(--panel); border:1px solid var(--line); border-radius:6px; margin-bottom:10px;">
+        <span style="color:var(--ink-faint);" id="lbl-current-rate-refinance">อัตราดอกเบี้ยเดิมเฉลี่ย:</span>
+        <b style="color:var(--warn);" id="valCurrentWeightedRate">0.0%</b>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div>
+          <label for="txtRefinanceRate" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-refinance-rate">ดอกเบี้ยใหม่ (% ต่อปี)</label>
+          <input type="number" id="txtRefinanceRate" value="9.9" min="0" max="36" step="0.1" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onRefinanceChange()">
+        </div>
+        <div>
+          <label for="txtRefinanceTerm" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-refinance-term">ระยะเวลาผ่อน (เดือน)</label>
+          <input type="number" id="txtRefinanceTerm" value="36" min="1" max="120" step="1" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onRefinanceChange()">
+        </div>
+      </div>
+
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;">
+        <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(12)">12 ด. (1 ปี)</button>
+        <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(24)">24 ด. (2 ปี)</button>
+        <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(36)">36 ด. (3 ปี)</button>
+        <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(48)">48 ด. (4 ปี)</button>
+        <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(60)">60 ด. (5 ปี)</button>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; margin-top:12px;">
+        <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
+          <div style="font-size:10px; color:var(--ink-faint);" id="lbl-refinance-pmt">ค่างวดใหม่/เดือน</div>
+          <div style="font-size:13px; font-weight:700; color:var(--ink); margin-top:2px;" id="valRefinancePmt">0</div>
+        </div>
+        <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
+          <div style="font-size:10px; color:var(--ink-faint);" id="lbl-refinance-interest-saved">ประหยัดดอกเบี้ย</div>
+          <div style="font-size:13px; font-weight:700; color:var(--ok); margin-top:2px;" id="valRefinanceInterestSaved">0</div>
+        </div>
+        <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
+          <div style="font-size:10px; color:var(--ink-faint);" id="lbl-refinance-cashflow-relief">ภาระผ่อน/เดือน</div>
+          <div style="font-size:13px; font-weight:700; margin-top:2px;" id="valRefinanceCashflowRelief">0</div>
+        </div>
+      </div>
+
+      <div id="refinanceVerdictBadge" style="margin-top:10px; padding:8px 10px; border-radius:8px; font-size:11px; font-weight:600; line-height:1.4;"></div>
+    </div>
+  </div>
+
   <div class="panel" id="debtChartPanel">
     <div class="panel-title" id="lbl-chart-title">กราฟการลดลงของหนี้สิน (Payoff Trajectory)</div>
     <div id="debtStrategyDeltaBadge" style="display:none; margin-bottom:12px; padding:8px 12px; border-radius:10px; font-size:12px; line-height:1.4; background:var(--panel-2); border:1px solid var(--line); color:var(--ink);"></div>
@@ -399,7 +453,7 @@
     <span id="saveStatus">&nbsp;</span>
     <button class="reset-btn" id="btn-reset-debts" onclick="resetDefaults()">รีเซ็ตค่าเริ่มต้น</button>
   </div>
-  <p class="version-tag">v2.1.2</p>
+  <p class="version-tag">v2.1.3</p>
 
 <script src="js/shared.js"></script>
 <script>
@@ -459,7 +513,15 @@
             enableWindfall: 'เปิดใช้งาน',
             windfallAmt: 'จำนวนเงินก้อน (บาท)',
             windfallMonth: 'โปะในเดือนที่',
-            legWindfall: 'โปะเงินก้อน (Windfall)'
+            legWindfall: 'โปะเงินก้อน (Windfall)',
+            refinanceTitle: '🔄 จำลองรวมหนี้ & รีไฟแนนซ์ (Refinance Simulator)',
+            enableRefinance: 'เปิดใช้งาน',
+            currentRateRefinance: 'อัตราดอกเบี้ยเดิมเฉลี่ย:',
+            refinanceRateLabel: 'ดอกเบี้ยใหม่ (% ต่อปี)',
+            refinanceTermLabel: 'ระยะเวลาผ่อน (เดือน)',
+            refinancePmtLabel: 'ค่างวดใหม่/เดือน',
+            refinanceSavedLabel: 'ประหยัดดอกเบี้ย',
+            refinanceReliefLabel: 'ภาระผ่อน/เดือน'
         },
                 en: {
             title: 'Debt Payoff Calculator',
@@ -516,7 +578,15 @@
             enableWindfall: 'Enable',
             windfallAmt: 'Lump-Sum Amount (THB)',
             windfallMonth: 'Inject in Month #',
-            legWindfall: 'Lump-Sum (Windfall)'
+            legWindfall: 'Lump-Sum (Windfall)',
+            refinanceTitle: '🔄 Debt Consolidation & Refinance Simulator',
+            enableRefinance: 'Enable',
+            currentRateRefinance: 'Current Weighted APR:',
+            refinanceRateLabel: 'New Interest APR (%)',
+            refinanceTermLabel: 'Loan Term (Months)',
+            refinancePmtLabel: 'New Payment / Mo',
+            refinanceSavedLabel: 'Interest Saved',
+            refinanceReliefLabel: 'Monthly Cash Flow'
         }
     };
 
@@ -569,7 +639,15 @@
             'lbl-leg-snowball': t.legSnowball,
             'lbl-leg-min': t.legMinOnly,
             'lbl-leg-milestone': t.legMilestone,
-            'lbl-leg-windfall': t.legWindfall
+            'lbl-leg-windfall': t.legWindfall,
+            'lbl-refinance-title': t.refinanceTitle,
+            'lbl-enable-refinance': t.enableRefinance,
+            'lbl-current-rate-refinance': t.currentRateRefinance,
+            'lbl-refinance-rate': t.refinanceRateLabel,
+            'lbl-refinance-term': t.refinanceTermLabel,
+            'lbl-refinance-pmt': t.refinancePmtLabel,
+            'lbl-refinance-interest-saved': t.refinanceSavedLabel,
+            'lbl-refinance-cashflow-relief': t.refinanceReliefLabel
         };
         for (let id in map) {
             const el = document.getElementById(id);
@@ -585,6 +663,9 @@
         windfallEnabled: false,
         windfallAmount: 50000,
         windfallMonth: 1,
+        refinanceEnabled: false,
+        refinanceRate: 9.9,
+        refinanceTerm: 36,
         debts: [
             { id: 1, name: LANG === 'en' ? 'Credit Card A' : 'บัตรเครดิต KBank', balance: 45000, rate: 16, minPayment: 2500 },
             { id: 2, name: LANG === 'en' ? 'Personal Loan' : 'สินเชื่อส่วนบุคคล', balance: 120000, rate: 18, minPayment: 4200 },
@@ -605,6 +686,17 @@
         if (box) box.style.display = state.windfallEnabled ? 'block' : 'none';
     }
 
+    function syncRefinanceInputs() {
+        const chk = document.getElementById('chkEnableRefinance');
+        const rate = document.getElementById('txtRefinanceRate');
+        const term = document.getElementById('txtRefinanceTerm');
+        const box = document.getElementById('refinanceInputsContainer');
+        if (chk) chk.checked = Boolean(state.refinanceEnabled);
+        if (rate) rate.value = state.refinanceRate ?? 9.9;
+        if (term) term.value = state.refinanceTerm ?? 36;
+        if (box) box.style.display = state.refinanceEnabled ? 'block' : 'none';
+    }
+
     const undoMgr = MoneyApp.createUndoManager({
         maxDepth: 15,
         enableShortcuts: true,
@@ -612,6 +704,7 @@
             state = JSON.parse(JSON.stringify(previousState));
             document.getElementById('txtExtraPayment').value = state.extraPayment;
             syncWindfallInputs();
+            syncRefinanceInputs();
             renderTable();
             setStrategy(state.strategy);
             saveState();
@@ -657,6 +750,34 @@
         state.windfallMonth = m;
         saveState();
         computePayoff();
+    }
+
+    function onToggleRefinance(checked) {
+        undoMgr.push(state);
+        state.refinanceEnabled = checked;
+        syncRefinanceInputs();
+        saveState();
+        computePayoff();
+        updateUndoUI();
+    }
+
+    function onRefinanceChange() {
+        const rate = Math.max(0, Math.min(36, parseNum(document.getElementById('txtRefinanceRate').value)));
+        const term = Math.max(1, Math.min(120, parseNum(document.getElementById('txtRefinanceTerm').value)));
+        state.refinanceRate = rate;
+        state.refinanceTerm = term;
+        saveState();
+        computePayoff();
+    }
+
+    function setRefinanceTerm(term) {
+        undoMgr.push(state);
+        state.refinanceTerm = term;
+        const input = document.getElementById('txtRefinanceTerm');
+        if (input) input.value = term;
+        saveState();
+        computePayoff();
+        updateUndoUI();
     }
 
     function setWindfallPreset(amount, month) {
@@ -1010,6 +1131,161 @@
 
         updateOrderBadges();
         renderPayoffChart(simCurrent, simMinOnly, totalDebt, simAvalanche, simSnowball, windfall, simBaseline);
+        updateRefinanceVisual(totalDebt, totalMin, avgRate, simCurrent);
+    }
+
+    /**
+     * Debt Consolidation & Refinancing Calculation Engine
+     */
+    function calculateDebtConsolidation({
+        debts = [],
+        currentTotalInterest = 0,
+        currentTotalMinPayment = 0,
+        refinanceRate = 9.9,
+        refinanceTermMonths = 36
+    } = {}) {
+        const validDebts = (debts || []).map(d => ({
+            balance: Math.max(0, parseNum(d.balance)),
+            rate: Math.max(0, parseNum(d.rate)),
+            minPayment: Math.max(0, parseNum(d.minPayment))
+        })).filter(d => d.balance > 0);
+
+        const totalBalance = validDebts.reduce((sum, d) => sum + d.balance, 0);
+        const totalMin = currentTotalMinPayment > 0
+            ? currentTotalMinPayment
+            : validDebts.reduce((sum, d) => sum + d.minPayment, 0);
+
+        if (totalBalance <= 0) {
+            return {
+                totalBalance: 0,
+                weightedRate: 0,
+                refinanceRate: Math.max(0, Number(refinanceRate) || 0),
+                refinanceTermMonths: Math.max(1, Math.floor(Number(refinanceTermMonths) || 36)),
+                newMonthlyPayment: 0,
+                totalRefinanceInterest: 0,
+                totalRefinancePaid: 0,
+                interestSaved: 0,
+                monthlyPaymentDiff: 0,
+                verdict: 'no_debt'
+            };
+        }
+
+        const weightedRate = validDebts.reduce((sum, d) => sum + (d.balance * d.rate), 0) / totalBalance;
+        const n = Math.max(1, Math.floor(Number(refinanceTermMonths) || 36));
+        const annualR = Math.max(0, Number(refinanceRate) || 0);
+        const monthlyR = (annualR / 100) / 12;
+
+        let pmt = 0;
+        if (monthlyR > 0) {
+            pmt = (totalBalance * monthlyR) / (1 - Math.pow(1 + monthlyR, -n));
+        } else {
+            pmt = totalBalance / n;
+        }
+
+        const totalRefinancePaid = pmt * n;
+        const totalRefinanceInterest = Math.max(0, totalRefinancePaid - totalBalance);
+        const interestSaved = Math.round(currentTotalInterest - totalRefinanceInterest);
+        const monthlyPaymentDiff = Math.round(totalMin - pmt);
+
+        let verdict = 'optimal';
+        if (interestSaved <= 0) {
+            verdict = 'higher_interest';
+        } else if (monthlyPaymentDiff < 0) {
+            verdict = 'faster_payoff';
+        }
+
+        return {
+            totalBalance: Math.round(totalBalance),
+            weightedRate: parseFloat(weightedRate.toFixed(2)),
+            refinanceRate: annualR,
+            refinanceTermMonths: n,
+            newMonthlyPayment: Math.round(pmt),
+            totalRefinanceInterest: Math.round(totalRefinanceInterest),
+            totalRefinancePaid: Math.round(totalRefinancePaid),
+            interestSaved,
+            monthlyPaymentDiff,
+            verdict
+        };
+    }
+
+    function updateRefinanceVisual(totalDebt, totalMin, avgRate, simCurrent) {
+        if (!state.refinanceEnabled) return;
+        const debts = state.debts;
+        const curInterest = simCurrent ? simCurrent.totalInterest : 0;
+        const rRate = state.refinanceRate ?? 9.9;
+        const rTerm = state.refinanceTerm ?? 36;
+
+        const res = calculateDebtConsolidation({
+            debts,
+            currentTotalInterest: curInterest,
+            currentTotalMinPayment: totalMin,
+            refinanceRate: rRate,
+            refinanceTermMonths: rTerm
+        });
+
+        const elW = document.getElementById('valCurrentWeightedRate');
+        if (elW) elW.textContent = (avgRate || res.weightedRate || 0).toFixed(1) + '%';
+
+        const elPmt = document.getElementById('valRefinancePmt');
+        if (elPmt) elPmt.textContent = formatMoney(res.newMonthlyPayment) + ' ' + unit;
+
+        const elSaved = document.getElementById('valRefinanceInterestSaved');
+        if (elSaved) {
+            if (res.interestSaved >= 0) {
+                elSaved.textContent = '+' + formatMoney(res.interestSaved) + ' ' + unit;
+                elSaved.style.color = 'var(--ok)';
+            } else {
+                elSaved.textContent = '-' + formatMoney(Math.abs(res.interestSaved)) + ' ' + unit;
+                elSaved.style.color = 'var(--warn)';
+            }
+        }
+
+        const elRelief = document.getElementById('valRefinanceCashflowRelief');
+        if (elRelief) {
+            if (res.monthlyPaymentDiff > 0) {
+                elRelief.textContent = '-' + formatMoney(res.monthlyPaymentDiff) + (LANG === 'en' ? ' /mo' : ' /ด.');
+                elRelief.style.color = 'var(--ok)';
+                elRelief.title = LANG === 'en' ? 'Monthly payment decreases' : 'ผ่อนลดลงต่อเดือน';
+            } else if (res.monthlyPaymentDiff < 0) {
+                elRelief.textContent = '+' + formatMoney(Math.abs(res.monthlyPaymentDiff)) + (LANG === 'en' ? ' /mo' : ' /ด.');
+                elRelief.style.color = 'var(--ink)';
+                elRelief.title = LANG === 'en' ? 'Monthly payment increases for faster payoff' : 'ต้องผ่อนเพิ่มต่อเดือนเพื่อให้หมดไว';
+            } else {
+                elRelief.textContent = '0 ' + unit;
+                elRelief.style.color = 'var(--ink)';
+            }
+        }
+
+        const elBadge = document.getElementById('refinanceVerdictBadge');
+        if (elBadge) {
+            if (res.verdict === 'no_debt') {
+                elBadge.style.display = 'none';
+            } else if (res.verdict === 'optimal') {
+                elBadge.style.display = 'block';
+                elBadge.style.background = 'var(--ok-dim)';
+                elBadge.style.border = '1px solid var(--ok)';
+                elBadge.style.color = 'var(--ok)';
+                elBadge.innerHTML = LANG === 'en'
+                    ? `🎉 <strong>High Value:</strong> Consolidating saves <strong>${formatMoney(res.interestSaved)} ${unit}</strong> in interest and lowers payments by <strong>${formatMoney(res.monthlyPaymentDiff)} ${unit}/mo</strong>!`
+                    : `🎉 <strong>คุ้มค่ามาก:</strong> รวมหนี้รีไฟแนนซ์ช่วยประหยัดดอกเบี้ย <strong>${formatMoney(res.interestSaved)} ${unit}</strong> และลดภาระผ่อนลง <strong>${formatMoney(res.monthlyPaymentDiff)} ${unit}/เดือน</strong>!`;
+            } else if (res.verdict === 'faster_payoff') {
+                elBadge.style.display = 'block';
+                elBadge.style.background = 'rgba(59, 130, 246, 0.1)';
+                elBadge.style.border = '1px solid rgba(59, 130, 246, 0.4)';
+                elBadge.style.color = '#2563eb';
+                elBadge.innerHTML = LANG === 'en'
+                    ? `⚡ <strong>Fast Debt Elimination:</strong> Saves <strong>${formatMoney(res.interestSaved)} ${unit}</strong> interest, requiring <strong>+${formatMoney(Math.abs(res.monthlyPaymentDiff))} ${unit}/mo</strong> higher payment.`
+                    : `⚡ <strong>ปลดหนี้ไว:</strong> ประหยัดดอกเบี้ย <strong>${formatMoney(res.interestSaved)} ${unit}</strong> แลกกับการผ่อนเพิ่ม <strong>+${formatMoney(Math.abs(res.monthlyPaymentDiff))} ${unit}/เดือน</strong> เพื่อให้จบใน ${res.refinanceTermMonths} เดือน`;
+            } else {
+                elBadge.style.display = 'block';
+                elBadge.style.background = 'rgba(239, 68, 68, 0.1)';
+                elBadge.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+                elBadge.style.color = '#dc2626';
+                elBadge.innerHTML = LANG === 'en'
+                    ? `⚠️ <strong>Caution:</strong> Stretching the term to ${res.refinanceTermMonths} months costs <strong>${formatMoney(Math.abs(res.interestSaved))} ${unit} more</strong> in total interest despite a lower rate.`
+                    : `⚠️ <strong>ควรระวัง:</strong> การยืดเวลาผ่อนเป็น ${res.refinanceTermMonths} เดือน ทำให้เสียดอกเบี้ยรวมเพิ่มขึ้น <strong>${formatMoney(Math.abs(res.interestSaved))} ${unit}</strong> แม้ดอกเบี้ยจะต่ำลง`;
+            }
+        }
     }
 
     /**
@@ -1305,6 +1581,7 @@
         state = JSON.parse(JSON.stringify(defaultState));
         document.getElementById('txtExtraPayment').value = state.extraPayment;
         syncWindfallInputs();
+        syncRefinanceInputs();
         renderTable();
         setStrategy(state.strategy);
         saveState();
@@ -1331,6 +1608,7 @@
     loadState();
     document.getElementById('txtExtraPayment').value = state.extraPayment;
     syncWindfallInputs();
+    syncRefinanceInputs();
     renderTable();
     setStrategy(state.strategy);
 </script>
