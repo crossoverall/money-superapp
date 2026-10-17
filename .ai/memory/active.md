@@ -1,5 +1,5 @@
 ---
-task_id: "FEAT-TAX-REFUND-01"
+task_id: "FEAT-BUDGET-TEMPLATES-01"
 status: "in_progress"
 current_stage: "approval_gate"
 complexity: "level_2"
@@ -7,55 +7,55 @@ iteration_count: 0
 pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Completed Feature: Financial Independence & Early Retirement (FIRE) Safe Withdrawal & Target Net Worth Visualizer (Phase 31 / v2.1.4)
-- **Status:** Completed & Verified (117 automated tests passing, 0 linter errors).
+### Completed Feature: Annual Tax Withholding (50 Tawi) vs PIT Liability Refund & Additional Payable Estimator (Phase 32 / v2.1.5)
+- **Status:** Completed & Verified (123 automated tests passing, 0 linter errors).
 - **Summary:**
-  1. Built `calculateFIREMetrics()` engine computing target FIRE wealth thresholds: $\text{FIRE Number} = \text{Annual Expenses} / \text{SWR}$, auto-linking annual living expenses from `remainingMoneyCalculator.state.v1` ($12 \times \text{monthlyExpense}$) with optional manual override in `#goalsModal`.
-  2. Defined clear milestone spectrum tiers (`accumulating`, `halfway_fire`, `lean_fire`, `standard_fire`, `fat_fire`) with visual status badges and color gradients.
-  3. Integrated interactive SWR selection pills (3.0%, 3.5%, 4.0%) with live recalculation, dual-gradient progress bar, Safe Annual Passive Income readout ($NW \times \text{SWR}$), and projected years-to-freedom timeline (ETA) calculated via logarithmic compound growth.
-  4. Added 5 comprehensive automated unit tests in `tests/financial-math.test.mjs` verifying milestone brackets, SWR sensitivity, compound horizon solver, and zero-expense edge cases.
+  1. Built `calculateTaxRefundOrPayable()` computing:
+     $$\text{Net Balance} = \text{Withheld Tax (50 Tawi)} - \text{Calculated PIT Liability}$$
+     with automated detection of `refund` (> 0), `payable` (< 0), and `exact` (= 0) states.
+  2. Implemented Revenue Department 3-month interest-free installment scheduler ($\text{Installment} = \lceil\text{Amount} / 3\rceil$) for payable amounts $\ge 3,000$ THB.
+  3. Added Withholding Tax at Source (ใบ 50 ทวิ) input field with one-click inter-tool bridge (`importWithholdingFromPayslip()`) auto-calculating annual cumulative tax withheld from `moneySuperapp.monthsSlips`.
+  4. Built high-visibility dynamic verdict card (`#taxRefundCard`) with bilingual status badges, breakdown metrics, PromptPay National ID readiness tips, and full integration into the print-ready Form P.N.D. 90/91 summary table.
+  5. Added 6 comprehensive automated unit tests in `tests/financial-math.test.mjs` verifying refund math, payable installment thresholds, zero/edge cases, and payslip payroll withholding integration.
 
 ---
 
-### Proposed Feature Specification: Annual Tax Withholding (50 Tawi) vs PIT Liability Refund / Additional Payable Estimator (Phase 32 / Roadmap Item 3.2)
+### Proposed Feature Specification: Recurring Budget Templates & Monthly Expense Category Profile Presets (Phase 33 / Roadmap Item 3.3)
 
 #### 1. Goal & Scope Limits
-- **Objective:** Add an interactive **Annual Tax Withholding (50 Tawi) vs PIT Liability Refund / Additional Payable Estimator & Breakdown Visualizer** to [`tax-calculator-base.html`](file:///home/l2okii/Document/money-superapp/tax-calculator-base.html).
+- **Objective:** Add an interactive **Recurring Budget Templates & Monthly Expense Category Profile Presets Engine** to [`remaining-money.html`](file:///home/l2okii/Document/money-superapp/remaining-money.html) and [`js/remaining-money.js`](file:///home/l2okii/Document/money-superapp/js/remaining-money.js).
 - **Key Capabilities & Benefits:**
-  1. **Tax Refund vs Additional Tax Payable Calculation:**
-     - Compares calculated annual Personal Income Tax (PIT) liability against total tax withheld at source (ภาษีหัก ณ ที่จ่าย / ใบ 50 ทวิ):
-       $$\text{Net Tax Balance} = \text{Withheld Tax to Date (50 Tawi)} - \text{Calculated PIT}$$
-     - If $\text{Net Balance} > 0$: **Tax Refund (ขอคืนภาษี)** 🎉.
-     - If $\text{Net Balance} < 0$: **Additional Tax Due (ต้องชำระภาษีเพิ่ม)** ⚠️.
-     - If $\text{Net Balance} = 0$: **Exact Balance (พอดี ไม่ต้องจ่ายเพิ่ม/ขอคืน)**.
-  2. **Inter-Tool Bridge with `months-slips.html`:**
-     - One-click import button: "ดึงภาษีหัก ณ ที่จ่ายจากสลิปเงินเดือน (Import from Payslips)" reading cumulative 12-month withholding tax calculated by `months-slips.html`.
-     - Manual input field for freelance/custom 50 Tawi withholding tax certificates (มาตรา 40(1), 40(2), 40(8)).
-  3. **Visual Refund Gauge & Document Checklist:**
-     - High-visibility bilingual verdict card (Refund Amount, Refund Timeline estimate, PromptPay national ID readiness tip).
-     - Print report parity (integrates seamlessly into the print-ready P.N.D.90/91 summary).
-  4. **Zero External Dependencies (ADR-001):**
-     - Pure client-side arithmetic, 100% offline privacy, zero third-party APIs.
+  1. **Template Preset Switcher & Custom Templates:**
+     - Quick preset buttons for realistic life scenarios:
+       - **Standard Month (เดือนปกติทั่วไป):** Balanced baseline configuration.
+       - **Frugal / Savings Sprint (ประหยัดเข้มงวด / เน้นออม):** Scaled down discretionary/wants expenses.
+       - **High Discretionary / Holiday Season (เดือนท่องเที่ยว / เทศกาล):** Seasonal adjustment for gifts, flights, dining.
+     - **"Save Current as Template" (บันทึกเป็นเทมเพลตใหม่):** Custom user-named budget profiles saved in local storage.
+  2. **One-Click Apply with Instant Recalculation:**
+     - Applying a template immediately updates fixed expenses, daily food allowance, discretionary expenses, runs 50/30/20 compliance calculation, and captures an undo snapshot (`undoMgr.push(captureSnapshot())`).
+  3. **Zero External Dependencies (ADR-001):**
+     - 100% offline client-side storage, zero server-side dependencies.
 - **Target Files (<= 5 files, ~160-200 lines total):**
-  1. `tax-calculator-base.html` (Withholding input, refund card, payslip bridge)
-  2. `tests/financial-math.test.mjs` (Unit tests for net tax balance, refund/payable states, and payslip integration)
-  3. `.ai/memory/active.md`
+  1. `remaining-money.html` (Template selector toolbar & modal)
+  2. `js/remaining-money.js` (Preset logic, template storage, and application)
+  3. `tests/financial-math.test.mjs` (Unit tests for template schemas, preset mathematical validations, and profile transitions)
+  4. `.ai/memory/active.md`
 - **Explicit Out of Scope:**
-  - Direct integration with Thai Revenue Department (e-Filing API) (preserves 100% offline client-side privacy).
+  - Cloud server profile synchronization (preserves ADR-001 100% client-side privacy).
 
 #### 2. Architecture & Decision Alignment
-- **ADR-001 (Zero-Build Static PWA / Privacy):** All tax math runs locally; zero network transmission.
-- **Conventions:** Follows existing patterns in `tax-calculator-base.html` (`formatMoney()`, `parseNum()`, bilingual `t()`).
+- **ADR-001 (Zero-Build Static PWA / Privacy):** All budget template state resides in `localStorage`.
+- **Conventions:** Follows existing patterns in `js/remaining-money.js` (`MoneyApp.safeJsonParse()`, `createUndoManager()`, bilingual `t()`).
 
 #### 3. Step-by-Step Implementation Plan
-1. **Mathematical Verification (`tests/financial-math.test.mjs`):**
-   - Implement and test `calculateTaxRefundOrPayable()`: net tax delta, refund/payable classifications, and zero-liability edge cases.
-2. **Withholding Input & Visual Refund Engine (`tax-calculator-base.html`):**
-   - Add 50 Tawi Withholding input with payslip auto-import button.
-   - Render dynamic Refund/Payable verdict banner and breakdown.
+1. **Mathematical & Schema Verification (`tests/financial-math.test.mjs`):**
+   - Write unit tests for template presets, validation of schema invariants, and 50/30/20 compliance delta across templates.
+2. **Template Switcher & Preset Toolbar (`remaining-money.html` / `js/remaining-money.js`):**
+   - Implement built-in presets (Standard, Frugal, Holiday) and custom template persistence (`moneySuperapp.budgetTemplates.v1`).
 3. **Verification & Quality Gate:**
-   - Run `npm test` (verify 120+ passing tests).
+   - Run `npm test` (verify 125+ passing tests).
    - Run `npm run lint` (0 errors).
 4. **Release & Bump:**
    - Log lessons in `.ai/memory/lessons.md`.
-   - Bump version to `v2.1.5` via `node scripts/bump.mjs patch`.
+   - Bump version to `v2.1.6` via `node scripts/bump.mjs patch`.
+

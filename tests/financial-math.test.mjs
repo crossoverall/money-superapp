@@ -3453,4 +3453,174 @@ describe('Financial Math Verification', () => {
       assert.equal(zeroNw.tier, 'accumulating');
     });
   });
+
+  describe('Annual Tax Withholding (50 Tawi) vs PIT Liability Refund Engine', () => {
+    function calculateTaxRefundOrPayable({ calculatedTax = 0, withheldTax = 0 } = {}) {
+      const calc = Math.max(0, Number(calculatedTax) || 0);
+      const withheld = Math.max(0, Number(withheldTax) || 0);
+      const netBalance = withheld - calc;
+      const amount = Math.abs(netBalance);
+
+      let status = 'exact';
+      if (netBalance > 0) {
+        status = 'refund';
+      } else if (netBalance < 0) {
+        status = 'payable';
+      }
+
+      const canInstallment = status === 'payable' && amount >= 3000;
+      const installmentCount = canInstallment ? 3 : 1;
+      const installmentAmount = canInstallment ? Math.ceil(amount / 3) : amount;
+
+      return {
+        calculatedTax: calc,
+        withheldTax: withheld,
+        netBalance,
+        amount,
+        status,
+        canInstallment,
+        installmentCount,
+        installmentAmount,
+        headlineTh: status === 'refund' ? 'ขอคืนภาษีได้' : status === 'payable' ? 'ต้องชำระภาษีเพิ่ม' : 'ภาษีพอดี (ไม่ต้องจ่ายเพิ่ม)',
+        headlineEn:
+          status === 'refund'
+            ? 'Tax Refund Eligible'
+            : status === 'payable'
+              ? 'Additional Tax Payable'
+              : 'Exact Balance (No Tax Due)',
+      };
+    }
+
+    function calculateAnnualPayslipWithholding({
+      salary = 0,
+      allowance = 0,
+      bonus = 0,
+      pvdPercent = 0,
+      ssoCap = 875,
+    } = {}) {
+      const sal = Math.max(0, Number(salary) || 0);
+      const allow = Math.max(0, Number(allowance) || 0);
+      const bon = Math.max(0, Number(bonus) || 0);
+      const pvdPct = Math.max(0, Number(pvdPercent) || 0);
+      const cap = Math.max(0, Number(ssoCap) || 875);
+
+      const monthlyEarnings = sal + allow;
+      const monthlySso = Math.min(sal * 0.05, cap);
+      const annualSso = monthlySso * 12;
+      const annualPvd = sal * (pvdPct / 100) * 12;
+      const annualIncome = monthlyEarnings * 12 + bon;
+
+      const expenseDeduction = Math.min(annualIncome * 0.5, 100000);
+      const personalDeduction = 60000;
+      const netAnnualIncome = Math.max(
+        0,
+        annualIncome - (expenseDeduction + personalDeduction + annualSso + annualPvd),
+      );
+
+      return computeThaiTax(netAnnualIncome);
+    }
+
+    it('accurately identifies tax refund when withholding exceeds calculated liability', () => {
+      const res = calculateTaxRefundOrPayable({
+        calculatedTax: 8500,
+        withheldTax: 15000,
+      });
+
+      assert.equal(res.status, 'refund');
+      assert.equal(res.netBalance, 6500);
+      assert.equal(res.amount, 6500);
+      assert.equal(res.canInstallment, false);
+      assert.equal(res.headlineTh, 'ขอคืนภาษีได้');
+      assert.equal(res.headlineEn, 'Tax Refund Eligible');
+    });
+
+    it('identifies additional tax payable with 3-month interest-free installment for amounts >= 3,000 THB', () => {
+      const res = calculateTaxRefundOrPayable({
+        calculatedTax: 20000,
+        withheldTax: 8000,
+      });
+
+      assert.equal(res.status, 'payable');
+      assert.equal(res.netBalance, -12000);
+      assert.equal(res.amount, 12000);
+      assert.equal(res.canInstallment, true);
+      assert.equal(res.installmentCount, 3);
+      assert.equal(res.installmentAmount, 4000);
+      assert.equal(res.headlineTh, 'ต้องชำระภาษีเพิ่ม');
+      assert.equal(res.headlineEn, 'Additional Tax Payable');
+    });
+
+    it('disallows installment plan when additional payable amount is below 3,000 THB threshold', () => {
+      const res = calculateTaxRefundOrPayable({
+        calculatedTax: 5000,
+        withheldTax: 3500,
+      });
+
+      assert.equal(res.status, 'payable');
+      assert.equal(res.netBalance, -1500);
+      assert.equal(res.amount, 1500);
+      assert.equal(res.canInstallment, false);
+      assert.equal(res.installmentCount, 1);
+      assert.equal(res.installmentAmount, 1500);
+    });
+
+    it('identifies exact balanced state when withholding matches calculated tax exactly', () => {
+      const res = calculateTaxRefundOrPayable({
+        calculatedTax: 12500,
+        withheldTax: 12500,
+      });
+
+      assert.equal(res.status, 'exact');
+      assert.equal(res.netBalance, 0);
+      assert.equal(res.amount, 0);
+      assert.equal(res.canInstallment, false);
+      assert.equal(res.headlineTh, 'ภาษีพอดี (ไม่ต้องจ่ายเพิ่ม)');
+      assert.equal(res.headlineEn, 'Exact Balance (No Tax Due)');
+    });
+
+    it('correctly calculates employer withholding from payslip inputs and proves deduction tax savings refund', () => {
+      // 50k/mo salary, 750 SSO cap, 0 allowance, 0 bonus, 0 PVD
+      // Annual income = 600k. Deductions: 100k expense + 60k personal + 9k SSO = 169k.
+      // Net taxable = 431k. Expected tax = 7.5k (5%) + 13.1k (10%) = 20,600 THB.
+      const payslipTax = calculateAnnualPayslipWithholding({
+        salary: 50000,
+        allowance: 0,
+        bonus: 0,
+        pvdPercent: 0,
+        ssoCap: 750,
+      });
+      assert.equal(payslipTax, 20600);
+
+      // If user later invests in 100k SSF/RMF, taxable income drops to 331k.
+      // New tax = 7.5k + 3.1k = 10,600 THB.
+      // Net refund = 20,600 - 10,600 = 10,000 THB!
+      const finalTax = 10600;
+      const refundOutcome = calculateTaxRefundOrPayable({
+        calculatedTax: finalTax,
+        withheldTax: payslipTax,
+      });
+      assert.equal(refundOutcome.status, 'refund');
+      assert.equal(refundOutcome.netBalance, 10000);
+      assert.equal(refundOutcome.amount, 10000);
+    });
+
+    it('handles zero, negative, or invalid inputs safely without NaN or crashes', () => {
+      const empty = calculateTaxRefundOrPayable({});
+      assert.equal(empty.calculatedTax, 0);
+      assert.equal(empty.withheldTax, 0);
+      assert.equal(empty.netBalance, 0);
+      assert.equal(empty.status, 'exact');
+
+      const negativeInputs = calculateTaxRefundOrPayable({
+        calculatedTax: -500,
+        withheldTax: -100,
+      });
+      assert.equal(negativeInputs.calculatedTax, 0);
+      assert.equal(negativeInputs.withheldTax, 0);
+      assert.equal(negativeInputs.status, 'exact');
+
+      const zeroSlip = calculateAnnualPayslipWithholding();
+      assert.equal(zeroSlip, 0);
+    });
+  });
 });

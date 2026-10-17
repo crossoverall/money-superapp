@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="2.1.4">
+    <meta name="version" content="2.1.5">
     <meta name="description" content="คำนวณภาษีเงินได้บุคคลธรรมดา — ประมาณการภาษีเงินได้จากเงินเดือนและโบนัส พร้อมแสดงรายละเอียดตามขั้นบันได">
     <title>คำนวณภาษีเงินได้บุคคลธรรมดา</title>
     <link rel="stylesheet" href="css/tailwind-lite.css">
@@ -342,6 +342,27 @@
                     </div>
                 </div>
             </details>
+
+            <!-- Tax Withholding at Source (50 Tawi) Input & Payslip Bridge -->
+            <div class="mt-4 p-3.5 bg-indigo-50/70 border border-indigo-200 rounded-xl space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <label class="block text-xs font-bold text-indigo-950 flex items-center gap-1.5" id="lbl-withheld-tax" for="withheldTax">
+                        <span>📄</span>
+                        <span id="txt-withheld-label">ภาษีหัก ณ ที่จ่ายสะสมทั้งปี (ใบ 50 ทวิ)</span>
+                    </label>
+                    <button type="button" id="btn-import-payslip-tax" onclick="importWithholdingFromPayslip()" class="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-indigo-700 bg-white hover:bg-indigo-100 border border-indigo-300 rounded-lg shadow-xs transition-colors" title="ดึงยอดภาษีหัก ณ ที่จ่ายทั้งปีจากสลิปเงินเดือน">
+                        <span>📥</span> <span id="txt-import-payslip">ดึงจากสลิปเงินเดือน</span>
+                    </button>
+                </div>
+                <div class="relative">
+                    <input type="number" id="withheldTax" placeholder="0" inputmode="decimal" class="w-full px-3 py-1.5 bg-white border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm font-semibold text-gray-800 pr-12" oninput="calculateTax()" aria-label="ภาษีหัก ณ ที่จ่ายสะสมทั้งปี (ใบ 50 ทวิ)">
+                    <span class="absolute right-3 top-2 text-xs text-gray-400 font-medium" id="lbl-withheld-unit">บาท</span>
+                </div>
+                <p class="text-[11px] text-indigo-800/80 leading-normal" id="lbl-withheld-hint">
+                    ยอดรวมภาษีที่ถูกหักไว้แล้วจากเงินเดือน โบนัส หรือค่าจ้างฟรีแลนซ์ (ระบุในหนังสือรับรอง 50 ทวิ) เพื่อเทียบยอดขอคืนหรือชำระเพิ่ม
+                </p>
+                <div id="payslip-import-feedback" style="display:none;" class="p-2 rounded bg-indigo-100/90 text-[11px] text-indigo-900 font-medium flex items-center justify-between"></div>
+            </div>
         </div>
 
         <hr class="my-6 border-gray-200">
@@ -383,6 +404,29 @@
             <span class="block text-sm text-blue-800 mb-1" id="lbl-taxAmount">ภาษีที่ต้องชำระโดยประมาณ</span>
             <span id="taxAmount" class="text-3xl font-bold text-blue-600">0</span>
             <span class="text-blue-800 font-medium" id="unitLabel"> บาท</span>
+        </div>
+
+        <!-- Tax Refund / Additional Payable Dynamic Verdict Card -->
+        <div id="taxRefundCard" class="mt-4 p-4 rounded-xl border border-blue-200 bg-blue-50/70 space-y-3 transition-all duration-300">
+            <div class="flex items-center justify-between">
+                <span id="refundVerdictBadge" class="px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 shadow-xs bg-blue-600 text-white">
+                    <span>✓</span> <span>ภาษีพอดี</span>
+                </span>
+                <span id="refundComparisonSub" class="text-[11px] font-semibold text-gray-500">ภาษีคำนวณตรงกับยอดหัก ณ ที่จ่าย</span>
+            </div>
+            <div class="flex items-baseline justify-between">
+                <div>
+                    <span class="block text-xs font-medium text-gray-500" id="lbl-net-balance-headline">ผลการยื่นภาษีสุทธิ</span>
+                    <span id="refundNetBalanceAmount" class="text-2xl sm:text-3xl font-black tracking-tight text-blue-700">0 บาท</span>
+                </div>
+                <div class="text-right text-[11px] text-gray-500 space-y-0.5">
+                    <div><span id="lbl-card-calc-tax">ภาษีที่คำนวณได้:</span> <span id="cardCalcTaxVal" class="font-semibold text-gray-700">0 บาท</span></div>
+                    <div><span id="lbl-card-withheld-tax">หักไว้แล้ว (50 ทวิ):</span> <span id="cardWithheldVal" class="font-semibold text-gray-700">0 บาท</span></div>
+                </div>
+            </div>
+            <div id="refundActionBox" class="p-2.5 rounded-lg text-xs leading-relaxed border border-blue-200 bg-white/90 text-blue-900">
+                💡 <strong>ยอดภาษีพอดี:</strong> ภาษีที่ถูกหักไว้ตรงกับยอดที่ต้องชำระพอดี ยื่นแบบแสดงรายการตามปกติโดยไม่ต้องชำระเพิ่มและไม่มีเงินภาษีคืน
+            </div>
         </div>
 
         <div class="mt-4">
@@ -476,7 +520,7 @@
                     <span id="lbl-reset-tax">ล้างข้อมูล</span>
                 </button>
             </div>
-            <p class="text-xs text-gray-400">v2.1.4</p>
+            <p class="text-xs text-gray-400">v2.1.5</p>
         </div>
     </div>
 
@@ -590,6 +634,11 @@
                 <div><span id="print-lbl-effrate">อัตราภาษีเฉลี่ย: </span><strong style="color:#0f172a;" id="print-val-effrate">0.0%</strong></div>
                 <div><span id="print-lbl-totaltax">ภาษีที่ต้องชำระ: </span><strong style="color:#2563eb; font-size:13px;" id="print-val-totaltax">0 บาท</strong></div>
             </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#e0e7ff; border:1px solid #c7d2fe; border-radius:6px; padding:6px 10px; font-size:11.5px; margin-top:6px;">
+                <div><span id="print-lbl-withheld">ภาษีหัก ณ ที่จ่ายสะสม (50 ทวิ): </span><strong style="color:#3730a3;" id="print-val-withheld">0 บาท</strong></div>
+                <div><span id="print-lbl-netbalance">ผลลัพธ์สุทธิ: </span><strong style="font-size:12.5px; color:#1d4ed8;" id="print-val-netbalance">ภาษีพอดี (0 บาท)</strong></div>
+            </div>
         </div>
 
         <!-- Section 4: Filing Notes & Checklist -->
@@ -691,6 +740,15 @@
                 'print-note-1': 'Paper filing deadline: March 31 / Online E-Filing deadline: April 8 annually.',
                 'print-note-2': 'Prepare supporting documents: 50 Tawi withholding tax cert, insurance certs, SSF/RMF/ThaiESG confirmations, and mortgage certs.',
                 'print-note-3': '100% private and computed locally in your browser by Money Superapp. No financial data leaves your device.',
+                'txt-withheld-label': 'Annual Tax Withheld to Date (50 Tawi)',
+                'txt-import-payslip': 'Import from Payslips',
+                'lbl-withheld-hint': 'Total tax already withheld from monthly salaries, bonus, or freelance income (stated on 50 Tawi withholding certificate) to determine refund or additional payable.',
+                'lbl-withheld-unit': 'THB',
+                'lbl-net-balance-headline': 'Net Filing Outcome',
+                'lbl-card-calc-tax': 'Calculated Tax:',
+                'lbl-card-withheld-tax': 'Withheld (50 Tawi):',
+                'print-lbl-withheld': 'Tax Withheld to Date (50 Tawi): ',
+                'print-lbl-netbalance': 'Net Return Balance: ',
             };
             Object.keys(EN).forEach(id => {
                 const el = document.getElementById(id);
@@ -717,7 +775,8 @@
                 yearlyIncome: 'e.g. 600000',
                 yearlyBonus: 'e.g. 50000',
                 yearlyPvd: 'e.g. 30000 (0 if none)',
-                yearlySso: 'e.g. 9000 (0 if freelance/uninsured)'
+                yearlySso: 'e.g. 9000 (0 if freelance/uninsured)',
+                withheldTax: 'e.g. 25000'
             };
             Object.keys(placeholders).forEach(id => {
                 const el = document.getElementById(id);
@@ -838,6 +897,7 @@
                 insuranceDeduct: document.getElementById('insuranceDeduct').value,
                 mortgageDeduct: document.getElementById('mortgageDeduct').value,
                 otherDeduct: document.getElementById('otherDeduct').value,
+                withheldTax: document.getElementById('withheldTax') ? document.getElementById('withheldTax').value : '',
                 monthsBreakdown: Array.from({length: 12}, (_, i) => document.getElementById('m-income-' + (i + 1)) ? document.getElementById('m-income-' + (i + 1)).value : '')
             };
             try {
@@ -906,6 +966,158 @@
                 nextBracketRate,
                 tiers
             };
+        }
+
+        function calculateTaxRefundOrPayable({ calculatedTax = 0, withheldTax = 0 } = {}) {
+            const calc = Math.max(0, Number(calculatedTax) || 0);
+            const withheld = Math.max(0, Number(withheldTax) || 0);
+            const netBalance = withheld - calc;
+            const amount = Math.abs(netBalance);
+
+            let status = 'exact';
+            if (netBalance > 0) {
+                status = 'refund';
+            } else if (netBalance < 0) {
+                status = 'payable';
+            }
+
+            const canInstallment = status === 'payable' && amount >= 3000;
+            const installmentCount = canInstallment ? 3 : 1;
+            const installmentAmount = canInstallment ? Math.ceil(amount / 3) : amount;
+
+            return {
+                calculatedTax: calc,
+                withheldTax: withheld,
+                netBalance,
+                amount,
+                status,
+                canInstallment,
+                installmentCount,
+                installmentAmount,
+                headlineTh: status === 'refund' ? 'ขอคืนภาษีได้' : (status === 'payable' ? 'ต้องชำระภาษีเพิ่ม' : 'ภาษีพอดี (ไม่ต้องจ่ายเพิ่ม)'),
+                headlineEn: status === 'refund' ? 'Tax Refund Eligible' : (status === 'payable' ? 'Additional Tax Payable' : 'Exact Balance (No Tax Due)')
+            };
+        }
+
+        function updateTaxRefundView(metrics) {
+            const cardEl = document.getElementById('taxRefundCard');
+            if (!cardEl) return;
+            const isEn = LANG === 'en';
+            const badgeEl = document.getElementById('refundVerdictBadge');
+            const subEl = document.getElementById('refundComparisonSub');
+            const amountEl = document.getElementById('refundNetBalanceAmount');
+            const calcValEl = document.getElementById('cardCalcTaxVal');
+            const withheldValEl = document.getElementById('cardWithheldVal');
+            const actionBoxEl = document.getElementById('refundActionBox');
+
+            if (calcValEl) calcValEl.textContent = `${formatMoney(metrics.calculatedTax)} ${unit}`;
+            if (withheldValEl) withheldValEl.textContent = `${formatMoney(metrics.withheldTax)} ${unit}`;
+
+            if (metrics.status === 'refund') {
+                cardEl.className = 'mt-4 p-4 rounded-xl border border-emerald-300 bg-emerald-50/80 space-y-3 transition-all duration-300';
+                if (badgeEl) {
+                    badgeEl.className = 'px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 shadow-xs bg-emerald-600 text-white';
+                    badgeEl.innerHTML = `<span>🎉</span> <span>${isEn ? 'Tax Refund Eligible' : 'ขอคืนภาษีได้'}</span>`;
+                }
+                if (subEl) subEl.textContent = isEn ? 'Withholding exceeds PIT liability' : 'ภาษีที่หักไว้เกินกว่าภาษีจริง';
+                if (amountEl) {
+                    amountEl.className = 'text-2xl sm:text-3xl font-black tracking-tight text-emerald-700';
+                    amountEl.textContent = `+ ${formatMoney(metrics.amount)} ${unit}`;
+                }
+                if (actionBoxEl) {
+                    actionBoxEl.className = 'p-2.5 rounded-lg text-xs leading-relaxed border border-emerald-200 bg-white/90 text-emerald-900';
+                    actionBoxEl.innerHTML = isEn
+                        ? '💡 <strong>Refund Ready:</strong> Ensure your PromptPay is linked to your 13-digit National ID or provide verified bank account details during e-Filing for the quickest direct deposit refund.'
+                        : '💡 <strong>คำแนะนำการรับเงินคืน:</strong> แนะนำให้ผูกพร้อมเพย์ด้วยเลขบัตรประชาชน 13 หลัก หรือระบุเลขที่บัญชีธนาคารในระบบ E-Filing กรมสรรพากร เพื่อรับเงินคืนภาษีได้อย่างรวดเร็วที่สุด';
+                }
+            } else if (metrics.status === 'payable') {
+                cardEl.className = 'mt-4 p-4 rounded-xl border border-amber-300 bg-amber-50/80 space-y-3 transition-all duration-300';
+                if (badgeEl) {
+                    badgeEl.className = 'px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 shadow-xs bg-amber-600 text-white';
+                    badgeEl.innerHTML = `<span>⚠️</span> <span>${isEn ? 'Additional Tax Payable' : 'ต้องชำระภาษีเพิ่ม'}</span>`;
+                }
+                if (subEl) subEl.textContent = isEn ? 'PIT liability exceeds withholding' : 'ภาษีจริงสูงกว่ายอดที่ถูกหักไว้';
+                if (amountEl) {
+                    amountEl.className = 'text-2xl sm:text-3xl font-black tracking-tight text-amber-700';
+                    amountEl.textContent = `- ${formatMoney(metrics.amount)} ${unit}`;
+                }
+                if (actionBoxEl) {
+                    actionBoxEl.className = 'p-2.5 rounded-lg text-xs leading-relaxed border border-amber-200 bg-white/90 text-amber-900';
+                    if (metrics.canInstallment) {
+                        actionBoxEl.innerHTML = isEn
+                            ? `💡 <strong>3-Month Installment Available:</strong> You owe ${formatMoney(metrics.amount)} ${unit} (≥ 3,000 THB threshold). You can opt to split into 3 monthly 0% installments of <strong>${formatMoney(metrics.installmentAmount)} ${unit}/month</strong> via Revenue Dept e-Filing.`
+                            : `💡 <strong>สิทธิผ่อนชำระ 3 งวด:</strong> มียอดภาษีชำระเพิ่ม ${formatMoney(metrics.amount)} ${unit} (ตั้งแต่ 3,000 บาทขึ้นไป) สามารถเลือกผ่อนชำระ 3 งวด งวดละ <strong>${formatMoney(metrics.installmentAmount)} บาท/งวด</strong> โดยไม่มีดอกเบี้ย ผ่านระบบ E-Filing`;
+                    } else {
+                        actionBoxEl.innerHTML = isEn
+                            ? `💡 <strong>Payment Reminder:</strong> Settle the outstanding tax of <strong>${formatMoney(metrics.amount)} ${unit}</strong> via QR Code, credit card, or bank transfer before the annual filing deadline.`
+                            : `💡 <strong>ข้อแนะนำ:</strong> ชำระภาษีส่วนที่ขาดจำนวน <strong>${formatMoney(metrics.amount)} บาท</strong> ผ่าน QR Code, บัตรเครดิต หรือเคาน์เตอร์ธนาคาร ก่อนครบกำหนดยื่นแบบเพื่อเลี่ยงเบี้ยปรับเงินเพิ่ม`;
+                    }
+                }
+            } else {
+                cardEl.className = 'mt-4 p-4 rounded-xl border border-blue-200 bg-blue-50/70 space-y-3 transition-all duration-300';
+                if (badgeEl) {
+                    badgeEl.className = 'px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 shadow-xs bg-blue-600 text-white';
+                    badgeEl.innerHTML = `<span>✓</span> <span>${isEn ? 'Exact Balance' : 'ภาษีพอดี'}</span>`;
+                }
+                if (subEl) subEl.textContent = isEn ? 'Calculated tax matches withholding' : 'ภาษีคำนวณตรงกับยอดหัก ณ ที่จ่าย';
+                if (amountEl) {
+                    amountEl.className = 'text-2xl sm:text-3xl font-black tracking-tight text-blue-700';
+                    amountEl.textContent = `0 ${unit}`;
+                }
+                if (actionBoxEl) {
+                    actionBoxEl.className = 'p-2.5 rounded-lg text-xs leading-relaxed border border-blue-200 bg-white/90 text-blue-900';
+                    actionBoxEl.innerHTML = isEn
+                        ? '💡 <strong>Balanced Tax:</strong> Your withheld tax matches your calculated liability exactly. File your annual return normally with zero additional balance.'
+                        : '💡 <strong>ยอดภาษีพอดี:</strong> ภาษีที่ถูกหักไว้ตรงกับยอดที่ต้องชำระพอดี ยื่นแบบแสดงรายการตามปกติโดยไม่ต้องชำระเพิ่มและไม่มีเงินภาษีคืน';
+                }
+            }
+        }
+
+        function importWithholdingFromPayslip() {
+            try {
+                const raw = localStorage.getItem('moneySuperapp.monthsSlips');
+                const feedbackEl = document.getElementById('payslip-import-feedback');
+                const isEn = LANG === 'en';
+                if (!raw) {
+                    if (feedbackEl) {
+                        feedbackEl.style.display = 'flex';
+                        feedbackEl.className = 'p-2 rounded bg-amber-100 text-[11px] text-amber-900 font-medium flex items-center justify-between';
+                        feedbackEl.innerHTML = `<span>⚠️ ${isEn ? 'No payslip data found. Please calculate in Payslip tab first.' : 'ยังไม่พบข้อมูลสลิปเงินเดือน กรุณาเข้าใช้งานแท็บจำลองสลิปเงินเดือนก่อน'}</span><button type="button" onclick="this.parentElement.style.display=\'none\'" class="text-amber-700 font-bold ml-2">✕</button>`;
+                    }
+                    return;
+                }
+                const slip = JSON.parse(raw);
+                const salary = parseNum(slip.salary);
+                const allowance = parseNum(slip.allowance);
+                const bonus = parseNum(slip.bonus);
+                const pvd = parseNum(slip.pvd);
+                const ssoCap = parseNum(slip.ssoCap) || 875;
+
+                const annualIncome = (salary + allowance) * 12 + bonus;
+                const ssoMonthly = Math.min(salary * 0.05, ssoCap);
+                const annualSso = ssoMonthly * 12;
+                const annualPvd = salary * (pvd / 100) * 12;
+                const expenseDeduction = Math.min(annualIncome * 0.5, 100000);
+                const personalDeduction = 60000;
+                const netAnnualIncome = Math.max(0, annualIncome - (expenseDeduction + personalDeduction + annualSso + annualPvd));
+
+                const wf = computeTaxWaterfall(netAnnualIncome);
+                const withheld = wf.totalTax;
+
+                const inputEl = document.getElementById('withheldTax');
+                if (inputEl) {
+                    undoMgr.push(captureSnapshot());
+                    inputEl.value = withheld;
+                    calculateTax();
+                    if (feedbackEl) {
+                        feedbackEl.style.display = 'flex';
+                        feedbackEl.className = 'p-2 rounded bg-indigo-100/90 text-[11px] text-indigo-900 font-medium flex items-center justify-between';
+                        feedbackEl.innerHTML = `<span>✓ ${isEn ? `Imported ${formatMoney(withheld)} THB withholding from payslips` : `ดึงภาษีหัก ณ ที่จ่ายสำเร็จ: ${formatMoney(withheld)} บาท`}</span><button type="button" onclick="this.parentElement.style.display=\'none\'" class="text-indigo-700 font-bold ml-2">✕</button>`;
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+            }
         }
 
         function calculateTax() {
@@ -1166,6 +1378,13 @@
             document.getElementById('netIncome').innerText = formatMoney(netIncome) + ' ' + unit;
             document.getElementById('taxAmount').innerText = formatMoney(tax);
 
+            const withheldTaxVal = parseNum(document.getElementById('withheldTax')?.value);
+            const refundMetrics = calculateTaxRefundOrPayable({
+                calculatedTax: tax,
+                withheldTax: withheldTaxVal
+            });
+            updateTaxRefundView(refundMetrics);
+
             // Update proactive tax optimization advisor and deduction room
             updateTaxAdvisor(netIncome, totalIncome, pvdDeduction, effectiveFund, effectiveThaiEsg, effectiveInsurance, effectiveEasyReceipt, tax);
 
@@ -1189,6 +1408,8 @@
                 tax,
                 effRate: totalIncome > 0 ? ((tax / totalIncome) * 100).toFixed(1) : '0.0',
                 wf,
+                withheldTax: withheldTaxVal,
+                refundMetrics
             });
         }
 
@@ -1291,6 +1512,23 @@
             if (effRateEl) effRateEl.textContent = `${data.effRate}%`;
             const totalTaxEl = document.getElementById('print-val-totaltax');
             if (totalTaxEl) totalTaxEl.textContent = `${formatMoney(data.tax)} ${unit}`;
+
+            const withheldEl = document.getElementById('print-val-withheld');
+            if (withheldEl) withheldEl.textContent = `${formatMoney(data.withheldTax || 0)} ${unit}`;
+            const netBalEl = document.getElementById('print-val-netbalance');
+            if (netBalEl && data.refundMetrics) {
+                const rm = data.refundMetrics;
+                if (rm.status === 'refund') {
+                    netBalEl.style.color = '#059669';
+                    netBalEl.textContent = isEn ? `Refund: + ${formatMoney(rm.amount)} ${unit}` : `ขอคืนภาษีได้: + ${formatMoney(rm.amount)} ${unit}`;
+                } else if (rm.status === 'payable') {
+                    netBalEl.style.color = '#d97706';
+                    netBalEl.textContent = isEn ? `Payable: - ${formatMoney(rm.amount)} ${unit}` : `ชำระภาษีเพิ่ม: - ${formatMoney(rm.amount)} ${unit}`;
+                } else {
+                    netBalEl.style.color = '#2563eb';
+                    netBalEl.textContent = isEn ? `Balanced (0 ${unit})` : `ภาษีพอดี (0 บาท)`;
+                }
+            }
         }
 
         function printTaxReport() {
@@ -1865,6 +2103,7 @@
             insuranceDeduct: '',
             mortgageDeduct: '',
             otherDeduct: '',
+            withheldTax: '',
             monthsBreakdown: Array(12).fill('')
         };
 
@@ -1885,6 +2124,7 @@
                 insuranceDeduct: document.getElementById('insuranceDeduct')?.value || '',
                 mortgageDeduct: document.getElementById('mortgageDeduct')?.value || '',
                 otherDeduct: document.getElementById('otherDeduct')?.value || '',
+                withheldTax: document.getElementById('withheldTax')?.value || '',
                 monthsBreakdown: Array.from({length: 12}, (_, i) => document.getElementById('m-income-' + (i + 1))?.value || '')
             };
         }
@@ -1920,6 +2160,7 @@
             if (document.getElementById('insuranceDeduct')) document.getElementById('insuranceDeduct').value = data.insuranceDeduct || '';
             if (document.getElementById('mortgageDeduct')) document.getElementById('mortgageDeduct').value = data.mortgageDeduct || '';
             if (document.getElementById('otherDeduct')) document.getElementById('otherDeduct').value = data.otherDeduct || '';
+            if (document.getElementById('withheldTax')) document.getElementById('withheldTax').value = data.withheldTax || '';
 
             if (data.incomeMode && (data.incomeMode === 'yearly' || data.incomeMode === 'monthly')) {
                 switchIncomeMode(data.incomeMode);
@@ -1995,6 +2236,9 @@
                 if (data.insuranceDeduct) document.getElementById('insuranceDeduct').value = data.insuranceDeduct;
                 if (data.mortgageDeduct) document.getElementById('mortgageDeduct').value = data.mortgageDeduct;
                 if (data.otherDeduct) document.getElementById('otherDeduct').value = data.otherDeduct;
+                if (data.withheldTax !== undefined && data.withheldTax !== '' && document.getElementById('withheldTax')) {
+                    document.getElementById('withheldTax').value = data.withheldTax;
+                }
 
                 if (data.incomeMode && (data.incomeMode === 'yearly' || data.incomeMode === 'monthly')) {
                     switchIncomeMode(data.incomeMode);

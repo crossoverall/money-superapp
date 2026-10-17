@@ -516,4 +516,24 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
 - **Rule:** When visualizing financial independence (FIRE), calculate target net worth directly from annualized living expenses across selectable Safe Withdrawal Rates (3.0%–4.0%), pair the primary target with interim milestone brackets (Lean vs Standard vs Fat FIRE), and calculate projected completion timelines using compound yield on monthly investment contributions.
 
 
+### 2026-10-17: Annual Tax Withholding (50 Tawi) vs PIT Liability Refund & Additional Payable Estimator
+
+- **Date & Context:** 2026-10-17, implementing Withholding Tax (50 Tawi) & Net Balance Estimator in `tax-calculator-base.html` (`v2.1.5`).
+- **Problem:**
+  1. Personal Income Tax (PIT) calculators calculate annual tax liability, but users file taxes by comparing their calculated liability against the tax already withheld at source throughout the year (ภาษีหัก ณ ที่จ่าย / ใบ 50 ทวิ).
+  2. Salaried taxpayers often find that additional deductions (SSF, RMF, ThaiESG, life insurance, home loan interest, Easy E-Receipt) reduce their final tax liability below what their employer withheld on monthly payslips, entitling them to a tax refund (ขอคืนภาษี). Without an explicit Withholding Tax input and refund breakdown, users had to calculate their expected refund manually.
+  3. Taxpayers owing additional tax (ชำระภาษีเพิ่ม) often do not know that the Thai Revenue Department allows interest-free 3-month installments when outstanding tax is 3,000 THB or higher.
+- **Resolution:**
+  1. Added Withholding Tax at Source (ใบ 50 ทวิ) input field with one-click inter-tool bridge (`importWithholdingFromPayslip()`) auto-calculating annual cumulative tax withheld from `moneySuperapp.monthsSlips`.
+  2. Built `calculateTaxRefundOrPayable()` computing:
+     $$\text{Net Balance} = \text{Withheld Tax (50 Tawi)} - \text{Calculated PIT Liability}$$
+     - `refund` ($\text{Net Balance} > 0$): Renders green badge and card with PromptPay 13-digit National ID advice for direct deposit refund.
+     - `payable` ($\text{Net Balance} < 0$): Renders amber badge and card with 3-month interest-free installment schedule ($\text{Installment} = \lceil\text{Amount} / 3\rceil$) when $\ge 3,000$ THB.
+     - `exact` ($\text{Net Balance} = 0$): Confirms balanced state.
+  3. Integrated Withholding Tax and Net Return Balance directly into the print-ready Form P.N.D. 90/91 table and full undo/redo state preservation.
+  4. Added 6 comprehensive automated unit tests in `tests/financial-math.test.mjs` verifying refund, payable, 3-installment rules, edge cases, and payslip integration (expanding test suite to 123 passing tests).
+- **Rule:** In tax planning tools, always pair calculated gross tax liability with tax withheld at source (50 Tawi) to reveal the actual filing outcome (Refund vs Payable), bridge cumulative withholding from payroll records, and provide actionable localized compliance guidance (PromptPay direct deposit vs 3-month interest-free installment plans).
+
+
+
 
