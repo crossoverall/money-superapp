@@ -608,4 +608,92 @@ describe('Financial Math Verification', () => {
       assert.equal(report.goalsProgress.debtFree, true);
     });
   });
+
+  describe('Multi-Currency Cross-Rate Conversion & Portfolio Valuation', () => {
+    const DEFAULT_FX_RATES = {
+      THB: 1.0,
+      USD: 33.39,
+      EUR: 36.4,
+      GBP: 43.5,
+      JPY: 0.22,
+      SGD: 25.6,
+    };
+
+    function calculateCrossRates(rates) {
+      if (!rates || typeof rates.THB !== 'number') return null;
+      const thb = rates.THB;
+      const result = { THB: 1.0, USD: thb };
+      ['EUR', 'GBP', 'JPY', 'SGD'].forEach((c) => {
+        if (typeof rates[c] === 'number' && rates[c] > 0) {
+          result[c] = parseFloat((thb / rates[c]).toFixed(4));
+        } else {
+          result[c] = DEFAULT_FX_RATES[c];
+        }
+      });
+      return result;
+    }
+
+    function getFxRate(currency, customFxRates = {}) {
+      if (!currency || currency === 'THB') return 1.0;
+      const curr = String(currency).toUpperCase().trim();
+      if (typeof customFxRates[curr] === 'number' && customFxRates[curr] > 0) {
+        return customFxRates[curr];
+      }
+      return DEFAULT_FX_RATES[curr] || 1.0;
+    }
+
+    function calculateAssetValueTHB(units, lastPrice, currency, customFxRates = {}) {
+      const rate = getFxRate(currency, customFxRates);
+      return Math.round(units * lastPrice * rate);
+    }
+
+    it('calculates cross-rates relative to THB correctly from USD base rates', () => {
+      const mockApiRates = {
+        USD: 1.0,
+        THB: 35.0,
+        EUR: 0.92,
+        GBP: 0.78,
+        JPY: 155.0,
+        SGD: 1.35,
+      };
+      const cross = calculateCrossRates(mockApiRates);
+      assert.equal(cross.THB, 1.0);
+      assert.equal(cross.USD, 35.0);
+      assert.equal(cross.EUR, 38.0435);
+      assert.equal(cross.GBP, 44.8718);
+      assert.equal(cross.JPY, 0.2258);
+      assert.equal(cross.SGD, 25.9259);
+    });
+
+    it('falls back to default FX rates when API rates are missing or offline', () => {
+      assert.equal(getFxRate('USD'), 33.39);
+      assert.equal(getFxRate('EUR'), 36.4);
+      assert.equal(getFxRate('GBP'), 43.5);
+      assert.equal(getFxRate('JPY'), 0.22);
+      assert.equal(getFxRate('SGD'), 25.6);
+      assert.equal(getFxRate('THB'), 1.0);
+      assert.equal(getFxRate('UNKNOWN_CURRENCY'), 1.0);
+    });
+
+    it('correctly calculates THB asset values across multiple currencies', () => {
+      // 10 units at 100 EUR @ 36.40 THB/EUR = 36,400 THB
+      assert.equal(calculateAssetValueTHB(10, 100, 'EUR'), 36400);
+
+      // 5 units at 200 GBP @ 43.50 THB/GBP = 43,500 THB
+      assert.equal(calculateAssetValueTHB(5, 200, 'GBP'), 43500);
+
+      // 10,000 units at 500 JPY @ 0.22 THB/JPY = 1,100,000 THB
+      assert.equal(calculateAssetValueTHB(10000, 500, 'JPY'), 1100000);
+
+      // 200 units at 50 SGD @ 25.60 THB/SGD = 256,000 THB
+      assert.equal(calculateAssetValueTHB(200, 50, 'SGD'), 256000);
+
+      // 1,000 units at 12.50 THB = 12,500 THB
+      assert.equal(calculateAssetValueTHB(1000, 12.5, 'THB'), 12500);
+
+      // Custom live rate override
+      const customRates = { EUR: 38.0 };
+      assert.equal(calculateAssetValueTHB(10, 100, 'EUR', customRates), 38000);
+    });
+  });
 });

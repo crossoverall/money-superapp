@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="1.9.3">
+<meta name="version" content="1.9.4">
 <title>คำนวณการเติมเงินรายเดือน</title>
 <link rel="stylesheet" href="css/theme.css">
 <style>
@@ -384,7 +384,7 @@
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v1.9.3</p>
+  <p class="version-tag">v1.9.4</p>
 
 <script src="js/shared.js"></script>
 <script>
@@ -513,9 +513,45 @@ function t(key, ...args){
   return v;
 }
 
+const DEFAULT_FX_RATES = {
+  THB: 1.0,
+  USD: 33.39,
+  EUR: 36.40,
+  GBP: 43.50,
+  JPY: 0.22,
+  SGD: 25.60,
+};
+
+const CURRENCY_SYMBOLS = {
+  THB: '฿',
+  USD: '$',
+  EUR: '€',
+  GBP: '£',
+  JPY: '¥',
+  SGD: 'S$',
+};
+
+function getFxRate(currency) {
+  if (!currency || currency === 'THB') return 1.0;
+  const curr = String(currency).toUpperCase().trim();
+  if (typeof state !== 'undefined' && state && state.fxRates && typeof state.fxRates[curr] === 'number' && state.fxRates[curr] > 0) {
+    return state.fxRates[curr];
+  }
+  if (typeof state !== 'undefined' && state && curr === 'USD' && typeof state.usdThbRate === 'number' && state.usdThbRate > 0) {
+    return state.usdThbRate;
+  }
+  return DEFAULT_FX_RATES[curr] || 1.0;
+}
+
+function getCurrencySymbol(currency) {
+  const curr = String(currency || 'THB').toUpperCase().trim();
+  return CURRENCY_SYMBOLS[curr] || curr;
+}
+
 const defaultState = {
   totalBudget: 200000,
   usdThbRate: 33.39,
+  fxRates: { ...DEFAULT_FX_RATES },
   lastPriceFetch: 0,
   autoRefreshEnabled: true,
   buckets: [
@@ -641,6 +677,7 @@ function saveState(){
       buckets: state.buckets,
       minTradeThreshold: minTrade,
       usdThbRate: state.usdThbRate || 33.39,
+      fxRates: state.fxRates || DEFAULT_FX_RATES,
       lastPriceFetch: state.lastPriceFetch || 0,
       autoRefreshEnabled: state.autoRefreshEnabled !== false,
     }));
@@ -671,6 +708,8 @@ if(savedState){
     document.getElementById('minTradeThreshold').value = savedState.minTradeThreshold;
   }
   if(typeof savedState.usdThbRate === 'number') state.usdThbRate = savedState.usdThbRate;
+  state.fxRates = Object.assign({}, DEFAULT_FX_RATES, savedState.fxRates || {});
+  if(state.usdThbRate) state.fxRates.USD = state.usdThbRate;
   if(typeof savedState.lastPriceFetch === 'number') state.lastPriceFetch = savedState.lastPriceFetch;
   if(typeof savedState.autoRefreshEnabled === 'boolean') state.autoRefreshEnabled = savedState.autoRefreshEnabled;
   totalBudgetEl.value = state.totalBudget;
@@ -684,6 +723,7 @@ function captureSnapshot(){
     buckets: JSON.parse(JSON.stringify(state.buckets || [])),
     minTradeThreshold: minTrade,
     usdThbRate: state.usdThbRate || 33.39,
+    fxRates: { ...(state.fxRates || DEFAULT_FX_RATES) },
   };
 }
 
@@ -692,6 +732,7 @@ function restoreSnapshot(snap){
   state.totalBudget = snap.totalBudget;
   state.buckets = JSON.parse(JSON.stringify(snap.buckets || []));
   if (snap.usdThbRate) state.usdThbRate = snap.usdThbRate;
+  if (snap.fxRates) state.fxRates = { ...snap.fxRates };
   if (totalBudgetEl) totalBudgetEl.value = state.totalBudget;
   const minTradeEl = document.getElementById('minTradeThreshold');
   if (minTradeEl && snap.minTradeThreshold !== undefined) {
@@ -1079,8 +1120,12 @@ function renderAssetRows(bucket){
           <label style="color:var(--ink-faint); font-weight:600;">${t('fieldPrice')}:</label>
           <input type="number" step="any" min="0" class="price-input" data-bucket="${bucket.id}" data-idx="${i}" data-field="lastPrice" value="${safePrice}" placeholder="0.00" style="width:70px; padding:3px 6px; border:1px solid var(--line); border-radius:5px; background:var(--panel-2); color:var(--ink); font-size:11px;">
           <select class="currency-select" data-bucket="${bucket.id}" data-idx="${i}" data-field="currency" title="Currency / สกุลเงิน" style="padding:2px 3px; border:1px solid var(--line); border-radius:5px; background:var(--panel); color:var(--ink); font-size:10px; font-weight:700; cursor:pointer;">
-            <option value="USD"${(a.currency === 'USD' || (!a.currency && !isThaiAssetSymbol(a.ticker))) ? ' selected' : ''}>$</option>
-            <option value="THB"${(a.currency === 'THB' || isThaiAssetSymbol(a.ticker)) ? ' selected' : ''}>฿</option>
+            <option value="THB"${(a.currency === 'THB' || (!a.currency && isThaiAssetSymbol(a.ticker))) ? ' selected' : ''}>฿ THB</option>
+            <option value="USD"${(a.currency === 'USD' || (!a.currency && !isThaiAssetSymbol(a.ticker))) ? ' selected' : ''}>$ USD</option>
+            <option value="EUR"${a.currency === 'EUR' ? ' selected' : ''}>€ EUR</option>
+            <option value="GBP"${a.currency === 'GBP' ? ' selected' : ''}>£ GBP</option>
+            <option value="JPY"${a.currency === 'JPY' ? ' selected' : ''}>¥ JPY</option>
+            <option value="SGD"${a.currency === 'SGD' ? ' selected' : ''}>S$ SGD</option>
           </select>
         </div>
         <div id="price-status-${bucket.id}-${i}" style="display:flex; align-items:center; gap:4px; color:var(--ink-dim); font-size:10px; font-weight:600;">
@@ -1134,8 +1179,7 @@ function renderAssetRows(bucket){
       b.assets[idx].currency = e.target.value;
       const a = b.assets[idx];
       if (a.units > 0 && a.lastPrice > 0) {
-        const isUSD = (a.currency === 'USD');
-        const rate = isUSD ? (state.usdThbRate || 33.39) : 1;
+        const rate = getFxRate(a.currency);
         a.value = Math.round(a.units * a.lastPrice * rate);
         const valInput = rowsEl.querySelector(`input[data-field="value"][data-idx="${idx}"]`);
         if (valInput) valInput.value = fmtPlain(a.value);
@@ -1156,8 +1200,8 @@ function renderAssetRows(bucket){
 
       const a = b.assets[idx];
       if (a.units > 0 && a.lastPrice > 0) {
-        const isUSD = (a.currency === 'USD' || (!a.currency && !isThaiAssetSymbol(a.ticker)));
-        const rate = isUSD ? (state.usdThbRate || 33.39) : 1;
+        const curr = a.currency || (isThaiAssetSymbol(a.ticker) ? 'THB' : 'USD');
+        const rate = getFxRate(curr);
         a.value = Math.round(a.units * a.lastPrice * rate);
         const valInput = rowsEl.querySelector(`input[data-field="value"][data-idx="${idx}"]`);
         if (valInput) valInput.value = fmtPlain(a.value);
@@ -1600,18 +1644,37 @@ function saveApiSettingsToStorage(settings) {
   } catch(e) {}
 }
 
-async function fetchUsdThbRate() {
+function calculateCrossRates(rates) {
+  if (!rates || typeof rates.THB !== 'number') return null;
+  const thb = rates.THB;
+  const result = { THB: 1.0, USD: thb };
+  ['EUR', 'GBP', 'JPY', 'SGD'].forEach(c => {
+    if (typeof rates[c] === 'number' && rates[c] > 0) {
+      result[c] = parseFloat((thb / rates[c]).toFixed(4));
+    } else {
+      result[c] = DEFAULT_FX_RATES[c];
+    }
+  });
+  return result;
+}
+
+async function fetchFxRates() {
   try {
     const res = await fetchWithTimeout('https://open.er-api.com/v6/latest/USD');
     if (!res.ok) throw new Error('FX HTTP ' + res.status);
     const data = await res.json();
     if (data && data.rates && typeof data.rates.THB === 'number') {
-      return data.rates.THB;
+      return calculateCrossRates(data.rates);
     }
   } catch (err) {
     console.warn('FX fetch failed:', err);
   }
   return null;
+}
+
+async function fetchUsdThbRate() {
+  const fx = await fetchFxRates();
+  return fx ? fx.USD : null;
 }
 
 async function fetchAssetPrice(rawSymbol, apiSettings) {
@@ -1725,10 +1788,11 @@ async function fetchAllPrices() {
   const apiSettings = getApiSettings();
 
   try {
-    // 1. Fetch USD/THB rate
-    const fxRate = await fetchUsdThbRate();
-    if (fxRate && fxRate > 0) {
-      state.usdThbRate = fxRate;
+    // 1. Fetch live FX rates (USD, EUR, GBP, JPY, SGD)
+    const fxRates = await fetchFxRates();
+    if (fxRates) {
+      state.fxRates = fxRates;
+      state.usdThbRate = fxRates.USD;
     }
 
     // 2. Collect all assets that have a ticker and CAN be auto-fetched.
@@ -1776,7 +1840,7 @@ async function fetchAllPrices() {
         a.lastFetched = Date.now();
         delete a._prevPrice;
         if (a.units != null && a.units > 0) {
-          const effectiveRate = a.currency === 'USD' ? (state.usdThbRate || 33.39) : 1;
+          const effectiveRate = getFxRate(a.currency);
           a.value = Math.round(a.units * a.lastPrice * effectiveRate);
         }
       } else {
@@ -1786,7 +1850,7 @@ async function fetchAllPrices() {
           delete a._prevPrice;
         }
         if (a.units != null && a.units > 0 && a.lastPrice > 0) {
-          const effectiveRate = (a.currency === 'THB' || isThaiAssetSymbol(a.ticker)) ? 1 : (state.usdThbRate || 33.39);
+          const effectiveRate = getFxRate(a.currency);
           a.value = Math.round(a.units * a.lastPrice * effectiveRate);
         }
       }
@@ -1823,7 +1887,10 @@ function updatePriceTimestampUI() {
   const tsEl = document.getElementById('priceFetchTimestamp');
   const fxEl = document.getElementById('fxRateBadge');
   if (fxEl) {
-    fxEl.textContent = `USD/THB: ${state.usdThbRate ? state.usdThbRate.toFixed(2) : '33.39'}`;
+    const usdRate = (state.usdThbRate || getFxRate('USD')).toFixed(2);
+    const eurRate = getFxRate('EUR').toFixed(2);
+    fxEl.textContent = `USD: ${usdRate} | EUR: ${eurRate}`;
+    fxEl.title = `USD: ${usdRate}฿ | EUR: ${eurRate}฿ | GBP: ${getFxRate('GBP').toFixed(2)}฿ | JPY: ${getFxRate('JPY').toFixed(2)}฿ | SGD: ${getFxRate('SGD').toFixed(2)}฿`;
   }
   if (!tsEl) return;
   if (!state.lastPriceFetch) {
