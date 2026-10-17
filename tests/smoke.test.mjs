@@ -269,6 +269,14 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         !slipsContent.includes('focus:ring-blue-500'),
         'months-slips.html must not contain focus:ring-blue-500',
       );
+      assert.ok(
+        slipsContent.includes('.bg-emerald-50 { background-color: var(--ok-dim) !important; }'),
+        'months-slips.html must map .bg-emerald-50 to var(--ok-dim)',
+      );
+      assert.ok(
+        slipsContent.includes('.text-emerald-800 { color: var(--ok) !important; }'),
+        'months-slips.html must map .text-emerald-800 to var(--ok)',
+      );
     });
 
     it('verifies dashboard.html declares Life Insurance Adequacy panel with semantic ARIA region and inputs', () => {
@@ -481,6 +489,33 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'js/tax-calculator.js must call calculateThaiInheritanceAndGiftTax',
       );
       assert.ok(taxJs.includes('lbl-inher-title'), 'js/tax-calculator.js EN must define lbl-inher-title');
+    });
+
+    it('verifies rebalance.html contains Target Date Retirement Glidepath Calculator panel and controls', () => {
+      const rebalHtml = fs.readFileSync(path.join(ROOT_DIR, 'rebalance.html'), 'utf8');
+      assert.ok(
+        rebalHtml.includes('id="panelTargetDateGlidepath"'),
+        'rebalance.html must contain #panelTargetDateGlidepath',
+      );
+      assert.ok(rebalHtml.includes('id="inpGlideCurrentAge"'), 'rebalance.html must contain #inpGlideCurrentAge');
+      assert.ok(rebalHtml.includes('id="inpGlideRetireAge"'), 'rebalance.html must contain #inpGlideRetireAge');
+      assert.ok(rebalHtml.includes('id="selGlideRisk"'), 'rebalance.html must contain #selGlideRisk');
+      assert.ok(rebalHtml.includes('id="glidepathBar"'), 'rebalance.html must contain #glidepathBar');
+      assert.ok(rebalHtml.includes('id="valGlideHorizonYears"'), 'rebalance.html must contain #valGlideHorizonYears');
+      assert.ok(rebalHtml.includes('id="valGlideCore"'), 'rebalance.html must contain #valGlideCore');
+      assert.ok(rebalHtml.includes('id="valGlideBallast"'), 'rebalance.html must contain #valGlideBallast');
+      assert.ok(rebalHtml.includes('id="valGlideSat"'), 'rebalance.html must contain #valGlideSat');
+      assert.ok(rebalHtml.includes('id="boxGlidepathAdvice"'), 'rebalance.html must contain #boxGlidepathAdvice');
+
+      const rebalJs = fs.readFileSync(path.join(ROOT_DIR, 'js/rebalance.js'), 'utf8');
+      assert.ok(rebalJs.includes('initTargetDateGlidepath'), 'js/rebalance.js must define initTargetDateGlidepath');
+      assert.ok(rebalJs.includes('toggleTargetDateGlidepath'), 'js/rebalance.js must define toggleTargetDateGlidepath');
+      assert.ok(rebalJs.includes('updateGlidepathUI'), 'js/rebalance.js must define updateGlidepathUI');
+      assert.ok(
+        rebalJs.includes('applyGlidepathSplitToPortfolio'),
+        'js/rebalance.js must define applyGlidepathSplitToPortfolio',
+      );
+      assert.ok(rebalJs.includes('lblGlidepathTitle'), 'js/rebalance.js EN must define lblGlidepathTitle');
     });
   });
 });

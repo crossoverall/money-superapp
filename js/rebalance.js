@@ -79,6 +79,23 @@ const EN = {
   lblForeignLawTitle: 'Statutory References:',
   txtForeignLawDesc:
     'Revenue Code Section 41 Paragraph 2, Revenue Department Orders Por. 161/2566 (effective 1 Jan 2024) & Por. 162/2566 (grandfathered pre-2024 income), and Royal Decree No. 300 (Foreign Tax Credit under DTA).',
+  lblGlidepathTitle: 'Target Date Retirement Glidepath Planner',
+  lblGlidepathSubtitle:
+    'Automatically adjust Core / Ballast / Satellite weights based on age and target retirement year (GPF / Vanguard model)',
+  lblInpGlideCurrentAge: 'Current Age (Years)',
+  lblInpGlideRetireAge: 'Target Retirement Age (Years)',
+  lblInpGlideRisk: 'Risk Tolerance Level',
+  optRiskModerate: 'Moderate (Age-balanced - Recommended)',
+  optRiskAggressive: 'Aggressive (High Growth Focus)',
+  optRiskConservative: 'Conservative (Capital Preservation)',
+  lblCohortPresets: '🎯 Select Target Retirement Cohort:',
+  lblGlidepathBarTitle: '📊 Recommended Glidepath Allocation Split:',
+  lblCardGlideHorizon: 'Investment Horizon',
+  lblCardGlideCore: 'Recommended Core %',
+  lblCardGlideBallast: 'Recommended Ballast %',
+  lblCardGlideSat: 'Recommended Satellite %',
+  lblApplyGlidepath: 'Apply to Portfolio Split',
+  txtGlidepathSyncNote: '💡 Selected allocation split automatically syncs to Core / Ballast / Satellite targets above.',
 };
 if (LANG === 'en') {
   document.title = 'Monthly Top-up Calculator';
@@ -153,6 +170,22 @@ if (LANG === 'en') {
     'lblCardNetThaiTax',
     'lblForeignLawTitle',
     'txtForeignLawDesc',
+    'lblGlidepathTitle',
+    'lblGlidepathSubtitle',
+    'lblInpGlideCurrentAge',
+    'lblInpGlideRetireAge',
+    'lblInpGlideRisk',
+    'optRiskModerate',
+    'optRiskAggressive',
+    'optRiskConservative',
+    'lblCohortPresets',
+    'lblGlidepathBarTitle',
+    'lblCardGlideHorizon',
+    'lblCardGlideCore',
+    'lblCardGlideBallast',
+    'lblCardGlideSat',
+    'lblApplyGlidepath',
+    'txtGlidepathSyncNote',
   ].forEach((id) => {
     const el = document.getElementById(id);
     if (el && EN[id]) el.textContent = EN[id];
@@ -3141,6 +3174,239 @@ function initForeignTaxAdvisor() {
   updateForeignTaxUI();
 }
 
+// ==========================================
+// Target Date Fund Glidepath Model (Roadmap Phase 64)
+// ==========================================
+const GLIDEPATH_STORAGE_KEY = 'money_superapp_glidepath_v1';
+let glidepathState = {
+  isOpen: false,
+  currentAge: 30,
+  retireAge: 60,
+  targetYear: null,
+  riskTolerance: 'moderate',
+};
+
+function loadGlidepathState() {
+  try {
+    const raw = localStorage.getItem(GLIDEPATH_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        glidepathState = { ...glidepathState, ...parsed };
+      }
+    }
+  } catch (_e) {
+    // Graceful fallback to default state
+  }
+}
+
+function saveGlidepathState() {
+  try {
+    localStorage.setItem(GLIDEPATH_STORAGE_KEY, JSON.stringify(glidepathState));
+  } catch (_e) {
+    // Storage quota or disabled fallback
+  }
+}
+
+function toggleTargetDateGlidepath() {
+  const panel = document.getElementById('glidepathPanelBody');
+  const arrow = document.getElementById('glidepathToggleArrow');
+  const btn = document.getElementById('btnToggleGlidepath');
+  if (!panel) return;
+  const isHidden = panel.style.display === 'none' || !panel.style.display;
+  panel.style.display = isHidden ? 'block' : 'none';
+  if (arrow) arrow.textContent = isHidden ? '▲' : '▼';
+  if (btn) btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+  glidepathState.isOpen = isHidden;
+  saveGlidepathState();
+  if (isHidden) {
+    updateGlidepathUI();
+  }
+}
+
+function setGlidepathCohortPreset(year) {
+  const ageEl = document.getElementById('inpGlideCurrentAge');
+  const retireAgeEl = document.getElementById('inpGlideRetireAge');
+  const curYear = new Date().getFullYear();
+  const curAge = Math.max(18, parseInt(ageEl ? ageEl.value : 30, 10) || 30);
+  const yearsToRetire = Math.max(0, year - curYear);
+  const derivedRetireAge = curAge + yearsToRetire;
+
+  if (retireAgeEl) {
+    retireAgeEl.value = derivedRetireAge;
+  }
+  glidepathState.targetYear = year;
+  updateGlidepathUI();
+}
+
+function calculateGlidepathData() {
+  const ageEl = document.getElementById('inpGlideCurrentAge');
+  const retireAgeEl = document.getElementById('inpGlideRetireAge');
+  const riskEl = document.getElementById('selGlideRisk');
+
+  const currentAge = Math.max(15, parseInt(ageEl ? ageEl.value : 30, 10) || 30);
+  const targetRetirementAge = Math.max(30, parseInt(retireAgeEl ? retireAgeEl.value : 60, 10) || 60);
+  const riskTolerance = riskEl ? riskEl.value : 'moderate';
+
+  glidepathState.currentAge = currentAge;
+  glidepathState.retireAge = targetRetirementAge;
+  glidepathState.riskTolerance = riskTolerance;
+  saveGlidepathState();
+
+  if (typeof MoneyApp !== 'undefined' && MoneyApp.calculateTargetDateGlidepath) {
+    return MoneyApp.calculateTargetDateGlidepath({
+      currentAge,
+      targetRetirementAge,
+      riskTolerance,
+    });
+  }
+
+  // Fallback
+  return {
+    yearsToRetire: Math.max(0, targetRetirementAge - currentAge),
+    targetYear: new Date().getFullYear() + Math.max(0, targetRetirementAge - currentAge),
+    split: { core: 80, ballast: 15, satellite: 5 },
+    phaseNameTh: 'ระยะสะสมความมั่งคั่ง',
+    phaseNameEn: 'Wealth Accumulation',
+    adviceTh: 'เน้นสินทรัพย์เติบโตสูงเพื่อพลังดอกเบี้ยทบต้น',
+    adviceEn: 'Focus on growth assets for compounding.',
+    assetBreakdown: {
+      coreDescriptionTh: 'หุ้นโลก, หุ้นไทย, อสังหาฯ',
+      coreDescriptionEn: 'Global/Thai equities, REITs',
+      ballastDescriptionTh: 'พันธบัตร, กองทุนตราสารหนี้, สภาพคล่อง',
+      ballastDescriptionEn: 'Govt bonds, fixed income, cash',
+      satelliteDescriptionTh: 'ทองคำ, คริปโต',
+      satelliteDescriptionEn: 'Gold, digital assets',
+    },
+  };
+}
+
+function updateGlidepathUI() {
+  const calc = calculateGlidepathData();
+  if (!calc || !calc.split) return;
+
+  const barCore = document.getElementById('glideBarCore');
+  const barBallast = document.getElementById('glideBarBallast');
+  const barSat = document.getElementById('glideBarSat');
+
+  if (barCore) barCore.style.width = `${calc.split.core}%`;
+  if (barBallast) barBallast.style.width = `${calc.split.ballast}%`;
+  if (barSat) barSat.style.width = `${calc.split.satellite}%`;
+
+  const badgePhase = document.getElementById('badgeGlidePhase');
+  if (badgePhase) {
+    badgePhase.textContent = LANG === 'en' ? calc.phaseNameEn : calc.phaseNameTh;
+  }
+
+  const txtCore = document.getElementById('txtGlideCorePct');
+  const txtBallast = document.getElementById('txtGlideBallastPct');
+  const txtSat = document.getElementById('txtGlideSatPct');
+
+  if (txtCore) {
+    txtCore.textContent = LANG === 'en' ? `Core (Growth): ${calc.split.core}%` : `Core (หุ้นเติบโต): ${calc.split.core}%`;
+  }
+  if (txtBallast) {
+    txtBallast.textContent =
+      LANG === 'en' ? `Ballast (Bonds): ${calc.split.ballast}%` : `Ballast (ตราสารหนี้/กันชน): ${calc.split.ballast}%`;
+  }
+  if (txtSat) {
+    txtSat.textContent =
+      LANG === 'en'
+        ? `Satellite (Alts/Gold): ${calc.split.satellite}%`
+        : `Satellite (ทางเลือก/ทอง): ${calc.split.satellite}%`;
+  }
+
+  const valHorizon = document.getElementById('valGlideHorizonYears');
+  const subTarget = document.getElementById('subGlideTargetYear');
+  const valCore = document.getElementById('valGlideCore');
+  const valBallast = document.getElementById('valGlideBallast');
+  const valSat = document.getElementById('valGlideSat');
+  const boxAdvice = document.getElementById('boxGlidepathAdvice');
+
+  if (valHorizon) {
+    valHorizon.textContent = LANG === 'en' ? `${calc.yearsToRetire} Years` : `${calc.yearsToRetire} ปี`;
+  }
+  if (subTarget) {
+    subTarget.textContent =
+      LANG === 'en'
+        ? `Retirement Year: ${calc.targetYear}`
+        : `ปีเกษียณ ค.ศ. ${calc.targetYear} (พ.ศ. ${calc.targetYear + 543})`;
+  }
+
+  if (valCore) valCore.textContent = `${calc.split.core}%`;
+  if (valBallast) valBallast.textContent = `${calc.split.ballast}%`;
+  if (valSat) valSat.textContent = `${calc.split.satellite}%`;
+
+  if (boxAdvice) {
+    const adviceText = LANG === 'en' ? calc.adviceEn : calc.adviceTh;
+    const coreDesc = LANG === 'en' ? calc.assetBreakdown.coreDescriptionEn : calc.assetBreakdown.coreDescriptionTh;
+    const ballastDesc =
+      LANG === 'en' ? calc.assetBreakdown.ballastDescriptionEn : calc.assetBreakdown.ballastDescriptionTh;
+    const satDesc =
+      LANG === 'en' ? calc.assetBreakdown.satelliteDescriptionEn : calc.assetBreakdown.satelliteDescriptionTh;
+
+    boxAdvice.innerHTML = `
+      💡 <strong>${LANG === 'en' ? 'Target Date Allocation Guidance:' : 'คำแนะนำกลยุทธ์การจัดพอร์ตตามเส้นทาง Glidepath:'}</strong> ${adviceText}<br>
+      <div style="margin-top:6px; font-size:10px; color:var(--ink-dim); display:flex; flex-direction:column; gap:2px;">
+        <span>• <strong>Core (${calc.split.core}%):</strong> ${coreDesc}</span>
+        <span>• <strong>Ballast (${calc.split.ballast}%):</strong> ${ballastDesc}</span>
+        <span>• <strong>Satellite (${calc.split.satellite}%):</strong> ${satDesc}</span>
+      </div>
+    `;
+  }
+}
+
+function applyGlidepathSplitToPortfolio() {
+  const calc = calculateGlidepathData();
+  if (!calc || !calc.split) return;
+
+  undoMgr.push(captureSnapshot());
+
+  const coreBucket = state.buckets.find((b) => b.id === 'core');
+  const ballastBucket = state.buckets.find((b) => b.id === 'ballast');
+  const satBucket = state.buckets.find((b) => b.id === 'satellite');
+
+  if (coreBucket) coreBucket.weight = calc.split.core;
+  if (ballastBucket) ballastBucket.weight = calc.split.ballast;
+  if (satBucket) satBucket.weight = calc.split.satellite;
+
+  renderSplit();
+  compute();
+  saveState();
+  updateUndoUI();
+
+  const applyBtn = document.getElementById('lblApplyGlidepath');
+  if (applyBtn) {
+    const originalText = applyBtn.textContent;
+    applyBtn.textContent = LANG === 'en' ? '✓ Applied to Portfolio!' : '✓ นำไปใช้กับพอร์ตแล้ว!';
+    setTimeout(() => {
+      applyBtn.textContent = originalText;
+    }, 2000);
+  }
+}
+
+function initTargetDateGlidepath() {
+  loadGlidepathState();
+  const ageEl = document.getElementById('inpGlideCurrentAge');
+  const retireAgeEl = document.getElementById('inpGlideRetireAge');
+  const riskEl = document.getElementById('selGlideRisk');
+  const panel = document.getElementById('glidepathPanelBody');
+  const arrow = document.getElementById('glidepathToggleArrow');
+  const btn = document.getElementById('btnToggleGlidepath');
+
+  if (ageEl && glidepathState.currentAge != null) ageEl.value = glidepathState.currentAge;
+  if (retireAgeEl && glidepathState.retireAge != null) retireAgeEl.value = glidepathState.retireAge;
+  if (riskEl && glidepathState.riskTolerance) riskEl.value = glidepathState.riskTolerance;
+
+  if (glidepathState.isOpen && panel) {
+    panel.style.display = 'block';
+    if (arrow) arrow.textContent = '▲';
+    if (btn) btn.setAttribute('aria-expanded', 'true');
+  }
+
+  updateGlidepathUI();
+}
+
 // Global window exposure for inline handlers
 if (typeof window !== 'undefined') {
   window.setGoldWeightPreset = setGoldWeightPreset;
@@ -3154,6 +3420,10 @@ if (typeof window !== 'undefined') {
   window.setRemittancePreset = setRemittancePreset;
   window.setRemittancePre2024Full = setRemittancePre2024Full;
   window.updateForeignTaxUI = updateForeignTaxUI;
+  window.toggleTargetDateGlidepath = toggleTargetDateGlidepath;
+  window.setGlidepathCohortPreset = setGlidepathCohortPreset;
+  window.updateGlidepathUI = updateGlidepathUI;
+  window.applyGlidepathSplitToPortfolio = applyGlidepathSplitToPortfolio;
 }
 
 renderSplit();
@@ -3164,3 +3434,4 @@ updatePriceTimestampUI();
 initAutoRefresh();
 initGoldCalculator();
 initForeignTaxAdvisor();
+initTargetDateGlidepath();

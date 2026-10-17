@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="2.4.6">
+    <meta name="version" content="2.4.7">
     <meta name="description" content="จำลองสลิปเงินเดือนรวมโบนัส — คำนวณรายได้ ภาษี เงินสมทบประกันสังคม และกองทุนสำรองเลี้ยงชีพ per เดือน">
     <title>จำลองสลิปเงินเดือน (รวมโบนัส)</title>
     <link rel="stylesheet" href="css/tailwind-lite.css">
@@ -18,17 +18,18 @@
         .bg-gray-200 { background-color: var(--line) !important; }
         .bg-gray-800 { background-color: #0E1512 !important; }
         .bg-blue-50 { background-color: var(--panel-2) !important; }
-        .bg-green-50 { background-color: var(--ok-dim) !important; }
+        .bg-green-50, .bg-emerald-50 { background-color: var(--ok-dim) !important; }
         .border-gray-200, .border-gray-300 { border-color: var(--line) !important; }
         .border-blue-500 { border-color: var(--core) !important; }
-        .border-green-200 { border-color: var(--ok) !important; }
+        .border-green-200, .border-emerald-200 { border-color: var(--ok) !important; }
         .text-gray-800, .text-gray-900 { color: var(--ink) !important; }
         .text-gray-700, .text-gray-600, .text-gray-500 { color: var(--ink-dim) !important; }
         .text-blue-800 { color: var(--core) !important; }
-        .text-green-800, .text-green-600 { color: var(--ok) !important; }
+        .text-green-800, .text-green-600, .text-emerald-800 { color: var(--ok) !important; }
         .text-red-500, .text-red-600 { color: var(--danger) !important; }
         .bg-blue-600 { background-color: var(--core) !important; }
         .hover\:bg-blue-700:hover { background-color: var(--ok) !important; filter: brightness(0.95); }
+        #streamTooltip { background-color: var(--ink) !important; color: var(--paper) !important; border: 1px solid var(--line); }
 
         input, select {
             color: var(--ink);
@@ -50,18 +51,18 @@
         [data-theme="dark"] .bg-gray-200 { background-color: var(--line) !important; }
         [data-theme="dark"] .bg-gray-800 { background-color: #0E1512 !important; }
         [data-theme="dark"] .bg-blue-50 { background-color: var(--panel-2) !important; }
-        [data-theme="dark"] .bg-green-50 { background-color: var(--ok-dim) !important; }
+        [data-theme="dark"] .bg-green-50, [data-theme="dark"] .bg-emerald-50 { background-color: var(--ok-dim) !important; }
         [data-theme="dark"] .border-gray-200,
         [data-theme="dark"] .border-gray-300 { border-color: var(--line) !important; }
         [data-theme="dark"] .border-blue-500 { border-color: var(--core) !important; }
-        [data-theme="dark"] .border-green-200 { border-color: var(--ok) !important; }
+        [data-theme="dark"] .border-green-200, [data-theme="dark"] .border-emerald-200 { border-color: var(--ok) !important; }
         [data-theme="dark"] .text-gray-800,
         [data-theme="dark"] .text-gray-900 { color: var(--ink) !important; }
         [data-theme="dark"] .text-gray-700,
         [data-theme="dark"] .text-gray-600,
         [data-theme="dark"] .text-gray-500 { color: var(--ink-dim) !important; }
         [data-theme="dark"] .text-blue-800 { color: var(--core) !important; }
-        [data-theme="dark"] .text-green-800 { color: var(--ok) !important; }
+        [data-theme="dark"] .text-green-800, [data-theme="dark"] .text-emerald-800 { color: var(--ok) !important; }
         [data-theme="dark"] .text-green-600 { color: var(--ok) !important; }
         [data-theme="dark"] .text-red-500,
         [data-theme="dark"] .text-red-600 { color: var(--danger) !important; }
@@ -250,7 +251,7 @@
                         <button onclick="window.print()" id="btn-print-slip" class="py-1.5 px-3 text-white text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-xs" style="background:var(--core);" aria-label="พิมพ์ / บันทึก PDF / Print or Save PDF">
                             <span id="lbl-print-slip">🖨️ พิมพ์ / บันทึก PDF</span>
                         </button>
-                        <p class="text-xs ml-auto" style="color:var(--ink-faint);">v2.4.6</p>
+                        <p class="text-xs ml-auto" style="color:var(--ink-faint);">v2.4.7</p>
                     </div>
                 </div>
             </div>

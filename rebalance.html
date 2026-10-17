@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="2.4.6">
+<meta name="version" content="2.4.7">
 <title>คำนวณการเติมเงินรายเดือน</title>
 <link rel="stylesheet" href="css/theme.css">
 <style>
@@ -448,6 +448,117 @@
     </div>
   </div>
 
+  <!-- Target Date Fund Glidepath Model (Roadmap Phase 64) -->
+  <div class="card" id="panelTargetDateGlidepath" role="region" aria-label="Target Date Retirement Glidepath Calculator" style="margin-bottom:16px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleTargetDateGlidepath()" id="btnToggleGlidepath" role="button" tabindex="0" aria-expanded="false">
+      <div>
+        <div style="font-size:14px; font-weight:700; color:var(--ink);" id="lblGlidepathTitle">
+          🎯 วางแผนสัดส่วนพอร์ตตามเป้าหมายอายุเกษียณ (Target Date Glidepath)
+        </div>
+        <div style="font-size:11px; color:var(--ink-dim);" id="lblGlidepathSubtitle">
+          คำนวณสัดส่วน Core / Ballast / Satellite อัตโนมัติตามอายุและเป้าหมายเกษียณ (โมเดล กบข. / Vanguard Glide Path)
+        </div>
+      </div>
+      <span id="glidepathToggleArrow" style="font-size:14px; color:var(--core); font-weight:700;">▼</span>
+    </div>
+
+    <div id="glidepathPanelBody" style="display:none; margin-top:14px; border-top:1px solid var(--line); padding-top:12px;">
+      <!-- Input Controls Grid -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:10px; margin-bottom:12px;">
+        <div>
+          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpGlideCurrentAge">
+            อายุปัจจุบัน (ปี)
+          </label>
+          <input type="number" id="inpGlideCurrentAge" value="30" min="18" max="90" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateGlidepathUI()">
+        </div>
+
+        <div>
+          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpGlideRetireAge">
+            อายุเป้าหมายเกษียณ (ปี)
+          </label>
+          <input type="number" id="inpGlideRetireAge" value="60" min="40" max="90" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateGlidepathUI()">
+        </div>
+
+        <div>
+          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpGlideRisk">
+            ระดับความเสี่ยงที่ยอมรับได้
+          </label>
+          <select id="selGlideRisk" onchange="updateGlidepathUI()" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:12px; font-weight:600; color:var(--ink); outline:none;">
+            <option value="moderate" id="optRiskModerate">ปานกลาง (สมดุลตามอายุ - แนะนำ)</option>
+            <option value="aggressive" id="optRiskAggressive">เชิงรุก (เน้นการเติบโตสูง)</option>
+            <option value="conservative" id="optRiskConservative">อนุรักษนิยม (เน้นความมั่นคง)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Cohort Year Preset Buttons -->
+      <div style="display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:12px;">
+        <span style="font-size:11px; color:var(--ink-faint); font-weight:600;" id="lblCohortPresets">🎯 เลือกรุ่นปีเกษียณ (Target Year Cohorts):</span>
+        <button type="button" class="tab" onclick="setGlidepathCohortPreset(2035)" style="font-size:10.5px; padding:3px 8px; width:auto;">2035 (พ.ศ. 2578)</button>
+        <button type="button" class="tab" onclick="setGlidepathCohortPreset(2040)" style="font-size:10.5px; padding:3px 8px; width:auto;">2040 (พ.ศ. 2583)</button>
+        <button type="button" class="tab" onclick="setGlidepathCohortPreset(2045)" style="font-size:10.5px; padding:3px 8px; width:auto;">2045 (พ.ศ. 2588)</button>
+        <button type="button" class="tab" onclick="setGlidepathCohortPreset(2050)" style="font-size:10.5px; padding:3px 8px; width:auto;">2050 (พ.ศ. 2593)</button>
+        <button type="button" class="tab" onclick="setGlidepathCohortPreset(2055)" style="font-size:10.5px; padding:3px 8px; width:auto;">2055 (พ.ศ. 2598)</button>
+        <button type="button" class="tab" onclick="setGlidepathCohortPreset(2060)" style="font-size:10.5px; padding:3px 8px; width:auto;">2060 (พ.ศ. 2603)</button>
+      </div>
+
+      <!-- Dynamic Visual Glidepath Allocation Bar -->
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:11px;">
+          <span style="font-weight:700; color:var(--ink);" id="lblGlidepathBarTitle">📊 สัดส่วนแนะนำตามเส้นทาง Glidepath:</span>
+          <span id="badgeGlidePhase" style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--core-dim); color:var(--core); border:1px solid var(--core);"></span>
+        </div>
+        <div style="height:14px; border-radius:7px; overflow:hidden; display:flex; margin-bottom:8px;" id="glidepathBar">
+          <div id="glideBarCore" style="background:var(--core); height:100%; transition:width 0.3s;" title="Core"></div>
+          <div id="glideBarBallast" style="background:var(--ballast); height:100%; transition:width 0.3s;" title="Ballast"></div>
+          <div id="glideBarSat" style="background:var(--satellite); height:100%; transition:width 0.3s;" title="Satellite"></div>
+        </div>
+        <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; font-size:11px;">
+          <span style="color:var(--core); font-weight:700;" id="txtGlideCorePct">Core (หุ้นเติบโต): 80%</span>
+          <span style="color:var(--ballast); font-weight:700;" id="txtGlideBallastPct">Ballast (ตราสารหนี้/กันชน): 15%</span>
+          <span style="color:var(--satellite); font-weight:700;" id="txtGlideSatPct">Satellite (ทางเลือก/ทอง): 5%</span>
+        </div>
+      </div>
+
+      <!-- Key Metrics Display Grid -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; margin-bottom:12px;">
+        <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
+          <span style="font-size:10px; color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGlideHorizon">ระยะเวลาลงทุน</span>
+          <span id="valGlideHorizonYears" style="font-size:13.5px; font-weight:800; color:var(--ink);">30 ปี</span>
+          <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="subGlideTargetYear">ปีเกษียณ ค.ศ. 2056</div>
+        </div>
+        <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
+          <span style="font-size:10px; color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGlideCore">สัดส่วน Core แนะนำ</span>
+          <span id="valGlideCore" style="font-size:13.5px; font-weight:800; color:var(--core);">80%</span>
+          <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="subGlideCoreDesc">หุ้นโลก / SET / อสังหาฯ</div>
+        </div>
+        <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
+          <span style="font-size:10px; color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGlideBallast">สัดส่วน Ballast แนะนำ</span>
+          <span id="valGlideBallast" style="font-size:13.5px; font-weight:800; color:var(--ballast);">15%</span>
+          <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="subGlideBallastDesc">พันธบัตร / กองทุนตราสารหนี้</div>
+        </div>
+        <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
+          <span style="font-size:10px; color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGlideSat">สัดส่วน Satellite แนะนำ</span>
+          <span id="valGlideSat" style="font-size:13.5px; font-weight:800; color:var(--satellite);">5%</span>
+          <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="subGlideSatDesc">ทองคำ / คริปโต / ธีมเฉพาะ</div>
+        </div>
+      </div>
+
+      <!-- Strategic Glidepath Advice Banner -->
+      <div id="boxGlidepathAdvice" style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:12px; font-size:11px; line-height:1.5;"></div>
+
+      <!-- Action Button: Apply to Portfolio Split -->
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <button type="button" class="min-budget-apply-btn" onclick="applyGlidepathSplitToPortfolio()" style="padding:7px 14px; font-size:11.5px; font-weight:700;">
+          📥 <span id="lblApplyGlidepath">นำสัดส่วนนี้ไปใช้กับพอร์ต (Apply to Portfolio)</span>
+        </button>
+        <span style="font-size:10.5px; color:var(--ink-dim);" id="txtGlidepathSyncNote">
+          💡 สัดส่วนที่เลือกจะอัปเดตช่องเป้าหมาย Core / Ballast / Satellite ด้านบนอัตโนมัติ
+        </span>
+      </div>
+    </div>
+  </div>
+
   <!-- Thai Gold Bar & Jewelry DCA P/L & Baht Weight Calculator -->
   <div class="panel" role="region" aria-label="Thai Gold DCA &amp; Baht Weight Calculator" id="panelThaiGold">
     <div class="panel-title" id="lbl-gold-panel-title" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
@@ -718,7 +829,7 @@
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v2.4.6</p>
+  <p class="version-tag">v2.4.7</p>
 
 <script src="js/shared.js"></script>
 <script src="js/rebalance.js"></script>

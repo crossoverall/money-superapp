@@ -15,6 +15,19 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Target Date Retirement Glidepath Planner & Comprehensive E2E Expansion (v2.4.7)
+
+- **Date & Context:** 2026-10-18, during implementation of Target Date Glidepath Model and comprehensive E2E test suite expansion across all 8 tools (`v2.4.7`).
+- **Problem:** Investors frequently struggle to set and rebalance their Core/Ballast/Satellite portfolio targets over time, either remaining excessively aggressive near retirement (exposing their life savings to catastrophic drawdown) or overly conservative in youth (losing decades of compounding growth). Additionally, sub-page themes occasionally contained unmapped utility classes (e.g. `bg-emerald-50`, unharmonized tooltips) that caused off-theme flashes in dark mode.
+- **Root Cause:** Standard portfolio rebalancers treat target weights as static constants rather than a dynamic life-cycle function of time-to-retirement. Furthermore, utility CSS classes from Tailwind need strict variable-based overrides for complete WCAG-compliant dark/light mode consistency.
+- **Solution & Rule:**
+  1. Implement `calculateTargetDateGlidepath(params)` in `js/shared.js`, modeling GPF (กบข. แผนสมดุลตามอายุ) and Vanguard Target Retirement glidepaths:
+     - Shift from aggressive wealth accumulation (80-85% Core, 5-15% Ballast, 5-10% Satellite) when $> 20$ years out, smoothly down to capital preservation and income distribution (20-25% Core, 70-75% Ballast, 5% Satellite) at or in retirement.
+     - Support risk tolerance profiles ('moderate', 'aggressive', 'conservative') and target retirement year cohorts (2035, 2040, 2045, 2050, 2055, 2060).
+  2. Implement `#panelTargetDateGlidepath` with dynamic segmented glidepath bar, interactive KPI metrics, strategic advice, and a 1-click `applyGlidepathSplitToPortfolio()` action that directly synchronizes the portfolio's Core/Ballast/Satellite weights and triggers auto-recomputation with full undo history.
+  3. Harmonize all remaining off-theme badges and tooltips (mapping `.bg-emerald-50`, `.border-emerald-200`, `.text-emerald-800`, and `#streamTooltip` directly to semantic Forest Sage tokens `var(--ok-dim)`, `var(--ok)`, and `var(--ink)`).
+  4. Expand test suite to 291 automated passing tests across 80 suites, covering 10 cross-tool integration bridges, bilingual symmetry, zero telemetry, and headless smoke audits.
+
 ### 2026-10-17: Foreign Investment & Crypto Repatriation Tax Advisor (v2.4.6)
 
 - **Date & Context:** 2026-10-17, during implementation of Foreign Investment & Crypto Repatriation Tax Advisor in `rebalance.html` / `js/rebalance.js` / `js/shared.js` (`v2.4.6`).

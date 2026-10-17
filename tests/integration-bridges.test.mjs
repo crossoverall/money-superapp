@@ -235,4 +235,133 @@ describe('Cross-Tool Integration Bridges & Storage Contracts', () => {
       assert.equal(saved.checked.pnd90_paper, false);
     });
   });
+
+  describe('Bridge 7: Target Date Glidepath -> Rebalance Portfolio (rebalanceCalculator.state.v1)', () => {
+    it('updates portfolio Core/Ballast/Satellite allocation weights seamlessly', () => {
+      const { MoneyApp, storage } = createMockEnvironment();
+
+      // Producer: Calculate optimal glidepath for a 45-year-old retiring at 60
+      const glide = MoneyApp.calculateTargetDateGlidepath({
+        currentAge: 45,
+        targetRetirementAge: 60,
+        riskTolerance: 'moderate',
+      });
+      assert.equal(glide.split.core, 58);
+      assert.equal(glide.split.ballast, 37);
+      assert.equal(glide.split.satellite, 5);
+
+      // Existing rebalance portfolio state
+      const rebalanceState = {
+        totalBudget: 150000,
+        buckets: [
+          { id: 'core', label: 'Core', weight: 80, assets: [] },
+          { id: 'ballast', label: 'Ballast', weight: 15, assets: [] },
+          { id: 'satellite', label: 'Satellite', weight: 5, assets: [] },
+        ],
+      };
+
+      // Consumer applies Glidepath weights to rebalance state
+      for (const b of rebalanceState.buckets) {
+        if (b.id === 'core') b.weight = glide.split.core;
+        if (b.id === 'ballast') b.weight = glide.split.ballast;
+        if (b.id === 'satellite') b.weight = glide.split.satellite;
+      }
+      storage.setItem('rebalanceCalculator.state.v1', JSON.stringify(rebalanceState));
+
+      const loaded = JSON.parse(storage.getItem('rebalanceCalculator.state.v1'));
+      assert.equal(loaded.buckets.find((b) => b.id === 'core').weight, 58);
+      assert.equal(loaded.buckets.find((b) => b.id === 'ballast').weight, 37);
+      assert.equal(loaded.buckets.find((b) => b.id === 'satellite').weight, 5);
+    });
+  });
+
+  describe('Bridge 8: Thai Gold DCA -> Rebalance Portfolio (exportGoldToPortfolio)', () => {
+    it('injects calculated physical gold valuation into portfolio ballast assets', () => {
+      const { MoneyApp, storage } = createMockEnvironment();
+
+      // Producer: calculate gold metrics for 5 baht of gold bar
+      const goldMetrics = MoneyApp.calculateThaiGoldMetrics({
+        goldType: 'bar',
+        weight: 5,
+        weightUnit: 'baht',
+        costPerBaht: 40000,
+        blockFee: 200,
+        currentMarketPrice: 42500,
+      });
+
+      assert.equal(goldMetrics.marketValue, 212500);
+
+      // Consumer: Rebalance loads existing portfolio and exports gold asset
+      const portfolioState = {
+        totalBudget: 100000,
+        buckets: [
+          { id: 'core', label: 'Core', weight: 70, assets: [] },
+          { id: 'ballast', label: 'Ballast', weight: 25, assets: [] },
+          { id: 'satellite', label: 'Satellite', weight: 5, assets: [] },
+        ],
+      };
+
+      const ballastBucket = portfolioState.buckets.find((b) => b.id === 'ballast');
+      ballastBucket.assets.push({
+        name: 'Physical Thai Gold (96.5%)',
+        ticker: 'GOLD',
+        units: goldMetrics.weightBaht,
+        lastPrice: goldMetrics.currentMarketPrice,
+        currency: 'THB',
+        value: goldMetrics.marketValue,
+        weight: 10,
+      });
+
+      storage.setItem('rebalanceCalculator.state.v1', JSON.stringify(portfolioState));
+
+      const savedPortfolio = JSON.parse(storage.getItem('rebalanceCalculator.state.v1'));
+      const goldAsset = savedPortfolio.buckets.find((b) => b.id === 'ballast').assets.find((a) => a.ticker === 'GOLD');
+
+      assert.ok(goldAsset);
+      assert.equal(goldAsset.value, 212500);
+      assert.equal(goldAsset.units, 5);
+      assert.equal(goldAsset.lastPrice, 42500);
+    });
+  });
+
+  describe('Bridge 9: Insurance Adequacy -> Personal Income Tax Deduction', () => {
+    it('bridges insurance coverage gap to statutory Section 47(1)(d) tax deduction benefit', () => {
+      const { MoneyApp } = createMockEnvironment();
+
+      const adequacy = MoneyApp.calculateInsuranceAdequacy({
+        debtClearance: 2500000,
+        monthlyExpenses: 40000,
+        supportYears: 5,
+        childEducation: 500000,
+        emergencyCushion: 300000,
+        liquidAssets: 800000,
+        existingCoverage: 1000000,
+        marginalTaxRate: 20,
+      });
+
+      assert.ok(adequacy.protectionGap > 0);
+      assert.equal(adequacy.status, 'severe_shortfall');
+      assert.equal(adequacy.deductibleAmount, 58500); // 3.9M gap * 1.5% = 58,500 THB
+      assert.equal(adequacy.potentialTaxSavings, 11700); // 58,500 * 20% bracket = 11,700 THB savings
+    });
+  });
+
+  describe('Bridge 10: Thai Mobile Banking CSV Statement -> Remaining Money Auto-Import', () => {
+    it('parses KBank statement and categorizes debits as expenses and credits as incomes', () => {
+      const { MoneyApp } = createMockEnvironment();
+
+      const mockCsv = `Date,Time,Transaction,Description,Withdrawal,Deposit,Balance\n15/09/2026,08:30,Transfer,Salary Employer,,65000.00,120000.00\n16/09/2026,12:15,Payment,Condo Loan,18500.00,,101500.00\n17/09/2026,19:40,QR Scan,Grocery Supermarket,2340.50,,99159.50\n`;
+      const parsed = MoneyApp.detectAndParseThaiBankStatement(mockCsv, 'kbank_statement_sep2026.csv');
+
+      assert.equal(parsed.isBankStatement, true);
+      assert.equal(parsed.bankCode, 'kbank');
+      assert.equal(parsed.candidate.incomes.length, 1);
+      assert.equal(parsed.candidate.incomes[0].value, 65000);
+      assert.equal(parsed.candidate.expenses.length, 2);
+      assert.equal(parsed.candidate.expenses[0].value, 18500);
+      assert.equal(parsed.candidate.expenses[1].value, 2340.5);
+      assert.equal(parsed.summary.totalInflow, 65000);
+      assert.equal(parsed.summary.totalOutflow, 20840.5);
+    });
+  });
 });
