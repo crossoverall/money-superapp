@@ -15,6 +15,49 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-17: Script Modularization & Decomposition (v2.2.6)
+
+- **Date & Context:** 2026-10-17, during modularization of inline scripts in `debt-calculator.html` and `dashboard.html` (`v2.2.6`).
+- **Problem:** `dashboard.html` (~2,760 lines) and `debt-calculator.html` (~1,720 lines) contained enormous blocks of inline JavaScript. This made HTML files bloated, prevented efficient browser script caching across visits, and bypassed dedicated JavaScript linting.
+- **Root Cause:** Legacy architecture kept calculator script logic inline within the respective HTML files.
+- **Solution & Rule:**
+  1. Extract script blocks into dedicated standalone modules: `js/debt-calculator.js` and `js/dashboard.js`.
+  2. Include the new scripts into Service Worker cache list (`sw.js`) to guarantee 100% offline standalone operation (ADR-001).
+  3. In Biome linter, avoid returning values from `.forEach()` callbacks (e.g. `map.set()` returns `this`). Wrap callback body in braces `{ map.set(...); }` to prevent lint errors (`lint/suspicious/useIterableCallbackReturn`).
+
+### 2026-10-17: Section 48(5) Retirement Lump-Sum vs Transfer-to-RMF Tax Optimization Engine (v2.2.5)
+
+- **Date & Context:** 2026-10-17, during implementation of Section 48(5) vs RMF Rollover optimizer in `tax-calculator.html` (`v2.2.5`).
+- **Problem:** Employees leaving an employer after $\ge 5$ years of service but under age 55 face a huge tax burden if they take their Provident Fund (PVD) as a cash lump sum. Under Section 48(5), taxable PVD is taxed at progressive rates (5%–35%). However, rolling over PVD into an RMF for PVD within 30 days keeps 100% of PVD funds tax-exempt. Users had no interactive way to calculate their exact immediate tax savings.
+- **Root Cause:** Severance calculator only computed full lump sum tax, without providing comparative rollover tax optimization.
+- **Solution & Rule:**
+  1. In Tab 1 ($\ge 5$ yrs, age $< 55$), compute side-by-side comparison:
+     - Option A (Full Lump Sum): Tax on $\text{severanceExcess} + \text{taxablePVD}$.
+     - Option B (Transfer to RMF): PVD is tax-exempt; Section 48(5) tax applies only to severance excess.
+  2. Display immediate tax savings badge, net immediate cash, and retained RMF wealth.
+  3. Ensure all text and labels are bilingual (Thai and English).
+
+### 2026-10-17: AES-GCM Encrypted Offline Backup Vault (v2.2.4)
+
+- **Date & Context:** 2026-10-17, during implementation of AES-GCM encrypted offline backup vault in `js/shared.js` and `index.html` (`v2.2.4`).
+- **Problem:** Users exporting plaintext JSON backups faced privacy risks if files were stored on unencrypted USB drives or cloud sync folders.
+- **Root Cause:** Standard JSON serialization lacks confidentiality and tamper protection.
+- **Solution & Rule:**
+  1. Use standard W3C Web Cryptography API (`crypto.subtle`) for 100% offline client-side security (zero CDN, zero external libraries).
+  2. PBKDF2 key derivation with 100,000 iterations SHA-256 and 16-byte random salt.
+  3. AES-GCM 256-bit encryption with 12-byte random IV providing AEAD authenticated ciphertext integrity.
+  4. Standardized `.superapp.vault` envelope format: `{ format: 'money-superapp-vault-v1', salt, iv, ciphertext, createdAt }`.
+
+### 2026-10-17: 360° Financial Health Scorecard & 5-Axis Spider/Radar Chart Engine (v2.2.3)
+
+- **Date & Context:** 2026-10-17, during implementation of 360° Financial Health Scorecard in `dashboard.html` (`v2.2.3`).
+- **Problem:** Users had separate metrics (emergency runway, savings rate, debt-to-asset, FIRE progress, tax efficiency) without a single unified index of overall financial health.
+- **Root Cause:** Metrics were displayed across disconnected widgets without a holistic diagnostic model.
+- **Solution & Rule:**
+  1. Implement 5 core financial pillars: Emergency Runway (target 6+ mos), Savings Rate (target 50%+), Debt Safety (Debt/Assets ratio), Wealth Accumulation (FIRE / NW target progress), and Tax Optimization.
+  2. Render lightweight SVG spider/radar chart using native `<polygon>` coordinates without external charting libraries.
+  3. Dynamically assign overall health tier (Excellent, Solid, Moderate, Needs Attention, Critical) with personalized actionable improvement tips.
+
 ### 2026-10-17: Net Worth Real-Value Inflation Deflator & Purchasing Power Projection Engine (v2.2.2)
 
 - **Date & Context:** 2026-10-17, during implementation of net worth real-value inflation deflator & purchasing power projection engine in `dashboard.html` (`v2.2.2`).
