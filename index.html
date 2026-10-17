@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="2.3.0">
+<meta name="version" content="2.3.1">
 <meta name="theme-color" content="#2F8B76">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -311,7 +311,7 @@
       <span>🔍</span>
       <span style="font-size:10px; opacity:0.75; background:#1e293b; padding:1px 4px; border-radius:4px; border:1px solid #475569;">Ctrl+K</span>
     </button>
-    <span class="version-badge">v2.3.0</span>
+    <span class="version-badge">v2.3.1</span>
     <button id="btn-help-modal" onclick="openOnboardingModal()" title="คู่มือการใช้งาน (Quick Tour)" aria-label="Open Quick Tour and Guide">
       <span class="help-icon">❓</span>
     </button>
@@ -343,7 +343,7 @@
 <!-- Privacy Footer Notice -->
 <div class="privacy-bar">
   <span id="lbl-privacy-footer">🔒 100% Client-Side Privacy — ทุกการคำนวณและข้อมูลถูกเก็บไว้ในอุปกรณ์ของคุณเท่านั้น ไม่มีการส่งข้อมูลสู่เซิร์ฟเวอร์</span>
-  <span style="color: #64748b; font-size: 10px;">Money Superapp v2.3.0</span>
+  <span style="color: #64748b; font-size: 10px;">Money Superapp v2.3.1</span>
 </div>
 
 <!-- Mobile Bottom Navigation Bar (Visible on Mobile <= 768px) -->
@@ -379,7 +379,7 @@
 </nav>
 
 <!-- Settings & Data Management Modal -->
-<div id="settingsModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.65); z-index: 9999; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(2px);">
+<div id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="lbl-modal-title" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.65); z-index: 9999; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(2px);">
   <div style="background: #131E19; color: #EAF2EE; border: 1px solid #24352C; border-radius: 16px; max-width: 500px; width: 100%; padding: 22px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #24352C; padding-bottom: 10px;">
       <h3 style="margin: 0; font-size: 16px; font-weight: 700;" id="lbl-modal-title">จัดการข้อมูล & ความเป็นส่วนตัว</h3>
@@ -560,7 +560,7 @@
 </div>
 
 <!-- Onboarding & Quick Tour Modal -->
-<div id="onboardingModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.65); z-index: 9999; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(2px);" onclick="if(event.target===this)closeOnboardingModal()">
+<div id="onboardingModal" role="dialog" aria-modal="true" aria-labelledby="lbl-onboarding-title" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.65); z-index: 9999; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(2px);" onclick="if(event.target===this)closeOnboardingModal()">
   <div style="background: #131E19; color: #EAF2EE; border: 1px solid #24352C; border-radius: 16px; max-width: 540px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 22px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 1px solid #24352C; padding-bottom: 12px;">
       <div>
@@ -651,7 +651,7 @@
 </div>
 
 <!-- Command Palette & Omnisearch Modal -->
-<div id="cmdPaletteModal" class="modal-backdrop" style="display:none; align-items:flex-start; padding-top:10vh;" onclick="if(event.target === this) closeCommandPalette()">
+<div id="cmdPaletteModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-label="Command Palette" style="display:none; align-items:flex-start; padding-top:10vh;" onclick="if(event.target === this) closeCommandPalette()">
   <div style="background:var(--card-bg, #111827); border:1px solid #374151; border-radius:12px; width:92%; max-width:540px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.5); overflow:hidden; font-family:inherit;">
     <div style="display:flex; align-items:center; padding:12px 14px; border-bottom:1px solid #374151; gap:8px;">
       <span style="font-size:16px;">🔍</span>
