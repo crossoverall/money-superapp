@@ -1,5 +1,5 @@
 ---
-task_id: "FEAT-VISUALIZATION-01"
+task_id: "FEAT-VISUALIZATION-02"
 status: "completed"
 current_stage: "release"
 complexity: "level_2"
@@ -7,49 +7,47 @@ iteration_count: 0
 pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Feature / Task Specification: Interactive Cashflow Visual Breakdown (Phase 5 Slice 1)
+### Feature / Task Specification: Debt Payoff Trajectory SVG Amortization Curve (Phase 5 Slice 2)
 
 #### 1. Goal & Scope Limits
-- **Objective:** Add an elegant, responsive, zero-dependency visual cashflow breakdown in `remaining-money.html` showing proportional allocation of gross income across statutory deductions (tax, SSO, PVD), living expenses, savings, and remaining investable money.
+- **Objective:** Add an interactive, zero-dependency SVG visualization to `debt-calculator.html` displaying the debt balance amortization trajectory over time.
 - **Target Files (<= 5 files):**
-  1. `remaining-money.html` (Render cashflow proportional bar / breakdown visual, responsive styling, localized legend)
-  2. `tests/financial-math.test.mjs` (Added unit tests for cashflow share proportions)
+  1. `debt-calculator.html` (Add SVG chart container, `renderPayoffChart()` rendering dual curves: current strategy vs minimum-only, axes, markers, and localized legend)
+  2. `tests/financial-math.test.mjs` (Add unit test for simulation schedule points)
   3. `.ai/memory/active.md`
 - **Explicit Out of Scope:**
-  - External charting libraries like Chart.js or D3 (must remain 100% zero-dependency vanilla JS & SVG/CSS per ADR-001).
-  - Heavy canvas animations that drain mobile batteries.
+  - Third-party chart libraries (No Chart.js, No D3).
+  - Heavy canvas rendering.
 
 #### 2. Architecture & Decision Alignment
-- **ADR-001 (Zero-Build Static PWA / Privacy):** 100% offline, pure SVG/CSS rendered client-side.
-- **ADR-002 (Iframe Isolation):** Self-contained within `remaining-money.html`.
-- **Theme & Design Consistency:** Uses CSS custom properties from `css/theme.css` (`--brand`, `--core`, `--panel`, `--line`, `--danger`, etc.). Dark-mode and print-media responsive.
+- **ADR-001 (Zero-Build Static PWA / Privacy):** 100% client-side offline SVG, zero telemetry.
+- **ADR-002 (Iframe Isolation):** Self-contained within `debt-calculator.html`.
+- **Consistent Theme:** Reuses CSS variables (`--core`, `--ok`, `--warn`, `--panel`, `--line`, etc.) for seamless light/dark mode support.
 
 #### 3. Step-by-Step Implementation Summary
-1. **Design Component:**
-   - Positioned directly below `.summary-strip`.
-   - Rendered segmented proportional bar representing Gross Income:
-     - Statutory Deductions (Tax + SSO + PVD): `#8b5cf6` (purple)
-     - Living Expenses: `#f43f5e` (rose/red)
-     - Savings / Emergency Reserves: `#0284c7` (sky/blue)
-     - Remaining Surplus for Investment: `#10b981` (emerald green)
-   - Real-time surplus/deficit pill badge:
-     - Surplus: green badge (`+X THB Surplus`)
-     - Balanced: neutral slate badge (`0 THB Balanced`)
-     - Deficit: red badge (`-X THB Deficit`)
-2. **Interactive Legend & Metrics:**
-   - Shows formatted amount and exact share of income for all four segments.
-   - Smooth CSS transitions (`transition: width 0.3s ease`).
-3. **Responsive & Print:**
-   - Graceful flex wrap on small mobile screens.
+1. **HTML & CSS Structure:**
+   - Added `#debtChartPanel` between strategy comparison cards and the detailed monthly table.
+   - Pure SVG viewport (`viewBox="0 0 600 220"`, `preserveAspectRatio="none"`).
+   - Localized legend with visual indicators for Current Strategy, Minimum Only, and Milestones.
+2. **Chart Rendering Function (`renderPayoffChart`):**
+   - Tracks monthly balance progression in `simulate()` via `trajectory` array (`[{ month, balance }]`).
+   - Maps coordinates `(x, y)` based on max debt balance and max months across strategies.
+   - Plots dual trajectories:
+     - 🟢 **Current Strategy** (with extra payment): Solid emerald green line with subtle vertical gradient area fill.
+     - 🟠 **Minimum Only**: Dashed amber line (`#f59e0b`) illustrating baseline interest drag.
+   - Plots milestone marker circles at exact payoff months for each debt account.
+   - Shows empty-state banner when debt balance is zero.
+3. **Bilingual Localization:**
+   - English and Thai strings for chart title, legend items, milestone tooltips, and axis labels.
 4. **Verification & Tests:**
-   - Added unit test suite `Cashflow Allocation Proportions` in `tests/financial-math.test.mjs`.
-   - 29 unit tests pass in 62ms.
+   - Added `simulateTrajectory` unit test in `tests/financial-math.test.mjs`.
+   - 30 unit tests pass in 63ms.
    - Biome check passes with 0 errors.
-   - Bumped to `v1.8.7` via `node scripts/bump.mjs patch`.
+   - Bumped to `v1.8.8` via `node scripts/bump.mjs patch`.
 
 #### 4. Acceptance Criteria
-- [x] Proportional cashflow bar reflects real-time input changes.
-- [x] Percentages sum to 100% of income (or flag deficit when negative).
-- [x] Thai and English localization supported.
-- [x] Looks great in both light and dark modes.
-- [x] All automated tests pass (`npm test`) and Biome linter passes (`npm run lint`).
+- [x] SVG curve accurately reflects balance reduction across months for both current strategy and minimum-only.
+- [x] Milestone dots mark exact months where specific loans are paid off.
+- [x] Fully responsive on mobile, desktop, and print.
+- [x] Bilingual support (TH / EN).
+- [x] Zero build step and passes `npm test` and `npm run lint`.

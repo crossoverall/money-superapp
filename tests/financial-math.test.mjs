@@ -228,6 +228,51 @@ describe('Financial Math Verification', () => {
       assert.equal(avalanche[1].id, 1); // 16%
       assert.equal(avalanche[2].id, 3); // 3.5%
     });
+
+    it('generates a monotonic decreasing trajectory from initial total to zero', () => {
+      function simulateTrajectory(debtsList, extra, strategy) {
+        const debts = debtsList.map((d) => ({ ...d, initialBalance: d.balance }));
+        let months = 0;
+        const initialTotal = debts.reduce((sum, d) => sum + d.initialBalance, 0);
+        const trajectory = [{ month: 0, balance: initialTotal }];
+        while (debts.some((d) => d.balance > 0.01) && months < 360) {
+          months++;
+          debts.forEach((d) => {
+            if (d.balance > 0) d.balance += d.balance * (d.rate / 100 / 12);
+          });
+          let avail = extra;
+          debts.forEach((d) => {
+            if (d.balance > 0) {
+              const pay = Math.min(d.balance, d.minPayment);
+              d.balance -= pay;
+            } else {
+              avail += d.minPayment;
+            }
+          });
+          const active = debts.filter((d) => d.balance > 0.01);
+          active.sort((a, b) => (strategy === 'snowball' ? a.balance - b.balance : b.rate - a.rate));
+          for (const target of active) {
+            if (avail <= 0.01) break;
+            const pay = Math.min(target.balance, avail);
+            target.balance -= pay;
+            avail -= pay;
+          }
+          const remaining = debts.reduce((sum, d) => sum + Math.max(0, d.balance), 0);
+          trajectory.push({ month: months, balance: Math.max(0, remaining) });
+        }
+        return { months, trajectory };
+      }
+
+      const sampleDebts = [
+        { id: 1, name: 'Card', balance: 10000, rate: 12, minPayment: 1000 },
+        { id: 2, name: 'Loan', balance: 20000, rate: 8, minPayment: 2000 },
+      ];
+      const res = simulateTrajectory(sampleDebts, 1000, 'avalanche');
+      assert.ok(res.months > 0 && res.months <= 360);
+      assert.equal(res.trajectory[0].balance, 30000);
+      assert.equal(res.trajectory[res.trajectory.length - 1].balance, 0);
+      assert.equal(res.trajectory[res.trajectory.length - 1].month, res.months);
+    });
   });
 
   describe('Cashflow Allocation Proportions', () => {
