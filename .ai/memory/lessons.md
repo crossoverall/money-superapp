@@ -535,5 +535,20 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
 - **Rule:** In tax planning tools, always pair calculated gross tax liability with tax withheld at source (50 Tawi) to reveal the actual filing outcome (Refund vs Payable), bridge cumulative withholding from payroll records, and provide actionable localized compliance guidance (PromptPay direct deposit vs 3-month interest-free installment plans).
 
 
+### 2026-10-17: Recurring Budget Templates & Monthly Expense Category Profile Presets
+
+- **Date & Context:** 2026-10-17, implementing Budget Presets & Quick Template Switcher in `remaining-money.html` and `js/remaining-money.js` (`v2.1.6`).
+- **Problem:**
+  1. Users frequently re-entered or manually adjusted repetitive monthly expenses across changing real-world life scenarios (such as an ultra-frugal savings sprint month vs a high-discretionary holiday/vacation month vs standard baseline).
+  2. Switching whole budget states without immediate visual feedback or undo safety risked overriding carefully tuned personal budgeting entries.
+- **Resolution:**
+  1. Built a responsive **Quick Budget Template Presets Bar** directly above the summary strip in `remaining-money.html`, offering one-click scenario switching (`First Jobber 25k`, `Frugal 35k`, `Holiday 45k`, `50/30/20 Rule 50k`, `Family 60k`) with active pill highlighting.
+  2. Expanded `BUDGET_PRESETS` with specialized life scenarios (`preset-frugal` with 43% savings rate, `preset-holiday` with realistic vacation allowances, and `preset-503020` hitting mathematically balanced Needs/Wants/Savings).
+  3. Linked active template state (`activeTemplateId`) into `captureSnapshot` and `restoreSnapshot`, ensuring full Ctrl+Z undo/redo fidelity across template transitions.
+  4. Added 4 automated unit tests in `tests/financial-math.test.mjs` verifying schema validation, savings rate assertions, edge cases, and custom template serialization (**127 automated tests passing, 0 Biome linter errors**).
+- **Rule:** When adding template/preset profile switchers to budgeting applications, provide a persistent top-level quick switcher for primary scenarios, bind template IDs into undo snapshots so reverting preserves active highlights, and mathematically validate template category distributions against budgeting benchmarks (e.g. 50/30/20).
+
+
+
 
 

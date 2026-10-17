@@ -90,6 +90,8 @@ const EN = {
   btnApplyTemplate: 'Apply',
   btnDeleteTemplate: 'Delete',
   noCustomTemplates: 'No saved templates yet. Enter a name above to save your current budget.',
+  txtPresetBarTitle: 'Budget Mode:',
+  lblManageTemplates: 'Manage Templates...',
 };
 
 const T = {
@@ -311,6 +313,10 @@ if (LANG === 'en') {
   if (tmplUndoNotice) tmplUndoNotice.textContent = EN.lblTemplateUndoNotice;
   const tmplCloseBtn = document.getElementById('btnCloseTemplate');
   if (tmplCloseBtn) tmplCloseBtn.textContent = EN.btnCloseTemplate;
+  const pbTitle = document.getElementById('txtPresetBarTitle');
+  if (pbTitle) pbTitle.textContent = EN.txtPresetBarTitle;
+  const pbManage = document.getElementById('lblManageTemplates');
+  if (pbManage) pbManage.textContent = EN.lblManageTemplates;
 }
 
 // ── Canonical names & Translation helper ──────────────────────────────────
@@ -712,11 +718,13 @@ function captureSnapshot() {
     pvdPercent: pvdPercent,
     showEmergencyRunway: !!state.showEmergencyRunway,
     currentEmergencyReserve: state.currentEmergencyReserve || 0,
+    activeTemplateId: currentActiveTemplateId,
   };
 }
 
 function restoreSnapshot(snap) {
   if (!snap) return;
+  currentActiveTemplateId = snap.activeTemplateId || null;
   state.incomes = snap.incomes ? JSON.parse(JSON.stringify(snap.incomes)) : [];
   state.expenses = snap.expenses ? JSON.parse(JSON.stringify(snap.expenses)) : [];
   state.savings = snap.savings ? JSON.parse(JSON.stringify(snap.savings)) : [];
@@ -757,6 +765,7 @@ function restoreSnapshot(snap) {
   renderRows();
   renderPvdRow();
   compute();
+  renderQuickPresetsBar();
   saveState();
   updateUndoUI();
 }
@@ -3135,9 +3144,113 @@ const BUDGET_PRESETS = [
       savings: [{ name: 'กองทุนสำรองฉุกเฉิน 6-12 เดือน', value: 10000 }],
     },
   },
+  {
+    id: 'preset-frugal',
+    nameTh: '🥦 ประหยัดเข้มงวด / เน้นสร้างตัว (Frugal & High Savings)',
+    nameEn: '🥦 Frugal & High Savings',
+    descTh: 'เงินเดือน 35k, ค่าใช้จ่ายจำเป็น 13k, ลดสิ่งฟุ่มเฟือยเหลือ 3k, ออม/ลงทุนหนัก 15k (~43%)',
+    descEn: 'Salary 35k, Fixed 13k, Minimal wants 3k, High savings 15k (~43% savings rate)',
+    state: {
+      incomes: [{ name: 'เงินเดือน', value: 35000, isSalary: true }],
+      expenses: [
+        { name: AUTO_TAX_NAME_TH, value: 0, auto: true, autoType: 'tax' },
+        { name: AUTO_SSO_NAME_TH, value: 0, auto: true, autoType: 'sso' },
+        { name: AUTO_PVD_NAME_TH, value: 0, auto: true, autoType: 'pvd' },
+        { name: 'ค่าเช่าห้อง / ที่พัก', value: 5500 },
+        { name: 'ค่าน้ำ + ค่าไฟ + เน็ต', value: 1200 },
+        { name: 'ค่าอาหารปรุงเองและของใช้จำเป็น', value: 5000 },
+        { name: 'ค่าเดินทางประหยัด', value: 1500 },
+        { name: 'ค่าสันทนาการจำกัดงบ', value: 1500 },
+      ],
+      savings: [{ name: 'เงินออมฉุกเฉิน & พอร์ตลงทุน', value: 15000 }],
+    },
+  },
+  {
+    id: 'preset-holiday',
+    nameTh: '✈️ เดือนท่องเที่ยว / เทศกาล (Holiday & Travel)',
+    nameEn: '✈️ Holiday & Travel',
+    descTh: 'เงินเดือน 45k, งบเที่ยว/ตั๋ว/โรงแรม 12k, กินเลี้ยงสังสรรค์ 7k, ของขวัญ 3k, ออม 5k',
+    descEn: 'Salary 45k, Travel/hotel 12k, Dining/social 7k, Gifts 3k, Savings 5k',
+    state: {
+      incomes: [{ name: 'เงินเดือน', value: 45000, isSalary: true }],
+      expenses: [
+        { name: AUTO_TAX_NAME_TH, value: 0, auto: true, autoType: 'tax' },
+        { name: AUTO_SSO_NAME_TH, value: 0, auto: true, autoType: 'sso' },
+        { name: AUTO_PVD_NAME_TH, value: 0, auto: true, autoType: 'pvd' },
+        { name: 'ค่าที่พัก & สาธารณูปโภค', value: 7500 },
+        { name: 'ตั๋วเครื่องบิน & โรงแรมที่พัก', value: 12000 },
+        { name: 'กินข้าวนอกบ้าน & สังสรรค์ปาร์ตี้', value: 7000 },
+        { name: 'ของฝาก & ช้อปปิ้งเทศกาล', value: 3500 },
+        { name: 'ค่าเดินทางท่องเที่ยว', value: 2500 },
+      ],
+      savings: [{ name: 'เงินออมสำรองประจำเดือน', value: 5000 }],
+    },
+  },
+  {
+    id: 'preset-503020',
+    nameTh: '🎯 สมดุลทองคำ 50/30/20 (Golden Rule)',
+    nameEn: '🎯 Golden 50/30/20 Rule',
+    descTh: 'เงินเดือน 50k, Needs 50% (25k), Wants 30% (15k), Savings 20% (10k) ตามสัดส่วนเป๊ะ',
+    descEn: 'Salary 50k, 50% Needs (25k), 30% Wants (15k), 20% Savings (10k)',
+    state: {
+      incomes: [{ name: 'เงินเดือน', value: 50000, isSalary: true }],
+      expenses: [
+        { name: AUTO_TAX_NAME_TH, value: 0, auto: true, autoType: 'tax' },
+        { name: AUTO_SSO_NAME_TH, value: 0, auto: true, autoType: 'sso' },
+        { name: AUTO_PVD_NAME_TH, value: 0, auto: true, autoType: 'pvd' },
+        { name: 'ผ่อนคอนโด / ค่าเช่า (Needs)', value: 14000 },
+        { name: 'ค่าเดินทาง & สาธารณูปโภค (Needs)', value: 4500 },
+        { name: 'ค่าอาหารพื้นฐาน (Needs)', value: 5000 },
+        { name: 'กินข้าวนอกบ้าน & บุฟเฟต์ (Wants)', value: 6500 },
+        { name: 'ช้อปปิ้ง & เสื้อผ้า (Wants)', value: 5000 },
+        { name: 'สตรีมมิ่ง & สันทนาการ (Wants)', value: 2500 },
+      ],
+      savings: [{ name: 'เงินออม & DCA กองทุนดัชนี (Savings)', value: 10000 }],
+    },
+  },
 ];
 
 const TEMPLATES_STORAGE_KEY = 'moneySuperapp.budgetTemplates.v1';
+let currentActiveTemplateId = null;
+
+function renderQuickPresetsBar() {
+  const container = document.getElementById('quickPresetsGroup');
+  if (!container) return;
+  const isEN = LANG === 'en';
+
+  const quickPills = [
+    { id: 'preset-first-jobber', icon: '💼', shortTh: 'เริ่มทำงาน (25k)', shortEn: 'First Jobber (25k)' },
+    { id: 'preset-frugal', icon: '🥦', shortTh: 'เน้นออม (35k)', shortEn: 'Frugal (35k)' },
+    { id: 'preset-holiday', icon: '✈️', shortTh: 'ท่องเที่ยว (45k)', shortEn: 'Holiday (45k)' },
+    { id: 'preset-503020', icon: '🎯', shortTh: 'สมดุล 50/30/20', shortEn: '50/30/20 Rule' },
+    { id: 'preset-mid-career', icon: '👨‍👩‍👧', shortTh: 'ครอบครัว (60k)', shortEn: 'Mid-Career (60k)' },
+  ];
+
+  container.innerHTML = quickPills
+    .map((p) => {
+      const preset = BUDGET_PRESETS.find((x) => x.id === p.id);
+      if (!preset) return '';
+      const label = isEN ? p.shortEn : p.shortTh;
+      const fullName = isEN ? preset.nameEn : preset.nameTh;
+      const isActive = currentActiveTemplateId === p.id;
+      const activeStyle = isActive
+        ? 'background:rgba(5,150,105,0.18); border-color:var(--brand, #059669); color:var(--core); font-weight:700; box-shadow:0 0 0 1px var(--brand, #059669);'
+        : 'background:var(--panel-2); border-color:var(--line); color:var(--ink-dim); font-weight:500;';
+      return `
+      <button type="button" onclick="selectQuickPreset('${p.id}')" title="${escapeAttr(fullName)}" style="font-size:11px; padding:4px 9px; border-radius:999px; border:1px solid; cursor:pointer; display:inline-flex; align-items:center; gap:4px; transition:all 0.15s; font-family:inherit; ${activeStyle}">
+        <span>${p.icon}</span> <span>${escapeAttr(label)}</span>
+      </button>
+    `;
+    })
+    .join('');
+}
+
+function selectQuickPreset(id) {
+  const preset = BUDGET_PRESETS.find((x) => x.id === id);
+  if (!preset) return;
+  const name = LANG === 'en' ? preset.nameEn : preset.nameTh;
+  applyBudgetTemplate(preset.state, name, id);
+}
 
 function getCustomTemplates() {
   return MoneyApp.safeJsonParse(TEMPLATES_STORAGE_KEY, []);
@@ -3146,7 +3259,7 @@ function getCustomTemplates() {
 function saveCustomTemplates(list) {
   try {
     localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(list));
-  } catch (e) {}
+  } catch (_e) {}
 }
 
 function openTemplateModal() {
@@ -3172,7 +3285,7 @@ function saveCurrentBudgetAsTemplate() {
   }
   const templates = getCustomTemplates();
   const newTmpl = {
-    id: 'tmpl-' + Date.now(),
+    id: `tmpl-${Date.now()}`,
     name: name,
     createdAt: new Date().toISOString(),
     state: {
@@ -3196,9 +3309,11 @@ function deleteCustomTemplate(id) {
   renderTemplatesModal();
 }
 
-function applyBudgetTemplate(tmplState, tmplName) {
+function applyBudgetTemplate(tmplState, tmplName, tmplId) {
   if (!tmplState) return;
   undoMgr.push(captureSnapshot());
+
+  currentActiveTemplateId = tmplId || null;
 
   state.incomes = JSON.parse(JSON.stringify(tmplState.incomes || []));
   state.expenses = JSON.parse(JSON.stringify(tmplState.expenses || []));
@@ -3208,6 +3323,7 @@ function applyBudgetTemplate(tmplState, tmplName) {
   renderRows();
   renderPvdRow();
   compute();
+  renderQuickPresetsBar();
   saveState();
   updateUndoUI();
   closeTemplateModal();
@@ -3245,7 +3361,7 @@ function renderTemplatesModal() {
               </div>
             </div>
             <div style="display:flex; gap:6px; flex-shrink:0;">
-              <button type="button" onclick="applyBudgetTemplate(getCustomTemplates().find(x=>x.id==='${t.id}').state, '${escapeAttr(t.name)}')" style="background:var(--brand, #059669); color:#fff; border:none; padding:5px 10px; border-radius:6px; font-size:11.5px; font-weight:600; cursor:pointer;">${isEN ? EN.btnApplyTemplate : 'นำไปใช้'}</button>
+              <button type="button" onclick="applyBudgetTemplate(getCustomTemplates().find(x=>x.id==='${t.id}').state, '${escapeAttr(t.name)}', '${t.id}')" style="background:var(--brand, #059669); color:#fff; border:none; padding:5px 10px; border-radius:6px; font-size:11.5px; font-weight:600; cursor:pointer;">${isEN ? EN.btnApplyTemplate : 'นำไปใช้'}</button>
               <button type="button" onclick="deleteCustomTemplate('${t.id}')" style="background:none; border:1px solid var(--line); color:var(--danger); padding:5px 8px; border-radius:6px; font-size:11.5px; cursor:pointer;" title="${isEN ? EN.btnDeleteTemplate : 'ลบแม่แบบ'}">🗑️</button>
             </div>
           </div>
@@ -3266,7 +3382,7 @@ function renderTemplatesModal() {
             <div style="font-weight:700; font-size:13px; color:var(--ink);">${name}</div>
             <div style="font-size:11px; color:var(--ink-dim); margin-top:2px;">${desc}</div>
           </div>
-          <button type="button" onclick="applyBudgetTemplate(BUDGET_PRESETS[${idx}].state, '${escapeAttr(name)}')" style="background:rgba(5, 150, 105, 0.12); border:1px solid var(--brand, #059669); color:var(--core); padding:5px 12px; border-radius:6px; font-size:11.5px; font-weight:600; cursor:pointer; flex-shrink:0;">${isEN ? EN.btnApplyTemplate : 'นำไปใช้'}</button>
+          <button type="button" onclick="applyBudgetTemplate(BUDGET_PRESETS[${idx}].state, '${escapeAttr(name)}', BUDGET_PRESETS[${idx}].id)" style="background:rgba(5, 150, 105, 0.12); border:1px solid var(--brand, #059669); color:var(--core); padding:5px 12px; border-radius:6px; font-size:11.5px; font-weight:600; cursor:pointer; flex-shrink:0;">${isEN ? EN.btnApplyTemplate : 'นำไปใช้'}</button>
         </div>
       `;
     }).join('');
@@ -3300,6 +3416,8 @@ window.closeTemplateModal = closeTemplateModal;
 window.saveCurrentBudgetAsTemplate = saveCurrentBudgetAsTemplate;
 window.deleteCustomTemplate = deleteCustomTemplate;
 window.applyBudgetTemplate = applyBudgetTemplate;
+window.selectQuickPreset = selectQuickPreset;
+window.renderQuickPresetsBar = renderQuickPresetsBar;
 
 // ── Init ───────────────────────────────────────────────────────────────────
 checkPendingLumpSum();
@@ -3316,6 +3434,7 @@ if (runwayContentEl) runwayContentEl.style.display = state.showEmergencyRunway ?
 if (txtCurrentReserve && state.currentEmergencyReserve > 0) txtCurrentReserve.value = state.currentEmergencyReserve;
 
 compute();
+renderQuickPresetsBar();
 
 window.addEventListener('storage', (e) => {
   if (e.key === 'moneySuperapp.pendingLumpSum') {

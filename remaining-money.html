@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.1.5">
+  <meta name="version" content="2.1.6">
   <title>คำนวณเงินคงเหลือ</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -334,6 +334,21 @@
   </div>
   <div class="sub" id="subtitle">บันทึกรายได้และค่าใช้จ่าย แล้วดูว่าแต่ละเดือนเหลือเงินเท่าไหร่ — เมื่อกรอกเงินเดือน ระบบจะคำนวณภาษีและประกันสังคมโดยอัตโนมัติ</div>
 
+  <!-- Quick Budget Template Presets Bar -->
+  <div class="budget-presets-bar no-print" style="margin-bottom: 14px; padding: 10px 14px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+      <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-faint); display: flex; align-items: center; gap: 4px;" id="lblPresetBarTitle">
+        <span>📋</span> <span id="txtPresetBarTitle">โหมดงบประมาณ:</span>
+      </span>
+      <div id="quickPresetsGroup" style="display: flex; gap: 6px; flex-wrap: wrap;">
+        <!-- Populated dynamically by renderQuickPresetsBar -->
+      </div>
+    </div>
+    <button type="button" class="reset-btn" onclick="openTemplateModal()" style="font-size: 11.5px; font-weight: 600; padding: 5px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); color: var(--ink-dim); cursor: pointer;" id="btnManageTemplates">
+      ⚙️ <span id="lblManageTemplates">จัดการแม่แบบ...</span>
+    </button>
+  </div>
+
   <div id="bridgeAlertBanner" style="display: none; margin-bottom: 16px; padding: 12px 16px; border-radius: 10px; background: #ecfdf5; border: 1px solid #10b981; color: #065f46; font-size: 13px; font-weight: 600; align-items: center; justify-content: space-between;">
     <span id="bridgeAlertText">✓ นำเข้าข้อมูลสำเร็จ</span>
     <button type="button" onclick="document.getElementById('bridgeAlertBanner').style.display='none'" style="background: none; border: none; color: #065f46; font-size: 16px; cursor: pointer;">×</button>
@@ -574,7 +589,7 @@
       <button class="reset-btn" id="resetBtn" style="color:var(--ink-faint);">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v2.1.5</p>
+  <p class="version-tag">v2.1.6</p>
 
   <!-- Import Preview Modal -->
   <div id="importModal" role="dialog" aria-modal="true" aria-labelledby="importModalTitle" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; display:none; align-items:center; justify-content:center; backdrop-filter:blur(2px);" onclick="if(event.target===this)closeImportModal()">

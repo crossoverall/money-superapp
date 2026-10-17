@@ -3623,4 +3623,133 @@ describe('Financial Math Verification', () => {
       assert.equal(zeroSlip, 0);
     });
   });
+
+  describe('Recurring Budget Templates & Expense Category Presets Engine', () => {
+    function validateBudgetTemplate(template) {
+      if (!template || typeof template !== 'object') return { valid: false, reason: 'Template must be an object' };
+      if (!template.id || typeof template.id !== 'string') return { valid: false, reason: 'Missing id' };
+      const state = template.state;
+      if (!state || typeof state !== 'object') return { valid: false, reason: 'Missing state' };
+      if (!Array.isArray(state.incomes)) return { valid: false, reason: 'incomes must be an array' };
+      if (!Array.isArray(state.expenses)) return { valid: false, reason: 'expenses must be an array' };
+      if (!Array.isArray(state.savings)) return { valid: false, reason: 'savings must be an array' };
+
+      const totalIncome = state.incomes.reduce((s, i) => s + Math.max(0, Number(i.value) || 0), 0);
+      const totalExpense = state.expenses.reduce((s, e) => s + Math.max(0, Number(e.value) || 0), 0);
+      const totalSavings = state.savings.reduce((s, sv) => s + Math.max(0, Number(sv.value) || 0), 0);
+      const netRemaining = totalIncome - totalExpense - totalSavings;
+      const savingsRatePct = totalIncome > 0 ? Math.round((totalSavings / totalIncome) * 100) : 0;
+
+      return {
+        valid: true,
+        summary: {
+          totalIncome,
+          totalExpense,
+          totalSavings,
+          netRemaining,
+          savingsRatePct,
+        },
+      };
+    }
+
+    function createCustomTemplate({ name, state }) {
+      const cleanName = String(name || '').trim();
+      if (!cleanName) throw new Error('Template name cannot be empty');
+      return {
+        id: `tmpl-${Date.now()}`,
+        name: cleanName,
+        createdAt: new Date().toISOString(),
+        state: {
+          incomes: (state?.incomes || []).map((i) => ({ ...i, value: Math.max(0, Number(i.value) || 0) })),
+          expenses: (state?.expenses || []).map((e) => ({ ...e, value: Math.max(0, Number(e.value) || 0) })),
+          savings: (state?.savings || []).map((s) => ({ ...s, value: Math.max(0, Number(s.value) || 0) })),
+        },
+      };
+    }
+
+    it('validates standard budget template schema and computes cash flow summaries', () => {
+      const standardTemplate = {
+        id: 'preset-standard',
+        name: 'Standard Month',
+        state: {
+          incomes: [{ name: 'Salary', value: 40000, isSalary: true }],
+          expenses: [
+            { name: 'Rent', value: 10000 },
+            { name: 'Food', value: 8000 },
+            { name: 'Utilities', value: 2000 },
+          ],
+          savings: [{ name: 'Emergency Fund', value: 8000 }],
+        },
+      };
+
+      const res = validateBudgetTemplate(standardTemplate);
+      assert.equal(res.valid, true);
+      assert.equal(res.summary.totalIncome, 40000);
+      assert.equal(res.summary.totalExpense, 20000);
+      assert.equal(res.summary.totalSavings, 8000);
+      assert.equal(res.summary.netRemaining, 12000);
+      assert.equal(res.summary.savingsRatePct, 20);
+    });
+
+    it('proves high savings rate in frugal template vs high wants in holiday template', () => {
+      const frugal = {
+        id: 'preset-frugal',
+        state: {
+          incomes: [{ name: 'Salary', value: 35000 }],
+          expenses: [{ name: 'Basic Needs', value: 12000 }],
+          savings: [{ name: 'Aggressive Investment', value: 15000 }],
+        },
+      };
+      const frugalRes = validateBudgetTemplate(frugal);
+      assert.ok(frugalRes.summary.savingsRatePct >= 40);
+
+      const holiday = {
+        id: 'preset-holiday',
+        state: {
+          incomes: [{ name: 'Salary', value: 45000 }],
+          expenses: [
+            { name: 'Fixed Needs', value: 10000 },
+            { name: 'Travel & Dining (Wants)', value: 24000 },
+          ],
+          savings: [{ name: 'Reserved Savings', value: 5000 }],
+        },
+      };
+      const holidayRes = validateBudgetTemplate(holiday);
+      assert.equal(holidayRes.summary.totalExpense, 34000);
+      assert.ok(holidayRes.summary.savingsRatePct < 15);
+    });
+
+    it('safely rejects malformed template schemas and handles empty arrays', () => {
+      assert.equal(validateBudgetTemplate(null).valid, false);
+      assert.equal(validateBudgetTemplate({ id: 'bad' }).valid, false);
+      assert.equal(validateBudgetTemplate({ id: 'bad', state: { incomes: 'not-array' } }).valid, false);
+
+      const emptyValid = validateBudgetTemplate({
+        id: 'empty-tmpl',
+        state: { incomes: [], expenses: [], savings: [] },
+      });
+      assert.equal(emptyValid.valid, true);
+      assert.equal(emptyValid.summary.totalIncome, 0);
+      assert.equal(emptyValid.summary.netRemaining, 0);
+    });
+
+    it('creates custom budget template with timestamp and sanitized numeric state', () => {
+      const custom = createCustomTemplate({
+        name: 'My Custom Plan',
+        state: {
+          incomes: [{ name: 'Salary', value: '30000' }],
+          expenses: [{ name: 'Rent', value: '7500' }],
+          savings: [{ name: 'Stocks', value: '5000' }],
+        },
+      });
+
+      assert.ok(custom.id.startsWith('tmpl-'));
+      assert.equal(custom.name, 'My Custom Plan');
+      assert.equal(custom.state.incomes[0].value, 30000);
+      assert.equal(custom.state.expenses[0].value, 7500);
+      assert.equal(custom.state.savings[0].value, 5000);
+
+      assert.throws(() => createCustomTemplate({ name: '' }), /cannot be empty/);
+    });
+  });
 });

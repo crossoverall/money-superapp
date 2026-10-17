@@ -1,7 +1,7 @@
 ---
 task_id: "FEAT-BUDGET-TEMPLATES-01"
 status: "in_progress"
-current_stage: "approval_gate"
+current_stage: "coder"
 complexity: "level_2"
 iteration_count: 0
 pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "reviewer", "release"]
