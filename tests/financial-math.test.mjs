@@ -1890,4 +1890,168 @@ describe('Financial Math Verification', () => {
       assert.equal(el.classList.contains('fade-out'), false);
     });
   });
+
+  describe('IndexedDB Storage Adapter & Snapshot Archival Engine', () => {
+    function partitionSnapshots(snapshots, maxMonths = 12, referenceDate = new Date()) {
+      if (!Array.isArray(snapshots) || snapshots.length <= 3) {
+        return {
+          active: snapshots || [],
+          toArchive: [],
+          cutoffDate: null,
+        };
+      }
+
+      const cutoff = new Date(referenceDate.getFullYear(), referenceDate.getMonth() - maxMonths, 1);
+      const y = cutoff.getFullYear();
+      const m = String(cutoff.getMonth() + 1).padStart(2, '0');
+      const d = String(cutoff.getDate()).padStart(2, '0');
+      const cutoffStr = `${y}-${m}-${d}`;
+
+      const sorted = [...snapshots].sort((a, b) => new Date(a.date) - new Date(b.date));
+      const active = [];
+      const toArchive = [];
+
+      for (const s of sorted) {
+        if (s.date < cutoffStr) {
+          toArchive.push(s);
+        } else {
+          active.push(s);
+        }
+      }
+
+      // Safeguard: always retain at least the 3 most recent snapshots in active view
+      while (active.length < 3 && toArchive.length > 0) {
+        active.unshift(toArchive.pop());
+      }
+
+      return {
+        active,
+        toArchive,
+        cutoffDate: cutoffStr,
+      };
+    }
+
+    function createIndexedDBAdapter(options) {
+      const opts = options || {};
+      const customIDB = opts.indexedDB || null;
+      const fallbackMemory = {};
+
+      function get(key) {
+        if (!customIDB) {
+          return Promise.resolve(Object.hasOwn(fallbackMemory, key) ? fallbackMemory[key] : null);
+        }
+        return customIDB.get(key);
+      }
+
+      function set(key, value) {
+        fallbackMemory[key] = value;
+        if (!customIDB) {
+          return Promise.resolve(true);
+        }
+        return customIDB.set(key, value);
+      }
+
+      function del(key) {
+        delete fallbackMemory[key];
+        if (!customIDB) {
+          return Promise.resolve(true);
+        }
+        return customIDB.delete(key);
+      }
+
+      function keys() {
+        if (!customIDB) {
+          return Promise.resolve(Object.keys(fallbackMemory));
+        }
+        return customIDB.keys();
+      }
+
+      function formatBytes(bytes) {
+        if (bytes == null || Number.isNaN(bytes) || bytes <= 0) return '0 B';
+        const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        let i = Math.floor(Math.log(bytes) / Math.log(1024));
+        i = Math.min(units.length - 1, Math.max(0, i));
+        const val = bytes / 1024 ** i;
+        return `${val < 10 && i > 0 ? val.toFixed(1) : Math.round(val)} ${units[i]}`;
+      }
+
+      return {
+        get,
+        set,
+        delete: del,
+        keys,
+        formatBytes,
+        isSupported: Boolean(customIDB),
+      };
+    }
+
+    it('correctly partitions snapshots into active and archive sets based on age', () => {
+      const refDate = new Date(2026, 9, 17); // Oct 17, 2026
+      const sampleSnapshots = [
+        { id: 1, date: '2024-05-01', netWorth: 100000 }, // 29 months old -> archive
+        { id: 2, date: '2025-06-15', netWorth: 150000 }, // 16 months old -> archive
+        { id: 3, date: '2025-09-30', netWorth: 180000 }, // 13 months old -> archive
+        { id: 4, date: '2025-11-01', netWorth: 200000 }, // 11 months old -> active
+        { id: 5, date: '2026-04-10', netWorth: 250000 }, // 6 months old -> active
+        { id: 6, date: '2026-10-01', netWorth: 300000 }, // 0 months old -> active
+      ];
+
+      const res = partitionSnapshots(sampleSnapshots, 12, refDate);
+      assert.equal(res.toArchive.length, 3);
+      assert.equal(res.active.length, 3);
+      assert.equal(res.toArchive[0].id, 1);
+      assert.equal(res.toArchive[1].id, 2);
+      assert.equal(res.toArchive[2].id, 3);
+      assert.equal(res.active[0].id, 4);
+      assert.equal(res.active[1].id, 5);
+      assert.equal(res.active[2].id, 6);
+    });
+
+    it('preserves minimum 3 active snapshots even when all snapshots exceed age threshold', () => {
+      const refDate = new Date(2026, 9, 17);
+      const allOldSnapshots = [
+        { id: 1, date: '2023-01-01', netWorth: 50000 },
+        { id: 2, date: '2023-06-01', netWorth: 60000 },
+        { id: 3, date: '2023-12-01', netWorth: 70000 },
+        { id: 4, date: '2024-01-01', netWorth: 80000 },
+      ];
+
+      const res = partitionSnapshots(allOldSnapshots, 12, refDate);
+      // Even though all 4 are older than 12 months, active must retain the 3 most recent
+      assert.equal(res.active.length, 3);
+      assert.equal(res.toArchive.length, 1);
+      assert.equal(res.toArchive[0].id, 1);
+      assert.equal(res.active[0].id, 2);
+      assert.equal(res.active[1].id, 3);
+      assert.equal(res.active[2].id, 4);
+    });
+
+    it('formats storage byte counts safely into human-readable units', () => {
+      const adapter = createIndexedDBAdapter();
+      assert.equal(adapter.formatBytes(0), '0 B');
+      assert.equal(adapter.formatBytes(512), '512 B');
+      assert.equal(adapter.formatBytes(1024), '1.0 KB');
+      assert.equal(adapter.formatBytes(1536), '1.5 KB');
+      assert.equal(adapter.formatBytes(1048576), '1.0 MB');
+      assert.equal(adapter.formatBytes(5242880), '5.0 MB');
+      assert.equal(adapter.formatBytes(1073741824), '1.0 GB');
+      assert.equal(adapter.formatBytes(null), '0 B');
+    });
+
+    it('operates safely with in-memory fallback when native IndexedDB is unavailable', async () => {
+      const adapter = createIndexedDBAdapter({ indexedDB: null });
+      assert.equal(adapter.isSupported, false);
+
+      await adapter.set('testKey', { hello: 'world' });
+      const val = await adapter.get('testKey');
+      assert.deepEqual(val, { hello: 'world' });
+
+      const allKeys = await adapter.keys();
+      assert.deepEqual(allKeys, ['testKey']);
+
+      await adapter.delete('testKey');
+      const valAfter = await adapter.get('testKey');
+      assert.equal(valAfter, null);
+    });
+  });
 });

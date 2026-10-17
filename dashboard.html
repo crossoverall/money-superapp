@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.0.5">
+  <meta name="version" content="2.0.6">
   <title>ภาพรวมการเงิน</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -310,7 +310,18 @@
 
   <div class="panel" role="region" aria-label="Historical Records">
   <div class="panel-title" id="lbl-history-title">ประวัติที่บันทึกไว้ (History)</div>
-  <div id="lbl-snapshot-count" style="margin-bottom:12px; font-size:12px; color:var(--ink-dim);"></div>
+  <div id="lbl-snapshot-count" style="margin-bottom:8px; font-size:12px; color:var(--ink-dim);"></div>
+  <!-- Storage Engine & Archival Status (Roadmap Item 4.3) -->
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px; font-size:11px; background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:6px 10px;">
+    <div style="display:flex; align-items:center; gap:6px;">
+      <span id="badgeStorageStatus" style="background:var(--ok-dim); color:var(--ok); border-radius:9999px; padding:2px 8px; font-size:10px; font-weight:700;">💾 IndexedDB</span>
+      <span id="txtStorageQuota" style="color:var(--ink-dim);">ความจุ: กำลังคำนวณ...</span>
+    </div>
+    <div style="display:flex; gap:6px;">
+      <button id="btnArchiveSnapshots" onclick="archiveOldSnapshots()" class="action-btn" style="padding:3px 8px; font-size:10px; display:none;">📦 <span id="lblArchiveSnapshots">ย้ายข้อมูลเก่าไปคลัง (>1 ปี)</span></button>
+      <button id="btnRestoreArchive" onclick="restoreArchivedSnapshots()" class="action-btn" style="padding:3px 8px; font-size:10px; display:none; background:transparent; border:1px solid var(--line); color:var(--ink);">📂 <span id="lblRestoreArchive">กู้คืนคลัง</span></button>
+    </div>
+  </div>
   <div id="historyListContainer" style="margin-bottom:12px;"></div>
   <button onclick="clearAllSnapshots()" class="reset-btn" style="width:100%; text-align:center;"><span id="btn-clear-history">ลบประวัติทั้งหมด</span></button>
   </div>
@@ -372,7 +383,7 @@
     </div>
   </div>
 
-  <p class="version-tag">Money Superapp v2.0.5</p>
+  <p class="version-tag">Money Superapp v2.0.6</p>
 
 <script src="js/shared.js"></script>
 <script>
@@ -428,7 +439,12 @@
             btnPrint: 'พิมพ์',
             printTitle: 'พิมพ์รายงานภาพรวมการเงิน',
             printDocTitle: 'Money Superapp — Financial Overview Report',
-            printDocSub: 'รายงานสรุปภาพรวมสถานะการเงินและความมั่งคั่งสุทธิ'
+            printDocSub: 'รายงานสรุปภาพรวมสถานะการเงินและความมั่งคั่งสุทธิ',
+            lblArchiveSnapshots: 'ย้ายข้อมูลเก่าไปคลัง (>1 ปี)',
+            lblRestoreArchive: 'กู้คืนคลัง',
+            archiveSuccess: (n) => `✓ ย้ายข้อมูลประวัติเก่า ${n} รายการไปจัดเก็บในคลัง IndexedDB สำเร็จ`,
+            restoreSuccess: (n) => `✓ กู้คืนประวัติจากคลัง ${n} รายการเรียบร้อยแล้ว`,
+            archiveEmpty: 'ไม่มีประวัติที่เก่ากว่า 1 ปีให้จัดเก็บ'
         },
         en: {
             title: 'Financial Dashboard',
@@ -481,7 +497,12 @@
             btnPrint: 'Print',
             printTitle: 'Print Financial Summary Report',
             printDocTitle: 'Money Superapp — Financial Overview Report',
-            printDocSub: 'Comprehensive Financial Health & Net Worth Summary'
+            printDocSub: 'Comprehensive Financial Health & Net Worth Summary',
+            lblArchiveSnapshots: 'Archive Older Data (>1 yr)',
+            lblRestoreArchive: 'Restore Archive',
+            archiveSuccess: (n) => `✓ Archived ${n} historical snapshots to IndexedDB storage`,
+            restoreSuccess: (n) => `✓ Restored ${n} snapshots from archive`,
+            archiveEmpty: 'No snapshots older than 12 months to archive'
         }
     };
 
@@ -533,6 +554,8 @@
             'lbl-btn-print': t.btnPrint,
             'lbl-print-doc-title': t.printDocTitle,
             'lbl-print-doc-sub': t.printDocSub,
+            'lblArchiveSnapshots': t.lblArchiveSnapshots,
+            'lblRestoreArchive': t.lblRestoreArchive,
         };
 
         Object.keys(textMapping).forEach(id => {
@@ -947,10 +970,161 @@
         return seed;
     }
 
+    const ARCHIVE_KEY = 'moneySuperapp.archivedSnapshots.v1';
+
     function saveSnapshots(snapshots) {
         try {
             localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshots));
         } catch(e){}
+        if (typeof MoneyApp !== 'undefined' && MoneyApp.idbStorage) {
+            MoneyApp.idbStorage.set(SNAPSHOT_KEY, snapshots).catch(() => {});
+        }
+    }
+
+    async function updateStorageQuotaDisplay() {
+        const badgeEl = document.getElementById('badgeStorageStatus');
+        const txtEl = document.getElementById('txtStorageQuota');
+        const btnArchive = document.getElementById('btnArchiveSnapshots');
+        const btnRestore = document.getElementById('btnRestoreArchive');
+
+        if (!badgeEl || !txtEl) return;
+
+        let isIDB = false;
+        let quotaInfo = null;
+
+        if (typeof MoneyApp !== 'undefined' && MoneyApp.idbStorage) {
+            isIDB = MoneyApp.idbStorage.isSupported;
+            try {
+                quotaInfo = await MoneyApp.idbStorage.estimate();
+            } catch(_e) {}
+        }
+
+        if (isIDB) {
+            badgeEl.textContent = '💾 IndexedDB';
+            badgeEl.style.background = 'var(--ok-dim)';
+            badgeEl.style.color = 'var(--ok)';
+        } else {
+            badgeEl.textContent = '💾 LocalStorage';
+            badgeEl.style.background = 'rgba(217, 119, 6, 0.15)';
+            badgeEl.style.color = 'var(--warn)';
+        }
+
+        if (quotaInfo) {
+            txtEl.textContent = `${LANG === 'en' ? 'Usage' : 'ความจุ'}: ${quotaInfo.formattedUsage} / ${quotaInfo.formattedQuota}`;
+        }
+
+        const snapshots = getSnapshots();
+        if (typeof MoneyApp !== 'undefined' && MoneyApp.partitionSnapshots) {
+            const part = MoneyApp.partitionSnapshots(snapshots, 12);
+            if (btnArchive) {
+                if (part.toArchive.length > 0) {
+                    btnArchive.style.display = 'inline-block';
+                    btnArchive.title = `${LANG === 'en' ? 'Archive' : 'ย้ายไปคลัง'} ${part.toArchive.length} ${LANG === 'en' ? 'older records' : 'รายการเก่า'}`;
+                } else {
+                    btnArchive.style.display = 'none';
+                }
+            }
+        }
+
+        if (btnRestore) {
+            let archived = [];
+            if (typeof MoneyApp !== 'undefined' && MoneyApp.idbStorage) {
+                try {
+                    archived = await MoneyApp.idbStorage.get(ARCHIVE_KEY);
+                } catch(_e) {}
+            }
+            if (!archived || !archived.length) {
+                try {
+                    const raw = localStorage.getItem(ARCHIVE_KEY);
+                    if (raw) archived = JSON.parse(raw);
+                } catch(_e) {}
+            }
+            if (Array.isArray(archived) && archived.length > 0) {
+                btnRestore.style.display = 'inline-block';
+                btnRestore.innerHTML = `📂 <span id="lblRestoreArchive">${LANG === 'en' ? 'Restore Archive' : 'กู้คืนคลัง'}</span> (${archived.length})`;
+            } else {
+                btnRestore.style.display = 'none';
+            }
+        }
+    }
+
+    async function archiveOldSnapshots() {
+        const snapshots = getSnapshots();
+        if (typeof MoneyApp === 'undefined' || !MoneyApp.partitionSnapshots) return;
+        const part = MoneyApp.partitionSnapshots(snapshots, 12);
+        if (part.toArchive.length === 0) {
+            alert(translations[LANG].archiveEmpty);
+            return;
+        }
+
+        let existingArchive = [];
+        if (MoneyApp.idbStorage) {
+            try {
+                existingArchive = (await MoneyApp.idbStorage.get(ARCHIVE_KEY)) || [];
+            } catch(_e) {}
+        }
+        if (!existingArchive || !existingArchive.length) {
+            try {
+                const raw = localStorage.getItem(ARCHIVE_KEY);
+                if (raw) existingArchive = JSON.parse(raw) || [];
+            } catch(_e) {}
+        }
+
+        const archiveMap = new Map();
+        existingArchive.forEach(s => archiveMap.set(s.date || s.id, s));
+        part.toArchive.forEach(s => archiveMap.set(s.date || s.id, s));
+        const mergedArchive = Array.from(archiveMap.values()).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        if (MoneyApp.idbStorage) {
+            await MoneyApp.idbStorage.set(ARCHIVE_KEY, mergedArchive);
+        }
+        try {
+            localStorage.setItem(ARCHIVE_KEY, JSON.stringify(mergedArchive));
+        } catch(_e) {}
+
+        saveSnapshots(part.active);
+        renderSnapshotsTable();
+        renderChart();
+        updateStorageQuotaDisplay();
+
+        alert(translations[LANG].archiveSuccess(part.toArchive.length));
+    }
+
+    async function restoreArchivedSnapshots() {
+        let archived = [];
+        if (typeof MoneyApp !== 'undefined' && MoneyApp.idbStorage) {
+            try {
+                archived = await MoneyApp.idbStorage.get(ARCHIVE_KEY);
+            } catch(_e) {}
+        }
+        if (!archived || !archived.length) {
+            try {
+                const raw = localStorage.getItem(ARCHIVE_KEY);
+                if (raw) archived = JSON.parse(raw);
+            } catch(_e) {}
+        }
+        if (!Array.isArray(archived) || archived.length === 0) return;
+
+        const current = getSnapshots();
+        const map = new Map();
+        archived.forEach(s => map.set(s.date || s.id, s));
+        current.forEach(s => map.set(s.date || s.id, s));
+        const restored = Array.from(map.values()).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        saveSnapshots(restored);
+
+        if (typeof MoneyApp !== 'undefined' && MoneyApp.idbStorage) {
+            await MoneyApp.idbStorage.delete(ARCHIVE_KEY);
+        }
+        try {
+            localStorage.removeItem(ARCHIVE_KEY);
+        } catch(_e) {}
+
+        renderSnapshotsTable();
+        renderChart();
+        updateStorageQuotaDisplay();
+
+        alert(translations[LANG].restoreSuccess(archived.length));
     }
 
     function takeSnapshot() {
@@ -984,6 +1158,7 @@
         renderDashboardKPIs();
         renderSnapshotsTable();
         renderChart();
+        updateStorageQuotaDisplay();
 
         const banner = document.getElementById('snapshotAlertBanner');
         if (document.getElementById('snapshotAlertText')) document.getElementById('snapshotAlertText').textContent = (LANG === 'en' ? translations.en.savedSuccess : translations.th.savedSuccess);
@@ -997,6 +1172,7 @@
         saveSnapshots(snapshots);
         renderSnapshotsTable();
         renderChart();
+        updateStorageQuotaDisplay();
     }
 
     function clearAllSnapshots() {
@@ -1005,6 +1181,7 @@
         saveSnapshots([]);
         renderSnapshotsTable();
         renderChart();
+        updateStorageQuotaDisplay();
     }
 
     function setChartMode(mode) {
@@ -1357,6 +1534,7 @@
     renderFinancialGoals();
     renderSnapshotsTable();
     renderChart();
+    updateStorageQuotaDisplay();
 
     function refreshDashboard() {
         applyLocalization();
@@ -1364,6 +1542,7 @@
         renderFinancialGoals();
         renderSnapshotsTable();
         renderChart();
+        updateStorageQuotaDisplay();
     }
 
     function printDashboardReport() {

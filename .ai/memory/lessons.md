@@ -378,3 +378,17 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
   2. Implemented an adaptive allocation intensity heatmap grid where each asset's tile reflects its deviation intensity (0% to 5%+ deviation scaled to color opacity) and directional status: emerald/ok for balanced (±1%), blue for underweight (priority DCA buy targets), and amber/warn for overweight (over-allocated / paused).
   3. Sanitized all dynamic tooltips and asset names via `escapeAttr()` to maintain strict offline XSS safety.
 - **Rule:** When visualizing multi-asset rebalancing states, pair aggregate tracking error metrics with a full-portfolio intensity heatmap and FX currency exposure matrix to provide holistic risk visibility before executing DCA orders.
+
+### 2026-10-17: IndexedDB Storage Adapter, Quota Estimation & Archival Timezones
+
+- **Date & Context:** 2026-10-17, implementing Transparent IndexedDB Storage Adapter & High-Capacity Snapshot Archive in `js/shared.js` and `dashboard.html` (`v2.0.6`).
+- **Problem:**
+  1. `localStorage` 5MB quota exhaustion looms as users accumulate years of monthly snapshots, debt histories, and calculator states.
+  2. In private browsing or sandboxed environments, `window.indexedDB` can throw security errors or be disabled entirely.
+  3. When calculating cutoff dates for snapshot archival (e.g. 12 months prior), calling `new Date(year, month - 12, 1).toISOString().slice(0, 10)` in positive timezone offsets (like GMT+7) shifted the UTC date backward by 1 day (e.g. `2025-10-01` local time turned into `2025-09-30` UTC), prematurely moving boundary-day snapshots into the archive.
+- **Resolution:**
+  1. Built a zero-dependency Promise-based key-value adapter `createIndexedDBAdapter()` in `js/shared.js` with automatic schema versioning, transaction wrapping, and a synchronous in-memory/localStorage fallback layer.
+  2. Implemented dual-write background mirroring on `saveSnapshots()` without blocking UI thread rendering.
+  3. Formatted cutoff strings using local calendar components (`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`) rather than `.toISOString()`, eliminating timezone boundary shifts.
+  4. Enforced an invariant that at least 3 active snapshots remain in primary view even if all snapshots exceed the age cutoff.
+- **Rule:** For client-side storage adapters, always pair IndexedDB with a synchronous fallback layer, and never use `.toISOString()` on local midnight dates for temporal boundary partitioning.

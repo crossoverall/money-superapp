@@ -244,6 +244,229 @@
     );
   }
 
+  function formatBytes(bytes) {
+    if (bytes == null || Number.isNaN(bytes) || bytes <= 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let i = Math.floor(Math.log(bytes) / Math.log(1024));
+    i = Math.min(units.length - 1, Math.max(0, i));
+    const val = bytes / 1024 ** i;
+    return `${val < 10 && i > 0 ? val.toFixed(1) : Math.round(val)} ${units[i]}`;
+  }
+
+  function partitionSnapshots(snapshots, maxMonths, referenceDate) {
+    const months = typeof maxMonths === 'number' ? maxMonths : 12;
+    const ref = referenceDate instanceof Date ? referenceDate : new Date();
+    if (!Array.isArray(snapshots) || snapshots.length <= 3) {
+      return {
+        active: snapshots || [],
+        toArchive: [],
+        cutoffDate: null,
+      };
+    }
+
+    const cutoff = new Date(ref.getFullYear(), ref.getMonth() - months, 1);
+    const y = cutoff.getFullYear();
+    const m = String(cutoff.getMonth() + 1).padStart(2, '0');
+    const d = String(cutoff.getDate()).padStart(2, '0');
+    const cutoffStr = `${y}-${m}-${d}`;
+
+    const sorted = snapshots.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+    const active = [];
+    const toArchive = [];
+
+    for (let i = 0; i < sorted.length; i++) {
+      const s = sorted[i];
+      if (s.date < cutoffStr) {
+        toArchive.push(s);
+      } else {
+        active.push(s);
+      }
+    }
+
+    while (active.length < 3 && toArchive.length > 0) {
+      active.unshift(toArchive.pop());
+    }
+
+    return {
+      active: active,
+      toArchive: toArchive,
+      cutoffDate: cutoffStr,
+    };
+  }
+
+  function createIndexedDBAdapter(options) {
+    const opts = options || {};
+    const dbName = opts.dbName || 'moneySuperapp_idb';
+    const storeName = opts.storeName || 'keyvalue';
+    const version = opts.version || 1;
+    const customIDB =
+      opts.indexedDB || (typeof window !== 'undefined' && 'indexedDB' in window ? window.indexedDB : null);
+    const fallbackMemory = {};
+    let dbPromise = null;
+
+    function openDB() {
+      if (dbPromise) return dbPromise;
+      if (!customIDB) {
+        return Promise.resolve(null);
+      }
+      dbPromise = new Promise((resolve) => {
+        try {
+          const req = customIDB.open(dbName, version);
+          req.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(storeName)) {
+              db.createObjectStore(storeName);
+            }
+          };
+          req.onsuccess = (e) => resolve(e.target.result);
+          req.onerror = () => resolve(null);
+        } catch (_e) {
+          resolve(null);
+        }
+      });
+      return dbPromise;
+    }
+
+    function get(key) {
+      return openDB().then((db) => {
+        if (!db) {
+          return Object.hasOwn(fallbackMemory, key) ? fallbackMemory[key] : null;
+        }
+        return new Promise((resolve) => {
+          try {
+            const tx = db.transaction(storeName, 'readonly');
+            const store = tx.objectStore(storeName);
+            const req = store.get(key);
+            req.onsuccess = () => resolve(req.result != null ? req.result : null);
+            req.onerror = () => resolve(null);
+          } catch (_e) {
+            resolve(null);
+          }
+        });
+      });
+    }
+
+    function set(key, value) {
+      return openDB().then((db) => {
+        fallbackMemory[key] = value;
+        if (!db) {
+          return Promise.resolve(true);
+        }
+        return new Promise((resolve) => {
+          try {
+            const tx = db.transaction(storeName, 'readwrite');
+            const store = tx.objectStore(storeName);
+            const req = store.put(value, key);
+            req.onsuccess = () => resolve(true);
+            req.onerror = () => resolve(false);
+          } catch (_e) {
+            resolve(false);
+          }
+        });
+      });
+    }
+
+    function del(key) {
+      return openDB().then((db) => {
+        delete fallbackMemory[key];
+        if (!db) {
+          return Promise.resolve(true);
+        }
+        return new Promise((resolve) => {
+          try {
+            const tx = db.transaction(storeName, 'readwrite');
+            const store = tx.objectStore(storeName);
+            const req = store.delete(key);
+            req.onsuccess = () => resolve(true);
+            req.onerror = () => resolve(false);
+          } catch (_e) {
+            resolve(false);
+          }
+        });
+      });
+    }
+
+    function keys() {
+      return openDB().then((db) => {
+        if (!db) {
+          return Promise.resolve(Object.keys(fallbackMemory));
+        }
+        return new Promise((resolve) => {
+          try {
+            const tx = db.transaction(storeName, 'readonly');
+            const store = tx.objectStore(storeName);
+            if (store.getAllKeys) {
+              const req = store.getAllKeys();
+              req.onsuccess = () => resolve(req.result || []);
+              req.onerror = () => resolve(Object.keys(fallbackMemory));
+            } else {
+              resolve(Object.keys(fallbackMemory));
+            }
+          } catch (_e) {
+            resolve(Object.keys(fallbackMemory));
+          }
+        });
+      });
+    }
+
+    function estimate() {
+      if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.estimate) {
+        return navigator.storage
+          .estimate()
+          .then((est) => {
+            const usage = est.usage || 0;
+            const quota = est.quota || 0;
+            const pct = quota > 0 ? parseFloat(((usage / quota) * 100).toFixed(2)) : 0;
+            return {
+              supported: true,
+              usage: usage,
+              quota: quota,
+              usagePct: pct,
+              formattedUsage: formatBytes(usage),
+              formattedQuota: formatBytes(quota),
+            };
+          })
+          .catch(() => fallbackEstimate());
+      }
+      return Promise.resolve(fallbackEstimate());
+    }
+
+    function fallbackEstimate() {
+      let bytes = 0;
+      try {
+        if (typeof localStorage !== 'undefined') {
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            const v = localStorage.getItem(k);
+            bytes += (k ? k.length : 0) + (v ? v.length : 0);
+          }
+        }
+      } catch (_e) {}
+      const approxBytes = bytes * 2;
+      const defaultQuota = 5 * 1024 * 1024;
+      return {
+        supported: false,
+        usage: approxBytes,
+        quota: defaultQuota,
+        usagePct: parseFloat(((approxBytes / defaultQuota) * 100).toFixed(2)),
+        formattedUsage: formatBytes(approxBytes),
+        formattedQuota: '5.0 MB (localStorage limit)',
+      };
+    }
+
+    return {
+      get: get,
+      set: set,
+      delete: del,
+      keys: keys,
+      estimate: estimate,
+      formatBytes: formatBytes,
+      isSupported: Boolean(customIDB),
+    };
+  }
+
+  var idbStorage = createIndexedDBAdapter();
+
   // Auto-initialize document theme, shortcuts, and swipe navigation when running in browser
   initTheme();
   initShortcutForwarding();
@@ -256,12 +479,16 @@
     formatMoney: formatMoney,
     parseNum: parseNum,
     escapeHtml: escapeHtml,
+    formatBytes: formatBytes,
     initTheme: initTheme,
     initShortcutForwarding: initShortcutForwarding,
     safeJsonParse: safeJsonParse,
     createUndoManager: createUndoManager,
     detectSwipeGesture: detectSwipeGesture,
     initTouchSwipeNavigation: initTouchSwipeNavigation,
+    partitionSnapshots: partitionSnapshots,
+    createIndexedDBAdapter: createIndexedDBAdapter,
+    idbStorage: idbStorage,
   };
 
   // Expose on global window object
@@ -277,5 +504,8 @@
     if (typeof global.safeJsonParse === 'undefined') global.safeJsonParse = safeJsonParse;
     if (typeof global.createUndoManager === 'undefined') global.createUndoManager = createUndoManager;
     if (typeof global.detectSwipeGesture === 'undefined') global.detectSwipeGesture = detectSwipeGesture;
+    if (typeof global.formatBytes === 'undefined') global.formatBytes = formatBytes;
+    if (typeof global.partitionSnapshots === 'undefined') global.partitionSnapshots = partitionSnapshots;
+    if (typeof global.idbStorage === 'undefined') global.idbStorage = idbStorage;
   }
 })(typeof window !== 'undefined' ? window : this);
