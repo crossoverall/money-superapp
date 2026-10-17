@@ -245,6 +245,31 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(themeCss.includes('--ink-faint: #5E7169;'), 'Light theme --ink-faint must be #5E7169 (WCAG AA)');
       assert.ok(themeCss.includes('--ink-faint: #7F968B;'), 'Dark theme --ink-faint must be #7F968B (WCAG AA)');
     });
+
+    it('verifies theme.css declares semantic token aliases for cross-tool theme harmonization', () => {
+      const themeCss = fs.readFileSync(path.join(ROOT_DIR, 'css/theme.css'), 'utf8');
+      assert.ok(themeCss.includes('--surface: var(--panel-2);'), 'theme.css must declare --surface alias');
+      assert.ok(themeCss.includes('--surface-2: var(--bg);'), 'theme.css must declare --surface-2 alias');
+      assert.ok(themeCss.includes('--card-bg: var(--panel);'), 'theme.css must declare --card-bg alias');
+      assert.ok(themeCss.includes('--accent: var(--core);'), 'theme.css must declare --accent alias');
+      assert.ok(themeCss.includes('--label: var(--ink-dim);'), 'theme.css must declare --label alias');
+    });
+
+    it('verifies sub-pages do not contain unharmonized rogue theme classes (slate/indigo/blue focus rings)', () => {
+      const taxContent = fs.readFileSync(path.join(ROOT_DIR, 'tax-calculator-base.html'), 'utf8');
+      const slipsContent = fs.readFileSync(path.join(ROOT_DIR, 'months-slips.html'), 'utf8');
+
+      assert.ok(!taxContent.includes('dark:bg-slate-'), 'tax-calculator-base.html must not contain dark:bg-slate-*');
+      assert.ok(!slipsContent.includes('dark:bg-slate-'), 'months-slips.html must not contain dark:bg-slate-*');
+      assert.ok(
+        !taxContent.includes('focus:ring-blue-500'),
+        'tax-calculator-base.html must not contain focus:ring-blue-500',
+      );
+      assert.ok(
+        !slipsContent.includes('focus:ring-blue-500'),
+        'months-slips.html must not contain focus:ring-blue-500',
+      );
+    });
   });
 
   describe('Bilingual Localization Structural Symmetry', () => {

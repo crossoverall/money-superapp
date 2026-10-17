@@ -437,7 +437,7 @@ function showStreamTip(e, monthIdx) {
   if (item.bonus > 0) {
     html += `<div class="flex justify-between gap-3 text-purple-300"><span>${LANG === 'en' ? '🎁 Bonus Included:' : '🎁 โบนัส:'}</span><span class="font-bold">+${formatMoney(item.bonus)} ${unit}</span></div>`;
   }
-  html += `<div class="flex justify-between gap-3 text-blue-300"><span>PVD:</span><span>-${formatMoney(item.pvd)} ${unit}</span></div>`;
+  html += `<div class="flex justify-between gap-3" style="color:var(--core);"><span>PVD:</span><span>-${formatMoney(item.pvd)} ${unit}</span></div>`;
   html += `<div class="flex justify-between gap-3 text-amber-300"><span>SSO:</span><span>-${formatMoney(item.sso)} ${unit}</span></div>`;
   html += `<div class="flex justify-between gap-3 text-red-300"><span>Tax:</span><span>-${formatMoney(item.tax)} ${unit}</span></div>`;
   html += `<div class="flex justify-between gap-3 border-t border-gray-700 pt-1 mt-1 text-gray-300"><span>${LANG === 'en' ? 'Gross Total:' : 'รายได้รวม:'}</span><span class="font-bold">${formatMoney(item.gross)} ${unit}</span></div>`;
@@ -617,18 +617,18 @@ function runReconciliation() {
                                 ${
                                   canInstallment
                                     ? `
-                                    <div class="mt-2 p-2 bg-white/80 dark:bg-slate-900/80 rounded border border-rose-200 dark:border-rose-800 text-[11px]">
+                                    <div class="mt-2 p-2 rounded border text-[11px]" style="background:var(--panel-2); border-color:var(--line); color:var(--ink);">
                                         💳 <strong>${isEN ? '3-Month Interest-Free Installment Option:' : 'สิทธิเลือกผ่อนชำระ 3 งวด (ดอกเบี้ย 0%):'}</strong>
                                         <div class="grid grid-cols-3 gap-2 mt-1 text-center font-semibold">
-                                            <div class="p-1 bg-amber-50 dark:bg-amber-950/50 rounded border border-amber-200 dark:border-amber-800">${isEN ? 'Inst 1:' : 'งวด 1:'} ${fmt(installmentAmt)} ${curUnit}<div class="text-[9.5px] font-normal text-gray-500">${isEN ? 'By Apr 8' : 'ภายใน 8 เม.ย.'}</div></div>
-                                            <div class="p-1 bg-amber-50 dark:bg-amber-950/50 rounded border border-amber-200 dark:border-amber-800">${isEN ? 'Inst 2:' : 'งวด 2:'} ${fmt(installmentAmt)} ${curUnit}<div class="text-[9.5px] font-normal text-gray-500">${isEN ? 'By May 8' : 'ภายใน 8 พ.ค.'}</div></div>
-                                            <div class="p-1 bg-amber-50 dark:bg-amber-950/50 rounded border border-amber-200 dark:border-amber-800">${isEN ? 'Inst 3:' : 'งวด 3:'} ${fmt(absDelta - installmentAmt * 2)} ${curUnit}<div class="text-[9.5px] font-normal text-gray-500">${isEN ? 'By Jun 8' : 'ภายใน 8 มิ.ย.'}</div></div>
+                                            <div class="p-1 rounded border" style="background:var(--warn-dim); border-color:var(--warn); color:var(--ink);">${isEN ? 'Inst 1:' : 'งวด 1:'} ${fmt(installmentAmt)} ${curUnit}<div class="text-[9.5px] font-normal" style="color:var(--ink-dim);">${isEN ? 'By Apr 8' : 'ภายใน 8 เม.ย.'}</div></div>
+                                            <div class="p-1 rounded border" style="background:var(--warn-dim); border-color:var(--warn); color:var(--ink);">${isEN ? 'Inst 2:' : 'งวด 2:'} ${fmt(installmentAmt)} ${curUnit}<div class="text-[9.5px] font-normal" style="color:var(--ink-dim);">${isEN ? 'By May 8' : 'ภายใน 8 พ.ค.'}</div></div>
+                                            <div class="p-1 rounded border" style="background:var(--warn-dim); border-color:var(--warn); color:var(--ink);">${isEN ? 'Inst 3:' : 'งวด 3:'} ${fmt(absDelta - installmentAmt * 2)} ${curUnit}<div class="text-[9.5px] font-normal" style="color:var(--ink-dim);">${isEN ? 'By Jun 8' : 'ภายใน 8 มิ.ย.'}</div></div>
                                         </div>
                                     </div>
                                 `
                                     : ''
                                 }
-                                <div class="pt-1.5 mt-2 border-t border-rose-200 dark:border-rose-800/60 text-[11.5px] font-medium text-rose-800 dark:text-rose-300">
+                                <div class="pt-1.5 mt-2 border-t text-[11.5px] font-medium" style="border-top-color:var(--line); color:var(--ink);">
                                     💰 ${isEN ? 'Adjusted Net Annual Income' : 'รายรับสุทธิรวมทั้งปีหลังหักภาษีส่วนเพิ่ม'}: <strong>${fmt(adjAnnualNet)} ${curUnit}</strong>
                                 </div>
                             </div>
@@ -638,21 +638,25 @@ function runReconciliation() {
   } else {
     // Exact Match
     if (badgeEl) {
-      badgeEl.innerHTML = `<span class="py-1 px-3 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-700 text-xs font-bold rounded-lg flex items-center gap-1">
+      badgeEl.innerHTML = `<span class="py-1 px-3 border text-xs font-bold rounded-lg flex items-center gap-1" style="background:var(--panel-2); border-color:var(--line); color:var(--ink);">
                         ✅ ${isEN ? 'Exact Balance' : 'ภาษีหักไว้พอดี'}
                     </span>`;
     }
     if (cardSettlementBox) {
-      cardSettlementBox.className =
-        'p-3 rounded-lg border bg-gray-50 dark:bg-slate-800/50 border-gray-200 dark:border-slate-700 shadow-sm';
+      cardSettlementBox.className = 'p-3 rounded-lg border shadow-xs';
+      cardSettlementBox.style.background = 'var(--panel-2)';
+      cardSettlementBox.style.borderColor = 'var(--line)';
     }
     if (cardSettlementEl) {
-      cardSettlementEl.className = 'text-sm font-black text-gray-700 dark:text-gray-300';
+      cardSettlementEl.className = 'text-sm font-black';
+      cardSettlementEl.style.color = 'var(--ink)';
       cardSettlementEl.innerText = `0.00 ${curUnit}`;
     }
     if (bannerEl) {
-      bannerEl.className =
-        'p-3 rounded-lg border bg-gray-50 dark:bg-slate-800/50 border-gray-200 dark:border-slate-700 text-xs leading-relaxed text-gray-600 dark:text-gray-300';
+      bannerEl.className = 'p-3 rounded-lg border text-xs leading-relaxed';
+      bannerEl.style.background = 'var(--panel-2)';
+      bannerEl.style.borderColor = 'var(--line)';
+      bannerEl.style.color = 'var(--ink-dim)';
       bannerEl.innerHTML = `
                         <div class="flex items-center gap-2">
                             <span>✅</span>
@@ -799,33 +803,33 @@ function runCompare() {
   let verdict = '';
   if (resA && resB) {
     if (Math.abs(diffMonthly) < 1) {
-      verdict = `<div class="p-2 rounded bg-gray-100 dark:bg-slate-800 text-center font-bold text-gray-700 dark:text-gray-300">
+      verdict = `<div class="p-2 rounded text-center font-bold" style="background:var(--panel-2); border:1px solid var(--line); color:var(--ink);">
                         ${isEN ? '🤝 Both scenarios provide equal net monthly pay' : '🤝 ทั้งสองข้อเสนอให้เงินได้สุทธิต่อเดือนเท่ากัน'}
                     </div>`;
     } else if (diffMonthly > 0) {
-      verdict = `<div class="p-2 rounded bg-emerald-50 dark:bg-emerald-950/40 text-center font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+      verdict = `<div class="p-2 rounded text-center font-bold" style="background:var(--ok-dim); color:var(--ok); border:1px solid var(--line);">
                         ${isEN ? `🎉 Scenario B gives +${fmt(diffMonthly)} ${curUnit}/mo (+${fmt(diffAnnual)} ${curUnit}/yr net)` : `🎉 Scenario B ให้เงินได้สุทธิมากกว่า +${fmt(diffMonthly)} ${curUnit}/เดือน (+${fmt(diffAnnual)} ${curUnit}/ปี)`}
                     </div>`;
     } else {
-      verdict = `<div class="p-2 rounded bg-indigo-50 dark:bg-indigo-950/40 text-center font-bold text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+      verdict = `<div class="p-2 rounded text-center font-bold" style="background:var(--core-dim); color:var(--core); border:1px solid var(--line);">
                         ${isEN ? `💡 Scenario A gives +${fmt(Math.abs(diffMonthly))} ${curUnit}/mo (+${fmt(Math.abs(diffAnnual))} ${curUnit}/yr net)` : `💡 Scenario A ให้เงินได้สุทธิมากกว่า +${fmt(Math.abs(diffMonthly))} ${curUnit}/เดือน (+${fmt(Math.abs(diffAnnual))} ${curUnit}/ปี)`}
                     </div>`;
     }
   }
 
   out.innerHTML = `
-                <div class="grid grid-cols-2 gap-2 pb-2 border-b border-gray-200 dark:border-slate-700 mb-2">
+                <div class="grid grid-cols-2 gap-2 pb-2 mb-2" style="border-bottom:1px solid var(--line);">
                     <div>
-                        <div class="font-bold text-gray-800 dark:text-gray-200 mb-1">${isEN ? 'Scenario A' : 'ข้อเสนอ A'}</div>
-                        <div>${isEN ? 'Net / Month:' : 'สุทธิ / เดือน:'} <span class="font-bold ${diffMonthly <= 0 && resB ? 'text-indigo-600' : ''}">${resA ? fmt(resA.monthlyNet) : '-'}</span> ${curUnit}</div>
+                        <div class="font-bold mb-1" style="color:var(--ink);">${isEN ? 'Scenario A' : 'ข้อเสนอ A'}</div>
+                        <div>${isEN ? 'Net / Month:' : 'สุทธิ / เดือน:'} <span class="font-bold" style="${diffMonthly <= 0 && resB ? 'color:var(--core);' : ''}">${resA ? fmt(resA.monthlyNet) : '-'}</span> ${curUnit}</div>
                         <div>${isEN ? 'Net / Year:' : 'สุทธิ / ทั้งปี:'} <span class="font-medium">${resA ? fmt(resA.annualNet) : '-'}</span> ${curUnit}</div>
-                        <div class="text-[11px] text-gray-500">${isEN ? 'Tax / Year:' : 'ภาษีทั้งปี:'} ${resA ? fmt(resA.annualTax) : '-'} | PVD: ${resA ? fmt(resA.annualPvd) : '-'}</div>
+                        <div class="text-[11px]" style="color:var(--ink-faint);">${isEN ? 'Tax / Year:' : 'ภาษีทั้งปี:'} ${resA ? fmt(resA.annualTax) : '-'} | PVD: ${resA ? fmt(resA.annualPvd) : '-'}</div>
                     </div>
                     <div>
-                        <div class="font-bold text-gray-800 dark:text-gray-200 mb-1">${isEN ? 'Scenario B' : 'ข้อเสนอ B'}</div>
-                        <div>${isEN ? 'Net / Month:' : 'สุทธิ / เดือน:'} <span class="font-bold ${diffMonthly > 0 ? 'text-emerald-600' : ''}">${resB ? fmt(resB.monthlyNet) : '-'}</span> ${curUnit}</div>
+                        <div class="font-bold mb-1" style="color:var(--ink);">${isEN ? 'Scenario B' : 'ข้อเสนอ B'}</div>
+                        <div>${isEN ? 'Net / Month:' : 'สุทธิ / เดือน:'} <span class="font-bold" style="${diffMonthly > 0 ? 'color:var(--ok);' : ''}">${resB ? fmt(resB.monthlyNet) : '-'}</span> ${curUnit}</div>
                         <div>${isEN ? 'Net / Year:' : 'สุทธิ / ทั้งปี:'} <span class="font-medium">${resB ? fmt(resB.annualNet) : '-'}</span> ${curUnit}</div>
-                        <div class="text-[11px] text-gray-500">${isEN ? 'Tax / Year:' : 'ภาษีทั้งปี:'} ${resB ? fmt(resB.annualTax) : '-'} | PVD: ${resB ? fmt(resB.annualPvd) : '-'}</div>
+                        <div class="text-[11px]" style="color:var(--ink-faint);">${isEN ? 'Tax / Year:' : 'ภาษีทั้งปี:'} ${resB ? fmt(resB.annualTax) : '-'} | PVD: ${resB ? fmt(resB.annualPvd) : '-'}</div>
                     </div>
                 </div>
                 ${verdict}

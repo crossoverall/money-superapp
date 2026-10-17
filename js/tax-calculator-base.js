@@ -407,41 +407,51 @@ function updateTaxRefundView(metrics) {
   if (withheldValEl) withheldValEl.textContent = `${formatMoney(metrics.withheldTax)} ${unit}`;
 
   if (metrics.status === 'refund') {
-    cardEl.className =
-      'mt-4 p-4 rounded-xl border border-emerald-300 bg-emerald-50/80 space-y-3 transition-all duration-300';
+    cardEl.className = 'mt-4 p-4 rounded-xl border space-y-3 transition-all duration-300';
+    cardEl.style.background = 'var(--ok-dim)';
+    cardEl.style.borderColor = 'var(--ok)';
     if (badgeEl) {
-      badgeEl.className =
-        'px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 shadow-xs bg-emerald-600 text-white';
+      badgeEl.className = 'px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 shadow-xs';
+      badgeEl.style.background = 'var(--ok)';
+      badgeEl.style.color = '#FFFFFF';
       badgeEl.innerHTML = `<span>🎉</span> <span>${isEn ? 'Tax Refund Eligible' : 'ขอคืนภาษีได้'}</span>`;
     }
     if (subEl) subEl.textContent = isEn ? 'Withholding exceeds PIT liability' : 'ภาษีที่หักไว้เกินกว่าภาษีจริง';
     if (amountEl) {
-      amountEl.className = 'text-2xl sm:text-3xl font-black tracking-tight text-emerald-700';
+      amountEl.className = 'text-2xl sm:text-3xl font-black tracking-tight';
+      amountEl.style.color = 'var(--ok)';
       amountEl.textContent = `+ ${formatMoney(metrics.amount)} ${unit}`;
     }
     if (actionBoxEl) {
-      actionBoxEl.className =
-        'p-2.5 rounded-lg text-xs leading-relaxed border border-emerald-200 bg-white/90 text-emerald-900';
+      actionBoxEl.className = 'p-2.5 rounded-lg text-xs leading-relaxed border';
+      actionBoxEl.style.background = 'var(--panel)';
+      actionBoxEl.style.borderColor = 'var(--line)';
+      actionBoxEl.style.color = 'var(--ink)';
       actionBoxEl.innerHTML = isEn
         ? '💡 <strong>Refund Ready:</strong> Ensure your PromptPay is linked to your 13-digit National ID or provide verified bank account details during e-Filing for the quickest direct deposit refund.'
         : '💡 <strong>คำแนะนำการรับเงินคืน:</strong> แนะนำให้ผูกพร้อมเพย์ด้วยเลขบัตรประชาชน 13 หลัก หรือระบุเลขที่บัญชีธนาคารในระบบ E-Filing กรมสรรพากร เพื่อรับเงินคืนภาษีได้อย่างรวดเร็วที่สุด';
     }
   } else if (metrics.status === 'payable') {
-    cardEl.className =
-      'mt-4 p-4 rounded-xl border border-amber-300 bg-amber-50/80 space-y-3 transition-all duration-300';
+    cardEl.className = 'mt-4 p-4 rounded-xl border space-y-3 transition-all duration-300';
+    cardEl.style.background = 'var(--warn-dim)';
+    cardEl.style.borderColor = 'var(--warn)';
     if (badgeEl) {
-      badgeEl.className =
-        'px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 shadow-xs bg-amber-600 text-white';
+      badgeEl.className = 'px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 shadow-xs';
+      badgeEl.style.background = 'var(--warn)';
+      badgeEl.style.color = '#FFFFFF';
       badgeEl.innerHTML = `<span>⚠️</span> <span>${isEn ? 'Additional Tax Payable' : 'ต้องชำระภาษีเพิ่ม'}</span>`;
     }
     if (subEl) subEl.textContent = isEn ? 'PIT liability exceeds withholding' : 'ภาษีจริงสูงกว่ายอดที่ถูกหักไว้';
     if (amountEl) {
-      amountEl.className = 'text-2xl sm:text-3xl font-black tracking-tight text-amber-700';
+      amountEl.className = 'text-2xl sm:text-3xl font-black tracking-tight';
+      amountEl.style.color = 'var(--warn)';
       amountEl.textContent = `- ${formatMoney(metrics.amount)} ${unit}`;
     }
     if (actionBoxEl) {
-      actionBoxEl.className =
-        'p-2.5 rounded-lg text-xs leading-relaxed border border-amber-200 bg-white/90 text-amber-900';
+      actionBoxEl.className = 'p-2.5 rounded-lg text-xs leading-relaxed border';
+      actionBoxEl.style.background = 'var(--panel)';
+      actionBoxEl.style.borderColor = 'var(--line)';
+      actionBoxEl.style.color = 'var(--ink)';
       if (metrics.canInstallment) {
         actionBoxEl.innerHTML = isEn
           ? `💡 <strong>3-Month Installment Available:</strong> You owe ${formatMoney(metrics.amount)} ${unit} (≥ 3,000 THB threshold). You can opt to split into 3 monthly 0% installments of <strong>${formatMoney(metrics.installmentAmount)} ${unit}/month</strong> via Revenue Dept e-Filing.`
@@ -453,20 +463,26 @@ function updateTaxRefundView(metrics) {
       }
     }
   } else {
-    cardEl.className = 'mt-4 p-4 rounded-xl border border-blue-200 bg-blue-50/70 space-y-3 transition-all duration-300';
+    cardEl.className = 'mt-4 p-4 rounded-xl border space-y-3 transition-all duration-300';
+    cardEl.style.background = 'var(--panel-2)';
+    cardEl.style.borderColor = 'var(--line)';
     if (badgeEl) {
-      badgeEl.className =
-        'px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 shadow-xs bg-blue-600 text-white';
+      badgeEl.className = 'px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 shadow-xs';
+      badgeEl.style.background = 'var(--core)';
+      badgeEl.style.color = '#FFFFFF';
       badgeEl.innerHTML = `<span>✓</span> <span>${isEn ? 'Exact Balance' : 'ภาษีพอดี'}</span>`;
     }
     if (subEl) subEl.textContent = isEn ? 'Calculated tax matches withholding' : 'ภาษีคำนวณตรงกับยอดหัก ณ ที่จ่าย';
     if (amountEl) {
-      amountEl.className = 'text-2xl sm:text-3xl font-black tracking-tight text-blue-700';
+      amountEl.className = 'text-2xl sm:text-3xl font-black tracking-tight';
+      amountEl.style.color = 'var(--core)';
       amountEl.textContent = `0 ${unit}`;
     }
     if (actionBoxEl) {
-      actionBoxEl.className =
-        'p-2.5 rounded-lg text-xs leading-relaxed border border-blue-200 bg-white/90 text-blue-900';
+      actionBoxEl.className = 'p-2.5 rounded-lg text-xs leading-relaxed border';
+      actionBoxEl.style.background = 'var(--panel)';
+      actionBoxEl.style.borderColor = 'var(--line)';
+      actionBoxEl.style.color = 'var(--ink)';
       actionBoxEl.innerHTML = isEn
         ? '💡 <strong>Balanced Tax:</strong> Your withheld tax matches your calculated liability exactly. File your annual return normally with zero additional balance.'
         : '💡 <strong>ยอดภาษีพอดี:</strong> ภาษีที่ถูกหักไว้ตรงกับยอดที่ต้องชำระพอดี ยื่นแบบแสดงรายการตามปกติโดยไม่ต้องชำระเพิ่มและไม่มีเงินภาษีคืน';
@@ -513,9 +529,11 @@ function importWithholdingFromPayslip() {
       calculateTax();
       if (feedbackEl) {
         feedbackEl.style.display = 'flex';
-        feedbackEl.className =
-          'p-2 rounded bg-indigo-100/90 text-[11px] text-indigo-900 font-medium flex items-center justify-between';
-        feedbackEl.innerHTML = `<span>✓ ${isEn ? `Imported ${formatMoney(withheld)} THB withholding from payslips` : `ดึงภาษีหัก ณ ที่จ่ายสำเร็จ: ${formatMoney(withheld)} บาท`}</span><button type="button" onclick="this.parentElement.style.display='none'" class="text-indigo-700 font-bold ml-2">✕</button>`;
+        feedbackEl.className = 'p-2 rounded text-[11px] font-medium flex items-center justify-between';
+        feedbackEl.style.background = 'var(--panel-2)';
+        feedbackEl.style.border = '1px solid var(--core)';
+        feedbackEl.style.color = 'var(--ink)';
+        feedbackEl.innerHTML = `<span>✓ ${isEn ? `Imported ${formatMoney(withheld)} THB withholding from payslips` : `ดึงภาษีหัก ณ ที่จ่ายสำเร็จ: ${formatMoney(withheld)} บาท`}</span><button type="button" onclick="this.parentElement.style.display='none'" style="color:var(--core); font-weight:700; margin-left:8px; background:none; border:none; cursor:pointer;">✕</button>`;
       }
     }
   } catch (e) {
@@ -732,22 +750,27 @@ function calculateTax() {
   const headroomEl = document.getElementById('bracketHeadroomBanner');
   if (headroomEl) {
     headroomEl.style.display = 'flex';
+    headroomEl.className = 'p-2.5 rounded-lg text-xs mb-3 border flex items-center justify-between';
     if (netIncome <= 150000) {
-      headroomEl.className =
-        'p-2.5 rounded-lg text-xs mb-3 border border-emerald-200 bg-emerald-50 text-emerald-800 flex items-center justify-between';
+      headroomEl.style.background = 'var(--ok-dim)';
+      headroomEl.style.borderColor = 'var(--ok)';
+      headroomEl.style.color = 'var(--ok)';
       const remExempt = Math.max(0, 150000 - netIncome);
       headroomEl.innerHTML = `<span>🎉 ${isEn ? 'Net income is within the tax-exempt bracket (0-150k THB).' : 'เงินได้สุทธิอยู่ในเกณฑ์ยกเว้นภาษี (0 - 150,000 บาท)'} ${remExempt > 0 ? (isEn ? `(${formatMoney(remExempt)} THB room remaining)` : `(เหลือโควตายกเว้นอีก ${formatMoney(remExempt)} บาท)`) : ''}</span>`;
     } else if (wf.topMarginalRate === 35) {
-      headroomEl.className =
-        'p-2.5 rounded-lg text-xs mb-3 border border-rose-200 bg-rose-50 text-rose-800 flex items-center justify-between';
+      headroomEl.style.background = 'var(--danger-dim)';
+      headroomEl.style.borderColor = 'var(--danger)';
+      headroomEl.style.color = 'var(--danger)';
       headroomEl.innerHTML = `<span>🔥 ${isEn ? 'Income has reached the highest bracket (35%).' : 'เงินได้อยู่ในขั้นบันไดสูงสุด (35%)'}</span>`;
     } else if (wf.headroom === 0) {
-      headroomEl.className =
-        'p-2.5 rounded-lg text-xs mb-3 border border-amber-200 bg-amber-50 text-amber-800 flex items-center justify-between';
+      headroomEl.style.background = 'var(--warn-dim)';
+      headroomEl.style.borderColor = 'var(--warn)';
+      headroomEl.style.color = 'var(--warn)';
       headroomEl.innerHTML = `<span>⚠️ ${isEn ? `Maxed out the ${wf.topMarginalRate}% tier. Excess income enters ${wf.nextBracketRate}%.` : `เงินได้เต็มเพดานขั้น ${wf.topMarginalRate}% พอดี เงินได้ส่วนเพิ่มจะเริ่มเสียที่ ${wf.nextBracketRate}%`}</span>`;
     } else {
-      headroomEl.className =
-        'p-2.5 rounded-lg text-xs mb-3 border border-blue-200 bg-blue-50 text-blue-800 flex items-center justify-between';
+      headroomEl.style.background = 'var(--core-dim)';
+      headroomEl.style.borderColor = 'var(--core)';
+      headroomEl.style.color = 'var(--core)';
       headroomEl.innerHTML = `<span>💡 ${isEn ? `<strong>${formatMoney(wf.headroom)} ${unit}</strong> headroom left at <strong>${wf.topMarginalRate}%</strong> before stepping into <strong>${wf.nextBracketRate}%</strong>` : `เหลือเงินได้อีก <strong>${formatMoney(wf.headroom)} ${unit}</strong> ในขั้น <strong>${wf.topMarginalRate}%</strong> ก่อนก้าวขึ้นสู่ขั้น <strong>${wf.nextBracketRate}%</strong>`}</span>`;
     }
   }
@@ -756,7 +779,7 @@ function calculateTax() {
   const breakdownEl = document.getElementById('taxBreakdown');
   if (breakdownEl) {
     if (netIncome <= 0) {
-      breakdownEl.innerHTML = `<div class="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-center font-medium">${isEn ? '🎉 No taxable net income — 0 THB tax payable' : '🎉 ไม่มีเงินได้สุทธิที่ต้องเสียภาษี — ภาษี 0 บาท'}</div>`;
+      breakdownEl.innerHTML = `<div class="p-3 border rounded-lg text-center font-medium" style="background:var(--ok-dim); border-color:var(--ok); color:var(--ok);">${isEn ? '🎉 No taxable net income — 0 THB tax payable' : '🎉 ไม่มีเงินได้สุทธิที่ต้องเสียภาษี — ภาษี 0 บาท'}</div>`;
     } else {
       breakdownEl.innerHTML = wf.tiers
         .map((t) => {
@@ -764,7 +787,7 @@ function calculateTax() {
           const isExempt = t.rate === 0;
           const rateBadge = isExempt ? (isEn ? 'Exempt' : 'ยกเว้น') : `${t.ratePct}%`;
           return `
-                        <div class="p-2.5 rounded-lg border border-gray-100 bg-gray-50/80 hover:bg-gray-50 transition-colors">
+                        <div class="p-2.5 rounded-lg border transition-colors" style="background:var(--panel-2); border-color:var(--line);">
                             <div class="flex justify-between items-center mb-1">
                                 <div class="flex items-center gap-1.5">
                                     <span class="px-2 py-0.5 rounded text-[10px] font-bold text-white shadow-xs" style="background:${t.color}">${rateBadge}</span>
@@ -772,7 +795,7 @@ function calculateTax() {
                                 </div>
                                 <span class="font-bold ${t.tax > 0 ? 'text-gray-900' : 'text-emerald-600'}">${formatMoney(t.tax)} ${unit}</span>
                             </div>
-                            <div class="w-full h-1.5 rounded-full bg-gray-200 overflow-hidden my-1.5">
+                            <div class="w-full h-1.5 rounded-full overflow-hidden my-1.5" style="background:var(--line);">
                                 <div class="h-full rounded-full transition-all duration-300" style="width:${t.pctOfTier}%; background:${t.color}"></div>
                             </div>
                             <div class="flex justify-between text-[11px] text-gray-500">
@@ -1193,9 +1216,9 @@ function renderCapacityMeters(categories) {
       const remStr = formatMoney(d.remaining);
       const isMaxed = d.remaining <= 0;
       const badgeText = isMaxed ? (isEn ? 'Maxed' : 'เต็มเพดาน') : isEn ? `+${remStr} room` : `เหลืออีก ${remStr}`;
-      const badgeClass = isMaxed
-        ? 'bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-gray-300'
-        : 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300';
+      const badgeStyle = isMaxed
+        ? 'background:var(--panel-2); color:var(--ink-dim); border:1px solid var(--line);'
+        : 'background:var(--core-dim); color:var(--core);';
 
       return `
                     <div class="space-y-1">
@@ -1206,10 +1229,10 @@ function renderCapacityMeters(categories) {
                             </div>
                             <div class="text-[11px] font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-1.5">
                                 <span>${usedStr} / ${limitStr} ${unit}</span>
-                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${badgeClass}">${badgeText}</span>
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold" style="${badgeStyle}">${badgeText}</span>
                             </div>
                         </div>
-                        <div class="w-full h-1.5 rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden">
+                        <div class="w-full h-1.5 rounded-full overflow-hidden" style="background:var(--line);">
                             <div class="h-full rounded-full transition-all duration-300" style="width:${Math.min(100, d.pctUsed)}%; background:${c.color};"></div>
                         </div>
                     </div>

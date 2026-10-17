@@ -33,6 +33,14 @@
   --input-bg: #FFFFFF;
   --input-border: #DCE4E0;
 
+  /* Semantic Aliases */
+  --surface: var(--panel-2);
+  --surface-2: var(--bg);
+  --card-bg: var(--panel);
+  --accent: var(--core);
+  --accent-hover: #267261;
+  --label: var(--ink-dim);
+
   /* Geometry */
   --radius-lg: 16px;
   --radius-md: 12px;
@@ -68,6 +76,14 @@
   /* Inputs & Form Elements */
   --input-bg: #16221C;
   --input-border: #24352C;
+
+  /* Semantic Aliases */
+  --surface: var(--panel-2);
+  --surface-2: #1A2821;
+  --card-bg: var(--panel);
+  --accent: var(--core);
+  --accent-hover: #5ec4ad;
+  --label: var(--ink-dim);
 }
 
 /* Global resets & typography */

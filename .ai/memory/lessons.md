@@ -15,6 +15,16 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-17: Design System Re-alignment & Sub-Page Theme Harmonization (v2.3.8)
+
+- **Date & Context:** 2026-10-17, during design audit and sub-page theme synchronization across `tax-calculator-base.html`, `months-slips.html`, and `tax-calculator.html` (`v2.3.8`).
+- **Problem:** Sub-pages contained legacy Tailwind utility color classes (`bg-blue-50`, `text-blue-800`, `focus:ring-blue-500`, `dark:bg-slate-900`, `dark:border-slate-800`) that clashed with the Forest Sage design system and created jarring navy/blue flashes in dark mode.
+- **Root Cause:** Legacy templates created before `css/theme.css` was unified were never migrated to semantic theme variables, relying instead on incomplete or fragile CSS overrides.
+- **Solution & Rule:**
+  1. Add semantic token aliases to `css/theme.css` (`--surface: var(--panel-2);`, `--surface-2: var(--bg);`, `--card-bg: var(--panel);`, `--accent: var(--core);`, `--label: var(--ink-dim);`).
+  2. Map all sub-page panels, cards, inputs, and badges directly to CSS variables (`var(--panel)`, `var(--panel-2)`, `var(--line)`, `var(--core)`, `var(--ink)`, `var(--ok-dim)`, `var(--warn-dim)`).
+  3. Prohibit `dark:bg-slate-*` and hardcoded `focus:ring-blue-500` in HTML markup; enforce via automated regression assertions in `tests/smoke.test.mjs`.
+
 ### 2026-10-17: Cross-Tool Integration Bridges & Unit Testing Verification (v2.3.7)
 
 - **Date & Context:** 2026-10-17, during implementation of cross-tool storage contracts and automated integration test suites (`v2.3.7`).

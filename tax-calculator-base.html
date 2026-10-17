@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="2.3.7">
+    <meta name="version" content="2.3.8">
     <meta name="description" content="คำนวณภาษีเงินได้บุคคลธรรมดา — ประมาณการภาษีเงินได้จากเงินเดือนและโบนัส พร้อมแสดงรายละเอียดตามขั้นบันได">
     <title>คำนวณภาษีเงินได้บุคคลธรรมดา</title>
     <link rel="stylesheet" href="css/tailwind-lite.css">
@@ -18,10 +18,11 @@
         .bg-white { background-color: var(--panel) !important; border: 1px solid var(--line); }
         .bg-gray-100 { background-color: var(--bg) !important; }
         .bg-blue-50 { background-color: var(--panel-2) !important; }
-        .border, .border-blue-100, hr.border-gray-200 { border-color: var(--line) !important; }
+        .bg-blue-100 { background-color: var(--core-dim) !important; }
+        .border, .border-blue-100, .border-blue-200, hr.border-gray-200 { border-color: var(--line) !important; }
         .text-gray-800, .text-gray-900 { color: var(--ink) !important; }
         .text-gray-700, .text-gray-600, .text-gray-500 { color: var(--ink-dim) !important; }
-        .text-blue-800, .text-blue-600 { color: var(--core) !important; }
+        .text-blue-800, .text-blue-600, .text-blue-700, .text-blue-900 { color: var(--core) !important; }
         .focus\:ring-blue-500:focus { box-shadow: 0 0 0 2px var(--core-dim) !important; }
         .bg-blue-600 { background-color: var(--core) !important; }
         .hover\:bg-blue-700:hover { background-color: var(--ok) !important; filter: brightness(0.95); }
@@ -41,17 +42,22 @@
         [data-theme="dark"] .bg-white { background-color: var(--panel) !important; }
         [data-theme="dark"] .bg-gray-100 { background-color: var(--bg) !important; }
         [data-theme="dark"] .bg-blue-50 { background-color: var(--panel-2) !important; }
+        [data-theme="dark"] .bg-blue-100 { background-color: var(--core-dim) !important; }
         [data-theme="dark"] .border,
         [data-theme="dark"] .border-blue-100,
+        [data-theme="dark"] .border-blue-200,
         [data-theme="dark"] hr.border-gray-200 { border-color: var(--line) !important; }
         [data-theme="dark"] .text-gray-800,
         [data-theme="dark"] .text-gray-900 { color: var(--ink) !important; }
         [data-theme="dark"] .text-gray-700,
         [data-theme="dark"] .text-gray-600,
         [data-theme="dark"] .text-gray-500 { color: var(--ink-dim) !important; }
-        [data-theme="dark"] .text-blue-800 { color: var(--core) !important; }
+        [data-theme="dark"] .text-blue-800,
+        [data-theme="dark"] .text-blue-600,
+        [data-theme="dark"] .text-blue-700,
+        [data-theme="dark"] .text-blue-900 { color: var(--core) !important; }
         [data-theme="dark"] input, [data-theme="dark"] select { background-color: var(--input-bg) !important; color: var(--ink) !important; border-color: var(--line) !important; }
-        [data-theme="dark"] #taxAdvisorCard { background-color: var(--panel-2) !important; border-color: var(--core) !important; color: var(--ink) !important; }
+        [data-theme="dark"] #taxAdvisorCard { background-color: var(--panel-2) !important; border-color: var(--line) !important; color: var(--ink) !important; }
         [data-theme="dark"] #taxAdvisorCard .bg-white\/80,
         [data-theme="dark"] #taxAdvisorCard .bg-white\/90 { background-color: var(--panel) !important; border-color: var(--line) !important; color: var(--ink) !important; }
         [data-theme="dark"] #taxAdvisorCard .text-emerald-800 { color: var(--ok) !important; }
@@ -218,19 +224,19 @@
             <div id="section-monthly" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-salary">เงินเดือน (บาท/เดือน)</label>
-                    <input type="number" id="salary" placeholder="เช่น 50000" inputmode="decimal" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
+                    <input type="number" id="salary" placeholder="เช่น 50000" inputmode="decimal" class="w-full px-4 py-2 border rounded-lg focus:outline-none" oninput="calculateTax()">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-bonus">โบนัส (บาท/ปี)</label>
-                    <input type="number" id="bonus" placeholder="เช่น 100000" inputmode="decimal" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
+                    <input type="number" id="bonus" placeholder="เช่น 100000" inputmode="decimal" class="w-full px-4 py-2 border rounded-lg focus:outline-none" oninput="calculateTax()">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-pvdPercent">กองทุนสำรองเลี้ยงชีพ (%)</label>
-                    <input type="number" id="pvd" placeholder="เช่น 5" inputmode="decimal" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
+                    <input type="number" id="pvd" placeholder="เช่น 5" inputmode="decimal" class="w-full px-4 py-2 border rounded-lg focus:outline-none" oninput="calculateTax()">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-sso-ceiling">เพดานประกันสังคม</label>
-                    <select id="ssoCap" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" onchange="calculateTax()">
+                    <select id="ssoCap" class="w-full px-4 py-2 border rounded-lg focus:outline-none text-sm" onchange="calculateTax()">
                         <option value="0" id="opt-sso-0">0 บาท (ไม่ได้ส่ง / อาชีพอิสระ)</option>
                         <option value="750" id="opt-sso-750">750 บาท (เพดานเดิม 15,000)</option>
                         <option value="875" id="opt-sso-875" selected>875 บาท (เพดานใหม่ 17,500)</option>
@@ -247,36 +253,36 @@
                         <label class="block text-sm font-medium text-gray-700" id="lbl-yearly-income">รายได้รวมทั้งปี (บาท/ปี)</label>
                         <span class="text-[11px] text-gray-400" id="lbl-yearly-income-tag">เงินได้ 40(1), 40(2)</span>
                     </div>
-                    <input type="number" id="yearlyIncome" placeholder="เช่น 600000" inputmode="decimal" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
+                    <input type="number" id="yearlyIncome" placeholder="เช่น 600000" inputmode="decimal" class="w-full px-4 py-2 border rounded-lg focus:outline-none" oninput="calculateTax()">
                     <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1" id="lbl-yearly-hint">สำหรับฟรีแลนซ์ ค้าขาย คอมมิชชั่น หรือรายได้แต่ละเดือนไม่แน่นอน</p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-yearly-bonus">โบนัส / รายได้พิเศษอื่นๆ ทั้งปี (บาท/ปี)</label>
-                    <input type="number" id="yearlyBonus" placeholder="เช่น 50000" inputmode="decimal" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
+                    <input type="number" id="yearlyBonus" placeholder="เช่น 50000" inputmode="decimal" class="w-full px-4 py-2 border rounded-lg focus:outline-none" oninput="calculateTax()">
                 </div>
 
                 <!-- 12-Month Inconsistent Income Breakdown Helper -->
-                <details class="bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-lg p-3 text-xs">
+                <details class="border rounded-lg p-3 text-xs" style="background:var(--panel-2); border-color:var(--line);">
                     <summary class="font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none" id="lbl-months-helper">➕ ตัวช่วยรวมรายได้ 12 เดือน (หากรายได้แต่ละเดือนไม่เท่ากัน)</summary>
-                    <div class="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
+                    <div class="mt-2 pt-2 border-t" style="border-top-color:var(--line);">
                         <p class="text-[11px] text-gray-500 dark:text-gray-400 mb-2" id="lbl-months-subhint">กรอกรายได้ในแต่ละเดือน ระบบจะคำนวณยอดรวมทั้งปีให้อัตโนมัติ</p>
                         <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-1">ม.ค.</label><input type="number" id="m-income-1" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
-                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-2">ก.พ.</label><input type="number" id="m-income-2" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
-                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-3">มี.ค.</label><input type="number" id="m-income-3" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
-                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-4">เม.ย.</label><input type="number" id="m-income-4" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
-                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-5">พ.ค.</label><input type="number" id="m-income-5" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
-                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-6">มิ.ย.</label><input type="number" id="m-income-6" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
-                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-7">ก.ค.</label><input type="number" id="m-income-7" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
-                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-8">ส.ค.</label><input type="number" id="m-income-8" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
-                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-9">ก.ย.</label><input type="number" id="m-income-9" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
-                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-10">ต.ค.</label><input type="number" id="m-income-10" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
-                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-11">พ.ย.</label><input type="number" id="m-income-11" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
-                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-12">ธ.ค.</label><input type="number" id="m-income-12" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
+                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-1">ม.ค.</label><input type="number" id="m-income-1" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
+                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-2">ก.พ.</label><input type="number" id="m-income-2" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
+                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-3">มี.ค.</label><input type="number" id="m-income-3" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
+                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-4">เม.ย.</label><input type="number" id="m-income-4" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
+                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-5">พ.ค.</label><input type="number" id="m-income-5" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
+                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-6">มิ.ย.</label><input type="number" id="m-income-6" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
+                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-7">ก.ค.</label><input type="number" id="m-income-7" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
+                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-8">ส.ค.</label><input type="number" id="m-income-8" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
+                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-9">ก.ย.</label><input type="number" id="m-income-9" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
+                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-10">ต.ค.</label><input type="number" id="m-income-10" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
+                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-11">พ.ย.</label><input type="number" id="m-income-11" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
+                            <div><label class="block text-[10px] text-gray-500 mb-0.5" id="lbl-m-12">ธ.ค.</label><input type="number" id="m-income-12" placeholder="0" class="w-full px-2 py-1 text-xs border rounded focus:outline-none" oninput="calcMonthlyBreakdown()"></div>
                         </div>
-                        <div class="flex justify-between items-center mt-2.5 pt-1.5 border-t border-gray-200 dark:border-slate-700">
+                        <div class="flex justify-between items-center mt-2.5 pt-1.5 border-t" style="border-top-color:var(--line);">
                             <span class="font-medium text-gray-600 dark:text-gray-300" id="lbl-months-total">รวม 12 เดือน:</span>
-                            <span class="font-bold text-blue-600 dark:text-blue-400" id="months-breakdown-total">0 บาท</span>
+                            <span class="font-bold" style="color:var(--core);" id="months-breakdown-total">0 บาท</span>
                         </div>
                     </div>
                 </details>
@@ -286,7 +292,7 @@
                         <label class="block text-sm font-medium text-gray-700" id="lbl-yearly-pvd">กองทุนสำรองเลี้ยงชีพ (PVD) ทั้งปี (บาท/ปี)</label>
                         <span class="text-[11px] text-gray-400" id="lbl-yearly-pvd-tag">ไม่เกิน 15% ของเงินได้</span>
                     </div>
-                    <input type="number" id="yearlyPvd" placeholder="เช่น 30000 (หากไม่มีใส่ 0)" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
+                    <input type="number" id="yearlyPvd" placeholder="เช่น 30000 (หากไม่มีใส่ 0)" class="w-full px-4 py-2 border rounded-lg focus:outline-none" oninput="calculateTax()">
                     <div id="warn-yearly-pvd" style="display:none; color:#d97706; font-size:11px; margin-top:3px; font-weight:500;"></div>
                 </div>
 
@@ -295,19 +301,19 @@
                         <label class="block text-sm font-medium text-gray-700" id="lbl-yearly-sso">เงินสมทบประกันสังคมทั้งปี (บาท/ปี)</label>
                         <span class="text-[11px] text-gray-400" id="lbl-yearly-sso-tag">สูงสุด 13,800 บาท</span>
                     </div>
-                    <input type="number" id="yearlySso" placeholder="เช่น 9000 (ฟรีแลนซ์/ไม่ได้ส่งใส่ 0)" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" oninput="calculateTax()">
+                    <input type="number" id="yearlySso" placeholder="เช่น 9000 (ฟรีแลนซ์/ไม่ได้ส่งใส่ 0)" class="w-full px-4 py-2 border rounded-lg focus:outline-none" oninput="calculateTax()">
                     <div id="warn-yearly-sso" style="display:none; color:#d97706; font-size:11px; margin-top:3px; font-weight:500;"></div>
                 </div>
             </div>
-            <details class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm">
+            <details class="border rounded-lg p-3 text-sm" style="background:var(--panel-2); border-color:var(--line);">
                 <summary class="font-medium text-gray-700 cursor-pointer select-none" id="lbl-more-deduct">+ ค่าลดหย่อนเพิ่มเติม (SSF, RMF, ThaiESG, ประกัน, ดอกเบี้ยบ้าน, Easy E-Receipt)</summary>
-                <div class="space-y-3 mt-3 pt-3 border-t border-gray-200">
+                <div class="space-y-3 mt-3 pt-3 border-t" style="border-top-color:var(--line);">
                     <div>
                         <div class="flex items-center justify-between mb-1">
                             <label class="block text-xs font-medium text-gray-600" id="lbl-fund-deduct">กองทุนเกษียณ SSF / RMF (รวม PVD สูงสุด 500,000 บาท/ปี)</label>
                             <span class="text-xs text-gray-400 cursor-help" title="เพดานกลุ่มเกษียณ: SSF + RMF + PVD รวมกันไม่เกิน 500,000 บาทต่อปี" id="tip-fund">ℹ️</span>
                         </div>
-                        <input type="number" id="fundDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" oninput="calculateTax()" aria-label="กองทุนเกษียณ SSF / RMF">
+                        <input type="number" id="fundDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:outline-none text-sm" oninput="calculateTax()" aria-label="กองทุนเกษียณ SSF / RMF">
                         <div id="warn-fund" style="display:none; color:#d97706; font-size:11px; margin-top:3px; font-weight:500;"></div>
                     </div>
                     <div>
@@ -315,7 +321,7 @@
                             <label class="block text-xs font-medium text-gray-600" id="lbl-thaiesg-deduct">กองทุน ThaiESG (สูงสุด 300,000 บาท/ปี)</label>
                             <span class="text-xs text-gray-400 cursor-help" title="Thai ESG: ลดหย่อนได้ไม่เกิน 30% ของเงินได้ และสูงสุดไม่เกิน 300,000 บาท (ถือครอง 5 ปี แยกต่างหากจากเพดานเกษียณ 500,000 บาท)" id="tip-thaiesg">ℹ️</span>
                         </div>
-                        <input type="number" id="thaiEsgDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" oninput="calculateTax()" aria-label="กองทุน ThaiESG">
+                        <input type="number" id="thaiEsgDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:outline-none text-sm" oninput="calculateTax()" aria-label="กองทุน ThaiESG">
                         <div id="warn-thaiesg" style="display:none; color:#d97706; font-size:11px; margin-top:3px; font-weight:500;"></div>
                     </div>
                     <div>
@@ -323,45 +329,45 @@
                             <label class="block text-xs font-medium text-gray-600" id="lbl-easyreceipt-deduct">มาตรการ Easy E-Receipt (สูงสุด 50,000 บาท/ปี)</label>
                             <span class="text-xs text-gray-400 cursor-help" title="Easy E-Receipt: ค่าซื้อสินค้าหรือบริการที่มีใบกำกับภาษีอิเล็กทรอนิกส์ (e-Tax Invoice & e-Receipt) สูงสุด 50,000 บาท" id="tip-easyreceipt">ℹ️</span>
                         </div>
-                        <input type="number" id="easyReceiptDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" oninput="calculateTax()" aria-label="มาตรการ Easy E-Receipt">
+                        <input type="number" id="easyReceiptDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:outline-none text-sm" oninput="calculateTax()" aria-label="มาตรการ Easy E-Receipt">
                         <div id="warn-easyreceipt" style="display:none; color:#d97706; font-size:11px; margin-top:3px; font-weight:500;"></div>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1" id="lbl-ins-deduct">เบี้ยประกันชีวิต + สุขภาพ (สูงสุด 100,000 บาท/ปี)</label>
-                        <input type="number" id="insuranceDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" oninput="calculateTax()" aria-label="เบี้ยประกันชีวิตและสุขภาพ">
+                        <input type="number" id="insuranceDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:outline-none text-sm" oninput="calculateTax()" aria-label="เบี้ยประกันชีวิตและสุขภาพ">
                         <div id="warn-insurance" style="display:none; color:#d97706; font-size:11px; margin-top:3px; font-weight:500;"></div>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1" id="lbl-mortgage-deduct">ดอกเบี้ยเงินกู้ยืมเพื่อที่อยู่อาศัย (สูงสุด 100,000 บาท/ปี)</label>
-                        <input type="number" id="mortgageDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" oninput="calculateTax()" aria-label="ดอกเบี้ยเงินกู้ยืมเพื่อที่อยู่อาศัย">
+                        <input type="number" id="mortgageDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:outline-none text-sm" oninput="calculateTax()" aria-label="ดอกเบี้ยเงินกู้ยืมเพื่อที่อยู่อาศัย">
                         <div id="warn-mortgage" style="display:none; color:#d97706; font-size:11px; margin-top:3px; font-weight:500;"></div>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1" id="lbl-other-deduct">ลดหย่อนอื่นๆ เช่น บิดามารดา บุตร เงินบริจาค (บาท/ปี)</label>
-                        <input type="number" id="otherDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" oninput="calculateTax()" aria-label="ลดหย่อนอื่นๆ">
+                        <input type="number" id="otherDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:outline-none text-sm" oninput="calculateTax()" aria-label="ลดหย่อนอื่นๆ">
                     </div>
                 </div>
             </details>
 
             <!-- Tax Withholding at Source (50 Tawi) Input & Payslip Bridge -->
-            <div class="mt-4 p-3.5 bg-indigo-50/70 border border-indigo-200 rounded-xl space-y-2.5">
+            <div class="mt-4 p-3.5 rounded-xl space-y-2.5" style="background:var(--panel-2); border:1px solid var(--line);">
                 <div class="flex items-center justify-between">
-                    <label class="block text-xs font-bold text-indigo-950 flex items-center gap-1.5" id="lbl-withheld-tax" for="withheldTax">
+                    <label class="block text-xs font-bold flex items-center gap-1.5" style="color:var(--ink);" id="lbl-withheld-tax" for="withheldTax">
                         <span>📄</span>
                         <span id="txt-withheld-label">ภาษีหัก ณ ที่จ่ายสะสมทั้งปี (ใบ 50 ทวิ)</span>
                     </label>
-                    <button type="button" id="btn-import-payslip-tax" onclick="importWithholdingFromPayslip()" class="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-indigo-700 bg-white hover:bg-indigo-100 border border-indigo-300 rounded-lg shadow-xs transition-colors" title="ดึงยอดภาษีหัก ณ ที่จ่ายทั้งปีจากสลิปเงินเดือน">
+                    <button type="button" id="btn-import-payslip-tax" onclick="importWithholdingFromPayslip()" class="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-lg shadow-xs transition-colors" style="background:var(--panel); color:var(--core); border:1px solid var(--line);" title="ดึงยอดภาษีหัก ณ ที่จ่ายทั้งปีจากสลิปเงินเดือน">
                         <span>📥</span> <span id="txt-import-payslip">ดึงจากสลิปเงินเดือน</span>
                     </button>
                 </div>
                 <div class="relative">
-                    <input type="number" id="withheldTax" placeholder="0" inputmode="decimal" class="w-full px-3 py-1.5 bg-white border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm font-semibold text-gray-800 pr-12" oninput="calculateTax()" aria-label="ภาษีหัก ณ ที่จ่ายสะสมทั้งปี (ใบ 50 ทวิ)">
-                    <span class="absolute right-3 top-2 text-xs text-gray-400 font-medium" id="lbl-withheld-unit">บาท</span>
+                    <input type="number" id="withheldTax" placeholder="0" inputmode="decimal" class="w-full px-3 py-1.5 rounded-lg text-sm font-semibold pr-12" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="calculateTax()" aria-label="ภาษีหัก ณ ที่จ่ายสะสมทั้งปี (ใบ 50 ทวิ)">
+                    <span class="absolute right-3 top-2 text-xs font-medium" style="color:var(--ink-faint);" id="lbl-withheld-unit">บาท</span>
                 </div>
-                <p class="text-[11px] text-indigo-800/80 leading-normal" id="lbl-withheld-hint">
+                <p class="text-[11px] leading-normal" style="color:var(--ink-dim);" id="lbl-withheld-hint">
                     ยอดรวมภาษีที่ถูกหักไว้แล้วจากเงินเดือน โบนัส หรือค่าจ้างฟรีแลนซ์ (ระบุในหนังสือรับรอง 50 ทวิ) เพื่อเทียบยอดขอคืนหรือชำระเพิ่ม
                 </p>
-                <div id="payslip-import-feedback" style="display:none;" class="p-2 rounded bg-indigo-100/90 text-[11px] text-indigo-900 font-medium flex items-center justify-between"></div>
+                <div id="payslip-import-feedback" style="display:none; background:var(--panel); border:1px solid var(--core); color:var(--ink);" class="p-2 rounded text-[11px] font-medium items-center justify-between"></div>
             </div>
         </div>
 
@@ -394,73 +400,73 @@
                 <span id="moreDeduct" class="font-medium text-red-500">- 0 บาท</span>
             </div>
 
-            <div class="border-t pt-3 mt-3 flex justify-between items-center text-base">
+            <div class="border-t pt-3 mt-3 flex justify-between items-center text-base" style="border-top-color:var(--line);">
                 <span class="font-semibold text-gray-800" id="lbl-netIncome">เงินได้สุทธิ:</span>
-                <span id="netIncome" class="font-semibold text-blue-600">0 บาท</span>
+                <span id="netIncome" class="font-semibold" style="color:var(--core);">0 บาท</span>
             </div>
         </div>
 
-        <div class="mt-6 bg-blue-50 p-4 rounded-xl border border-blue-100 text-center">
-            <span class="block text-sm text-blue-800 mb-1" id="lbl-taxAmount">ภาษีที่ต้องชำระโดยประมาณ</span>
-            <span id="taxAmount" class="text-3xl font-bold text-blue-600">0</span>
-            <span class="text-blue-800 font-medium" id="unitLabel"> บาท</span>
+        <div class="mt-6 p-4 rounded-xl border text-center" style="background:var(--panel-2); border-color:var(--line);">
+            <span class="block text-sm mb-1" style="color:var(--ink-dim);" id="lbl-taxAmount">ภาษีที่ต้องชำระโดยประมาณ</span>
+            <span id="taxAmount" class="text-3xl font-bold" style="color:var(--core);">0</span>
+            <span class="font-medium" style="color:var(--ink-dim);" id="unitLabel"> บาท</span>
         </div>
 
         <!-- Tax Refund / Additional Payable Dynamic Verdict Card -->
-        <div id="taxRefundCard" class="mt-4 p-4 rounded-xl border border-blue-200 bg-blue-50/70 space-y-3 transition-all duration-300">
+        <div id="taxRefundCard" class="mt-4 p-4 rounded-xl border space-y-3 transition-all duration-300" style="background:var(--panel-2); border-color:var(--line);">
             <div class="flex items-center justify-between">
-                <span id="refundVerdictBadge" class="px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 shadow-xs bg-blue-600 text-white">
+                <span id="refundVerdictBadge" class="px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 shadow-xs" style="background:var(--core); color:#ffffff;">
                     <span>✓</span> <span>ภาษีพอดี</span>
                 </span>
-                <span id="refundComparisonSub" class="text-[11px] font-semibold text-gray-500">ภาษีคำนวณตรงกับยอดหัก ณ ที่จ่าย</span>
+                <span id="refundComparisonSub" class="text-[11px] font-semibold" style="color:var(--ink-dim);">ภาษีคำนวณตรงกับยอดหัก ณ ที่จ่าย</span>
             </div>
             <div class="flex items-baseline justify-between">
                 <div>
-                    <span class="block text-xs font-medium text-gray-500" id="lbl-net-balance-headline">ผลการยื่นภาษีสุทธิ</span>
-                    <span id="refundNetBalanceAmount" class="text-2xl sm:text-3xl font-black tracking-tight text-blue-700">0 บาท</span>
+                    <span class="block text-xs font-medium" style="color:var(--ink-dim);" id="lbl-net-balance-headline">ผลการยื่นภาษีสุทธิ</span>
+                    <span id="refundNetBalanceAmount" class="text-2xl sm:text-3xl font-black tracking-tight" style="color:var(--core);">0 บาท</span>
                 </div>
-                <div class="text-right text-[11px] text-gray-500 space-y-0.5">
-                    <div><span id="lbl-card-calc-tax">ภาษีที่คำนวณได้:</span> <span id="cardCalcTaxVal" class="font-semibold text-gray-700">0 บาท</span></div>
-                    <div><span id="lbl-card-withheld-tax">หักไว้แล้ว (50 ทวิ):</span> <span id="cardWithheldVal" class="font-semibold text-gray-700">0 บาท</span></div>
+                <div class="text-right text-[11px] space-y-0.5" style="color:var(--ink-dim);">
+                    <div><span id="lbl-card-calc-tax">ภาษีที่คำนวณได้:</span> <span id="cardCalcTaxVal" class="font-semibold" style="color:var(--ink);">0 บาท</span></div>
+                    <div><span id="lbl-card-withheld-tax">หักไว้แล้ว (50 ทวิ):</span> <span id="cardWithheldVal" class="font-semibold" style="color:var(--ink);">0 บาท</span></div>
                 </div>
             </div>
-            <div id="refundActionBox" class="p-2.5 rounded-lg text-xs leading-relaxed border border-blue-200 bg-white/90 text-blue-900">
+            <div id="refundActionBox" class="p-2.5 rounded-lg text-xs leading-relaxed border" style="background:var(--panel); border-color:var(--line); color:var(--ink);">
                 💡 <strong>ยอดภาษีพอดี:</strong> ภาษีที่ถูกหักไว้ตรงกับยอดที่ต้องชำระพอดี ยื่นแบบแสดงรายการตามปกติโดยไม่ต้องชำระเพิ่มและไม่มีเงินภาษีคืน
             </div>
         </div>
 
         <div class="mt-4">
             <div class="flex items-center justify-between mb-2">
-                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide" id="lbl-breakdownTitle">รายละเอียดภาษีตามขั้นบันได (Waterfall)</p>
-                <span id="txt-effective-tax-rate" class="text-xs font-bold text-gray-500"></span>
+                <p class="text-xs font-semibold uppercase tracking-wide" style="color:var(--ink-dim);" id="lbl-breakdownTitle">รายละเอียดภาษีตามขั้นบันได (Waterfall)</p>
+                <span id="txt-effective-tax-rate" class="text-xs font-bold" style="color:var(--ink-dim);"></span>
             </div>
 
             <!-- Segmented Waterfall Bar -->
-            <div id="waterfallBarContainer" class="w-full h-3 rounded-full overflow-hidden flex bg-gray-100 mb-2.5 border border-gray-200" role="progressbar" aria-label="Tax bracket distribution"></div>
+            <div id="waterfallBarContainer" class="w-full h-3 rounded-full overflow-hidden flex mb-2.5 border" style="background:var(--panel-2); border-color:var(--line);" role="progressbar" aria-label="Tax bracket distribution"></div>
 
             <!-- Headroom Alert Banner -->
             <div id="bracketHeadroomBanner" class="p-2.5 rounded-lg text-xs mb-3 border flex items-center justify-between" style="display:none;"></div>
 
             <!-- Detailed Tiers List -->
-            <div id="taxBreakdown" class="space-y-2 text-xs text-gray-600"></div>
+            <div id="taxBreakdown" class="space-y-2 text-xs" style="color:var(--ink-dim);"></div>
         </div>
 
         <!-- Tax Optimization Advisor & Deduction Capacity Room -->
-        <div id="taxAdvisorCard" class="mt-4 p-4 rounded-xl border border-emerald-300 bg-emerald-50 text-xs space-y-3" style="display:none;">
+        <div id="taxAdvisorCard" class="mt-4 p-4 rounded-xl border space-y-3 text-xs" style="display:none; background:var(--panel-2); border-color:var(--line);">
             <div class="flex items-center justify-between">
-                <span class="font-bold text-emerald-900 flex items-center gap-1.5" id="lbl-advisor-title">
+                <span class="font-bold flex items-center gap-1.5" style="color:var(--ink);" id="lbl-advisor-title">
                     <span>💡</span> <span id="txt-advisor-title">คำแนะนำและโอกาสประหยัดภาษี (Optimization Room)</span>
                 </span>
-                <span id="badge-marginal-rate" class="px-2.5 py-0.5 rounded-full bg-emerald-200 text-emerald-800 font-bold text-[11px]"></span>
+                <span id="badge-marginal-rate" class="px-2.5 py-0.5 rounded-full font-bold text-[11px]" style="background:var(--core-dim); color:var(--core);"></span>
             </div>
 
-            <p id="advisor-summary" class="text-emerald-800 leading-relaxed"></p>
+            <p id="advisor-summary" class="leading-relaxed" style="color:var(--ink-dim);"></p>
 
             <!-- Deduction Capacity Progress Meters -->
-            <div class="bg-white/90 p-3 rounded-lg border border-emerald-200 text-gray-700 space-y-2.5" id="advisor-meters-box">
-                <div class="flex justify-between items-center text-[11px] font-semibold text-gray-600">
+            <div class="p-3 rounded-lg border space-y-2.5" id="advisor-meters-box" style="background:var(--panel); border-color:var(--line); color:var(--ink);">
+                <div class="flex justify-between items-center text-[11px] font-semibold" style="color:var(--ink-dim);">
                     <span id="lbl-capacity-title">📊 สิทธิ์ลดหย่อนและโควตาคงเหลือ (Deduction Capacity)</span>
-                    <span id="txt-total-room-badge" class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold"></span>
+                    <span id="txt-total-room-badge" class="px-2 py-0.5 rounded font-bold" style="background:var(--core-dim); color:var(--core);"></span>
                 </div>
                 <div id="capacityMetersList" class="space-y-2">
                     <!-- Dynamic capacity meters rendered by updateTaxAdvisor -->
@@ -468,24 +474,24 @@
             </div>
 
             <!-- What-If Simulation Playground -->
-            <div id="advisor-sim-box" class="bg-white/90 p-3 rounded-lg border border-emerald-200 text-gray-700 space-y-2" style="display:none;">
-                <div class="flex justify-between items-center text-[11px] font-semibold text-gray-600">
+            <div id="advisor-sim-box" class="p-3 rounded-lg border space-y-2" style="display:none; background:var(--panel); border-color:var(--line); color:var(--ink);">
+                <div class="flex justify-between items-center text-[11px] font-semibold" style="color:var(--ink-dim);">
                     <span id="lbl-sim-title">⚡ จำลองผลภาษีเมื่อลงทุนเพิ่ม (What-If Simulation)</span>
-                    <span id="txt-sim-roi-badge" class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-bold text-[10px]"></span>
+                    <span id="txt-sim-roi-badge" class="px-2 py-0.5 rounded font-bold text-[10px]" style="background:var(--core-dim); color:var(--core);"></span>
                 </div>
                 <!-- Simulation Quick Pills -->
                 <div class="flex items-center gap-1.5 flex-wrap">
-                    <span class="text-[11px] text-gray-500 font-medium" id="lbl-sim-pills">เลือกลงทุนเพิ่ม:</span>
-                    <button type="button" class="sim-pill px-2 py-1 rounded bg-gray-100 hover:bg-emerald-100 border border-gray-300 font-medium text-[11px] transition-all" onclick="selectSimExtra(10000)">+10k</button>
-                    <button type="button" class="sim-pill px-2 py-1 rounded bg-gray-100 hover:bg-emerald-100 border border-gray-300 font-medium text-[11px] transition-all" onclick="selectSimExtra(30000)">+30k</button>
-                    <button type="button" class="sim-pill px-2 py-1 rounded bg-gray-100 hover:bg-emerald-100 border border-gray-300 font-medium text-[11px] transition-all" onclick="selectSimExtra(50000)">+50k</button>
-                    <button type="button" class="sim-pill px-2 py-1 rounded bg-gray-100 hover:bg-emerald-100 border border-gray-300 font-medium text-[11px] transition-all" onclick="selectSimExtra(100000)">+100k</button>
-                    <button type="button" class="sim-pill px-2 py-1 rounded bg-gray-100 hover:bg-emerald-100 border border-gray-300 font-medium text-[11px] transition-all" onclick="selectSimExtra('max')">Max Room</button>
+                    <span class="text-[11px] font-medium" style="color:var(--ink-dim);" id="lbl-sim-pills">เลือกลงทุนเพิ่ม:</span>
+                    <button type="button" class="sim-pill px-2 py-1 rounded border font-medium text-[11px] transition-all" style="background:var(--panel-2); color:var(--ink); border-color:var(--line);" onclick="selectSimExtra(10000)">+10k</button>
+                    <button type="button" class="sim-pill px-2 py-1 rounded border font-medium text-[11px] transition-all" style="background:var(--panel-2); color:var(--ink); border-color:var(--line);" onclick="selectSimExtra(30000)">+30k</button>
+                    <button type="button" class="sim-pill px-2 py-1 rounded border font-medium text-[11px] transition-all" style="background:var(--panel-2); color:var(--ink); border-color:var(--line);" onclick="selectSimExtra(50000)">+50k</button>
+                    <button type="button" class="sim-pill px-2 py-1 rounded border font-medium text-[11px] transition-all" style="background:var(--panel-2); color:var(--ink); border-color:var(--line);" onclick="selectSimExtra(100000)">+100k</button>
+                    <button type="button" class="sim-pill px-2 py-1 rounded border font-medium text-[11px] transition-all" style="background:var(--panel-2); color:var(--ink); border-color:var(--line);" onclick="selectSimExtra('max')">Max Room</button>
                 </div>
                 <!-- Simulated Result Callout -->
-                <div id="sim-result-callout" class="p-2.5 rounded bg-emerald-50/80 border border-emerald-200 text-[11px] text-emerald-900 leading-normal"></div>
+                <div id="sim-result-callout" class="p-2.5 rounded border text-[11px] leading-normal" style="background:var(--panel-2); border-color:var(--line); color:var(--ink);"></div>
                 <div class="flex justify-end pt-1">
-                    <button type="button" id="btn-apply-sim" onclick="applyCurrentSimulation()" class="py-1 px-3 bg-emerald-700 hover:bg-emerald-800 text-white font-medium rounded-md text-[11px] transition-all shadow-xs">
+                    <button type="button" id="btn-apply-sim" onclick="applyCurrentSimulation()" class="py-1 px-3 text-white font-medium rounded-md text-[11px] transition-all shadow-xs" style="background:var(--core);">
                         ✓ นำยอดจำลองนี้ไปกรอกจริง
                     </button>
                 </div>
@@ -493,10 +499,10 @@
 
             <!-- Legacy Quick Actions -->
             <div id="advisor-actions" class="flex flex-wrap gap-2 pt-1">
-                <button type="button" id="btn-advisor-drop" onclick="applyAdvisorDropOne()" class="flex-1 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg text-center transition-all shadow-xs">
+                <button type="button" id="btn-advisor-drop" onclick="applyAdvisorDropOne()" class="flex-1 py-1.5 px-2 text-white font-medium rounded-lg text-center transition-all shadow-xs" style="background:var(--core);">
                     🎯 ลด 1 ขั้นบันได
                 </button>
-                <button type="button" id="btn-advisor-max" onclick="applyAdvisorMax()" class="flex-1 py-1.5 px-2 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg text-center transition-all shadow-xs">
+                <button type="button" id="btn-advisor-max" onclick="applyAdvisorMax()" class="flex-1 py-1.5 px-2 text-white font-medium rounded-lg text-center transition-all shadow-xs" style="background:var(--core);">
                     🌟 ใช้สิทธิ์สูงสุด
                 </button>
                 <button type="button" id="btn-advisor-revert" onclick="revertAdvisorOptimization()" class="py-1.5 px-2 font-medium rounded-lg text-center transition-all" style="display:none; background:var(--panel-2); color:var(--ink); border:1px solid var(--line);">
@@ -507,15 +513,15 @@
 
         <!-- Tax Scenario Comparator & Bracket Inflation Stress-Tester -->
         <div class="mt-4 no-print">
-            <button type="button" id="btn-toggle-scenario-compare" onclick="toggleTaxScenarioComparator()" class="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2">
-                <span id="lbl-toggle-scenario">⚖️ เปรียบเทียบ Scenario ภาษี & ทดสอบเงินเฟ้อ (Bracket Creep)</span>
+            <button type="button" id="btn-toggle-scenario-compare" onclick="toggleTaxScenarioComparator()" class="w-full py-2.5 px-4 text-white text-xs font-semibold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2" style="background:var(--core);">
+                <span id="lbl-toggle-scenario">⚖️ เปรียบเทียบ Scenario ภาษี &amp; ทดสอบเงินเฟ้อ (Bracket Creep)</span>
             </button>
-            <div id="taxScenarioComparePanel" class="mt-3 p-4 bg-white rounded-xl shadow-md border border-gray-200 text-xs space-y-3" style="display:none;">
-                <div class="flex justify-between items-center border-b pb-2">
-                    <span class="font-bold text-gray-800 flex items-center gap-1.5" id="lbl-compare-header">
+            <div id="taxScenarioComparePanel" class="mt-3 p-4 rounded-xl shadow-md border text-xs space-y-3" style="display:none; background:var(--panel); border-color:var(--line);">
+                <div class="flex justify-between items-center border-b pb-2" style="border-color:var(--line);">
+                    <span class="font-bold flex items-center gap-1.5" style="color:var(--ink);" id="lbl-compare-header">
                         <span>📊</span> <span>เปรียบเทียบ Scenario A (ปัจจุบัน) vs Scenario B (เปรียบเทียบ)</span>
                     </span>
-                    <button type="button" onclick="copyCurrentToScenarioB()" class="py-1 px-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded text-[11px] transition-all">
+                    <button type="button" onclick="copyCurrentToScenarioB()" class="py-1 px-2.5 font-medium rounded text-[11px] transition-all" style="background:var(--panel-2); color:var(--ink); border:1px solid var(--line); cursor:pointer;">
                         <span id="lbl-copy-curr-b">📋 คัดลอกค่าปัจจุบันไป B</span>
                     </button>
                 </div>
@@ -523,16 +529,16 @@
                 <!-- Scenario B Inputs Grid -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                        <label class="block text-gray-600 font-medium mb-1" id="lbl-scen-income">รายได้รวม B (บาท/ปี):</label>
-                        <input type="number" id="scenIncome" class="w-full p-2 border rounded-lg text-xs" placeholder="เช่น 600000" oninput="runTaxScenarioComparison()">
+                        <label class="block font-medium mb-1" style="color:var(--ink-dim);" id="lbl-scen-income">รายได้รวม B (บาท/ปี):</label>
+                        <input type="number" id="scenIncome" class="w-full p-2 rounded-lg text-xs" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" placeholder="เช่น 600000" oninput="runTaxScenarioComparison()">
                     </div>
                     <div>
-                        <label class="block text-gray-600 font-medium mb-1" id="lbl-scen-ded">ลดหย่อนอื่นๆ B (บาท/ปี):</label>
-                        <input type="number" id="scenDeductions" class="w-full p-2 border rounded-lg text-xs" placeholder="เช่น 100000" oninput="runTaxScenarioComparison()">
+                        <label class="block font-medium mb-1" style="color:var(--ink-dim);" id="lbl-scen-ded">ลดหย่อนอื่นๆ B (บาท/ปี):</label>
+                        <input type="number" id="scenDeductions" class="w-full p-2 rounded-lg text-xs" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" placeholder="เช่น 100000" oninput="runTaxScenarioComparison()">
                     </div>
                     <div>
-                        <label class="block text-gray-600 font-medium mb-1" id="lbl-scen-infl">อัตราเงินเฟ้อ / Inflation (%):</label>
-                        <input type="number" id="scenInflation" class="w-full p-2 border rounded-lg text-xs" placeholder="เช่น 4" value="0" oninput="runTaxScenarioComparison()">
+                        <label class="block font-medium mb-1" style="color:var(--ink-dim);" id="lbl-scen-infl">อัตราเงินเฟ้อ / Inflation (%):</label>
+                        <input type="number" id="scenInflation" class="w-full p-2 rounded-lg text-xs" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" placeholder="เช่น 4" value="0" oninput="runTaxScenarioComparison()">
                     </div>
                 </div>
 
@@ -542,7 +548,7 @@
                 </div>
 
                 <!-- Bracket Creep & Real Purchasing Power Callout -->
-                <div id="scenBracketCreepCallout" class="p-2.5 rounded-lg border text-[11px] leading-relaxed" style="display:none;"></div>
+                <div id="scenBracketCreepCallout" class="p-2.5 rounded-lg border text-[11px] leading-relaxed" style="display:none; background:var(--panel-2); border-color:var(--line); color:var(--ink);"></div>
             </div>
         </div>
 
@@ -605,7 +611,7 @@
                     <span id="lbl-reset-tax">ล้างข้อมูล</span>
                 </button>
             </div>
-            <p class="text-xs text-gray-400">v2.3.7</p>
+            <p class="text-xs text-gray-400">v2.3.8</p>
         </div>
     </div>
 
