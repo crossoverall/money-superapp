@@ -708,6 +708,123 @@ describe('Financial Math Verification', () => {
     });
   });
 
+  describe('Interactive Financial Goal Projection & Compound Scenario Simulator', () => {
+    function calculateGoalHorizonMonths(currentVal, targetVal, monthlyPmt, annualRate) {
+      const cur = typeof currentVal === 'number' ? currentVal : 0;
+      const tgt = typeof targetVal === 'number' ? targetVal : 0;
+      const pmt = typeof monthlyPmt === 'number' ? monthlyPmt : 0;
+      const rate = typeof annualRate === 'number' ? annualRate : 0;
+
+      if (cur >= tgt) return 0;
+
+      const r = rate / 12;
+
+      if (Math.abs(r) < 1e-9) {
+        if (pmt <= 0) return Infinity;
+        const months = Math.ceil((tgt - cur) / pmt);
+        return months > 600 ? Infinity : Math.max(0, months);
+      }
+
+      const num = tgt * r + pmt;
+      const den = cur * r + pmt;
+
+      if (den <= 0 || num <= 0) return Infinity;
+
+      const ratio = num / den;
+      if (ratio <= 1) return 0;
+
+      const months = Math.ceil(Math.log(ratio) / Math.log(1 + r));
+      return months > 600 ? Infinity : Math.max(0, months);
+    }
+
+    function getProjectedDateString(months, refDate = new Date(), lang = 'th') {
+      const isEn = lang === 'en';
+      if (!Number.isFinite(months) || months > 600) {
+        return isEn ? '> 50 years' : '> 50 ปี';
+      }
+      if (months <= 0) {
+        return isEn ? 'Achieved' : 'บรรลุแล้ว';
+      }
+
+      const d = refDate instanceof Date && !Number.isNaN(refDate.getTime()) ? new Date(refDate) : new Date(refDate);
+      const targetMonth = d.getMonth() + months;
+      const targetYear = d.getFullYear() + Math.floor(targetMonth / 12);
+      const finalMonth = ((targetMonth % 12) + 12) % 12;
+
+      const mEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const mTh = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+
+      const mName = isEn ? mEn[finalMonth] : mTh[finalMonth];
+      const yName = isEn ? targetYear : targetYear + 543;
+      const monthUnit = isEn ? 'mos' : 'เดือน';
+
+      return `${mName} ${yName} (~${months} ${monthUnit})`;
+    }
+
+    it('calculates linear goal horizon correctly for zero return cash savings', () => {
+      // 50k to 200k with 15k/mo = 150k / 15k = 10 months
+      assert.equal(calculateGoalHorizonMonths(50000, 200000, 15000, 0), 10);
+      // Already achieved -> 0 months
+      assert.equal(calculateGoalHorizonMonths(200000, 200000, 15000, 0), 0);
+      // No monthly contribution -> Infinity
+      assert.equal(calculateGoalHorizonMonths(50000, 200000, 0, 0), Infinity);
+      // Negative contribution -> Infinity
+      assert.equal(calculateGoalHorizonMonths(50000, 200000, -5000, 0), Infinity);
+    });
+
+    it('calculates compound interest goal horizon with periodic monthly contributions', () => {
+      // 100k PV, 1M FV, 10k PMT, 6% annual rate -> 72 months
+      assert.equal(calculateGoalHorizonMonths(100000, 1000000, 10000, 0.06), 72);
+      // Pure compound without additional PMT: 100k to 1M at 6% -> 462 months
+      assert.equal(calculateGoalHorizonMonths(100000, 1000000, 0, 0.06), 462);
+    });
+
+    it('demonstrates realistic progression across Conservative, Moderate, and Aggressive scenarios', () => {
+      const pv = 100000;
+      const fv = 1000000;
+      const pmt = 10000;
+
+      const mCash = calculateGoalHorizonMonths(pv, fv, pmt, 0); // 0%
+      const mCons = calculateGoalHorizonMonths(pv, fv, pmt, 0.03); // 3%
+      const mMod = calculateGoalHorizonMonths(pv, fv, pmt, 0.06); // 6%
+      const mAggr = calculateGoalHorizonMonths(pv, fv, pmt, 0.09); // 9%
+
+      assert.equal(mCash, 90);
+      assert.equal(mCons, 80);
+      assert.equal(mMod, 72);
+      assert.equal(mAggr, 66);
+
+      // Higher expected return rate strictly shortens the time required to reach milestone
+      assert.ok(mAggr < mMod);
+      assert.ok(mMod < mCons);
+      assert.ok(mCons < mCash);
+    });
+
+    it('handles negative net worth and unachievable deficit edge cases safely', () => {
+      // Negative net worth (-50k) with 10k PMT at 6% reaching 100k
+      assert.equal(calculateGoalHorizonMonths(-50000, 100000, 10000, 0.06), 15);
+
+      // Deep deficit where interest decay exceeds tiny monthly contribution
+      assert.equal(calculateGoalHorizonMonths(-500000, 1000000, 500, 0.06), Infinity);
+
+      // Horizon exceeding 50 years (> 600 months)
+      assert.equal(calculateGoalHorizonMonths(1000, 100000000, 100, 0.01), Infinity);
+    });
+
+    it('formats target projection dates accurately in Thai and English formats', () => {
+      const refDate = new Date(2026, 9, 17); // Oct 17, 2026
+
+      assert.equal(getProjectedDateString(12, refDate, 'th'), 'ต.ค. 2570 (~12 เดือน)');
+      assert.equal(getProjectedDateString(12, refDate, 'en'), 'Oct 2027 (~12 mos)');
+
+      assert.equal(getProjectedDateString(0, refDate, 'th'), 'บรรลุแล้ว');
+      assert.equal(getProjectedDateString(0, refDate, 'en'), 'Achieved');
+
+      assert.equal(getProjectedDateString(Infinity, refDate, 'th'), '> 50 ปี');
+      assert.equal(getProjectedDateString(Infinity, refDate, 'en'), '> 50 years');
+    });
+  });
+
   describe('Tax Bracket Waterfall Allocation & Headroom', () => {
     it('allocates 0 THB net income into exempt tier with full headroom', () => {
       const wf = computeTaxWaterfall(0);

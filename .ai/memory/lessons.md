@@ -392,3 +392,19 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
   3. Formatted cutoff strings using local calendar components (`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`) rather than `.toISOString()`, eliminating timezone boundary shifts.
   4. Enforced an invariant that at least 3 active snapshots remain in primary view even if all snapshots exceed the age cutoff.
 - **Rule:** For client-side storage adapters, always pair IndexedDB with a synchronous fallback layer, and never use `.toISOString()` on local midnight dates for temporal boundary partitioning.
+
+### 2026-10-17: Closed-Form Compound Goal Projection & Risk Scenario Simulation
+
+- **Date & Context:** 2026-10-17, implementing Interactive Financial Goal Projection & Compound Scenario Simulator in `dashboard.html` (`v2.0.7`).
+- **Problem:**
+  1. Financial goal progress bars previously displayed only static percentage completion without indicating estimated time-to-achievement (ETA). Users could not ascertain whether their current savings rate was sufficient to reach their targets.
+  2. Wealth milestones grow from both regular contributions and compound investment yields. Using naive linear division $n = (FV - PV) / PMT$ significantly underestimates progress for compound-yielding assets ($r > 0$).
+  3. Mathematical edge cases like zero contribution ($PMT = 0$), negative net worth ($PV < 0$), interest decay exceeding savings ($PV \cdot r + PMT \le 0$), or extreme horizons (> 50 years) could produce `NaN`, negative durations, or division-by-zero errors.
+- **Resolution:**
+  1. Implemented a closed-form compound growth horizon solver:
+     $n = \lceil \ln((FV \cdot r + PMT)/(PV \cdot r + PMT)) / \ln(1+r) \rceil$ for $r > 0$, and graceful linear fallback $n = \lceil (FV - PV)/PMT \rceil$ for $r \approx 0$.
+  2. Guarded non-positive denominators and logarithmic boundaries, returning `Infinity` when contributions cannot overcome compounding debt or capping horizons at 600 months (50 years).
+  3. Added one-click scenario toggle pills (0% Cash, 3% Conservative, 6% Moderate, 9% Aggressive) with live on-card recalculation, alongside custom rate configuration in `#goalsModal`.
+  4. Formatted projected completion dates with bilingual Thai Buddhist and English Gregorian calendars (`ต.ค. 2570 (~12 เดือน)` / `Oct 2027 (~12 mos)`).
+- **Rule:** For financial goal horizon projections, always use closed-form compound formulas with $r \approx 0$ linear fallbacks, explicitly guard $PV \cdot r + PMT \le 0$ against negative log arguments, and clamp horizons safely at 50 years.
+

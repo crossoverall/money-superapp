@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.0.6">
+  <meta name="version" content="2.0.7">
   <title>ภาพรวมการเงิน</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -92,6 +92,9 @@
     .chart-mode-pill.active.mode-sav { background: var(--ok-dim); border-color: var(--ok); color: var(--ok); }
     .chart-mode-pill.active.mode-emg { background: rgba(126,34,206,0.12); border-color: var(--purple); color: var(--purple); }
     .chart-mode-pill.active.mode-debt { background: var(--warn-dim); border-color: var(--warn); color: var(--warn); }
+    .scenario-pill { background: var(--panel); border: 1px solid var(--line); color: var(--ink-faint); border-radius: 12px; padding: 1px 7px; font-size: 10px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; }
+    .scenario-pill:hover { border-color: var(--blue); color: var(--ink); }
+    .scenario-pill.active { background: rgba(37,99,235,0.12); border-color: var(--blue); color: var(--blue); font-weight: 700; }
 
     .chart-container { width: 100%; height: 200px; margin-top: 10px; position: relative; }
     #svgChart { width:100%; height:100%; overflow:visible; }
@@ -241,6 +244,10 @@
         <span id="goal-emergency-cur-txt">ปัจจุบัน: 0 บาท</span>
         <span id="goal-emergency-target-txt">เป้าหมาย: 0 บาท</span>
       </div>
+      <div style="margin-top:8px; padding-top:8px; border-top:1px dashed var(--line); display:flex; justify-content:space-between; align-items:center; font-size:11px;">
+        <span style="color:var(--ink-faint);" id="lbl-goal-emergency-horizon-title">ความเร็วการสะสม:</span>
+        <span id="goal-emergency-horizon" style="font-weight:600; color:var(--purple); background:var(--panel); padding:2px 8px; border-radius:6px; border:1px solid var(--line);">🎯 ประมาณการ: -</span>
+      </div>
     </div>
 
     <!-- Net Worth Milestone -->
@@ -255,6 +262,18 @@
       <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--ink-faint); margin-top:6px;">
         <span id="goal-networth-cur-txt">ปัจจุบัน: 0 บาท</span>
         <span id="goal-networth-target-txt">เป้าหมาย: 1,000,000 บาท</span>
+      </div>
+      <div style="margin-top:8px; padding-top:8px; border-top:1px dashed var(--line); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+        <div style="display:flex; gap:4px; align-items:center;">
+          <span style="font-size:10px; color:var(--ink-faint);" id="lbl-scenario-title">ผลตอบแทน:</span>
+          <div style="display:inline-flex; gap:3px;" role="group" aria-label="Return rate scenario">
+            <button type="button" class="scenario-pill" data-rate="0" onclick="setGoalScenarioRate(0)">0%</button>
+            <button type="button" class="scenario-pill" data-rate="0.03" onclick="setGoalScenarioRate(0.03)">3%</button>
+            <button type="button" class="scenario-pill" data-rate="0.06" onclick="setGoalScenarioRate(0.06)">6%</button>
+            <button type="button" class="scenario-pill" data-rate="0.09" onclick="setGoalScenarioRate(0.09)">9%</button>
+          </div>
+        </div>
+        <span id="goal-networth-horizon" style="font-size:11px; font-weight:600; color:var(--blue); background:var(--panel); padding:2px 8px; border-radius:6px; border:1px solid var(--line);">🎯 ประมาณการ: -</span>
       </div>
     </div>
 
@@ -373,6 +392,19 @@
         </div>
       </div>
 
+      <div style="margin-bottom:20px;">
+        <label for="inpGoalReturnRate" style="display:block; font-size:12px; font-weight:700; margin-bottom:6px;" id="lblModalReturnRate">📈 ผลตอบแทนคาดหวังต่อปีสำหรับเป้าหมายความมั่งคั่ง (%)</label>
+        <div style="display:flex; gap:8px; margin-bottom:8px;">
+          <input type="number" id="inpGoalReturnRate" min="0" max="25" step="0.5" inputmode="decimal" style="flex:1; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:14px; font-weight:600; color:var(--ink); outline:none;">
+        </div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button type="button" onclick="setGoalReturnRatePreset(0)" class="action-btn" style="padding:4px 8px; font-size:11px;">0% (Cash)</button>
+          <button type="button" onclick="setGoalReturnRatePreset(3)" class="action-btn" style="padding:4px 8px; font-size:11px;">3% (Cons.)</button>
+          <button type="button" onclick="setGoalReturnRatePreset(6)" class="action-btn" style="padding:4px 8px; font-size:11px;">6% (Mod.)</button>
+          <button type="button" onclick="setGoalReturnRatePreset(9)" class="action-btn" style="padding:4px 8px; font-size:11px;">9% (Aggr.)</button>
+        </div>
+      </div>
+
       <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--line); padding-top:14px;">
         <button type="button" onclick="resetGoalsToDefault()" class="reset-btn" style="font-size:12px;" id="btnResetGoalsText">รีเซ็ตค่าเริ่มต้น</button>
         <div style="display:flex; gap:8px;">
@@ -383,7 +415,7 @@
     </div>
   </div>
 
-  <p class="version-tag">Money Superapp v2.0.6</p>
+  <p class="version-tag">Money Superapp v2.0.7</p>
 
 <script src="js/shared.js"></script>
 <script>
@@ -432,6 +464,9 @@
             lblGoalsModalTitle: '🎯 กำหนดเป้าหมายทางการเงิน',
             lblModalEmergency: '🛡️ เป้าหมายเงินสำรองฉุกเฉิน (เดือนของค่าใช้จ่าย)',
             lblModalNetWorth: '💎 เป้าหมายความมั่งคั่งสุทธิ (บาท)',
+            lblGoalEmergencyHorizon: 'ความเร็วการสะสม:',
+            lblGoalScenario: 'ผลตอบแทน:',
+            lblModalReturnRate: '📈 ผลตอบแทนคาดหวังต่อปีสำหรับเป้าหมายความมั่งคั่ง (%)',
             btnResetGoalsText: 'รีเซ็ตค่าเริ่มต้น',
             btnCloseGoalsModal: 'ยกเลิก',
             btnSaveGoalsText: 'บันทึก',
@@ -490,6 +525,9 @@
             lblGoalsModalTitle: '🎯 Configure Financial Goals',
             lblModalEmergency: '🛡️ Emergency Runway Target (months of expenses)',
             lblModalNetWorth: '💎 Net Worth Milestone Target (THB)',
+            lblGoalEmergencyHorizon: 'Accumulation Velocity:',
+            lblGoalScenario: 'Return Rate:',
+            lblModalReturnRate: '📈 Expected Annual Return for Net Worth Goal (%)',
             btnResetGoalsText: 'Reset Defaults',
             btnCloseGoalsModal: 'Cancel',
             btnSaveGoalsText: 'Save Goals',
@@ -548,6 +586,9 @@
             'lblGoalsModalTitle': t.lblGoalsModalTitle,
             'lblModalEmergency': t.lblModalEmergency,
             'lblModalNetWorth': t.lblModalNetWorth,
+            'lbl-goal-emergency-horizon-title': t.lblGoalEmergencyHorizon,
+            'lbl-scenario-title': t.lblGoalScenario,
+            'lblModalReturnRate': t.lblModalReturnRate,
             'btnResetGoalsText': t.btnResetGoalsText,
             'btnCloseGoalsModal': t.btnCloseGoalsModal,
             'btnSaveGoalsText': t.btnSaveGoalsText,
@@ -752,17 +793,75 @@
     const GOALS_KEY = 'moneySuperapp.financialGoals.v1';
     const DEFAULT_GOALS = {
         emergencyMonths: 6,
-        netWorthTarget: 1000000
+        netWorthTarget: 1000000,
+        expectedReturnRate: 0.06
     };
 
     function getFinancialGoals() {
-        return safeJsonParse(GOALS_KEY, DEFAULT_GOALS);
+        const saved = safeJsonParse(GOALS_KEY, DEFAULT_GOALS);
+        return {
+            emergencyMonths: typeof saved.emergencyMonths === 'number' ? saved.emergencyMonths : DEFAULT_GOALS.emergencyMonths,
+            netWorthTarget: typeof saved.netWorthTarget === 'number' ? saved.netWorthTarget : DEFAULT_GOALS.netWorthTarget,
+            expectedReturnRate: typeof saved.expectedReturnRate === 'number' ? saved.expectedReturnRate : DEFAULT_GOALS.expectedReturnRate
+        };
     }
 
     function saveFinancialGoals(goals) {
         try {
             localStorage.setItem(GOALS_KEY, JSON.stringify(goals));
         } catch(e){}
+    }
+
+    function calculateGoalHorizonMonths(currentVal, targetVal, monthlyPmt, annualRate) {
+        const cur = typeof currentVal === 'number' ? currentVal : 0;
+        const tgt = typeof targetVal === 'number' ? targetVal : 0;
+        const pmt = typeof monthlyPmt === 'number' ? monthlyPmt : 0;
+        const rate = typeof annualRate === 'number' ? annualRate : 0;
+
+        if (cur >= tgt) return 0;
+
+        const r = rate / 12;
+
+        if (Math.abs(r) < 1e-9) {
+            if (pmt <= 0) return Infinity;
+            const months = Math.ceil((tgt - cur) / pmt);
+            return months > 600 ? Infinity : Math.max(0, months);
+        }
+
+        const num = tgt * r + pmt;
+        const den = cur * r + pmt;
+
+        if (den <= 0 || num <= 0) return Infinity;
+
+        const ratio = num / den;
+        if (ratio <= 1) return 0;
+
+        const months = Math.ceil(Math.log(ratio) / Math.log(1 + r));
+        return months > 600 ? Infinity : Math.max(0, months);
+    }
+
+    function getProjectedDateString(months, refDate = new Date(), lang = 'th') {
+        const isEn = lang === 'en';
+        if (!Number.isFinite(months) || months > 600) {
+            return isEn ? '> 50 years' : '> 50 ปี';
+        }
+        if (months <= 0) {
+            return isEn ? 'Achieved' : 'บรรลุแล้ว';
+        }
+
+        const d = refDate instanceof Date && !Number.isNaN(refDate.getTime()) ? new Date(refDate) : new Date(refDate);
+        const targetMonth = d.getMonth() + months;
+        const targetYear = d.getFullYear() + Math.floor(targetMonth / 12);
+        const finalMonth = ((targetMonth % 12) + 12) % 12;
+
+        const mEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const mTh = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+
+        const mName = isEn ? mEn[finalMonth] : mTh[finalMonth];
+        const yName = isEn ? targetYear : targetYear + 543;
+        const monthUnit = isEn ? 'mos' : 'เดือน';
+
+        return `${mName} ${yName} (~${months} ${monthUnit})`;
     }
 
     function computeGoalProgress(curNW, targetNW, curRunway, targetRunway, totalDebt, monthlyExpense, emergencyReserve) {
@@ -805,11 +904,16 @@
             p.emergencyReserve
         );
 
+        const monthlySav = Math.max(0, p.monthlySavings);
+        const totalMonthlyContrib = Math.max(0, p.monthlySavings + p.monthlyInvest);
+        const returnRate = typeof g.expectedReturnRate === 'number' ? g.expectedReturnRate : 0.06;
+
         // 1. Emergency runway goal
         const emergBar = document.getElementById('goal-emergency-bar');
         const emergBadge = document.getElementById('goal-emergency-badge');
         const emergCurTxt = document.getElementById('goal-emergency-cur-txt');
         const emergTargetTxt = document.getElementById('goal-emergency-target-txt');
+        const emergHorizonEl = document.getElementById('goal-emergency-horizon');
 
         if (emergBar) {
             emergBar.style.width = `${progress.runwayPct}%`;
@@ -830,12 +934,29 @@
         if (emergTargetTxt) {
             emergTargetTxt.textContent = `${isEn ? 'Target (' : 'เป้าหมาย ('}${g.emergencyMonths}${isEn ? ' mos): ' : ' เดือน): '}${formatMoney(progress.targetBufferAmt)} ${unit}`;
         }
+        if (emergHorizonEl) {
+            if (progress.runwayAchieved) {
+                emergHorizonEl.textContent = isEn ? '🎉 Target Reached' : '🎉 ถึงเป้าหมายแล้ว';
+                emergHorizonEl.style.color = 'var(--ok)';
+            } else {
+                const emergPmt = monthlySav > 0 ? monthlySav : totalMonthlyContrib;
+                const emergMonths = calculateGoalHorizonMonths(p.emergencyReserve, progress.targetBufferAmt, emergPmt, 0);
+                if (Number.isFinite(emergMonths)) {
+                    emergHorizonEl.textContent = `🎯 ${isEn ? 'ETA: ' : 'ประมาณการ: '}${getProjectedDateString(emergMonths, new Date(), LANG)}`;
+                    emergHorizonEl.style.color = 'var(--purple)';
+                } else {
+                    emergHorizonEl.textContent = isEn ? '⚠️ Need Monthly Savings' : '⚠️ ต้องเพิ่มเงินออมต่อเดือน';
+                    emergHorizonEl.style.color = 'var(--warn)';
+                }
+            }
+        }
 
         // 2. Net worth milestone
         const nwBar = document.getElementById('goal-networth-bar');
         const nwBadge = document.getElementById('goal-networth-badge');
         const nwCurTxt = document.getElementById('goal-networth-cur-txt');
         const nwTargetTxt = document.getElementById('goal-networth-target-txt');
+        const nwHorizonEl = document.getElementById('goal-networth-horizon');
 
         if (nwBar) {
             nwBar.style.width = `${progress.nwPct}%`;
@@ -854,6 +975,21 @@
         }
         if (nwCurTxt) nwCurTxt.textContent = `${isEn ? 'Current: ' : 'ปัจจุบัน: '}${formatMoney(p.netWorth)} ${unit}`;
         if (nwTargetTxt) nwTargetTxt.textContent = `${isEn ? 'Target: ' : 'เป้าหมาย: '}${formatMoney(g.netWorthTarget)} ${unit}`;
+        if (nwHorizonEl) {
+            if (progress.nwAchieved) {
+                nwHorizonEl.textContent = isEn ? '🏆 Milestone Reached' : '🏆 บรรลุเป้าหมายแล้ว';
+                nwHorizonEl.style.color = 'var(--ok)';
+            } else {
+                const nwMonths = calculateGoalHorizonMonths(p.netWorth, g.netWorthTarget, totalMonthlyContrib, returnRate);
+                if (Number.isFinite(nwMonths)) {
+                    nwHorizonEl.textContent = `🎯 ${isEn ? 'ETA: ' : 'ประมาณการ: '}${getProjectedDateString(nwMonths, new Date(), LANG)}`;
+                    nwHorizonEl.style.color = 'var(--blue)';
+                } else {
+                    nwHorizonEl.textContent = isEn ? '⚠️ Need Growth/Contributions' : '⚠️ ต้องเพิ่มเงินลงทุน/ออม';
+                    nwHorizonEl.style.color = 'var(--warn)';
+                }
+            }
+        }
 
         // 3. Debt-free goal
         const debtBar = document.getElementById('goal-debt-bar');
@@ -886,14 +1022,24 @@
             if (debtCurTxt) debtCurTxt.textContent = `${isEn ? 'Remaining: ' : 'หนี้คงเหลือ: '}${formatMoney(p.totalDebt)} ${unit}`;
             if (debtTargetTxt) debtTargetTxt.textContent = `${isEn ? 'Goal: ' : 'เป้าหมาย: '}0 ${unit}`;
         }
+
+        // Update scenario pills
+        document.querySelectorAll('.scenario-pill').forEach(pill => {
+            const rate = parseFloat(pill.dataset.rate);
+            const isActive = Math.abs(rate - returnRate) < 0.001;
+            pill.classList.toggle('active', isActive);
+            pill.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
     }
 
     function openGoalsModal() {
         const goals = getFinancialGoals();
         const inpEmerg = document.getElementById('inpGoalEmergencyMonths');
         const inpNW = document.getElementById('inpGoalNetWorth');
+        const inpRate = document.getElementById('inpGoalReturnRate');
         if (inpEmerg) inpEmerg.value = goals.emergencyMonths;
         if (inpNW) inpNW.value = goals.netWorthTarget;
+        if (inpRate) inpRate.value = ((goals.expectedReturnRate ?? 0.06) * 100).toFixed(1);
         const modal = document.getElementById('goalsModal');
         if (modal) modal.style.display = 'flex';
     }
@@ -913,19 +1059,35 @@
         if (inp) inp.value = val;
     }
 
+    function setGoalReturnRatePreset(val) {
+        const inp = document.getElementById('inpGoalReturnRate');
+        if (inp) inp.value = val;
+    }
+
+    function setGoalScenarioRate(rate) {
+        const goals = getFinancialGoals();
+        goals.expectedReturnRate = rate;
+        saveFinancialGoals(goals);
+        renderFinancialGoals();
+    }
+
     function resetGoalsToDefault() {
         const inpEmerg = document.getElementById('inpGoalEmergencyMonths');
         const inpNW = document.getElementById('inpGoalNetWorth');
+        const inpRate = document.getElementById('inpGoalReturnRate');
         if (inpEmerg) inpEmerg.value = DEFAULT_GOALS.emergencyMonths;
         if (inpNW) inpNW.value = DEFAULT_GOALS.netWorthTarget;
+        if (inpRate) inpRate.value = (DEFAULT_GOALS.expectedReturnRate * 100).toFixed(1);
     }
 
     function saveGoalsFromModal() {
         const inpEmerg = document.getElementById('inpGoalEmergencyMonths');
         const inpNW = document.getElementById('inpGoalNetWorth');
+        const inpRate = document.getElementById('inpGoalReturnRate');
         const emerg = Math.max(1, parseNum(inpEmerg ? inpEmerg.value : DEFAULT_GOALS.emergencyMonths));
         const nw = Math.max(1000, parseNum(inpNW ? inpNW.value : DEFAULT_GOALS.netWorthTarget));
-        saveFinancialGoals({ emergencyMonths: emerg, netWorthTarget: nw });
+        const rate = Math.max(0, Math.min(25, parseNum(inpRate ? inpRate.value : (DEFAULT_GOALS.expectedReturnRate * 100)))) / 100;
+        saveFinancialGoals({ emergencyMonths: emerg, netWorthTarget: nw, expectedReturnRate: rate });
         closeGoalsModal();
         renderFinancialGoals();
     }

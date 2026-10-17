@@ -1,5 +1,5 @@
 ---
-task_id: "FEAT-GOAL-PROJECTION-01"
+task_id: "FEAT-DEBT-WINDFALL-01"
 status: "pending_approval"
 current_stage: "approval_gate"
 complexity: "level_2"
@@ -7,51 +7,58 @@ iteration_count: 0
 pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Completed Feature: Transparent IndexedDB Storage Adapter & High-Capacity Snapshot Archive (Phase 23 / v2.0.6)
-- **Status:** Completed & Verified (81 automated tests passing, 0 linter errors).
+### Completed Feature: Interactive Financial Goal Projection & Compound Scenario Simulator (Phase 24 / v2.0.7)
+- **Status:** Completed & Verified (86 automated tests passing, 0 linter errors).
 - **Summary:**
-  1. Promise-based lightweight native `IndexedDB` key-value adapter in `js/shared.js` (`MoneyApp.idbStorage`) with automatic schema versioning, transaction wrappers, and transparent in-memory/localStorage fallback.
-  2. Dual-write background mirroring on snapshot saves without UI thread blocking.
-  3. Snapshot archival engine in `dashboard.html` that partitions records older than 12 months, freeing up localStorage while retaining multi-gigabyte historical archive in IndexedDB, with one-click restore and live quota inspection (`navigator.storage.estimate()`).
-  4. Full bilingual Thai/English localization and timezone-invariant local calendar formatting.
+  1. Closed-form logarithmic compound horizon solver ($n = \lceil \ln((FV \cdot r + PMT)/(PV \cdot r + PMT)) / \ln(1+r) \rceil$) with linear fallback ($n = \lceil (FV - PV)/PMT \rceil$) when $r \approx 0$.
+  2. Guarded non-positive denominators and mathematical edge cases, clamping horizons at 600 months (50 years) or returning `Infinity` with helpful UI warnings.
+  3. Interactive scenario toggle pills (0% Cash, 3% Conservative, 6% Moderate, 9% Aggressive) with real-time recalculation directly on the Net Worth milestone card.
+  4. Customizable expected return rate input in `#goalsModal` with quick preset buttons.
+  5. Localized projected completion dates with bilingual Thai Buddhist and English Gregorian calendar representations (`ต.ค. 2570 (~12 เดือน)` / `Oct 2027 (~12 mos)`).
 
 ---
 
-### Proposed Feature Specification: Interactive Financial Goal Projection & Compound Scenario Simulator (Phase 24 / Roadmap Item 3.1)
+### Proposed Feature Specification: Accelerated Debt Payoff Lump-Sum / Bonus Windfall Simulator (Phase 25 / Roadmap Item 3.2)
 
 #### 1. Goal & Scope Limits
-- **Objective:** Enhance the Financial Goals & Milestones section in [`dashboard.html`](file:///home/l2okii/Document/money-superapp/dashboard.html) with an interactive Compound Growth Projection & Target Date Estimator.
+- **Objective:** Add an interactive Lump-Sum / Bonus Windfall Injection Simulator to the Debt Payoff Calculator ([`debt-calculator.html`](file:///home/l2okii/Document/money-superapp/debt-calculator.html)).
 - **Key Capabilities & Benefits:**
-  1. **Compound Growth & Target Payoff/Goal Horizon Engine:**
-     - Computes estimated completion month/year for Emergency Runway, Net Worth Milestones, and Debt Payoff based on active monthly savings, investment contributions, and user-configurable expected annual return (0% to 15%, defaulting to 5%).
-  2. **Scenario Comparison Toggle (Conservative / Moderate / Aggressive):**
-     - Shows milestone achievement timelines across 3 preset risk return profiles (Conservative 3%, Moderate 6%, Aggressive 9%) alongside cash-only baseline.
-  3. **Interactive Target Horizon Badge & Visual Timeline Progress:**
-     - Renders an estimated "Goal Reached by: [Mon YYYY]" badge on each goal card.
-  4. **Zero External Dependencies (ADR-001):**
-     - Pure client-side closed-form annuity/compound formula ($FV = PV(1+r)^n + PMT \frac{(1+r)^n - 1}{r}$).
-  5. **Bilingual Localization (TH/EN):**
-     - Full translation in Thai and English.
-- **Target Files (<= 5 files, ~120-150 lines total):**
-  1. `dashboard.html` (interactive projection parameters and milestone target date badges)
-  2. `tests/financial-math.test.mjs` (unit tests verifying target date calculations and compound growth projection formulas)
+  1. **One-Time Lump-Sum / Windfall Injection:**
+     - Allows users to model applying an irregular windfall (e.g. annual bonus, tax refund, severance, asset sale) of an arbitrary amount (e.g. 20,000 to 200,000 THB) at a specific month milestone (e.g. Month 1, Month 3, Month 6).
+  2. **Accelerated Savings & Interest Reduction Engine:**
+     - Quantifies the exact financial impact in real time:
+       - **Months shaved off debt sentence** (e.g. "Debt-free 14 months earlier").
+       - **Total interest expense saved in Baht** (e.g. "Saves 34,800 THB in interest").
+       - **Effective return on debt capital**.
+  3. **Visual Timeline & Comparison Overlay:**
+     - Overlays the windfall acceleration curve directly onto the existing SVG payoff amortization chart (dashed green trajectory showing faster slope to zero).
+  4. **Strategy Compatibility (Snowball & Avalanche):**
+     - Windfall is automatically directed to the priority target account dictated by the active strategy (smallest balance first for Snowball, highest interest rate first for Avalanche).
+  5. **Zero External Dependencies (ADR-001):**
+     - Pure client-side discrete amortization loop simulation.
+  6. **Bilingual Localization (TH/EN):**
+     - Full Thai and English translations.
+- **Target Files (<= 5 files, ~150-180 lines total):**
+  1. `debt-calculator.html` (interactive windfall input controls, impact KPI chip, and SVG trajectory overlay)
+  2. `tests/financial-math.test.mjs` (unit tests validating windfall amortized interest and month reductions)
   3. `.ai/memory/active.md`
 - **Explicit Out of Scope:**
-  - Complex Monte Carlo simulations or server-side forecasting.
+  - Automated bank API syncing or recurring dynamic interest adjustments.
 
 #### 2. Architecture & Decision Alignment
-- **ADR-001 (Zero-Build Static PWA / Privacy):** 100% client-side privacy, fully offline-functional.
-- **Preserves Existing Storage:** Compatible with existing `moneySuperapp.financialGoals.v1` schema.
+- **ADR-001 (Zero-Build Static PWA / Privacy):** 100% offline-functional and client-side private.
+- **Preserves Existing Storage:** Windfall simulation state stored non-destructively in `moneySuperapp.debtCalculator.state.v1`.
 
 #### 3. Step-by-Step Implementation Plan
 1. **Mathematical Verification (`tests/financial-math.test.mjs`):**
-   - Write unit tests for closed-form compound goal horizon calculation and monthly iteration solvers.
-2. **Goal Horizon & Projection Engine (`dashboard.html`):**
-   - Implement `calculateGoalHorizonMonths(currentVal, targetVal, monthlyPmt, annualRate)` and integrate into `renderFinancialGoals()`.
-3. **UI Badges & Scenario Controls (`dashboard.html`):**
-   - Add target date chips and expected return selector in the Goals card and modal.
-4. **Verification & Quality Gate:**
-   - Execute `npm test` and `npm run lint`.
-5. **Release & Bump:**
+   - Unit tests verifying discrete monthly amortization with one-time windfall injection at month $k$, calculating delta months and delta interest for both Snowball and Avalanche orderings.
+2. **Simulation Engine & UI Controls (`debt-calculator.html`):**
+   - Add windfall input card (Amount THB and Month Injection slider/input).
+   - Integrate windfall into `computePayoff()` and compute impact comparison metrics (time saved, interest saved).
+   - Overlay windfall curve on the multi-strategy SVG payoff chart.
+3. **Verification & Quality Gate:**
+   - Run `npm test` (verify 90+ passing tests).
+   - Run `npm run lint` (0 errors).
+4. **Release & Bump:**
    - Log lessons in `.ai/memory/lessons.md`.
-   - Bump version to `v2.0.7` via `node scripts/bump.mjs patch`.
+   - Bump version to `v2.0.8` via `node scripts/bump.mjs patch`.
