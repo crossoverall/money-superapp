@@ -3274,6 +3274,7 @@ renderExecutiveDossier();
 renderSnapshotsTable();
 renderChart();
 updateStorageQuotaDisplay();
+let dashboardLayoutManager = null;
 initDashboardLayout();
 
 const PRIVACY_KEY = 'moneySuperapp.privacyMask.v1';
@@ -3366,6 +3367,17 @@ function renderExecutiveDossier() {
   const isMasked = isPrivacyMaskActive();
   applyPrivacyMaskUI(isMasked);
 
+  const healthMetrics =
+    typeof calculateFinancialHealthScore === 'function'
+      ? calculateFinancialHealthScore({
+          runwayMonths: p.runwayMonths,
+          savingsRatePct: p.savingsRate,
+          debt: p.totalDebt,
+          assets: p.portfolioVal + p.emergencyReserve,
+          netWorth: p.netWorth,
+        })
+      : { compositeScore: 75 };
+
   const dossier = MoneyApp.generateExecutiveDossier({
     dashboardState: {
       netWorth: p.netWorth,
@@ -3373,7 +3385,7 @@ function renderExecutiveDossier() {
       debts: p.totalDebt,
       monthlySavings: p.monthlySavings + p.monthlyInvest,
       runway: p.runwayMonths,
-      financialHealthScore: calculateHealthScoreMetrics().overallScore,
+      financialHealthScore: healthMetrics.compositeScore,
       emergencyFund: p.emergencyReserve,
     },
     portfolioState: portState,
@@ -3507,7 +3519,6 @@ function renderExecutiveDossier() {
   if (elTaxWith) elTaxWith.textContent = `${formatMoney(dossier.pillars.tax.withheld50Tawi)} ${curUnit}`;
 }
 
-let dashboardLayoutManager = null;
 function initDashboardLayout() {
   if (typeof MoneyApp !== 'undefined' && MoneyApp.initCardLayoutManager) {
     dashboardLayoutManager = MoneyApp.initCardLayoutManager({

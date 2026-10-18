@@ -3,7 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="2.5.8">
+<meta name="version" content="2.5.9">
+<script>
+  try {
+    var t = localStorage.getItem('moneySuperapp.theme');
+    if (t) document.documentElement.dataset.theme = t;
+    var l = localStorage.getItem('moneySuperapp.lang');
+    if (l) document.documentElement.lang = l;
+  } catch (_e) {}
+</script>
 <meta name="theme-color" content="#2F8B76">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -28,8 +36,8 @@
     overflow: hidden;
   }
 
-  /* Full-bleed dark background bar; capped and centered so tabs don't stretch */
-  .topbar { flex: 0 0 auto; background: #131E19; border-bottom: 1px solid #24352C; }
+  /* Full-bleed topbar using theme tokens */
+  .topbar { flex: 0 0 auto; background: var(--panel); border-bottom: 1px solid var(--line); }
   .topbar-inner {
     max-width: 1280px; margin: 0 auto; display: flex; align-items: stretch; justify-content: space-between;
   }
@@ -40,7 +48,7 @@
     align-items: center;
     gap: 6px;
     padding: 10px 12px;
-    color: #EAF2EE;
+    color: var(--ink);
     font-size: 14px;
     font-weight: 700;
     white-space: nowrap;
@@ -67,7 +75,7 @@
     padding: 14px 6px;
     border: none;
     background: none;
-    color: #8FA69C;
+    color: var(--ink-dim);
     font-size: 13px;
     cursor: pointer;
     border-bottom: 3px solid transparent;
@@ -75,8 +83,8 @@
     transition: background 0.15s, color 0.15s;
     text-align: center;
   }
-  .top-nav button:hover { background: #16221C; color: #EAF2EE; }
-  .top-nav button.active { color: #FFFFFF; border-bottom-color: #4FA894; background: #0E1512; font-weight: 600; }
+  .top-nav button:hover { background: var(--panel-2); color: var(--ink); }
+  .top-nav button.active { color: var(--core); border-bottom-color: var(--core); background: var(--bg); font-weight: 600; }
 
   /* Topbar Actions: ALWAYS compact across all viewports */
   .topbar-actions {
@@ -95,7 +103,7 @@
     flex: 0 0 auto;
   }
   .theme-toggle {
-    border-left: 1px solid #24352C;
+    border-left: 1px solid var(--line);
     padding-left: 6px;
   }
   .version-badge {
@@ -103,14 +111,14 @@
     padding: 0 6px;
     font-size: 11px;
     font-weight: 600;
-    color: #5B7168;
+    color: var(--ink-faint);
     letter-spacing: 0.04em;
     align-self: center;
   }
   .lang-toggle button, .theme-toggle button {
-    border: 1px solid #24352C;
+    border: 1px solid var(--line);
     background: none;
-    color: #8FA69C;
+    color: var(--ink-dim);
     white-space: nowrap;
     font-size: 11.5px;
     font-weight: 700;
@@ -124,8 +132,8 @@
     line-height: 1;
     transition: background 0.15s, color 0.15s, border-color 0.15s;
   }
-  .lang-toggle button:hover, .theme-toggle button:hover { background: #16221C; color: #EAF2EE; }
-  .lang-toggle button.active, .theme-toggle button.active { background: #2F8B76; color: #FFFFFF; border-color: #2F8B76; }
+  .lang-toggle button:hover, .theme-toggle button:hover { background: var(--panel-2); color: var(--ink); }
+  .lang-toggle button.active, .theme-toggle button.active { background: var(--core); color: #FFFFFF; border-color: var(--core); }
 
   .theme-toggle button {
     font-size: 13px;
@@ -134,8 +142,8 @@
 
   #btn-settings-modal, #btn-help-modal {
     background: none;
-    border: 1px solid #24352C;
-    color: #8FA69C;
+    border: 1px solid var(--line);
+    color: var(--ink-dim);
     padding: 5px 8px;
     border-radius: 999px;
     cursor: pointer;
@@ -149,22 +157,46 @@
     line-height: 1;
     transition: background 0.15s, color 0.15s;
   }
-  #btn-settings-modal:hover, #btn-help-modal:hover { background: #16221C; color: #EAF2EE; }
+  #btn-settings-modal:hover, #btn-help-modal:hover { background: var(--panel-2); color: var(--ink); }
+
+  .btn-cmd-palette {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    border-radius: 6px;
+    padding: 3px 7px;
+    font-size: 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: inherit;
+    transition: all 0.15s ease;
+  }
+  .btn-cmd-palette:hover { background: var(--line); }
+  .cmd-k-badge {
+    font-size: 10px;
+    color: var(--ink-dim);
+    background: var(--panel);
+    padding: 1px 4px;
+    border-radius: 4px;
+    border: 1px solid var(--line);
+  }
 
   iframe { display: block; width: 100%; flex: 1 1 auto; border: none; background: var(--bg); }
 
   /* Privacy Footer Notice */
   .privacy-bar {
-    flex: 0 0 auto; background: #0E1512; color: #5B7168; font-size: 11px;
+    flex: 0 0 auto; background: var(--panel); color: var(--ink-faint); font-size: 11px;
     padding: 6px 16px; display: flex; justify-content: space-between; align-items: center;
-    border-top: 1px solid #24352C;
+    border-top: 1px solid var(--line);
   }
 
   /* Mobile Bottom Navigation Bar (hidden on desktop) */
   .bottom-nav {
     display: none;
-    background: #131E19;
-    border-top: 1px solid #24352C;
+    background: var(--panel);
+    border-top: 1px solid var(--line);
     flex: 0 0 auto;
     z-index: 100;
     user-select: none;
@@ -210,7 +242,7 @@
     .theme-toggle {
       padding: 0 4px;
       gap: 3px;
-      border-left: 1px solid #374151;
+      border-left: 1px solid var(--line);
     }
     .theme-toggle button {
       padding: 4px 6px;
@@ -231,7 +263,7 @@
       justify-content: space-around;
       height: 56px;
       padding-bottom: env(safe-area-inset-bottom, 0);
-      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
       overflow-x: auto;
       scrollbar-width: none;
       -ms-overflow-style: none;
@@ -249,7 +281,7 @@
       background: none;
       border: none;
       padding: 6px 1px 4px;
-      color: #94a3b8;
+      color: var(--ink-dim);
       cursor: pointer;
       font-family: inherit;
       border-top: 3px solid transparent;
@@ -257,12 +289,12 @@
       -webkit-tap-highlight-color: transparent;
     }
     .bottom-nav button:active {
-      background: rgba(255, 255, 255, 0.05);
+      background: var(--panel-2);
     }
     .bottom-nav button.active {
-      color: #4FA894;
-      border-top-color: #4FA894;
-      background: #0E1512;
+      color: var(--core);
+      border-top-color: var(--core);
+      background: var(--bg);
     }
     .bottom-nav button .b-icon {
       font-size: 16px;
@@ -350,11 +382,11 @@
       <button data-theme-btn="light" id="btn-theme-light" title="☀ Light Theme" aria-label="Switch to Light Theme"><span class="theme-icon">☀</span></button>
       <button data-theme-btn="dark" id="btn-theme-dark" title="☾ Dark Theme" aria-label="Switch to Dark Theme"><span class="theme-icon">☾</span></button>
     </div>
-    <button id="btn-cmd-palette" onclick="openCommandPalette()" title="Command Palette & Omnisearch (Ctrl+K)" aria-label="Open Command Palette and Search" style="background:rgba(255,255,255,0.06); border:1px solid #374151; color:#e2e8f0; border-radius:6px; padding:3px 7px; font-size:12px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; font-family:inherit;">
+    <button id="btn-cmd-palette" onclick="openCommandPalette()" title="Command Palette & Omnisearch (Ctrl+K)" aria-label="Open Command Palette and Search" class="btn-cmd-palette">
       <span>🔍</span>
-      <span style="font-size:10px; opacity:0.75; background:#1e293b; padding:1px 4px; border-radius:4px; border:1px solid #475569;">Ctrl+K</span>
+      <span class="cmd-k-badge">Ctrl+K</span>
     </button>
-    <span class="version-badge">v2.5.8</span>
+    <span class="version-badge">v2.5.9</span>
     <button id="btn-help-modal" onclick="openOnboardingModal()" title="คู่มือการใช้งาน (Quick Tour)" aria-label="Open Quick Tour and Guide">
       <span class="help-icon">❓</span>
     </button>
@@ -386,7 +418,7 @@
 <!-- Privacy Footer Notice -->
 <div class="privacy-bar">
   <span id="lbl-privacy-footer">🔒 100% Client-Side Privacy — ทุกการคำนวณและข้อมูลถูกเก็บไว้ในอุปกรณ์ของคุณเท่านั้น ไม่มีการส่งข้อมูลสู่เซิร์ฟเวอร์</span>
-  <span style="color: #64748b; font-size: 10px;">Money Superapp v2.5.8</span>
+  <span style="color: #64748b; font-size: 10px;">Money Superapp v2.5.9</span>
 </div>
 
 <!-- Mobile Bottom Navigation Bar (Visible on Mobile <= 768px) -->

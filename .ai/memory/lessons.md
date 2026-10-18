@@ -15,6 +15,26 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Cross-Frame Theme Propagation, TDZ Hoisting & Shell Variable Harmonization (v2.5.9)
+- **Date & Context:** 2026-10-18, comprehensive UI theme harmonization and runtime exception eradication across all 8 tools (`v2.5.9`).
+- **Problem:**
+  1. Toggling theme or language in the app shell (`index.html`) did not reflect in embedded iframe tools, leaving them in outdated theme states.
+  2. The app shell topbar, bottom nav, and privacy banner used hardcoded dark colors (`#131E19`, `#24352C`, `#8FA69C`), producing jarring contrast in Light mode.
+  3. Three uncaught runtime `ReferenceError` crashes completely halted page initialization:
+     - `dashboard.js`: Calling undefined `calculateHealthScoreMetrics` and TDZ on `dashboardLayoutManager`.
+     - `remaining-money.js`: TDZ on `remainingLayoutManager`.
+     - `debt-calculator.js`: TDZ on `debtLayoutManager` and undefined `monthNamesTh`.
+  4. FOUC occurred during cold page visits because theme was resolved late after CSS had already painted.
+- **Root Cause:**
+  1. Iframes have isolated DOM trees. Mutating parent `document.documentElement.dataset.theme` does not penetrate child iframes without explicit cross-document synchronization or postMessage dispatch.
+  2. App shell elements relied on hardcoded hex colors instead of semantic design tokens (`var(--panel)`, `var(--line)`, `var(--ink)`, `var(--bg)`).
+  3. ES6 `let` declarations are not hoisted with initial values and remain in the Temporal Dead Zone (TDZ). Invoking initializers (`init*Layout()`) before `let *LayoutManager = null;` throws an uncaught fatal `ReferenceError`.
+- **Solution & Rule:**
+  1. **Dual Cross-Frame Synchronization:** In `app-shell.js`, mutate `frame.contentDocument.documentElement.dataset.theme` directly, dispatch `postMessage({ type: 'THEME_CHANGE', theme })`, and sync in `frame.addEventListener('load')`. In `shared.js`, listen to both `message` and `storage` events to update child DOM reactively.
+  2. **Strict Semantic Variables in Shell:** Never use hardcoded hex values in shell containers (`.topbar`, `.bottom-nav`). Bind strictly to theme tokens (`var(--panel)`, `var(--line)`, `var(--ink)`).
+  3. **Lexical Declaration Order:** Always declare module-level variables (`let *LayoutManager = null;`, constants) before executing setup functions that assign or reference them.
+  4. **Synchronous Head Theme Script:** Place an inline `<script>` in `<head>` before `<link rel="stylesheet">` in every HTML file to synchronously assign `dataset.theme` from `localStorage` prior to layout/paint.
+
 ### 2026-10-18: CSS Grid Responsive Column Spanning & Implicit Track Synthesis (v2.5.8)
 - **Date & Context:** 2026-10-18, resolving broken layout on the payslip simulator (`months-slips.html`) on both desktop and mobile viewports.
 - **Problem:**

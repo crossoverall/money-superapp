@@ -25,9 +25,54 @@
 
   function initTheme() {
     if (typeof document !== 'undefined' && document.documentElement) {
+      try {
+        LANG = (typeof localStorage !== 'undefined' && localStorage.getItem('moneySuperapp.lang')) || 'th';
+        THEME = (typeof localStorage !== 'undefined' && localStorage.getItem('moneySuperapp.theme')) || 'light';
+        unit = LANG === 'en' ? 'THB' : 'บาท';
+      } catch (_e) {}
       document.documentElement.lang = LANG;
       document.documentElement.dataset.theme = THEME;
     }
+  }
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('message', (e) => {
+      if (e.data && e.data.type === 'THEME_CHANGE' && e.data.theme) {
+        THEME = e.data.theme;
+        try {
+          if (typeof localStorage !== 'undefined') localStorage.setItem('moneySuperapp.theme', THEME);
+        } catch (_e) {}
+        if (document.documentElement) {
+          document.documentElement.dataset.theme = THEME;
+        }
+      }
+      if (e.data && e.data.type === 'LANG_CHANGE' && e.data.lang) {
+        LANG = e.data.lang;
+        unit = LANG === 'en' ? 'THB' : 'บาท';
+        try {
+          if (typeof localStorage !== 'undefined') localStorage.setItem('moneySuperapp.lang', LANG);
+        } catch (_e) {}
+        if (document.documentElement) {
+          document.documentElement.lang = LANG;
+        }
+      }
+    });
+
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'moneySuperapp.theme' && e.newValue) {
+        THEME = e.newValue;
+        if (document.documentElement) {
+          document.documentElement.dataset.theme = THEME;
+        }
+      }
+      if (e.key === 'moneySuperapp.lang' && e.newValue) {
+        LANG = e.newValue;
+        unit = LANG === 'en' ? 'THB' : 'บาท';
+        if (document.documentElement) {
+          document.documentElement.lang = LANG;
+        }
+      }
+    });
   }
 
   function formatMoney(amount, decimals) {

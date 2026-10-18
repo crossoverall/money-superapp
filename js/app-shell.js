@@ -370,6 +370,16 @@ function applyLang(lang) {
     document.getElementById('lbl-btn-biometric-unlock').textContent = t.btnBiometricUnlock;
 
   updateGoogleUI();
+  try {
+    if (frame && frame.contentDocument && frame.contentDocument.documentElement) {
+      frame.contentDocument.documentElement.lang = lang;
+    }
+  } catch (_e) {}
+  try {
+    if (frame && frame.contentWindow) {
+      frame.contentWindow.postMessage({ type: 'LANG_CHANGE', lang: lang }, '*');
+    }
+  } catch (_e) {}
 }
 
 // --- Google Drive Cloud Sync Integration ---
@@ -1920,6 +1930,16 @@ function applyTheme(theme) {
   themeButtons.forEach((b) => {
     b.classList.toggle('active', b.dataset.themeBtn === theme);
   });
+  try {
+    if (frame && frame.contentDocument && frame.contentDocument.documentElement) {
+      frame.contentDocument.documentElement.dataset.theme = theme;
+    }
+  } catch (_e) {}
+  try {
+    if (frame && frame.contentWindow) {
+      frame.contentWindow.postMessage({ type: 'THEME_CHANGE', theme: theme }, '*');
+    }
+  } catch (_e) {}
 }
 function reloadFrame() {
   try {
@@ -1960,6 +1980,18 @@ function triggerHaptic(ms = 10) {
 if (frame) {
   frame.addEventListener('load', () => {
     hideSkeleton();
+    try {
+      const curTheme = getTheme();
+      const curLang = getLang();
+      if (frame.contentDocument && frame.contentDocument.documentElement) {
+        frame.contentDocument.documentElement.dataset.theme = curTheme;
+        frame.contentDocument.documentElement.lang = curLang;
+      }
+      if (frame.contentWindow) {
+        frame.contentWindow.postMessage({ type: 'THEME_CHANGE', theme: curTheme }, '*');
+        frame.contentWindow.postMessage({ type: 'LANG_CHANGE', lang: curLang }, '*');
+      }
+    } catch (_e) {}
   });
 }
 

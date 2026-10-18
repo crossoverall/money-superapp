@@ -709,6 +709,22 @@ function simulate(debtsList, extra, strategy, windfall = null) {
   return { months, totalInterest, totalPaid, schedule, payoffOrder, trajectory };
 }
 
+const MONTH_NAMES_TH = [
+  'ม.ค.',
+  'ก.พ.',
+  'มี.ค.',
+  'เม.ย.',
+  'พ.ค.',
+  'มิ.ย.',
+  'ก.ค.',
+  'ส.ค.',
+  'ก.ย.',
+  'ต.ค.',
+  'พ.ย.',
+  'ธ.ค.',
+];
+const MONTH_NAMES_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
 function computePayoff() {
   const debts = state.debts;
   const totalDebt = debts.reduce((sum, d) => sum + parseNum(d.balance), 0);
@@ -759,21 +775,8 @@ function computePayoff() {
   // Current strategy outputs
   const now = new Date();
   const freeDate = new Date(now.getFullYear(), now.getMonth() + simCurrent.months, 1);
-  const monthNamesTh = [
-    'ม.ค.',
-    'ก.พ.',
-    'มี.ค.',
-    'เม.ย.',
-    'พ.ค.',
-    'มิ.ย.',
-    'ก.ค.',
-    'ส.ค.',
-    'ก.ย.',
-    'ต.ค.',
-    'พ.ย.',
-    'ธ.ค.',
-  ];
-  const monthNamesEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthNamesTh = MONTH_NAMES_TH;
+  const monthNamesEn = MONTH_NAMES_EN;
   const dateStr =
     totalDebt <= 0
       ? LANG === 'en'
@@ -889,8 +892,8 @@ function renderDebtMilestoneRoad(simCurrent, simMinOnly, totalDebt, now) {
     const clearedPct = totalDebt > 0 ? Math.min(100, Math.round((cumCleared / totalDebt) * 100 * 10) / 10) : 100;
     const pDate = new Date(now.getFullYear(), now.getMonth() + m.month, 1);
     const pDateStr = isEn
-      ? `${monthNamesEn[pDate.getMonth()]} ${pDate.getFullYear()}`
-      : `${monthNamesTh[pDate.getMonth()]} ${pDate.getFullYear() + 543}`;
+      ? `${MONTH_NAMES_EN[pDate.getMonth()]} ${pDate.getFullYear()}`
+      : `${MONTH_NAMES_TH[pDate.getMonth()]} ${pDate.getFullYear() + 543}`;
 
     const schedItem = (simCurrent.schedule || []).find((s) => s.month === m.month) || { interest: 0 };
     const curInterest = schedItem.interest || 0;
@@ -1803,9 +1806,9 @@ renderTable();
 setStrategy(state.strategy);
 computePrepay();
 computeCarLoan();
+let debtLayoutManager = null;
 initDebtLayout();
 
-let debtLayoutManager = null;
 function initDebtLayout() {
   if (typeof MoneyApp !== 'undefined' && MoneyApp.initCardLayoutManager) {
     debtLayoutManager = MoneyApp.initCardLayoutManager({

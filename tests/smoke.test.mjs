@@ -46,6 +46,17 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         assert.match(content, /<title>[\s\S]*?<\/title>/i, `${page} must include a valid <title> tag`);
       });
     }
+
+    it('verifies all 8 core HTML pages declare synchronous head theme initialization script', () => {
+      for (const page of CORE_HTML_PAGES) {
+        const filePath = path.join(ROOT_DIR, page);
+        const content = fs.readFileSync(filePath, 'utf8');
+        assert.ok(
+          content.includes("localStorage.getItem('moneySuperapp.theme')"),
+          `${page} must include early head theme initialization script`,
+        );
+      }
+    });
   });
 
   describe('Script & Stylesheet Dependency Integrity', () => {
@@ -111,6 +122,18 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(content.includes('.col-span-12'), 'missing .col-span-12');
       assert.ok(content.includes('.md\\:col-span-12'), 'missing .md:col-span-12');
       assert.ok(content.includes('.md\\:grid-cols-12'), 'missing .md:grid-cols-12');
+    });
+
+    it('verifies shared.js and app-shell.js declare cross-frame theme synchronization', () => {
+      const sharedPath = path.join(ROOT_DIR, 'js', 'shared.js');
+      const shellPath = path.join(ROOT_DIR, 'js', 'app-shell.js');
+      const sharedCode = fs.readFileSync(sharedPath, 'utf8');
+      const shellCode = fs.readFileSync(shellPath, 'utf8');
+
+      assert.ok(shellCode.includes("type: 'THEME_CHANGE'"), 'app-shell.js must dispatch THEME_CHANGE postMessage');
+      assert.ok(shellCode.includes("type: 'LANG_CHANGE'"), 'app-shell.js must dispatch LANG_CHANGE postMessage');
+      assert.ok(sharedCode.includes("type === 'THEME_CHANGE'"), 'shared.js must listen for THEME_CHANGE message');
+      assert.ok(sharedCode.includes("type === 'LANG_CHANGE'"), 'shared.js must listen for LANG_CHANGE message');
     });
   });
 

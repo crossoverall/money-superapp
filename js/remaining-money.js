@@ -4015,12 +4015,13 @@ window.onShockScenarioChange = onShockScenarioChange;
 window.onShockSeveranceChange = onShockSeveranceChange;
 window.renderIncomeShockStressTester = renderIncomeShockStressTester;
 
+let remainingLayoutManager = null;
+
 compute();
 renderIncomeShockStressTester();
 renderQuickPresetsBar();
 initRemainingLayout();
 
-let remainingLayoutManager = null;
 function initRemainingLayout() {
   if (typeof MoneyApp !== 'undefined' && MoneyApp.initCardLayoutManager) {
     remainingLayoutManager = MoneyApp.initCardLayoutManager({
