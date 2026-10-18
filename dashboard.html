@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.5.26">
+  <meta name="version" content="2.5.27">
   <script>
     try {
       var t = localStorage.getItem('moneySuperapp.theme');
@@ -232,8 +232,8 @@
           </div>
           <div style="font-size:18px; font-weight:800; color:var(--ink); margin:6px 0 2px 0;" id="dossier-networth-val" class="dossier-amount">0 บาท</div>
           <div style="display:flex; justify-content:space-between; font-size:10.5px; color:var(--ink-dim); border-top:1px dashed var(--line); padding-top:6px; margin-top:6px;">
-            <span>สินทรัพย์: <b id="dossier-gross-assets" class="dossier-amount">0 บาท</b></span>
-            <span>หนี้สิน: <b id="dossier-total-debt" class="dossier-amount" style="color:var(--warn);">0 บาท</b></span>
+            <span><span id="lbl-dossier-sub-assets">สินทรัพย์:</span> <b id="dossier-gross-assets" class="dossier-amount">0 บาท</b></span>
+            <span><span id="lbl-dossier-sub-debt">หนี้สิน:</span> <b id="dossier-total-debt" class="dossier-amount" style="color:var(--warn);">0 บาท</b></span>
           </div>
         </div>
 
@@ -245,8 +245,8 @@
           </div>
           <div style="font-size:18px; font-weight:800; color:var(--ink); margin:6px 0 2px 0;" id="dossier-emergency-val" class="dossier-amount">0 บาท</div>
           <div style="display:flex; justify-content:space-between; font-size:10.5px; color:var(--ink-dim); border-top:1px dashed var(--line); padding-top:6px; margin-top:6px;">
-            <span>เงินออม/เดือน: <b id="dossier-monthly-savings" class="dossier-amount" style="color:var(--ok);">0 บาท</b></span>
-            <span>อัตราการออม: <b id="dossier-savings-rate">0%</b></span>
+            <span><span id="lbl-dossier-sub-sav">เงินออม/เดือน:</span> <b id="dossier-monthly-savings" class="dossier-amount" style="color:var(--ok);">0 บาท</b></span>
+            <span><span id="lbl-dossier-sub-savrate">อัตราการออม:</span> <b id="dossier-savings-rate">0%</b></span>
           </div>
         </div>
 
@@ -258,8 +258,8 @@
           </div>
           <div style="font-size:18px; font-weight:800; color:var(--ink); margin:6px 0 2px 0;" id="dossier-portfolio-val" class="dossier-amount">0 บาท</div>
           <div style="display:flex; justify-content:space-between; font-size:10.5px; color:var(--ink-dim); border-top:1px dashed var(--line); padding-top:6px; margin-top:6px;">
-            <span>DCA/เดือน: <b id="dossier-dca-budget" class="dossier-amount">0 บาท</b></span>
-            <span>ทองคำ &amp; อื่นๆ: <b id="dossier-aux-invest" class="dossier-amount">0 บาท</b></span>
+            <span><span id="lbl-dossier-sub-dca">DCA/เดือน:</span> <b id="dossier-dca-budget" class="dossier-amount">0 บาท</b></span>
+            <span><span id="lbl-dossier-sub-gold">ทองคำ &amp; อื่นๆ:</span> <b id="dossier-aux-invest" class="dossier-amount">0 บาท</b></span>
           </div>
         </div>
 
@@ -271,8 +271,8 @@
           </div>
           <div style="font-size:18px; font-weight:800; color:var(--ink); margin:6px 0 2px 0;" id="dossier-debt-payoff-date">ปลอดหนี้ใน -</div>
           <div style="display:flex; justify-content:space-between; font-size:10.5px; color:var(--ink-dim); border-top:1px dashed var(--line); padding-top:6px; margin-top:6px;">
-            <span>ระยะเวลา: <b id="dossier-debt-months">- เดือน</b></span>
-            <span>ผ่อนต่อเดือน: <b id="dossier-debt-payment" class="dossier-amount">0 บาท</b></span>
+            <span><span id="lbl-dossier-sub-term">ระยะเวลา:</span> <b id="dossier-debt-months">- เดือน</b></span>
+            <span><span id="lbl-dossier-sub-pmt">ผ่อนต่อเดือน:</span> <b id="dossier-debt-payment" class="dossier-amount">0 บาท</b></span>
           </div>
         </div>
 
@@ -284,8 +284,8 @@
           </div>
           <div style="font-size:18px; font-weight:800; color:var(--ink); margin:6px 0 2px 0;" id="dossier-ins-coverage-val" class="dossier-amount">0 บาท</div>
           <div style="display:flex; justify-content:space-between; font-size:10.5px; color:var(--ink-dim); border-top:1px dashed var(--line); padding-top:6px; margin-top:6px;">
-            <span>ทุนประกันควรมี: <b id="dossier-ins-need" class="dossier-amount">0 บาท</b></span>
-            <span>ส่วนต่าง: <b id="dossier-ins-gap" class="dossier-amount">-</b></span>
+            <span><span id="lbl-dossier-sub-insneed">ทุนประกันควรมี:</span> <b id="dossier-ins-need" class="dossier-amount">0 บาท</b></span>
+            <span><span id="lbl-dossier-sub-insgap">ส่วนต่าง:</span> <b id="dossier-ins-gap" class="dossier-amount">-</b></span>
           </div>
         </div>
 
@@ -297,8 +297,8 @@
           </div>
           <div style="font-size:18px; font-weight:800; color:var(--ink); margin:6px 0 2px 0;" id="dossier-tax-balance-val" class="dossier-amount">ขอคืน 0 บาท</div>
           <div style="display:flex; justify-content:space-between; font-size:10.5px; color:var(--ink-dim); border-top:1px dashed var(--line); padding-top:6px; margin-top:6px;">
-            <span>ภาษีทั้งปี: <b id="dossier-annual-tax" class="dossier-amount">0 บาท</b></span>
-            <span>หักแล้ว: <b id="dossier-tax-withheld" class="dossier-amount">0 บาท</b></span>
+            <span><span id="lbl-dossier-sub-taxann">ภาษีทั้งปี:</span> <b id="dossier-annual-tax" class="dossier-amount">0 บาท</b></span>
+            <span><span id="lbl-dossier-sub-taxwith">หักแล้ว:</span> <b id="dossier-tax-withheld" class="dossier-amount">0 บาท</b></span>
           </div>
         </div>
       </div>
@@ -1338,7 +1338,7 @@
     </div>
   </div>
 
-  <p class="version-tag">Money Superapp v2.5.26</p>
+  <p class="version-tag">Money Superapp v2.5.27</p>
 
 <script src="js/shared.js"></script>
 <script src="js/dashboard.js"></script>

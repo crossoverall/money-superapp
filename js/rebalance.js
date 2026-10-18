@@ -102,6 +102,11 @@ const EN = {
   lblBucketsSubtitle: 'Core (Growth) / Ballast (Stability) / Satellite (Thematic) Allocations & Top-up',
   lblHowtoTitle: '📖 How it Works & Tips',
   lblResetLayout: 'Reset Card Order',
+  lblBridgeDcaToBudget: 'Send DCA to Budget',
+  lblBridgeGlidepathToBudget: 'Send Retirement DCA to Budget',
+  subGlideCoreDesc: 'Global Equities / SET / REITs',
+  subGlideBallastDesc: 'Bonds / Fixed Income Funds',
+  subGlideSatDesc: 'Gold / Crypto / Thematic',
 };
 if (LANG === 'en') {
   document.title = 'Monthly Top-up Calculator';
@@ -198,9 +203,18 @@ if (LANG === 'en') {
     'lblCardGlideSat',
     'lblApplyGlidepath',
     'txtGlidepathSyncNote',
+    'lblBridgeDcaToBudget',
+    'lblBridgeGlidepathToBudget',
+    'subGlideCoreDesc',
+    'subGlideBallastDesc',
+    'subGlideSatDesc',
   ].forEach((id) => {
     const el = document.getElementById(id);
     if (el && EN[id]) el.textContent = EN[id];
+  });
+  document.querySelectorAll('#glidepathPanelBody button[onclick^="setGlidepathCohortPreset"]').forEach((btn) => {
+    const m = btn.getAttribute('onclick').match(/\d+/);
+    if (m) btn.textContent = `${m[0]} (Target ${m[0]})`;
   });
   if (document.getElementById('lblModalDesc')) document.getElementById('lblModalDesc').innerHTML = EN.lblModalDesc;
   document.getElementById('howto').innerHTML = EN.howto;
@@ -3205,8 +3219,6 @@ function initForeignTaxAdvisor() {
   const foreignTaxEl = document.getElementById('inpForeignTaxPaid');
   const domesticNetEl = document.getElementById('inpOtherDomesticNet');
   const panel = document.getElementById('foreignTaxPanelBody');
-  const arrow = document.getElementById('foreignTaxToggleArrow');
-  const btn = document.getElementById('btnToggleForeignTax');
 
   if (remitEl && foreignTaxState.remittanceAmount != null) remitEl.value = foreignTaxState.remittanceAmount;
   if (pre2024El && foreignTaxState.pre2024Amount != null) pre2024El.value = foreignTaxState.pre2024Amount;

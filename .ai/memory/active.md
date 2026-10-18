@@ -1,21 +1,18 @@
 ---
-task_id: "SDLC-PHASE-83-GLIDEPATH-DCA-TO-BUDGET-BRIDGE"
-status: "completed"
-current_stage: "release"
+task_id: "none"
+status: "idle"
+current_stage: "idle"
 complexity: "level_2"
 iteration_count: 0
 pipeline: ["orchestrator", "planner", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Problem Diagnosis & Scope (Phase 83 - v2.5.26)
-1. **Outbound Investment DCA Bridge in Rebalance (`rebalance.html` & `js/rebalance.js`):**
-   - Add `#btnBridgeDcaToBudget` in `#panelBudget` and `#btnBridgeGlidepathToBudget` in `#panelTargetDateGlidepath`.
-   - Implement `bridgeDcaToBudget(source)` setting `moneySuperapp.pendingDcaBudget` and switching tab to `remaining-money`.
-2. **Inbound Savings Bridge in Remaining Money (`remaining-money.html` & `js/remaining-money.js`):**
-   - Add `#dcaBudgetBridgeAlert` banner in `remaining-money.html`.
-   - Implement `checkPendingDcaBudget()` in `js/remaining-money.js` to upsert into `state.savings`.
-   - Recompute cash flow, push undo snapshot, and show notification toast.
-3. **Verification & Delivery:**
-   - Unit and smoke tests in `tests/shared.test.mjs` and `tests/smoke.test.mjs`.
-   - Headless CDP script capturing screenshots.
-   - Biome check & bump to `v2.5.26`.
+### Last Completed Task
+- **Task ID**: `SDLC-PHASE-84-BILINGUAL-PARITY-AND-MISMATCH-RESOLUTION`
+- **Version**: `v2.5.27`
+- **Summary**:
+  1. Resolved 100% of untranslated Thai elements appearing in English mode across all 8 core application pages (`dashboard.html`, `rebalance.html`, `months-slips.html`, `tax-calculator-base.html`, `tax-calculator.html`, `remaining-money.html`, `debt-calculator.html`, `index.html`).
+  2. Fixed Temporal Dead Zone (TDZ) `ReferenceError` on `deflatorState` in `js/dashboard.js` that blocked KPI rendering in EN mode.
+  3. Ensured 100% dictionary structural symmetry between `.th` and `.en` in `js/app-shell.js`, `js/dashboard.js`, and `js/debt-calculator.js`.
+  4. Localized dynamic UI elements and badges (Dividend Tax Credit status, P.N.D. 90/91 pre-flight checklists, retirement pool excess alerts, car loan APR multiplier, emergency runway units, and onboarding modal badges).
+  5. All 398 automated smoke and integration tests pass cleanly with zero Biome linter errors.

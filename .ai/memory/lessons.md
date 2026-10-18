@@ -15,6 +15,23 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Bilingual Parity, TDZ Hoisting & Translation Symmetry (v2.5.27)
+- **Date & Context:** 2026-10-18, implementing Phase 84 Bilingual Parity & Mismatch Resolution (`v2.5.27`).
+- **Problem:**
+  1. Automated live DOM audit detected untranslated Thai elements remaining in English mode across all tools (Executive Dossier subtitles, DCA-to-Budget bridge buttons, P.N.D. 90/91 e-Filing worksheet checklists, windfall bridge alerts, and onboarding modal badges).
+  2. `dashboard.html` in EN mode failed to render KPIs and charts, reporting 90+ untranslated elements and throwing `ReferenceError: Cannot access 'deflatorState' before initialization`.
+  3. Default dynamic badge states (e.g., Dividend Tax Credit `badge-applied-status`) remained in Thai ("ปิดอยู่") in EN mode until clicked.
+- **Root Cause:**
+  1. `applyLocalization()` in `js/dashboard.js` accessed `deflatorState.horizonYears`, but `deflatorState` was declared using `let` later in the file (~line 2276). In EN mode, `applyLocalization()` was invoked during page load before `deflatorState` was initialized, triggering a Temporal Dead Zone (TDZ) ReferenceError and halting script execution.
+  2. Modals and bridge banners added in Phases 75–83 had hardcoded Thai text in HTML templates without corresponding `.en` translation keys.
+  3. Dynamic UI state handlers were not triggered during initial page bootstrap.
+- **Solution & Rule:**
+  1. **Hoisting & State Initialization:** Declare all state models (e.g. `deflatorState`) before localization or view rendering routines. Guard against uninitialized state with defensive defaults: `(deflatorState?.horizonYears || 10)`.
+  2. **Default Dynamic Badge Localization:** Trigger dynamic UI initialization functions (e.g. `updateDividendTaxCreditUI()`) immediately upon script bootstrap so default OFF/ACTIVE states adhere to `window.LANG`.
+  3. **100% Translation Key Symmetry:** Always update both `.th` and `.en` dictionaries symmetrically in `js/app-shell.js`, `js/dashboard.js`, and `js/debt-calculator.js` to satisfy the automated dictionary symmetry smoke tests.
+  4. **Dead Element Cleanup:** Remove obsolete element IDs from deduction maps and ensure Biome `noDuplicateObjectKeys` checks pass.
+  5. **Verification:** Live DOM audit confirmed 0 untranslated Thai elements across all 8 core pages (`dashboard.html`, `rebalance.html`, `months-slips.html`, `tax-calculator-base.html`, `tax-calculator.html`, `remaining-money.html`, `debt-calculator.html`, and `index.html`) in English mode, with 398 automated tests passing.
+
 ### 2026-10-18: Target Date Retirement Glidepath Monthly DCA to Living Budget Bridge (v2.5.26)
 - **Date & Context:** 2026-10-18, implementing Phase 83 Glidepath DCA to Living Budget Bridge (`v2.5.26`).
 - **Problem:**

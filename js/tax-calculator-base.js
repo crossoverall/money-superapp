@@ -70,8 +70,6 @@ if (LANG === 'en') {
     'lbl-panel-income': '1. Income Details',
     'lbl-panel-deductions': '2. Deductions & Withholding',
     'lbl-panel-results': '3. Tax Summary & Refund',
-    'lbl-panel-scenario': '4. Tax Scenario & Inflation',
-    'lbl-panel-calendar': '5. Statutory Tax Calendar',
     'print-doc-sub': 'Tax Return Estimate & Allowances Statement for Annual Filing',
     'print-lbl-sec1': 'Part 1: Assessable Income',
     'print-lbl-income-main': 'Salary & Wages (Section 40(1))',
@@ -114,13 +112,13 @@ if (LANG === 'en') {
     'lbl-card-withheld-tax': 'Withheld (50 Tawi):',
     'print-lbl-withheld': 'Tax Withheld to Date (50 Tawi): ',
     'print-lbl-netbalance': 'Net Return Balance: ',
-    'lbl-toggle-scenario': '⚖️ Tax Scenario Comparator & Inflation Stress-Tester (Bracket Creep)',
+    'lbl-panel-scenario': '4. ⚖️ Tax Scenario & Inflation Stress-Tester (Bracket Creep)',
     'lbl-compare-header': '📊 Scenario A (Current) vs Scenario B (Comparison)',
     'lbl-copy-curr-b': '📋 Copy Current to B',
     'lbl-scen-income': 'Scenario B Gross Income (THB/yr):',
     'lbl-scen-ded': 'Scenario B Other Deductions (THB/yr):',
     'lbl-scen-infl': 'Annual Inflation Rate (%):',
-    'lbl-toggle-tax-calendar': '🗓️ Tax Planning Calendar & Deadlines (ภ.ง.ด.90/91/94)',
+    'lbl-panel-calendar': '5. 🗓️ Tax Planning Calendar & Deadlines (P.N.D. 90/91/94)',
     'lbl-tax-calendar-header': 'Statutory Tax Deadlines & Compliance Checklist',
     'lbl-reset-tax-calendar': '↺ Reset Checklist',
     'lbl-next-deadline-title': 'Upcoming Statutory Deadline:',
@@ -141,7 +139,7 @@ if (LANG === 'en') {
     'lbl-opt-claim-credit': 'Option 2: Claim Tax Credit (Sec 47 bis)',
     'desc-opt-claim-credit': 'Gross-up dividend & claim refund credit',
     'lbl-apply-div-tax': 'Include in total annual tax computation',
-    'lbl-panel-efiling': '📋 ภ.ง.ด. 90/91 e-Filing Worksheet (Revenue Dept.)',
+    'lbl-panel-efiling': '📋 P.N.D. 90/91 e-Filing Worksheet (Revenue Dept.)',
     lblBtnCopyAllEFiling: 'Copy Full Summary',
     lblEFilingPortalDesc:
       'Ordered to match the Revenue Department e-Filing screen (efiling.rd.go.th). Click copy icons to paste into RD online.',
@@ -176,10 +174,32 @@ if (LANG === 'en') {
     lblMetricToTaxFree: 'Deductions to Tax-Free',
     lblBtnCopyStepDown: 'Copy Target Deduction',
     lblBtnBridgeStepDownRebalance: 'Send Target to Rebalance DCA',
+    lblPreflightTitle: 'Pre-Flight E-Filing Checklist (Revenue Dept)',
+    btnCheckAllPreflight: '✓ Check All',
+    btnResetPreflight: 'Reset',
+    'lbl-chk-50tawi': '1. Verify all 50 Tawi withholding tax certificates',
+    'sub-chk-50tawi': 'Reconcile salary, bonus, and freelance income with actual company certificates',
+    'lbl-chk-pool500k': '2. Retirement group (PVD + SSF + RMF) does not exceed 500,000 THB cap',
+    'sub-chk-pool500k': 'Complies with Revenue Code Section 47 without unallowable excess',
+    'lbl-chk-thaiesg': '3. Thai ESG fund complies with statutory limits',
+    'sub-chk-thaiesg': 'Up to 300,000 THB (and max 30% of income) with full 5-year holding period',
+    'lbl-chk-consent': '4. Confirm electronic consent for automated tax data transfer',
+    'sub-chk-consent': 'Authorize asset management and insurance companies to submit data to the Revenue Department',
+    'lbl-chk-promptpay': '5. Link PromptPay with 13-digit National Citizen ID',
+    'sub-chk-promptpay': 'For direct refund deposit from Revenue Dept without postal check delays',
+    btnCopyNetBalance: '📋 Copy Net Balance',
+    btnBridgeTaxAccrualMonthly: 'Reserve Monthly Tax in Budget (Remaining Money)',
+    btnBridgeTaxAccrualInstallments: 'Reserve 3-Installment Plan (0%) in Budget',
+    lblPoolExcessTitle: 'Retirement Fund Contributions Exceed Statutory 500k Ceiling',
+    lblPoolExcessDesc:
+      'Your combined PVD + SSF + RMF contributions exceed the 500,000 THB Section 47 ceiling by <strong id="valPoolExcessAmount" class="font-mono">0</strong> THB. The Revenue Department will automatically cap your deduction at 500,000 THB.',
   };
   Object.keys(EN).forEach((id) => {
     const el = document.getElementById(id);
-    if (el) el.textContent = EN[id];
+    if (el) {
+      if (id === 'lblPoolExcessDesc') el.innerHTML = EN[id];
+      else el.textContent = EN[id];
+    }
   });
   const printPersonalVal = document.getElementById('print-val-deduct-personal');
   if (printPersonalVal) printPersonalVal.textContent = '- 60,000 THB';
@@ -195,6 +215,15 @@ if (LANG === 'en') {
   document.getElementById('pvdDeduct').textContent = '- 0 THB';
   document.getElementById('ssoDeduct').textContent = '- 0 THB';
   document.getElementById('netIncome').textContent = '0 THB';
+  if (document.getElementById('moreDeduct')) {
+    document.getElementById('moreDeduct').textContent = '- 0 THB';
+  }
+  if (document.getElementById('badgeEfPreflightStatus')) {
+    document.getElementById('badgeEfPreflightStatus').textContent = '0/5 Not Ready';
+  }
+  if (document.getElementById('months-breakdown-total')) {
+    document.getElementById('months-breakdown-total').textContent = '0 THB';
+  }
   const placeholders = {
     salary: 'e.g. 50000',
     bonus: 'e.g. 100000',
@@ -935,6 +964,16 @@ function updateDividendTaxCreditUI() {
 
   let baseNet = parseNum(document.getElementById('netIncome')?.textContent);
   const chkApply = document.getElementById('chkApplyDividendToTax');
+  const badgeStatus = document.getElementById('badge-applied-status');
+  if (badgeStatus) {
+    if (chkApply && chkApply.checked) {
+      badgeStatus.textContent = isEn ? 'ACTIVE' : 'เปิดใช้งาน';
+      badgeStatus.style.color = 'var(--ok)';
+    } else {
+      badgeStatus.textContent = isEn ? 'OFF' : 'ปิดอยู่';
+      badgeStatus.style.color = 'var(--ink-dim)';
+    }
+  }
   if (chkApply && chkApply.checked && dividendAmt > 0) {
     const factor = citRate > 0 && citRate < 1 ? citRate / (1 - citRate) : 0;
     baseNet = Math.max(0, baseNet - Math.round(dividendAmt * (1 + factor)));
@@ -1475,27 +1514,21 @@ function updateEFilingWorksheetView(deductionsArg) {
   const lifeInsVal =
     deductions?.insurance !== undefined
       ? deductions.insurance
-      : parseNum(document.getElementById('insuranceDeduct')?.value || document.getElementById('insurance')?.value);
+      : parseNum(document.getElementById('insuranceDeduct')?.value);
 
   const rmfVal =
-    deductions?.rawFund !== undefined
-      ? deductions.rawFund
-      : parseNum(document.getElementById('fundDeduct')?.value || document.getElementById('fund')?.value);
+    deductions?.rawFund !== undefined ? deductions.rawFund : parseNum(document.getElementById('fundDeduct')?.value);
 
   const thaiEsgVal =
-    deductions?.thaiEsg !== undefined
-      ? deductions.thaiEsg
-      : parseNum(document.getElementById('thaiEsgDeduct')?.value || document.getElementById('thaiesg')?.value);
+    deductions?.thaiEsg !== undefined ? deductions.thaiEsg : parseNum(document.getElementById('thaiEsgDeduct')?.value);
 
   const mortgageVal =
     deductions?.mortgage !== undefined
       ? deductions.mortgage
-      : parseNum(document.getElementById('mortgageDeduct')?.value || document.getElementById('mortgage')?.value);
+      : parseNum(document.getElementById('mortgageDeduct')?.value);
 
   const otherVal =
-    deductions?.other !== undefined
-      ? deductions.other
-      : parseNum(document.getElementById('otherDeduct')?.value || document.getElementById('otherDeductions')?.value);
+    deductions?.other !== undefined ? deductions.other : parseNum(document.getElementById('otherDeduct')?.value);
 
   const ws = MoneyApp.calculateThaiEFilingWorksheet({
     salary: incomeMode === 'yearly' ? 0 : salaryVal,
@@ -3017,6 +3050,8 @@ window.renderTaxCalendar = renderTaxCalendar;
 
 loadPreflightState();
 loadState();
+calculateTax();
+updateDividendTaxCreditUI();
 renderTaxCalendar();
 
 // Universal Card Layout Manager

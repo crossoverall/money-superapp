@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="2.5.26">
+<meta name="version" content="2.5.27">
 <script>
   try {
     var t = localStorage.getItem('moneySuperapp.theme');
@@ -482,7 +482,7 @@
       <span>🔍</span>
       <span class="cmd-k-badge">Ctrl+K</span>
     </button>
-    <span class="version-badge">v2.5.26</span>
+    <span class="version-badge">v2.5.27</span>
     <button id="btn-help-modal" onclick="openOnboardingModal()" title="คู่มือการใช้งาน (Quick Tour)" aria-label="Open Quick Tour and Guide">
       <span class="help-icon">❓</span>
     </button>
@@ -514,7 +514,7 @@
 <!-- Privacy Footer Notice -->
 <div class="privacy-bar">
   <span id="lbl-privacy-footer">🔒 100% Client-Side Privacy — ทุกการคำนวณและข้อมูลถูกเก็บไว้ในอุปกรณ์ของคุณเท่านั้น ไม่มีการส่งข้อมูลสู่เซิร์ฟเวอร์</span>
-  <span style="color: #64748b; font-size: 10px;">Money Superapp v2.5.26</span>
+  <span style="color: #64748b; font-size: 10px;">Money Superapp v2.5.27</span>
 </div>
 
 <!-- Mobile Bottom Navigation Bar (Visible on Mobile <= 768px) -->
@@ -865,9 +865,9 @@
 
     <!-- Guarantees Pills -->
     <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
-      <span style="background: rgba(255,255,255,0.04); border: 1px solid #24352C; border-radius: 999px; padding: 4px 10px; font-size: 11px; color: #8FA69C;">🔒 ปลอดภัย 100% บนเครื่อง</span>
-      <span style="background: rgba(255,255,255,0.04); border: 1px solid #24352C; border-radius: 999px; padding: 4px 10px; font-size: 11px; color: #8FA69C;">☁️ ซิงค์ Google Drive ได้</span>
-      <span style="background: rgba(255,255,255,0.04); border: 1px solid #24352C; border-radius: 999px; padding: 4px 10px; font-size: 11px; color: #8FA69C;">⌨️ คีย์ลัด Alt+1..7</span>
+      <span id="badge-onboard-safe" style="background: rgba(255,255,255,0.04); border: 1px solid #24352C; border-radius: 999px; padding: 4px 10px; font-size: 11px; color: #8FA69C;">🔒 ปลอดภัย 100% บนเครื่อง</span>
+      <span id="badge-onboard-drive" style="background: rgba(255,255,255,0.04); border: 1px solid #24352C; border-radius: 999px; padding: 4px 10px; font-size: 11px; color: #8FA69C;">☁️ ซิงค์ Google Drive ได้</span>
+      <span id="badge-onboard-keys" style="background: rgba(255,255,255,0.04); border: 1px solid #24352C; border-radius: 999px; padding: 4px 10px; font-size: 11px; color: #8FA69C;">⌨️ คีย์ลัด Alt+1..7</span>
     </div>
 
     <!-- Action Footer -->

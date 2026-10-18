@@ -88,6 +88,16 @@ const translations = {
     btnBiometricUnlock: 'ปลดล็อกด้วย Face ID / Touch ID',
     pwaUpdateText: 'มีเวอร์ชันใหม่พร้อมใช้งาน',
     pwaUpdateBtn: 'อัปเดตเลย ➔',
+    gdriveWorking: '⏳ กำลังทำงาน...',
+    autoLockOpt0: 'ล็อกทันทีเมื่อสลับหน้าต่าง',
+    autoLockOpt1: '1 นาที',
+    autoLockOpt5: '5 นาที (แนะนำ)',
+    autoLockOpt15: '15 นาที',
+    autoLockOptNever: 'ไม่ล็อกอัตโนมัติ',
+    badgeOnboardSafe: '🔒 ปลอดภัย 100% บนเครื่อง',
+    badgeOnboardDrive: '☁️ ซิงค์ Google Drive ได้',
+    badgeOnboardKeys: '⌨️ คีย์ลัด Alt+1..7',
+    qrCameraFallback: '📷 กล้องไม่พร้อมใช้งาน หรือเบราว์เซอร์ไม่รองรับ BarcodeDetector คุณสามารถวางโค้ด JSON ชิ้นส่วนด้านล่าง',
   },
   en: {
     skipLink: 'Skip to main content',
@@ -172,6 +182,16 @@ const translations = {
     btnBiometricUnlock: 'Unlock with Face ID / Touch ID',
     pwaUpdateText: 'New version available',
     pwaUpdateBtn: 'Update Now ➔',
+    gdriveWorking: '⏳ Working...',
+    autoLockOpt0: 'Lock immediately on blur',
+    autoLockOpt1: '1 minute',
+    autoLockOpt5: '5 minutes (Recommended)',
+    autoLockOpt15: '15 minutes',
+    autoLockOptNever: 'Never lock automatically',
+    badgeOnboardSafe: '🔒 100% On-device Safe',
+    badgeOnboardDrive: '☁️ Optional Google Drive Sync',
+    badgeOnboardKeys: '⌨️ Shortcuts Alt+1..7',
+    qrCameraFallback: '📷 Camera unavailable or BarcodeDetector not supported. You can paste slice JSON below.',
   },
 };
 
@@ -377,6 +397,34 @@ function applyLang(lang) {
     document.getElementById('lbl-pwa-update-text').textContent = t.pwaUpdateText;
   if (document.getElementById('lbl-pwa-update-btn'))
     document.getElementById('lbl-pwa-update-btn').textContent = t.pwaUpdateBtn;
+
+  if (document.getElementById('gdrive-sync-spinner'))
+    document.getElementById('gdrive-sync-spinner').textContent = t.gdriveWorking;
+
+  const selAutoLock = document.getElementById('selAutoLockTimeout');
+  if (selAutoLock && selAutoLock.options && selAutoLock.options.length >= 5) {
+    selAutoLock.options[0].text = t.autoLockOpt0;
+    selAutoLock.options[1].text = t.autoLockOpt1;
+    selAutoLock.options[2].text = t.autoLockOpt5;
+    selAutoLock.options[3].text = t.autoLockOpt15;
+    selAutoLock.options[4].text = t.autoLockOptNever;
+  }
+
+  if (document.getElementById('badge-onboard-safe'))
+    document.getElementById('badge-onboard-safe').textContent = t.badgeOnboardSafe;
+  if (document.getElementById('badge-onboard-drive'))
+    document.getElementById('badge-onboard-drive').textContent = t.badgeOnboardDrive;
+  if (document.getElementById('badge-onboard-keys'))
+    document.getElementById('badge-onboard-keys').textContent = t.badgeOnboardKeys;
+  if (document.getElementById('qrCameraFallbackNotice'))
+    document.getElementById('qrCameraFallbackNotice').textContent = t.qrCameraFallback;
+
+  if (typeof updateQrImportUI === 'function') {
+    updateQrImportUI();
+  }
+  if (typeof runStorageHealthCheck === 'function') {
+    runStorageHealthCheck(false);
+  }
 
   updateGoogleUI();
   try {
@@ -2772,7 +2820,7 @@ async function checkIncomingShareTarget() {
       navigateTo('remaining-money');
     } else {
       window.location.hash = 'remaining-money';
-      const frame = document.getElementById('app-frame');
+      const frame = document.getElementById('app');
       if (frame) frame.src = 'remaining-money.html';
     }
   } catch (err) {

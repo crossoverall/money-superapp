@@ -55,7 +55,7 @@ if (LANG === 'en') {
       '💡 <strong>Recommendation:</strong> Rolling over PVD into an RMF for PVD within 30 days keeps 100% of PVD funds tax-exempt, compounding tax-free until age 55 for tax-exempt withdrawals.',
     'lbl-sso-title': '🏥 Social Security Benefits &amp; Pension Simulator',
     'lbl-sso-subtitle': 'Section 33 (Regular Employee), Section 39 (Voluntary), Section 40 (Freelance)',
-    'lbl-sso-sec': 'Section (มาตรา)',
+    'lbl-sso-sec': 'SSO Section',
     'opt-sso-33': 'Sec. 33 (Regular Employee)',
     'opt-sso-39': 'Sec. 39 (Voluntary Insured)',
     'opt-sso-40': 'Sec. 40 (Freelance / Self-employed)',
@@ -139,6 +139,27 @@ if (LANG === 'en') {
   document.getElementById('tab0').innerHTML = 'Member<br>&lt; 5 yrs';
   document.getElementById('tab1').innerHTML = '≥ 5 yrs<br>age &lt; 55';
   document.getElementById('tab2').innerHTML = '≥ 5 yrs<br>age ≥ 55';
+
+  const elEmptyHint = document.getElementById('resultsEmptyHint');
+  if (elEmptyHint) elEmptyHint.textContent = '💡 Fill in Section 1 and click "Calculate Tax" to view results';
+  const elSevPrev = document.getElementById('sev-calc-preview');
+  if (elSevPrev) elSevPrev.textContent = '0.00 THB (180 days)';
+  const elSavingsBadge = document.getElementById('opt-savings-badge');
+  if (elSavingsBadge) elSavingsBadge.textContent = 'Tax savings 0 THB';
+  const elLumpTax = document.getElementById('opt-lump-tax');
+  if (elLumpTax) elLumpTax.textContent = '0.00 THB';
+  const elLumpNet = document.getElementById('opt-lump-net');
+  if (elLumpNet) elLumpNet.textContent = '0.00 THB';
+  const elRmfTax = document.getElementById('opt-rmf-tax');
+  if (elRmfTax) elRmfTax.textContent = '0.00 THB';
+  const elRmfInvested = document.getElementById('opt-rmf-invested');
+  if (elRmfInvested) elRmfInvested.textContent = '0.00 THB';
+  const elRmfTotal = document.getElementById('opt-rmf-total');
+  if (elRmfTotal) elRmfTotal.textContent = '0.00 THB';
+  const elInstallment = document.getElementById('valLandInstallmentMonthly');
+  if (elInstallment) elInstallment.textContent = '0.00 THB/installment';
+  const elVacant = document.getElementById('badgeVacantSurcharge');
+  if (elVacant) elVacant.textContent = 'Standard Rate';
 }
 
 let activeTab = 0;
@@ -1116,6 +1137,7 @@ window.updateLandTaxUI = updateLandTaxUI;
 
 // Restore state if available
 loadState();
+calculateSsoBenefits();
 initInheritanceTaxCard();
 initLandTaxCard();
 

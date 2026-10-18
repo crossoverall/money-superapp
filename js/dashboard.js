@@ -193,6 +193,18 @@ const translations = {
     eduTileShortfall: 'เป้าหมายที่ต้องสะสมเพิ่ม (หลังหักเงินเดิม)',
     eduTileDca: 'ยอด DCA ลงทุนต่อเดือนที่แนะนำ',
     eduBtnBridge: 'ส่งยอด DCA ไปยังงบประมาณ',
+    dossierSubAssets: 'สินทรัพย์:',
+    dossierSubDebt: 'หนี้สิน:',
+    dossierSubSav: 'เงินออม/เดือน:',
+    dossierSubSavRate: 'อัตราการออม:',
+    dossierSubDca: 'DCA/เดือน:',
+    dossierSubGold: 'ทองคำ & อื่นๆ:',
+    dossierSubTerm: 'ระยะเวลา:',
+    dossierSubPmt: 'ผ่อนต่อเดือน:',
+    dossierSubInsNeed: 'ทุนประกันควรมี:',
+    dossierSubInsGap: 'ส่วนต่าง:',
+    dossierSubTaxAnn: 'ภาษีทั้งปี:',
+    dossierSubTaxWith: 'หักแล้ว:',
   },
   en: {
     title: 'Financial Dashboard',
@@ -388,7 +400,25 @@ const translations = {
     eduTileShortfall: 'Net Sinking Fund Shortfall',
     eduTileDca: 'Recommended Monthly DCA Target',
     eduBtnBridge: 'Bridge Monthly DCA to Budget',
+    dossierSubAssets: 'Assets:',
+    dossierSubDebt: 'Liabilities:',
+    dossierSubSav: 'Savings/Mo:',
+    dossierSubSavRate: 'Savings Rate:',
+    dossierSubDca: 'DCA/Mo:',
+    dossierSubGold: 'Gold & Others:',
+    dossierSubTerm: 'Payoff Horizon:',
+    dossierSubPmt: 'Payment/Mo:',
+    dossierSubInsNeed: 'Required Coverage:',
+    dossierSubInsGap: 'Coverage Gap:',
+    dossierSubTaxAnn: 'Annual Tax:',
+    dossierSubTaxWith: 'Tax Withheld:',
   },
+};
+
+let deflatorState = {
+  inflationRate: 2.5,
+  horizonYears: 10,
+  currentNetWorth: 0,
 };
 
 function applyLocalization() {
@@ -557,6 +587,18 @@ function applyLocalization() {
     'lbl-tile-edu-shortfall': t.eduTileShortfall,
     'lbl-tile-edu-dca': t.eduTileDca,
     'lbl-btn-bridge-edu': t.eduBtnBridge,
+    'lbl-dossier-sub-assets': t.dossierSubAssets,
+    'lbl-dossier-sub-debt': t.dossierSubDebt,
+    'lbl-dossier-sub-sav': t.dossierSubSav,
+    'lbl-dossier-sub-savrate': t.dossierSubSavRate,
+    'lbl-dossier-sub-dca': t.dossierSubDca,
+    'lbl-dossier-sub-gold': t.dossierSubGold,
+    'lbl-dossier-sub-term': t.dossierSubTerm,
+    'lbl-dossier-sub-pmt': t.dossierSubPmt,
+    'lbl-dossier-sub-insneed': t.dossierSubInsNeed,
+    'lbl-dossier-sub-insgap': t.dossierSubInsGap,
+    'lbl-dossier-sub-taxann': t.dossierSubTaxAnn,
+    'lbl-dossier-sub-taxwith': t.dossierSubTaxWith,
   };
 
   const selEdu = document.getElementById('selEduTrack');
@@ -616,6 +658,22 @@ function applyLocalization() {
   if (btnIns15) btnIns15.textContent = LANG === 'en' ? '15 Yrs' : '15 ปี';
   const btnIns20 = document.getElementById('btnInsYear20');
   if (btnIns20) btnIns20.textContent = LANG === 'en' ? '20 Yrs' : '20 ปี';
+
+  const btnMc = document.getElementById('btn-toggle-mc');
+  if (btnMc) {
+    btnMc.textContent = LANG === 'en' ? '📊 View 1,000 Trials Analysis' : '📊 ดูผลวิเคราะห์ 1,000 การทดลอง';
+  }
+  const horiDisplay = document.getElementById('valInflationHorizonDisplay');
+  if (horiDisplay) {
+    horiDisplay.textContent = `${deflatorState.horizonYears || 10} ${LANG === 'en' ? 'yrs' : 'ปี'}`;
+  }
+  const goalButtons = document.querySelectorAll('#goalsModal button[onclick^="setGoalAnnualExpensesPreset"]');
+  goalButtons.forEach((btn) => {
+    const fn = btn.getAttribute('onclick') || '';
+    if (fn.includes('360000')) btn.textContent = LANG === 'en' ? '360K (30k/mo)' : '360K (30k/ด.)';
+    else if (fn.includes('600000')) btn.textContent = LANG === 'en' ? '600K (50k/mo)' : '600K (50k/ด.)';
+    else if (fn.includes('1200000')) btn.textContent = LANG === 'en' ? '1.2M (100k/mo)' : '1.2M (100k/ด.)';
+  });
 }
 
 applyLocalization();
@@ -2215,12 +2273,6 @@ window.bridgeEduDcaToBudget = bridgeEduDcaToBudget;
 window.initThreeBucketsCalculator = initThreeBucketsCalculator;
 
 // --- Inflation Deflator & Purchasing Power Engine ---
-let deflatorState = {
-  inflationRate: 2.5,
-  horizonYears: 10,
-  currentNetWorth: 0,
-};
-
 function setInflationRate(rate) {
   deflatorState.inflationRate = rate;
   const inp = document.getElementById('inpInflationRate');
@@ -3972,6 +4024,8 @@ function renderExecutiveDossier() {
   if (elPort) elPort.textContent = `${formatMoney(dossier.pillars.investments.portfolioValue)} ${curUnit}`;
   const elDca = document.getElementById('dossier-dca-budget');
   if (elDca) elDca.textContent = `${formatMoney(dossier.pillars.investments.monthlyDca)} ${curUnit}`;
+  const elAuxInvest = document.getElementById('dossier-aux-invest');
+  if (elAuxInvest) elAuxInvest.textContent = `${formatMoney(p.goldVal || 0)} ${curUnit}`;
   const badgeGlide = document.getElementById('dossier-glidepath-badge');
   if (badgeGlide) badgeGlide.textContent = `Equity ${dossier.pillars.investments.glidepathEquityPct}%`;
 

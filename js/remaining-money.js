@@ -288,6 +288,24 @@ if (LANG === 'en') {
   if (bridgeDebtLbl) bridgeDebtLbl.textContent = EN.lblBridgeDebtBtn;
   const bridgeAlertEl = document.getElementById('bridgeAlertText');
   if (bridgeAlertEl) bridgeAlertEl.textContent = EN.bridgeAlertDefault;
+  const insBridgeAlertEl = document.getElementById('insurancePremiumBridgeAlertText');
+  if (insBridgeAlertEl) insBridgeAlertEl.textContent = 'Life insurance premium estimate imported successfully';
+  const dcaBridgeAlertEl = document.getElementById('dcaBudgetBridgeAlertText');
+  if (dcaBridgeAlertEl) dcaBridgeAlertEl.textContent = 'DCA investment savings target imported successfully';
+  const runwayUnitEl = document.getElementById('runwayUnit');
+  if (runwayUnitEl) runwayUnitEl.innerHTML = 'months<br><span style="font-size:11px;" id="runwayFormula"></span>';
+  const shockBarebonesEl = document.getElementById('valShockBarebonesDrain');
+  if (shockBarebonesEl) shockBarebonesEl.textContent = 'Essential expenses only';
+  const shockSsoEl = document.getElementById('valShockSsoBonus');
+  if (shockSsoEl) shockSsoEl.textContent = 'Buffer extends by +0 mo.';
+  const shockStdEl = document.getElementById('valShockStandardDrain');
+  if (shockStdEl) shockStdEl.textContent = 'Needs + Wants + Debt';
+  const shockVerdictEl = document.getElementById('txtShockVerdictTitle');
+  if (shockVerdictEl) shockVerdictEl.textContent = 'Emergency Reserve Safety Level';
+  ['importIncomeSummary', 'importExpenseSummary', 'importSavingSummary', 'importRemainingSummary'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = '0 THB';
+  });
   const taxAlertEl = document.getElementById('taxAccrualAlertText');
   if (taxAlertEl && EN.taxAccrualAlertText) taxAlertEl.textContent = EN.taxAccrualAlertText;
   const refiAlertEl = document.getElementById('refinanceSavingsAlertText');

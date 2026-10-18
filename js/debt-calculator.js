@@ -300,6 +300,12 @@ if (LANG === 'en') {
     'lbl-res-car-apr': t.resCarApr,
     'lbl-res-car-pmt': t.resCarPmt,
     'lbl-res-car-interest': t.resCarInterest,
+    bridgeAlertText: '✓ Imported successfully',
+    windfallBridgeAlertText: 'Tax refund windfall imported for debt payoff!',
+    lblBridgeRefinanceToBudget: '💰 Record payment savings into Budget',
+    lblBridgeRefinanceToRebalance: '📈 Send payment savings to DCA Portfolio',
+    lblBridgeRefinanceExpenseToBudget: '⚠️ Send increased payment to Budget',
+    valCarMultiplier: '~1.9x higher than Flat Rate',
   };
   for (let id in map) {
     const el = document.getElementById(id);
