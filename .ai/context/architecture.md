@@ -245,15 +245,23 @@ Renders KPI Cards & SVG Historical Growth Trends
 
 ---
 
-## 5. Security, Authentication & Authorization
+## 5. Security, Authentication & Content Security Policy (CSP)
 
-- **Authentication / Authorization:** `N/A - Standalone / No Auth Required`.
+- **Authentication / Authorization:** `N/A - Standalone / No Auth Required`. Optional user-initiated Google Drive appdata vault sync in `index.html`.
 - **Privacy Boundary:** 100% Client-Side. No telemetry, tracking beacons, analytics scripts, or remote logging. All calculations execute locally.
+- **Content Security Policy (CSP) Architecture (Phase 93):**
+  - **Standalone Sub-Pages** (`dashboard.html`, `rebalance.html`, `months-slips.html`, `tax-calculator-base.html`, `tax-calculator.html`, `remaining-money.html`, `debt-calculator.html`):
+    - Policy: `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self';`
+    - Guarantees: Total network isolation (`connect-src 'self'`), clickjacking defense (`frame-src 'none'`), plugin disabling (`object-src 'none'`), and base URI injection blocking (`base-uri 'self'`).
+  - **Application Shell** (`index.html`):
+    - Policy: `default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://accounts.google.com/ https://www.googleapis.com/; frame-src 'self' https://accounts.google.com/; object-src 'none'; base-uri 'self';`
+    - Guarantees: Permits local iframes for the 7 tools, while strictly scoping external network and script calls exclusively to optional, user-consented Google Drive appdata vault backups.
 - **Input Sanitization & XSS Mitigation:**
   - Input fields use `parseFloat(clean) || 0` after stripping commas.
-  - Dynamic user-supplied strings (such as debt account names) are sanitized using `escapeHtml()` prior to insertion into innerHTML templates.
-  - Inline scripts and resources are completely self-hosted, avoiding third-party script tampering.
-- **Confidence:** `HIGH` (Verified in all HTML tool files)
+  - Dynamic user-supplied strings are sanitized using `MoneyApp.escapeHtml()` prior to insertion into innerHTML templates.
+  - Prohibition of dangerous execution primitives: zero `eval()`, zero `document.write()`, and zero `new Function()` in production JS.
+  - Automated continuous security regression enforcement via `tests/security.test.mjs`.
+- **Confidence:** `HIGH` (Directly verified in all HTML and JS files)
 
 ---
 

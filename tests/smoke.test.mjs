@@ -1030,6 +1030,19 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(bridgeContent.includes('LEGACY_ACTION_MAP'), 'bridge.js must define LEGACY_ACTION_MAP');
       assert.ok(bridgeContent.includes('BroadcastChannel'), 'bridge.js must support BroadcastChannel sync');
     });
+
+    it('verifies all 8 core HTML pages declare Phase 93 Content-Security-Policy meta tags and tests/security.test.mjs exists', () => {
+      const secTestPath = path.join(ROOT_DIR, 'tests/security.test.mjs');
+      assert.ok(fs.existsSync(secTestPath), 'tests/security.test.mjs must exist on disk');
+
+      for (const page of CORE_HTML_PAGES) {
+        const pageHtml = fs.readFileSync(path.join(ROOT_DIR, page), 'utf8');
+        assert.ok(
+          pageHtml.includes('http-equiv="Content-Security-Policy"'),
+          `${page} must declare Content-Security-Policy meta tag`,
+        );
+      }
+    });
   });
 
   describe('Bilingual Localization Structural Symmetry', () => {

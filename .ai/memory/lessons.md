@@ -15,6 +15,20 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Content Security Policy (CSP) & Automated Security Regression Suite (v2.5.36)
+- **Date & Context:** 2026-10-18, Phase 93 Security Hardening & CSP (`v2.5.36`).
+- **Problem:**
+  1. The 8 HTML files lacked declarative `<meta http-equiv="Content-Security-Policy">` tags, meaning browser defense-in-depth against unauthorized remote scripts, exfiltration, clickjacking, and rogue object plugins was not declaratively enforced.
+  2. There was no dedicated automated security regression test suite scanning all production JS files for dangerous execution primitives (`eval()`, `document.write()`, `new Function()`) and banned telemetry trackers.
+- **Root Cause:** Security posture previously relied solely on convention and architectural rules without automated continuous verification or declarative browser CSP meta tags.
+- **Solution & Rule:**
+  1. **Declarative CSP Meta Tags:** Implemented strict CSP meta tags on all 8 core HTML files:
+     - Sub-tools: `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self';`
+     - Application Shell (`index.html`): Scoped to allow local iframes and opt-in user GDrive vault backup.
+  2. **Automated Security Test Suite (`tests/security.test.mjs`):** Built 15 unit/smoke assertions proving 100% CSP tag coverage, 0 `eval()`, 0 `document.write()`, 0 `new Function()`, 0 banned telemetry domains, and testing `MoneyApp.escapeHtml` sanitization contracts.
+  3. **Architecture Context:** Documented CSP policies and security guarantees in `.ai/context/architecture.md`.
+  4. Verified 100% test pass (434 tests across 108 suites) and 0 Biome warnings.
+
 ### 2026-10-18: Cross-Tool Unified Bridge Protocol Engine & Node BroadcastChannel Unref (v2.5.35)
 - **Date & Context:** 2026-10-18, Phase 92 Unified Bridge Protocol & Topology (`v2.5.35`).
 - **Problem:**
