@@ -583,6 +583,27 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'MoneyApp must export formatAppLockTimeout',
       );
     });
+
+    it('verifies index.html and app-shell.js declare Phase 73 PWA Update Toast and controls', () => {
+      const indexContent = fs.readFileSync(path.join(ROOT_DIR, 'index.html'), 'utf8');
+      assert.ok(indexContent.includes('id="pwaUpdateToast"'), 'index.html must define #pwaUpdateToast');
+      assert.ok(indexContent.includes('id="lbl-pwa-update-text"'), 'index.html must define #lbl-pwa-update-text');
+      assert.ok(indexContent.includes('id="btnPwaUpdateNow"'), 'index.html must define #btnPwaUpdateNow');
+      assert.ok(indexContent.includes('id="lbl-pwa-update-btn"'), 'index.html must define #lbl-pwa-update-btn');
+      assert.ok(indexContent.includes('id="btnPwaDismissUpdate"'), 'index.html must define #btnPwaDismissUpdate');
+      assert.ok(indexContent.includes('class="pwa-update-toast"'), 'index.html must define .pwa-update-toast');
+
+      const appShellContent = fs.readFileSync(path.join(ROOT_DIR, 'js/app-shell.js'), 'utf8');
+      assert.ok(appShellContent.includes('showPwaUpdateToast'), 'app-shell.js must define showPwaUpdateToast');
+      assert.ok(appShellContent.includes('dismissPwaUpdateToast'), 'app-shell.js must define dismissPwaUpdateToast');
+      assert.ok(appShellContent.includes('applyPwaUpdate'), 'app-shell.js must define applyPwaUpdate');
+      assert.ok(appShellContent.includes('reg.waiting'), 'app-shell.js must check reg.waiting');
+      assert.ok(appShellContent.includes('SKIP_WAITING'), 'app-shell.js must post SKIP_WAITING');
+
+      const swContent = fs.readFileSync(path.join(ROOT_DIR, 'sw.js'), 'utf8');
+      assert.ok(swContent.includes('SKIP_WAITING'), 'sw.js must handle SKIP_WAITING message');
+      assert.ok(swContent.includes('self.skipWaiting()'), 'sw.js must call self.skipWaiting()');
+    });
   });
 
   describe('Bilingual Localization Structural Symmetry', () => {

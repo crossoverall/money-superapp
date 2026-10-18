@@ -1,5 +1,5 @@
 ---
-task_id: "SDLC-PHASE-72-GOLD-NETWORTH-SYNC"
+task_id: "SDLC-PHASE-73-PWA-UPDATE-TOAST"
 status: "completed"
 current_stage: "release"
 complexity: "level_2"
@@ -8,17 +8,17 @@ pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "rev
 ---
 
 ### Problem Diagnosis & Root Causes Resolved
-1. **Physical Asset Wealth Silo (`rebalance.html` -> `dashboard.html`):**
-   - Thai Gold holdings tracked in `rebalance.html` (`moneySuperapp.thaiGold.state.v1`) were previously omitted from dashboard net worth calculations.
-   - Updated `gatherFinancialProfile()` in `js/dashboard.js` to ingest `moneySuperapp.thaiGold.state.v1` and compute current market value via `MoneyApp.calculateThaiGoldMetrics`.
-   - Aggregated gold market value into `grossAssets` and `netWorth`.
-   - Enhanced SVG Donut chart with 3rd arc `#donutSegGold` (amber `#f59e0b`).
-   - Added `#row-comp-gold` in Net Worth Composition with progressive disclosure (`display: none` when 0 gold, `display: flex` when gold exists).
-   - Synchronized downstream tools: Insurance Adequacy (`syncInsuranceFromTools`), Retirement 3-Bucket (`syncThreeBucketsFromTools`), and Executive Dossier assets.
-   - Added bilingual translation keys `compGold` in `translations.th` and `translations.en`.
+1. **Uncontrolled PWA Cache Refresh & Version Mismatches:**
+   - `sw.js` previously called `self.skipWaiting()` automatically upon `install`, updating assets while tabs remained active.
+   - PWA users (especially mobile) had no indicator of new versions and could experience mismatched JS/HTML versions.
+   - Updated `sw.js` to wait until user triggers update or all clients close.
+   - Added `message` listener in `sw.js` for `{ type: 'SKIP_WAITING' }`.
+   - Added `#pwaUpdateToast` with floating pill styling on desktop and responsive docked card above `.bottom-nav` on mobile (`calc(66px + env(safe-area-inset-bottom, 0px))`).
+   - Added `showPwaUpdateToast()`, `dismissPwaUpdateToast()`, `applyPwaUpdate()` in `js/app-shell.js` with `controllerchange` handler reloading the top window.
+   - Implemented 100% symmetric Thai and English translations (`pwaUpdateText`, `pwaUpdateBtn`).
 
 ### Verification
-- 347 / 347 unit & integration smoke tests passing (`npm test`).
+- 348 / 348 unit & integration smoke tests passing (`npm test`).
 - 0 Biome linter errors (`npx @biomejs/biome check`).
-- Headless Chrome CDP visual inspection: Verified Light, Dark, and zero-gold fallback modes with clean 3-arc donut and breakdown row.
-- Bumped version to `v2.5.15`.
+- Headless Chrome CDP visual inspection: Verified Desktop Light, Desktop Dark, Mobile iPhone 12/13/14 Dark, and Mobile EN modes.
+- Bumped version to `v2.5.16`.

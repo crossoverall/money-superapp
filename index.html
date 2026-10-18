@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="2.5.15">
+<meta name="version" content="2.5.16">
 <script>
   try {
     var t = localStorage.getItem('moneySuperapp.theme');
@@ -203,6 +203,88 @@
     -webkit-user-select: none;
   }
 
+  /* Phase 73: Floating PWA Update Toast */
+  .pwa-update-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10001;
+    background: var(--panel);
+    color: var(--ink);
+    border: 1.5px solid var(--core);
+    border-radius: 9999px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35), 0 0 15px rgba(47, 139, 118, 0.25);
+    padding: 8px 12px 8px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    max-width: 90vw;
+    animation: pwaSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes pwaSlideUp {
+    from { opacity: 0; transform: translate(-50%, 16px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+  }
+  .pwa-update-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .pwa-update-icon {
+    font-size: 16px;
+    line-height: 1;
+  }
+  .pwa-update-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pwa-update-btn {
+    background: var(--core);
+    color: #ffffff;
+    border: none;
+    border-radius: 9999px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+  .pwa-update-btn:hover {
+    opacity: 0.92;
+    transform: translateY(-1px);
+  }
+  .pwa-update-btn:active {
+    transform: translateY(0);
+  }
+  .pwa-dismiss-btn {
+    background: none;
+    border: none;
+    color: var(--ink-dim);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s ease;
+  }
+  .pwa-dismiss-btn:hover {
+    color: var(--ink);
+  }
+
   /* Responsive scaling for tablet / medium desktop (769px to 1024px) */
   @media (min-width: 769px) and (max-width: 1024px) {
     .top-nav button {
@@ -354,6 +436,20 @@
       transform: translateX(18px);
       background-color: #ffffff;
     }
+    .pwa-update-toast {
+      bottom: calc(66px + env(safe-area-inset-bottom, 0px));
+      left: 12px;
+      right: 12px;
+      transform: none;
+      max-width: none;
+      border-radius: 14px;
+      padding: 10px 14px;
+      animation: pwaSlideUpMobile 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes pwaSlideUpMobile {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   }
 </style>
 </head>
@@ -386,7 +482,7 @@
       <span>🔍</span>
       <span class="cmd-k-badge">Ctrl+K</span>
     </button>
-    <span class="version-badge">v2.5.15</span>
+    <span class="version-badge">v2.5.16</span>
     <button id="btn-help-modal" onclick="openOnboardingModal()" title="คู่มือการใช้งาน (Quick Tour)" aria-label="Open Quick Tour and Guide">
       <span class="help-icon">❓</span>
     </button>
@@ -418,7 +514,7 @@
 <!-- Privacy Footer Notice -->
 <div class="privacy-bar">
   <span id="lbl-privacy-footer">🔒 100% Client-Side Privacy — ทุกการคำนวณและข้อมูลถูกเก็บไว้ในอุปกรณ์ของคุณเท่านั้น ไม่มีการส่งข้อมูลสู่เซิร์ฟเวอร์</span>
-  <span style="color: #64748b; font-size: 10px;">Money Superapp v2.5.15</span>
+  <span style="color: #64748b; font-size: 10px;">Money Superapp v2.5.16</span>
 </div>
 
 <!-- Mobile Bottom Navigation Bar (Visible on Mobile <= 768px) -->
@@ -954,6 +1050,22 @@
     <button type="button" id="btnBiometricUnlock" onclick="triggerBiometricUnlock()" style="display: none; align-items: center; justify-content: center; gap: 8px; background: rgba(79, 168, 148, 0.15); border: 1px solid #2F8B76; color: #4FA894; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; width: 100%;">
       <span>🪪</span>
       <span id="lbl-btn-biometric-unlock">ปลดล็อกด้วย Face ID / Touch ID</span>
+    </button>
+  </div>
+</div>
+
+<!-- Phase 73: PWA Cache Update Toast (Non-Intrusive Floating Notification) -->
+<div id="pwaUpdateToast" role="alert" aria-live="polite" style="display: none;" class="pwa-update-toast">
+  <div class="pwa-update-content">
+    <span class="pwa-update-icon">⚡</span>
+    <span id="lbl-pwa-update-text" class="pwa-update-text">มีเวอร์ชันใหม่พร้อมใช้งาน</span>
+  </div>
+  <div class="pwa-update-actions">
+    <button type="button" id="btnPwaUpdateNow" class="pwa-update-btn" onclick="applyPwaUpdate()">
+      <span id="lbl-pwa-update-btn">อัปเดตเลย ➔</span>
+    </button>
+    <button type="button" id="btnPwaDismissUpdate" class="pwa-dismiss-btn" onclick="dismissPwaUpdateToast()" aria-label="Dismiss">
+      &times;
     </button>
   </div>
 </div>

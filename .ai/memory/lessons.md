@@ -15,6 +15,16 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Non-Intrusive PWA Update Toast & Controlled Background Cache Refresh (v2.5.16)
+- **Date & Context:** 2026-10-18, implementing Phase 73 PWA cache update banner & refresh toast in `index.html`, `js/app-shell.js`, and `sw.js` (`v2.5.16`).
+- **Problem:** When service worker assets were updated, `sw.js` was previously invoking `self.skipWaiting()` automatically inside the `install` event. This caused background cache replacement while user tabs remained open, risking code-version mismatches and unnotified stale state, particularly for mobile PWA users who rarely close the browser window.
+- **Root Cause:** Without a two-phase update handshake (installing $\to$ waiting $\to$ explicit user-triggered activation), users had no visual indicator that a new release was available, nor an atomic way to refresh their app session.
+- **Solution & Rule:**
+  1. **Controlled SW Waiting State:** Remove immediate `self.skipWaiting()` from `install` in `sw.js`. Let new versions transition to the `waiting` (`installed`) state.
+  2. **Inter-Process SKIP_WAITING Message Protocol:** In `sw.js`, listen for `message` event with `{ type: 'SKIP_WAITING' }` to invoke `self.skipWaiting()`.
+  3. **Non-Intrusive Floating Toast UI:** Add `#pwaUpdateToast` with role `alert` and `aria-live="polite"`. Use pill-shaped elevation on desktop (`bottom: 24px; left: 50%; transform: translateX(-50%)`) and docked card elevation above bottom navigation on mobile (`bottom: calc(66px + env(safe-area-inset-bottom, 0px))`).
+  4. **Atomic Controller Change Reload:** In `js/app-shell.js`, listen to `reg.waiting` upon load and `updatefound` + `statechange === 'installed'` when a controller exists. On user confirmation, post `SKIP_WAITING` and trigger clean top-level `window.location.reload()` guarded by a `refreshing` boolean latch.
+
 ### 2026-10-18: Inter-Tool Gold & Physical Asset Net Worth Synchronization (v2.5.15)
 - **Date & Context:** 2026-10-18, integrating Thai Gold DCA & physical asset holdings from `rebalance.html` into `dashboard.html` Net Worth & Composition (`v2.5.15`).
 - **Problem:** When users logged physical gold holdings (bars/jewelry/lots) in `rebalance.html` (`moneySuperapp.thaiGold.state.v1`), their physical asset wealth was completely ignored in `dashboard.html`. Net Worth, Gross Assets, Donut composition, Insurance Adequacy, and 3-Bucket retirement calculations omitted physical asset reserves.

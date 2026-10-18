@@ -1,4 +1,4 @@
-const CACHE_NAME = 'money-superapp-v2.5.15';
+const CACHE_NAME = 'money-superapp-v2.5.16';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -35,8 +35,15 @@ self.addEventListener('install', event => {
           });
         })
       );
-    }).then(() => self.skipWaiting())
+    })
   );
+});
+
+// Phase 73: Listen for SKIP_WAITING message from App Shell update toast
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('activate', event => {

@@ -86,6 +86,8 @@ const translations = {
     lockScreenTitle: 'Money Superapp',
     lockScreenSubtitle: 'กรุณากรอกรหัส PIN 6 หลักเพื่อปลดล็อก',
     btnBiometricUnlock: 'ปลดล็อกด้วย Face ID / Touch ID',
+    pwaUpdateText: 'มีเวอร์ชันใหม่พร้อมใช้งาน',
+    pwaUpdateBtn: 'อัปเดตเลย ➔',
   },
   en: {
     skipLink: 'Skip to main content',
@@ -168,6 +170,8 @@ const translations = {
     lockScreenTitle: 'Money Superapp',
     lockScreenSubtitle: 'Enter 6-digit PIN to unlock',
     btnBiometricUnlock: 'Unlock with Face ID / Touch ID',
+    pwaUpdateText: 'New version available',
+    pwaUpdateBtn: 'Update Now ➔',
   },
 };
 
@@ -368,6 +372,11 @@ function applyLang(lang) {
     document.getElementById('lbl-lock-screen-subtitle').textContent = t.lockScreenSubtitle;
   if (document.getElementById('lbl-btn-biometric-unlock'))
     document.getElementById('lbl-btn-biometric-unlock').textContent = t.btnBiometricUnlock;
+
+  if (document.getElementById('lbl-pwa-update-text'))
+    document.getElementById('lbl-pwa-update-text').textContent = t.pwaUpdateText;
+  if (document.getElementById('lbl-pwa-update-btn'))
+    document.getElementById('lbl-pwa-update-btn').textContent = t.pwaUpdateBtn;
 
   updateGoogleUI();
   try {
@@ -2608,15 +2617,69 @@ try {
   }
 } catch (_e) {}
 
+// Phase 73: PWA Cache Update Toast Controls
+let waitingServiceWorker = null;
+
+function showPwaUpdateToast(worker) {
+  waitingServiceWorker = worker;
+  const toast = document.getElementById('pwaUpdateToast');
+  if (toast) {
+    toast.style.display = 'flex';
+  }
+}
+
+function dismissPwaUpdateToast() {
+  const toast = document.getElementById('pwaUpdateToast');
+  if (toast) {
+    toast.style.display = 'none';
+  }
+}
+
+function applyPwaUpdate() {
+  if (waitingServiceWorker) {
+    try {
+      waitingServiceWorker.postMessage({ type: 'SKIP_WAITING' });
+    } catch (_e) {}
+  }
+  setTimeout(() => {
+    window.location.reload();
+  }, 400);
+}
+
+window.showPwaUpdateToast = showPwaUpdateToast;
+window.dismissPwaUpdateToast = dismissPwaUpdateToast;
+window.applyPwaUpdate = applyPwaUpdate;
+
 // Register Service Worker for PWA and offline access
 if ('serviceWorker' in navigator) {
+  let refreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    reloadFrame();
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
   });
+
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register('./sw.js')
       .then((reg) => {
+        // 1. Check if there is already an installed worker waiting
+        if (reg.waiting) {
+          showPwaUpdateToast(reg.waiting);
+        }
+
+        // 2. Listen for future updates
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          if (!newWorker) return;
+
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              showPwaUpdateToast(newWorker);
+            }
+          });
+        });
+
         reg.update();
         console.log('PWA ServiceWorker registered with scope: ', reg.scope);
       })
