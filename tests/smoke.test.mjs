@@ -1423,5 +1423,53 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'dashboard.js must delegate calculateNetWorthComposition to MoneyApp.FinancialHealth',
       );
     });
+
+    it('verifies Phase 98 Portfolio Auxiliary Sub-tools Engine modularization and clean delegation', () => {
+      const subPath = path.join(ROOT_DIR, 'js/engines/rebalance-subtools.js');
+      assert.ok(fs.existsSync(subPath), 'js/engines/rebalance-subtools.js must exist');
+      const subContent = fs.readFileSync(subPath, 'utf8');
+      assert.ok(
+        subContent.includes('MoneyApp.RebalanceSubtools = RebalanceSubtools'),
+        'rebalance-subtools.js must export MoneyApp.RebalanceSubtools',
+      );
+      assert.ok(!subContent.includes('eval('), 'rebalance-subtools.js must never invoke eval()');
+      assert.ok(!subContent.includes('document.write'), 'rebalance-subtools.js must never invoke document.write()');
+
+      // Verify all 8 core HTML files register rebalance-subtools.js
+      const htmlFiles = [
+        'dashboard.html',
+        'debt-calculator.html',
+        'index.html',
+        'months-slips.html',
+        'rebalance.html',
+        'remaining-money.html',
+        'tax-calculator-base.html',
+        'tax-calculator.html',
+      ];
+      for (const file of htmlFiles) {
+        const content = fs.readFileSync(path.join(ROOT_DIR, file), 'utf8');
+        assert.ok(
+          content.includes('src="js/engines/rebalance-subtools.js"'),
+          `${file} must include js/engines/rebalance-subtools.js`,
+        );
+      }
+
+      // Verify service worker registers rebalance-subtools.js
+      const swContent = fs.readFileSync(path.join(ROOT_DIR, 'sw.js'), 'utf8');
+      assert.ok(
+        swContent.includes("'./js/engines/rebalance-subtools.js'"),
+        'sw.js must cache js/engines/rebalance-subtools.js',
+      );
+
+      // Verify js/rebalance.js delegates auxiliary sub-tools cleanly
+      const rebalContent = fs.readFileSync(path.join(ROOT_DIR, 'js/rebalance.js'), 'utf8');
+      assert.ok(rebalContent.includes('RebalanceSubtools'), 'rebalance.js must reference MoneyApp.RebalanceSubtools');
+      assert.ok(rebalContent.includes('toggleThaiGoldCalculator'), 'rebalance.js must expose toggleThaiGoldCalculator');
+      assert.ok(rebalContent.includes('toggleForeignTaxAdvisor'), 'rebalance.js must expose toggleForeignTaxAdvisor');
+      assert.ok(
+        rebalContent.includes('toggleTargetDateGlidepath'),
+        'rebalance.js must expose toggleTargetDateGlidepath',
+      );
+    });
   });
 });

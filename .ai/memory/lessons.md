@@ -15,6 +15,18 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Decompose rebalance.js: Portfolio Auxiliary Sub-tools Engine (v2.5.41)
+- **Date & Context:** 2026-10-18, Phase 98 Engine Modularization (`v2.5.41`).
+- **Problem:**
+  1. `js/rebalance.js` was bloated at 3,558 lines, mixing the core portfolio rebalancer and asset allocation logic with over 800 lines of auxiliary sub-tools: Thai Gold Bar & Jewelry DCA Calculator & P/L Optimizer, Foreign Investment & Crypto Repatriation Tax Advisor (Orders P.161 & P.162), and Target Date Retirement Glidepath Calculator.
+  2. Auxiliary sub-tool logic was tightly coupled to rebalance page lifecycle, making independent unit testing cumbersome.
+- **Root Cause:** Auxiliary calculators were appended directly to `rebalance.js` as roadmap features expanded without dedicated domain sub-tool engines.
+- **Solution & Rule:**
+  1. **Modular Sub-tools Engine (`js/engines/rebalance-subtools.js`):** Extracted `MoneyApp.RebalanceSubtools` providing dedicated state management, persistence, calculations, and UI coordinators for Gold, Foreign Tax, and Glidepath.
+  2. **Zero-Breaking Rebalance Delegation:** Delegated all auxiliary methods in `js/rebalance.js` to `MoneyApp.RebalanceSubtools` while preserving backward-compatible global function exposure (`toggleThaiGoldCalculator`, `setGoldWeightPreset`, `updateGoldCalculator`, `syncGoldMarketPrice`, etc.), reducing `rebalance.js` from 3,558 down to 2,912 lines (shrunk by 646 lines).
+  3. **Bridge Persistence Invariants:** Preserved explicit cross-tool bridge storage keys (e.g. `moneySuperapp.pendingDcaBudget`) in both the engine and controller to maintain unbroken cross-module communications.
+  4. **Quality Gates & Invariants:** Added `tests/rebalance-subtools.test.mjs` (5 unit tests), updated `tests/smoke.test.mjs` (66 smoke tests), achieved 100% test pass rate (473 tests across 109 suites), zero Biome errors/warnings, and zero CSP violations.
+
 ### 2026-10-18: Decompose dashboard.js: Financial Health & Advisor Engine (v2.5.40)
 - **Date & Context:** 2026-10-18, Phase 97 Engine Modularization (`v2.5.40`).
 - **Problem:**
