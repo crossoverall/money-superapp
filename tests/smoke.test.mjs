@@ -1262,5 +1262,55 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'rebalance.html must define standard box container styling for .panel and .card',
       );
     });
+
+    it('verifies Phase 95 Cashflow Visualization Engine modularization and clean delegation', () => {
+      const vizPath = path.join(ROOT_DIR, 'js/engines/cashflow-viz.js');
+      assert.ok(fs.existsSync(vizPath), 'js/engines/cashflow-viz.js must exist');
+      const vizContent = fs.readFileSync(vizPath, 'utf8');
+      assert.ok(
+        vizContent.includes('MoneyApp.CashflowViz = CashflowViz'),
+        'cashflow-viz.js must export MoneyApp.CashflowViz',
+      );
+      assert.ok(!vizContent.includes('eval('), 'cashflow-viz.js must never invoke eval()');
+      assert.ok(!vizContent.includes('document.write'), 'cashflow-viz.js must never invoke document.write()');
+
+      // Verify all 8 core HTML files register cashflow-viz.js
+      const htmlFiles = [
+        'dashboard.html',
+        'debt-calculator.html',
+        'index.html',
+        'months-slips.html',
+        'rebalance.html',
+        'remaining-money.html',
+        'tax-calculator-base.html',
+        'tax-calculator.html',
+      ];
+      for (const file of htmlFiles) {
+        const content = fs.readFileSync(path.join(ROOT_DIR, file), 'utf8');
+        assert.ok(
+          content.includes('src="js/engines/cashflow-viz.js"'),
+          `${file} must include js/engines/cashflow-viz.js`,
+        );
+      }
+
+      // Verify service worker registers cashflow-viz.js
+      const swContent = fs.readFileSync(path.join(ROOT_DIR, 'sw.js'), 'utf8');
+      assert.ok(swContent.includes("'./js/engines/cashflow-viz.js'"), 'sw.js must cache js/engines/cashflow-viz.js');
+
+      // Verify js/remaining-money.js delegates visualization calls
+      const rmContent = fs.readFileSync(path.join(ROOT_DIR, 'js/remaining-money.js'), 'utf8');
+      assert.ok(
+        rmContent.includes('CashflowViz') && rmContent.includes('renderCashflowWaterfall'),
+        'remaining-money.js must delegate renderCashflowWaterfall to MoneyApp.CashflowViz',
+      );
+      assert.ok(
+        rmContent.includes('CashflowViz') && rmContent.includes('renderCashflowSankey'),
+        'remaining-money.js must delegate renderCashflowSankey to MoneyApp.CashflowViz',
+      );
+      assert.ok(
+        rmContent.includes('MoneyApp?.CashflowViz?.calculateBudgetRule503020'),
+        'remaining-money.js must delegate calculateBudgetRule503020 to MoneyApp.CashflowViz',
+      );
+    });
   });
 });

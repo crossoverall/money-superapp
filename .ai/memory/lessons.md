@@ -15,6 +15,18 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Decompose remaining-money.js: Cash Flow Visualization Engine (v2.5.38)
+- **Date & Context:** 2026-10-18, Phase 95 Engine Modularization (`v2.5.38`).
+- **Problem:**
+  1. `js/remaining-money.js` was bloated at 4,442 LOC, mixing high-level budgeting CRUD and transaction tables with 650+ lines of low-level SVG visualization math: Sankey ribbon cubic bezier generators, 3-column node flow conservation, Waterfall step connectors, and 50/30/20 budget compliance donut arc geometry.
+  2. The SVG visualization logic was tightly coupled to page-specific DOM structures, preventing other modules (such as the executive dossier or monthly slips) from easily reusing or rendering flow diagrams.
+- **Root Cause:** Visualization algorithms evolved directly inside the monolithic page controller without modular separation of pure flow math from DOM rendering.
+- **Solution & Rule:**
+  1. **Pure Engine Modularization (`js/engines/cashflow-viz.js`):** Extracted `MoneyApp.CashflowViz` exporting `classifyBudgetType`, `calculateBudgetRule503020`, `calculateEmergencyRunway`, `generateSankeyRibbonPath`, `calculateSankeyFlows`, `renderCashflowWaterfall`, and `renderCashflowSankey`.
+  2. **Backward Compatible Delegation:** Retained identical function signatures in `js/remaining-money.js` delegating to `MoneyApp.CashflowViz`, shrinking `remaining-money.js` by over 600 lines while maintaining 100% API stability.
+  3. **Multi-File Safe Replacements:** For large contiguous blocks in sprawling legacy controllers, decompose into targeted sub-sections (e.g. waterfall, budget rule, sankey) to guarantee deterministic, zero-offset diffs.
+  4. **Quality Gates:** Added `tests/cashflow-viz.test.mjs` (8 unit tests), updated `tests/smoke.test.mjs` (63 smoke tests), achieved 100% test pass rate (452 tests across 109 suites), zero Biome errors/warnings, and zero CSP violations.
+
 ### 2026-10-18: safeHTML Tagged Template Sanitizer & Attribute Hardening (v2.5.37)
 - **Date & Context:** 2026-10-18, Phase 94 safeHTML & XSS Hardening (`v2.5.37`).
 - **Problem:**

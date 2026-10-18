@@ -1,5 +1,5 @@
 ---
-task_id: "SDLC-PHASE-94-SAFE-HTML-SANITIZATION"
+task_id: "SDLC-PHASE-95-CASHFLOW-VIZ-EXTRACTION"
 status: "completed"
 current_stage: "release"
 complexity: "level_2"
@@ -7,11 +7,19 @@ iteration_count: 0
 pipeline: ["orchestrator", "planner", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Completed SDLC Task (Phase 94 - safeHTML Tagged Template Sanitizer & Attribute Hardening)
+### Completed SDLC Task (Phase 95 - Decompose remaining-money.js: Cash Flow Visualization Engine)
 - **Delivered**:
-  - Implemented `MoneyApp.safeHTML(strings, ...values)` tagged template literal in `js/shared.js`.
-  - Added `MoneyApp.rawHTML(markup)` explicit safe wrapper for trusted sub-templates and SVG icons.
-  - Hardened `MoneyApp.escapeAttr` to sanitize all 5 attribute injection characters (`&`, `"`, `'`, `<`, `>`).
-  - Added unit test suites in `tests/security.test.mjs` (20 tests) and `tests/shared.test.mjs` (100 tests).
-  - Added regression smoke invariant in `tests/smoke.test.mjs` (62 tests).
-  - Released and bumped to `v2.5.37`.
+  - Extracted pure SVG flow math and visualizers into `js/engines/cashflow-viz.js` (`MoneyApp.CashflowViz`):
+    - `classifyBudgetType(item, defaultType)`
+    - `calculateBudgetRule503020(options)`
+    - `calculateEmergencyRunway(options)`
+    - `generateSankeyRibbonPath(x0, y0Top, y0Bot, x1, y1Top, y1Bot)`
+    - `calculateSankeyFlows(options)`
+    - `renderCashflowWaterfall(svgEl, options)`
+    - `renderCashflowSankey(svgEl, options)`
+  - Registered `js/engines/cashflow-viz.js` in `sw.js` and all 8 core HTML files.
+  - Refactored `js/remaining-money.js` into clean forwarders, shrinking it by >600 lines while preserving 100% backward compatibility.
+  - Added unit test suite in `tests/cashflow-viz.test.mjs` (8 tests).
+  - Added smoke invariant in `tests/smoke.test.mjs` (63 tests).
+  - Verified 100% test pass rate (452 tests across 109 suites) and 0 Biome warnings/errors.
+  - Released and bumped to `v2.5.38`.
