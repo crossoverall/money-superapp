@@ -2026,6 +2026,11 @@ function checkPendingBudget() {
               LANG === 'en'
                 ? `✓ Loaded monthly debt refinance savings (+${fmt(budget)} THB/mo) as investment DCA budget!`
                 : `✓ ดึงเงินประหยัดจากการรีไฟแนนซ์หนี้ (+${fmt(budget)} บาท/เดือน) มาเป็นงบ DCA ลงทุนจัดพอร์ตแล้ว!`;
+          } else if (source === 'tax_stepdown') {
+            textEl.textContent =
+              LANG === 'en'
+                ? `✓ Loaded monthly tax bracket step-down target (${fmt(budget)} THB/mo) as investment DCA budget!`
+                : `✓ ดึงเป้าหมายลดฐานภาษีรายเดือน (${fmt(budget)} บาท/เดือน) มาเป็นงบ DCA ลงทุนลดหย่อนภาษีแล้ว!`;
           } else {
             textEl.textContent =
               LANG === 'en'

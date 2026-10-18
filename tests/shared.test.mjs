@@ -1369,4 +1369,67 @@ describe('MoneyApp Shared Core Module', () => {
       assert.equal(nullInput.verdict, 'no_debt');
     });
   });
+
+  describe('MoneyApp.calculateTaxBracketStepDown (Phase 79)', () => {
+    it('correctly handles tax-free income (<= 150,000 THB)', () => {
+      const { MoneyApp } = createEnvironment('th');
+      const res = MoneyApp.calculateTaxBracketStepDown(120000);
+      assert.equal(res.netTaxableIncome, 120000);
+      assert.equal(res.currentRate, 0);
+      assert.equal(res.currentRatePct, 0);
+      assert.equal(res.isTaxFree, true);
+      assert.equal(res.amountToStepDown, 0);
+      assert.equal(res.taxSavedAtStepDown, 0);
+      assert.equal(res.amountToTaxFree, 0);
+      assert.equal(res.totalCurrentTax, 0);
+    });
+
+    it('correctly calculates step-down metrics for 620,000 THB (15% bracket -> 10% bracket)', () => {
+      const { MoneyApp } = createEnvironment('th');
+      const res = MoneyApp.calculateTaxBracketStepDown(620000);
+      assert.equal(res.netTaxableIncome, 620000);
+      assert.equal(res.currentRate, 0.15);
+      assert.equal(res.currentRatePct, 15);
+      assert.equal(res.currentTierIndex, 3);
+      assert.equal(res.isTaxFree, false);
+      assert.equal(res.lowerThreshold, 500000);
+      assert.equal(res.nextLowerRate, 0.1);
+      assert.equal(res.nextLowerRatePct, 10);
+      assert.equal(res.amountToStepDown, 120000); // 620k - 500k
+      assert.equal(res.taxSavedAtStepDown, 18000); // 120k * 15%
+      assert.equal(res.stepDownRoiPct, 15);
+      assert.equal(res.amountToTaxFree, 470000); // 620k - 150k
+      // 0-150k: 0, 150k-300k (150k*5%=7.5k), 300k-500k (200k*10%=20k), 500k-620k (120k*15%=18k) = 45.5k
+      assert.equal(res.totalCurrentTax, 45500);
+      assert.equal(res.taxSavedToTaxFree, 45500);
+      assert.equal(res.progressInCurrentTierPct, 48); // 120k / 250k = 48%
+    });
+
+    it('correctly calculates step-down for high bracket (> 5,000,000 THB at 35%)', () => {
+      const { MoneyApp } = createEnvironment('th');
+      const res = MoneyApp.calculateTaxBracketStepDown(6000000);
+      assert.equal(res.currentRate, 0.35);
+      assert.equal(res.currentRatePct, 35);
+      assert.equal(res.lowerThreshold, 5000000);
+      assert.equal(res.nextLowerRate, 0.3);
+      assert.equal(res.amountToStepDown, 1000000);
+      assert.equal(res.taxSavedAtStepDown, 350000);
+      assert.equal(res.stepDownRoiPct, 35);
+    });
+
+    it('gracefully handles empty, negative, or invalid inputs', () => {
+      const { MoneyApp } = createEnvironment('th');
+      const resZero = MoneyApp.calculateTaxBracketStepDown(0);
+      assert.equal(resZero.isTaxFree, true);
+      assert.equal(resZero.amountToStepDown, 0);
+
+      const resNeg = MoneyApp.calculateTaxBracketStepDown(-50000);
+      assert.equal(resNeg.isTaxFree, true);
+      assert.equal(resNeg.netTaxableIncome, 0);
+
+      const resNull = MoneyApp.calculateTaxBracketStepDown(null);
+      assert.equal(resNull.isTaxFree, true);
+      assert.equal(resNull.netTaxableIncome, 0);
+    });
+  });
 });

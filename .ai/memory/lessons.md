@@ -1100,3 +1100,19 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
   2. Wired seamlessly into `parseImportCSV()` in `js/remaining-money.js`, automatically popping the interactive preview modal with detected bank format badges (`[Kasikornbank (KBank) CSV]`).
   3. Added comprehensive test suite (`tests/bank-statement-parser.test.mjs`) and smoke test assertions (**273 tests passing, 0 Biome errors**).
 - **Rule:** Never force users to format bank statements manually; inspect header rows for known banking debit/credit signatures and auto-bifurcate inflows and outflows with bank brand detection prior to standard CSV parsing.
+
+### 2026-10-18: Thai PIT Marginal Tax Bracket Boundary Step-Down Headroom Analyzer & DCA Rebalance Bridge
+
+- **Date & Context:** 2026-10-18, implementing Thai PIT Bracket Boundary & Marginal Rate Step-Down Headroom Analyzer in `tax-calculator-base.html`, `js/tax-calculator-base.js`, `js/shared.js`, and `js/rebalance.js` (`v2.5.22`).
+- **Problem:**
+  1. Pre-existing bracket headroom banners only computed headroom *upward* ("how much more income before entering the next higher bracket"). However, taxpayers and financial planners during year-end tax season specifically seek *downward* optimization: "How much additional tax deduction (SSF, RMF, Thai ESG, life insurance) do I need to step down into a lower marginal tax bracket and what will my immediate guaranteed tax return be?".
+  2. Users often feel overwhelmed by large lump-sum year-end deduction recommendations (e.g. 49,500 THB). Without a seamless bridge to long-term DCA execution, users fail to take action.
+- **Resolution:**
+  1. Built `MoneyApp.calculateTaxBracketStepDown(netTaxableIncome)` in `js/shared.js`:
+     - Identifies the current progressive tier and immediate lower tier based on statutory Revenue Department brackets (0% to 35%).
+     - Calculates exact `amountToStepDown` (net income minus lower threshold), `taxSavedAtStepDown`, `stepDownRoiPct` (guaranteed return equal to current marginal rate), `amountToTaxFree`, `taxSavedToTaxFree`, and `progressInCurrentTierPct`.
+  2. Built interactive `#boxTaxBracketStepDown` in `tax-calculator-base.html` and `js/tax-calculator-base.js`:
+     - Displays current and target bracket badges, a 4-metric grid, a visual progress bar, strategic callout advice, and one-click copy button.
+     - Added `#btnBridgeStepDownToRebalance` that converts the annual target into a monthly DCA budget (`amountToStepDown / 12`), sets `moneySuperapp.pendingRebalanceSource = 'tax_stepdown'`, and jumps to `rebalance.html`.
+  3. Enhanced `rebalance.js` `checkPendingBudget()` to recognize `'tax_stepdown'` with a tailored bilingual toast notification.
+- **Rule:** When advising on tax brackets, always present downward marginal step-down targets alongside upward headroom, highlight the guaranteed tax savings ROI equal to the current marginal tax rate, and provide an automated monthly DCA bridge to make tax deductions manageable.

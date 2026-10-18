@@ -791,6 +791,35 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'months-slips js must define defaultCollapsed for panelJobCompare',
       );
     });
+
+    it('verifies tax-calculator-base and shared.js declare Phase 79 Bracket Step-Down Analyzer and Bridges', () => {
+      const taxHtml = fs.readFileSync(path.join(ROOT_DIR, 'tax-calculator-base.html'), 'utf8');
+      assert.ok(taxHtml.includes('id="boxTaxBracketStepDown"'), 'tax-base must declare #boxTaxBracketStepDown');
+      assert.ok(taxHtml.includes('id="valMetricStepDownNeed"'), 'tax-base must declare #valMetricStepDownNeed');
+      assert.ok(taxHtml.includes('id="valMetricStepDownSaved"'), 'tax-base must declare #valMetricStepDownSaved');
+      assert.ok(taxHtml.includes('id="valMetricStepDownRoi"'), 'tax-base must declare #valMetricStepDownRoi');
+      assert.ok(taxHtml.includes('id="valMetricToTaxFree"'), 'tax-base must declare #valMetricToTaxFree');
+      assert.ok(taxHtml.includes('id="barStepDownProgress"'), 'tax-base must declare #barStepDownProgress');
+      assert.ok(taxHtml.includes('id="btnCopyStepDownTarget"'), 'tax-base must declare #btnCopyStepDownTarget');
+      assert.ok(
+        taxHtml.includes('id="btnBridgeStepDownToRebalance"'),
+        'tax-base must declare #btnBridgeStepDownToRebalance',
+      );
+
+      const taxJs = fs.readFileSync(path.join(ROOT_DIR, 'js/tax-calculator-base.js'), 'utf8');
+      assert.ok(taxJs.includes('renderTaxBracketStepDown'), 'tax-base js must define renderTaxBracketStepDown');
+      assert.ok(taxJs.includes('copyStepDownTarget'), 'tax-base js must define copyStepDownTarget');
+      assert.ok(taxJs.includes('sendStepDownToRebalance'), 'tax-base js must define sendStepDownToRebalance');
+
+      const rebalanceJs = fs.readFileSync(path.join(ROOT_DIR, 'js/rebalance.js'), 'utf8');
+      assert.ok(rebalanceJs.includes("'tax_stepdown'"), 'rebalance js must handle tax_stepdown source');
+
+      const sharedJs = fs.readFileSync(path.join(ROOT_DIR, 'js/shared.js'), 'utf8');
+      assert.ok(
+        sharedJs.includes('calculateTaxBracketStepDown: calculateTaxBracketStepDown'),
+        'shared.js must export calculateTaxBracketStepDown',
+      );
+    });
   });
 
   describe('Bilingual Localization Structural Symmetry', () => {

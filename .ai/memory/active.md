@@ -1,10 +1,10 @@
 ---
-task_id: "SDLC-PHASE-78-CARD-REORDER-AND-FOLD-LAYOUT-PARITY"
+task_id: "SDLC-PHASE-79-TAX-BRACKET-STEPDOWN-HEADROOM-ANALYZER"
 status: "ready_for_release"
 current_stage: "release"
 complexity: "level_2"
 iteration_count: 0
-pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "reviewer", "release"]
+pipeline: ["orchestrator", "planner", "coder", "debugger", "reviewer", "release"]
 ---
 
 ### Problem Diagnosis & Scope (Phase 78 - v2.5.21)

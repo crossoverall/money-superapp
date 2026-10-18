@@ -169,6 +169,13 @@ if (LANG === 'en') {
     lblBridgeTaxAccrualInstallments: 'Reserve 3-Installment Plan (0%) in Budget',
     lblBridgeTaxRefundToDebt: 'Send Tax Refund to Lump-Sum Debt Payoff',
     lblBridgeTaxRefundToRebalance: 'Send Refund to Rebalance Portfolio',
+    lblStepDownTitle: 'Tax Bracket Step-Down Analyzer',
+    lblMetricStepDownNeed: 'Deductions to Step Down',
+    lblMetricStepDownSaved: 'Instant Tax Savings',
+    lblMetricStepDownRoi: 'Tax Return (ROI)',
+    lblMetricToTaxFree: 'Deductions to Tax-Free',
+    lblBtnCopyStepDown: 'Copy Target Deduction',
+    lblBtnBridgeStepDownRebalance: 'Send Target to Rebalance DCA',
   };
   Object.keys(EN).forEach((id) => {
     const el = document.getElementById(id);
@@ -669,6 +676,150 @@ window.sendTaxRefundToDebt = sendTaxRefundToDebt;
 window.sendTaxRefundToRebalance = sendTaxRefundToRebalance;
 window.jumpToTab = jumpToTab;
 
+// Phase 79: Thai PIT Bracket Boundary & Step-Down Headroom Analyzer
+let lastTaxStepDownMetrics = null;
+
+function renderTaxBracketStepDown(netIncome) {
+  const container = document.getElementById('boxTaxBracketStepDown');
+  if (!container) return;
+
+  const stepDown =
+    typeof MoneyApp !== 'undefined' && MoneyApp.calculateTaxBracketStepDown
+      ? MoneyApp.calculateTaxBracketStepDown(netIncome)
+      : null;
+  lastTaxStepDownMetrics = stepDown;
+  if (!stepDown) return;
+
+  const isEn = typeof LANG !== 'undefined' && LANG === 'en';
+  const unit = isEn ? 'THB' : 'บาท';
+
+  // Badges
+  const badgeCur = document.getElementById('badgeCurrentBracket');
+  const badgeTarget = document.getElementById('badgeTargetBracket');
+  if (badgeCur) {
+    badgeCur.textContent = isEn ? `Current: ${stepDown.currentRatePct}%` : `ฐานปัจจุบัน: ${stepDown.currentRatePct}%`;
+  }
+  if (badgeTarget) {
+    if (stepDown.isTaxFree) {
+      badgeTarget.textContent = isEn ? 'Goal: Tax-Exempt (0%)' : 'เป้าหมาย: ยกเว้นภาษี (0%)';
+      badgeTarget.style.background = 'var(--ok-dim)';
+      badgeTarget.style.borderColor = 'var(--ok)';
+      badgeTarget.style.color = 'var(--ok)';
+    } else {
+      badgeTarget.textContent = isEn
+        ? `Target: Step down to ${stepDown.nextLowerRatePct}%`
+        : `เป้าหมายลดลงเหลือ: ${stepDown.nextLowerRatePct}%`;
+      badgeTarget.style.background = 'var(--core-dim)';
+      badgeTarget.style.borderColor = 'var(--core)';
+      badgeTarget.style.color = 'var(--core)';
+    }
+  }
+
+  // Metric values
+  const valNeed = document.getElementById('valMetricStepDownNeed');
+  const valSaved = document.getElementById('valMetricStepDownSaved');
+  const valRoi = document.getElementById('valMetricStepDownRoi');
+  const valTaxFree = document.getElementById('valMetricToTaxFree');
+
+  if (valNeed) {
+    valNeed.textContent = stepDown.isTaxFree ? '0 ' + unit : `${formatMoney(stepDown.amountToStepDown)} ${unit}`;
+  }
+  if (valSaved) {
+    valSaved.textContent = stepDown.isTaxFree ? '0 ' + unit : `${formatMoney(stepDown.taxSavedAtStepDown)} ${unit}`;
+  }
+  if (valRoi) {
+    valRoi.textContent = stepDown.isTaxFree ? '0%' : `${stepDown.stepDownRoiPct}%`;
+  }
+  if (valTaxFree) {
+    valTaxFree.textContent = stepDown.isTaxFree
+      ? isEn
+        ? 'Tax-free reached'
+        : 'ภาษี 0 บาทแล้ว'
+      : `${formatMoney(stepDown.amountToTaxFree)} ${unit}`;
+  }
+
+  // Progress Bar
+  const trackStart = document.getElementById('lblStepDownTrackStart');
+  const trackProgress = document.getElementById('valStepDownTrackProgress');
+  const trackEnd = document.getElementById('lblStepDownTrackEnd');
+  const barProgress = document.getElementById('barStepDownProgress');
+
+  if (trackStart) {
+    trackStart.textContent = isEn
+      ? `Lower: ${formatMoney(stepDown.lowerThreshold)}`
+      : `ขั้นต่ำ: ${formatMoney(stepDown.lowerThreshold)}`;
+  }
+  if (trackProgress) {
+    trackProgress.textContent = `${stepDown.progressInCurrentTierPct}% ${isEn ? 'in bracket' : 'ในขั้นนี้'}`;
+  }
+  if (trackEnd) {
+    const pitTiers = (typeof MoneyApp !== 'undefined' && MoneyApp.THAI_PIT_TIERS) || [];
+    const tier = pitTiers[stepDown.currentTierIndex];
+    const maxVal = tier && tier.max !== Infinity ? `${formatMoney(tier.max)}` : isEn ? 'Max' : 'ไม่จำกัด';
+    trackEnd.textContent = isEn ? `Cap: ${maxVal}` : `เพดาน: ${maxVal}`;
+  }
+  if (barProgress) {
+    barProgress.style.width = `${stepDown.progressInCurrentTierPct}%`;
+    barProgress.style.background = stepDown.isTaxFree
+      ? 'var(--ok)'
+      : stepDown.currentRatePct >= 25
+        ? 'var(--warn)'
+        : 'var(--core)';
+  }
+
+  // Callout Description
+  const callout = document.getElementById('stepDownCalloutDesc');
+  if (callout) {
+    if (stepDown.isTaxFree) {
+      const rem = Math.max(0, 150000 - stepDown.netTaxableIncome);
+      callout.innerHTML = `🎉 <strong>${isEn ? 'Exempt Bracket:' : 'อยู่ในเกณฑ์ยกเว้นภาษี:'}</strong> ${isEn ? `Your taxable net income is within the 0% bracket. You still have ${formatMoney(rem)} THB of tax-free headroom before paying tax.` : `เงินได้สุทธิของคุณไม่เกิน 150,000 บาท อยู่ในเกณฑ์ยกเว้นภาษี 100% ยังมีโควตาเงินได้ปลอดภาษีเหลืออีก ${formatMoney(rem)} บาท`}`;
+    } else {
+      callout.innerHTML = `💡 <strong>${isEn ? 'Tax Step-Down Strategy:' : 'กลยุทธ์ลดฐานภาษี:'}</strong> ${
+        isEn
+          ? `Investing an additional <strong>${formatMoney(stepDown.amountToStepDown)} ${unit}</strong> in deductions (ThaiESG, SSF, RMF, or Insurance) drops your taxable income to <strong>${formatMoney(stepDown.lowerThreshold)} ${unit}</strong>, stepping down from the <strong>${stepDown.currentRatePct}%</strong> bracket to <strong>${stepDown.nextLowerRatePct}%</strong> and securing an instant guaranteed tax saving of <strong>${formatMoney(stepDown.taxSavedAtStepDown)} ${unit}</strong> (${stepDown.stepDownRoiPct}% immediate ROI).`
+          : `หากลงทุนในค่าลดหย่อนเพิ่มเติม (ThaiESG, SSF, RMF หรือประกัน) อีก <strong>${formatMoney(stepDown.amountToStepDown)} ${unit}</strong> จะช่วยลดเงินได้สุทธิลงมาแตะที่ <strong>${formatMoney(stepDown.lowerThreshold)} ${unit}</strong> หลุดจากฐานภาษี <strong>${stepDown.currentRatePct}%</strong> ลงมาสู่ฐาน <strong>${stepDown.nextLowerRatePct}%</strong> ทันที พร้อมรับเงินคืนภาษีทันที <strong>${formatMoney(stepDown.taxSavedAtStepDown)} ${unit}</strong> (ผลตอบแทนภาษีเทียบเท่า ${stepDown.stepDownRoiPct}%)`
+      }`;
+    }
+  }
+
+  // Action buttons
+  const btnRebalance = document.getElementById('btnBridgeStepDownToRebalance');
+  if (btnRebalance) {
+    if (stepDown.isTaxFree || stepDown.amountToStepDown <= 0) {
+      btnRebalance.style.display = 'none';
+    } else {
+      btnRebalance.style.display = '';
+    }
+  }
+}
+
+function copyStepDownTarget(btn) {
+  if (!lastTaxStepDownMetrics || lastTaxStepDownMetrics.amountToStepDown <= 0) return;
+  const isEn = typeof LANG !== 'undefined' && LANG === 'en';
+  navigator.clipboard.writeText(String(Math.round(lastTaxStepDownMetrics.amountToStepDown))).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<span>✓</span> <span>${isEn ? 'Copied!' : 'คัดลอกแล้ว!'}</span>`;
+    setTimeout(() => {
+      btn.innerHTML = orig;
+    }, 1800);
+  });
+}
+
+function sendStepDownToRebalance() {
+  if (!lastTaxStepDownMetrics || lastTaxStepDownMetrics.amountToStepDown <= 0) return;
+  const targetAnnual = Math.round(lastTaxStepDownMetrics.amountToStepDown);
+  const monthlyDCA = Math.round(targetAnnual / 12);
+  try {
+    localStorage.setItem('moneySuperapp.pendingBudget', String(monthlyDCA));
+    localStorage.setItem('moneySuperapp.pendingRebalanceSource', 'tax_stepdown');
+  } catch (_e) {}
+  jumpToTab('rebalance');
+}
+
+window.renderTaxBracketStepDown = renderTaxBracketStepDown;
+window.copyStepDownTarget = copyStepDownTarget;
+window.sendStepDownToRebalance = sendStepDownToRebalance;
+
 function importWithholdingFromPayslip() {
   try {
     const raw = localStorage.getItem('moneySuperapp.monthsSlips');
@@ -1106,6 +1257,9 @@ function calculateTax() {
       headroomEl.innerHTML = `<span>💡 ${isEn ? `<strong>${formatMoney(wf.headroom)} ${unit}</strong> headroom left at <strong>${wf.topMarginalRate}%</strong> before stepping into <strong>${wf.nextBracketRate}%</strong>` : `เหลือเงินได้อีก <strong>${formatMoney(wf.headroom)} ${unit}</strong> ในขั้น <strong>${wf.topMarginalRate}%</strong> ก่อนก้าวขึ้นสู่ขั้น <strong>${wf.nextBracketRate}%</strong>`}</span>`;
     }
   }
+
+  // 3.5 Phase 79: Thai PIT Bracket Boundary & Step-Down Headroom Analyzer
+  renderTaxBracketStepDown(netIncome);
 
   // 4. Detailed Tiers Cards
   const breakdownEl = document.getElementById('taxBreakdown');

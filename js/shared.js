@@ -1275,6 +1275,90 @@
     return Math.round(totalTax);
   }
 
+  var THAI_PIT_TIERS = [
+    { min: 0, max: 150000, rate: 0 },
+    { min: 150000, max: 300000, rate: 0.05 },
+    { min: 300000, max: 500000, rate: 0.1 },
+    { min: 500000, max: 750000, rate: 0.15 },
+    { min: 750000, max: 1000000, rate: 0.2 },
+    { min: 1000000, max: 2000000, rate: 0.25 },
+    { min: 2000000, max: 5000000, rate: 0.3 },
+    { min: 5000000, max: Infinity, rate: 0.35 },
+  ];
+
+  /**
+   * Phase 79: Computes Thai Personal Income Tax Bracket Boundary Headroom & Step-Down Targets.
+   * Calculates the exact deduction needed to drop into the next lower tax bracket,
+   * the immediate guaranteed tax return ROI, and distance to reach the tax-free 0% threshold.
+   *
+   * @param {number} netTaxableIncome - Annual net taxable income after legal expenses and deductions
+   * @returns {Object} Tax bracket boundary metrics, step-down targets, and guaranteed savings
+   */
+  function calculateTaxBracketStepDown(netTaxableIncome) {
+    var net = Math.max(0, parseNum(netTaxableIncome));
+    var totalTax = computeThaiPitTax(net);
+
+    // Identify current active tier
+    var tierIndex = 0;
+    var i;
+    for (i = 0; i < THAI_PIT_TIERS.length; i++) {
+      if (net > THAI_PIT_TIERS[i].min) {
+        tierIndex = i;
+      }
+    }
+
+    var currentTier = THAI_PIT_TIERS[tierIndex];
+    var currentRate = currentTier.rate;
+    var currentRatePct = Math.round(currentRate * 100);
+    var isTaxFree = tierIndex === 0;
+
+    var lowerThreshold = currentTier.min;
+    var nextLowerRate = 0;
+    var nextLowerRatePct = 0;
+    if (tierIndex > 0) {
+      nextLowerRate = THAI_PIT_TIERS[tierIndex - 1].rate;
+      nextLowerRatePct = Math.round(nextLowerRate * 100);
+    }
+
+    var amountToStepDown = isTaxFree ? 0 : Math.max(0, net - lowerThreshold);
+    var taxSavedAtStepDown = Math.round(amountToStepDown * currentRate);
+    var stepDownRoiPct = currentRatePct;
+
+    var amountToTaxFree = Math.max(0, net - 150000);
+    var taxSavedToTaxFree = totalTax;
+
+    var tierSpan = currentTier.max - currentTier.min;
+    var progressInCurrentTierPct = 0;
+    if (isTaxFree) {
+      progressInCurrentTierPct = net > 0 ? Math.min(100, Math.round((net / 150000) * 1000) / 10) : 0;
+    } else if (tierSpan !== Infinity) {
+      progressInCurrentTierPct = Math.min(
+        100,
+        Math.max(0, Math.round(((net - currentTier.min) / tierSpan) * 1000) / 10),
+      );
+    } else {
+      progressInCurrentTierPct = 100;
+    }
+
+    return {
+      netTaxableIncome: net,
+      currentRate: currentRate,
+      currentRatePct: currentRatePct,
+      currentTierIndex: tierIndex,
+      isTaxFree: isTaxFree,
+      lowerThreshold: lowerThreshold,
+      nextLowerRate: nextLowerRate,
+      nextLowerRatePct: nextLowerRatePct,
+      amountToStepDown: amountToStepDown,
+      taxSavedAtStepDown: taxSavedAtStepDown,
+      stepDownRoiPct: stepDownRoiPct,
+      amountToTaxFree: amountToTaxFree,
+      taxSavedToTaxFree: taxSavedToTaxFree,
+      progressInCurrentTierPct: progressInCurrentTierPct,
+      totalCurrentTax: totalTax,
+    };
+  }
+
   /**
    * Calculates Thai Stock Dividend Tax Credit (เครดิตภาษีเงินปันผล มาตรา 47 ทวิ)
    *
@@ -4154,6 +4238,8 @@
     compareDebtVelocity: compareDebtVelocity,
     calculateTaxAccrualAndRefundPlan: calculateTaxAccrualAndRefundPlan,
     calculateDebtConsolidation: calculateDebtConsolidation,
+    calculateTaxBracketStepDown: calculateTaxBracketStepDown,
+    THAI_PIT_TIERS: THAI_PIT_TIERS,
   };
 
   // Expose on global window object
@@ -4223,5 +4309,7 @@
       global.calculateTaxAccrualAndRefundPlan = calculateTaxAccrualAndRefundPlan;
     if (typeof global.calculateDebtConsolidation === 'undefined')
       global.calculateDebtConsolidation = calculateDebtConsolidation;
+    if (typeof global.calculateTaxBracketStepDown === 'undefined')
+      global.calculateTaxBracketStepDown = calculateTaxBracketStepDown;
   }
 })(typeof window !== 'undefined' ? window : this);
