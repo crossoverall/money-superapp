@@ -2088,19 +2088,27 @@
     const onToggle = typeof options.onToggle === 'function' ? options.onToggle : null;
 
     function getStorageData() {
+      let data = { order: [], collapsed: {} };
       try {
         const raw = localStorage.getItem(storageKey);
         if (raw) {
           const parsed = JSON.parse(raw);
           if (parsed && typeof parsed === 'object') {
-            return {
+            data = {
               order: Array.isArray(parsed.order) ? parsed.order : [],
               collapsed: parsed.collapsed && typeof parsed.collapsed === 'object' ? parsed.collapsed : {},
             };
           }
         }
       } catch (_e) {}
-      return { order: [], collapsed: {} };
+      if (Array.isArray(options.defaultCollapsed)) {
+        options.defaultCollapsed.forEach((id) => {
+          if (data.collapsed[id] === undefined) {
+            data.collapsed[id] = true;
+          }
+        });
+      }
+      return data;
     }
 
     function saveStorageData(data) {
@@ -2120,17 +2128,41 @@
       });
     }
 
-    function getCardBody(card) {
+    function getCardHeader(card) {
       return (
-        card.querySelector('.card-body, .panel-body, [data-card-body]') ||
-        document.getElementById(`${getCardId(card)}Body`) ||
+        card.querySelector('.card-header, .panel-header, .panel-title, [data-card-header]') ||
+        card.firstElementChild
+      );
+    }
+
+    function getCardBodies(card) {
+      const explicit = Array.prototype.slice.call(
+        card.querySelectorAll('.card-body, .panel-body, [data-card-body]')
+      );
+      if (explicit.length > 0) return explicit;
+
+      const cardId = getCardId(card);
+      const namedBody =
+        document.getElementById(`${cardId}Body`) ||
         document.getElementById(
-          `${getCardId(card)
+          `${cardId
             .replace(/^panel/, '')
             .toLowerCase()}PanelBody`,
         ) ||
-        (card.children.length > 1 ? card.children[1] : null)
-      );
+        card.querySelector('[id$="Body"], [id$="PanelBody"]');
+      if (namedBody && (namedBody.parentNode === card || namedBody.closest('.reorder-card') === card)) {
+        return [namedBody];
+      }
+
+      const header = getCardHeader(card);
+      const bodies = [];
+      for (let i = 0; i < card.children.length; i++) {
+        const child = card.children[i];
+        if (child !== header && !child.classList.contains('card-reorder-controls')) {
+          bodies.push(child);
+        }
+      }
+      return bodies;
     }
 
     function updateControlStates() {
@@ -2152,14 +2184,14 @@
           toggleBtn.textContent = isCollapsed ? '▼' : '▲';
           toggleBtn.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
         }
-        const body = getCardBody(card);
-        if (body) {
+        const bodies = getCardBodies(card);
+        bodies.forEach((body) => {
           if (isCollapsed) {
             body.classList.add('card-collapsed-hidden');
           } else {
             body.classList.remove('card-collapsed-hidden');
           }
-        }
+        });
       });
 
       return order;
@@ -2213,6 +2245,21 @@
           container.appendChild(c);
         }
       });
+    } else if (Array.isArray(options.defaultOrder) && options.defaultOrder.length > 0) {
+      const cardMap = {};
+      initialCards.forEach((c) => {
+        cardMap[getCardId(c)] = c;
+      });
+      options.defaultOrder.forEach((id) => {
+        if (cardMap[id]) {
+          container.appendChild(cardMap[id]);
+        }
+      });
+      initialCards.forEach((c) => {
+        if (options.defaultOrder.indexOf(getCardId(c)) === -1) {
+          container.appendChild(c);
+        }
+      });
     }
 
     // Attach control clusters
@@ -2263,7 +2310,7 @@
         newCluster.appendChild(downBtn);
         newCluster.appendChild(toggleBtn);
 
-        const header = card.querySelector('.card-header, .panel-title, [data-card-header]') || card.firstElementChild;
+        const header = getCardHeader(card);
         if (header) {
           if (typeof window !== 'undefined' && window.getComputedStyle) {
             const disp = window.getComputedStyle(header).display;

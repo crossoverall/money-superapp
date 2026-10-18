@@ -554,17 +554,17 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(rebalHtml.includes('id="goldLotsContainer"'), 'rebalance.html must contain #goldLotsContainer');
       assert.ok(rebalHtml.includes('id="boxGoldTaxExemption"'), 'rebalance.html must contain #boxGoldTaxExemption');
 
-      // Verify layout order: bucketsContainer -> targetDateGlidepath -> thaiGold -> foreignTaxAdvisor -> howto
+      // Verify layout order: bucketsContainer -> howto -> targetDateGlidepath -> thaiGold -> foreignTaxAdvisor (sub-tools at bottom)
       const idxBuckets = rebalHtml.indexOf('id="bucketsContainer"');
+      const idxHowto = rebalHtml.indexOf('id="howto"');
       const idxGlidepath = rebalHtml.indexOf('id="panelTargetDateGlidepath"');
       const idxGold = rebalHtml.indexOf('id="panelThaiGold"');
       const idxForeign = rebalHtml.indexOf('id="panelForeignTaxAdvisor"');
-      const idxHowto = rebalHtml.indexOf('id="howto"');
       assert.ok(idxBuckets !== -1 && idxGlidepath !== -1 && idxGold !== -1 && idxForeign !== -1 && idxHowto !== -1);
-      assert.ok(idxBuckets < idxGlidepath, '#bucketsContainer must precede auxiliary panels');
+      assert.ok(idxBuckets < idxHowto, '#bucketsContainer must precede #howto');
+      assert.ok(idxHowto < idxGlidepath, '#howto must precede bottom auxiliary panels');
       assert.ok(idxGlidepath < idxGold, '#panelTargetDateGlidepath must precede #panelThaiGold');
       assert.ok(idxGold < idxForeign, '#panelThaiGold must precede #panelForeignTaxAdvisor');
-      assert.ok(idxForeign < idxHowto, '#panelForeignTaxAdvisor must precede #howto');
 
       const rebalJs = fs.readFileSync(path.join(ROOT_DIR, 'js/rebalance.js'), 'utf8');
       assert.ok(rebalJs.includes('initGoldCalculator'), 'js/rebalance.js must define initGoldCalculator');

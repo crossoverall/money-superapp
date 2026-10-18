@@ -1,26 +1,40 @@
 ---
-task_id: "SUPERWAVE-PHASE-64"
+task_id: "SDLC-BUGFIX-CARD-LAYOUT-AND-AUXILIARY"
 status: "completed"
-current_stage: "release"
+current_stage: "completed"
 complexity: "level_2"
 iteration_count: 0
 pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Completed in Phase 64 (v2.4.7) - Super-Wave Finale:
-- **Target Date Retirement Glidepath Planner & Comprehensive E2E Test Expansion:**
-  1. Built pure financial math engine `calculateTargetDateGlidepath(params)` in `js/shared.js`:
-     - Dynamically shifts Core (growth/equities) vs Ballast (fixed income/cash) vs Satellite based on years to retirement and risk profile.
-     - Implements smooth glidepath curves based on GPF (กบข. แผนสมดุลตามอายุ) and Vanguard Target Retirement models.
-     - Supports target year cohorts (2035, 2040, 2045, 2050, 2055, 2060) and risk profiles (moderate, aggressive, conservative).
-  2. Implemented interactive calculator card `#panelTargetDateGlidepath` in `rebalance.html` and controller logic in `js/rebalance.js`:
-     - Visual segmented glidepath allocation bar with live percentages.
-     - 1-click `applyGlidepathSplitToPortfolio()` action updating the portfolio's Core/Ballast/Satellite split targets and triggering rebalancing calculations with undo history.
-     - Strategic asset class breakdown advice.
-  3. Harmonized remaining off-theme UI elements:
-     - Mapped `.bg-emerald-50`, `.border-emerald-200`, `.text-emerald-800`, and `#streamTooltip` in `months-slips.html` to Forest Sage semantic tokens.
-  4. Expanded automated test suite:
-     - Added `tests/target-date-glidepath.test.mjs` (6 unit tests).
-     - Expanded `tests/smoke.test.mjs` with Target Date Glidepath and theme consistency assertions.
-     - Expanded `tests/integration-bridges.test.mjs` covering Bridges 7, 8, 9, and 10.
-     - Reached **291 passing tests across 80 suites** with 0 Biome errors and 100% localization key symmetry.
+### Problem Diagnosis & Root Causes
+1. **Multi-Child Collapsing Bug in `initCardLayoutManager` (`js/shared.js`):**
+   - `getCardBody(card)` fell back to `card.children[1]`.
+   - Cards without an explicit `.card-body` wrapper have multiple direct child elements (inputs, tables, summaries, actions).
+   - Toggling `.card-collapsed-hidden` only hid the second element, leaving all other children visible underneath the collapsed header.
+   - **Fix:** Update `initCardLayoutManager` to toggle `.card-collapsed-hidden` on ALL non-header child elements of a card (or all elements in `getCardBodies(card)`), ensuring complete collapse.
+2. **Duplicate Toggle Controls & State Desynchronization in `rebalance.html`:**
+   - `#panelTargetDateGlidepath`, `#panelThaiGold`, and `#panelForeignTaxAdvisor` had legacy inline toggles (`glidepathToggleArrow`, `goldToggleArrow`, `foreignTaxToggleArrow`, custom `onclick` handlers, and inline `style="display:none"`).
+   - When `initCardLayoutManager` injected its own `▲`/`▼` toggle button, two independent arrows appeared side-by-side, causing conflicting click events and broken collapse/expand states.
+   - **Fix:** Retire legacy conflicting toggle arrows and inline handlers. Wire panels to use the unified Card Layout Manager folding mechanism.
+3. **Auxiliary Panels Ordering in `rebalance.html`:**
+   - In HTML markup, `#panelTargetDateGlidepath` was positioned above `#panelThaiGold`, `#panelForeignTaxAdvisor`, and `#howto`.
+   - The user requested moving all 3 auxiliary sub-tools ("Target Date Retirement", "Thai Gold DCA", and "Foreign Investment & Crypto Tax") to the bottom of the page.
+   - **Fix:** Relocate the 3 auxiliary card DOM blocks to the bottom of `rebalance.html` (after `#panelBuckets` and `#howto`, above the action buttons), and initialize them as collapsed by default.
+
+### Atomic SDLC Action Plan
+- **Slice 1: Card Layout Engine Core Fix (`js/shared.js`)**
+  - Make `initCardLayoutManager` manage all non-header child elements when collapsing cards without a single wrapper.
+  - Support `defaultCollapsed` option for specific card IDs so sub-tools can start folded.
+- **Slice 2: Rebalance HTML & Controller Harmonization (`rebalance.html`, `js/rebalance.js`)**
+  - Move `#panelTargetDateGlidepath`, `#panelThaiGold`, and `#panelForeignTaxAdvisor` to the bottom of `rebalance.html`.
+  - Harmonize header structures and remove redundant duplicate toggle arrows/handlers.
+  - Pass `defaultCollapsed: ['panelTargetDateGlidepath', 'panelThaiGold', 'panelForeignTaxAdvisor']` to `initCardLayoutManager`.
+- **Slice 3: QA Verification & Smoke Test Expansion (`tests/smoke.test.mjs`)**
+  - Add headless DOM assertions testing multi-child collapsing behavior and DOM position order in `rebalance.html`.
+  - Run full test suite (`npm test`) and linter (`npx @biomejs/biome lint`).
+- **Slice 4: Independent Security & Adversarial Review (`reviewer.md`)**
+  - Verify ADR-001 offline invariance, zero external network requests, keyboard accessibility, and bilingual parity.
+- **Slice 5: Release & Memory Consolidation (`release.md`)**
+  - Bump patch version, append lessons to `.ai/memory/lessons.md`, commit and push one-by-one to `origin/master`.
+

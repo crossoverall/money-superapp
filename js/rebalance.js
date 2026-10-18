@@ -2639,19 +2639,15 @@ function saveGoldState() {
 }
 
 function toggleThaiGoldCalculator() {
-  const panel = document.getElementById('goldPanelBody');
-  const arrow = document.getElementById('goldToggleArrow');
-  const btn = document.getElementById('btnToggleThaiGold');
-  if (!panel) return;
-  const isHidden = panel.style.display === 'none' || !panel.style.display;
-  panel.style.display = isHidden ? 'block' : 'none';
-  if (arrow) arrow.textContent = isHidden ? '▲' : '▼';
-  if (btn) btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
-  goldState.isOpen = isHidden;
-  saveGoldState();
-  if (isHidden) {
-    updateGoldCalculator();
+  if (rebalanceLayoutManager) {
+    rebalanceLayoutManager.toggleCard('panelThaiGold');
+  } else {
+    const panel = document.getElementById('goldPanelBody');
+    if (!panel) return;
+    const isHidden = panel.classList.contains('card-collapsed-hidden');
+    panel.classList.toggle('card-collapsed-hidden', !isHidden);
   }
+  updateGoldCalculator();
 }
 
 function updateGoldCalculator(save = true) {
@@ -2958,14 +2954,6 @@ function exportGoldToPortfolio() {
 
 function initGoldCalculator() {
   loadGoldState();
-  const panel = document.getElementById('goldPanelBody');
-  const arrow = document.getElementById('goldToggleArrow');
-  const btn = document.getElementById('btnToggleThaiGold');
-  if (goldState.isOpen && panel) {
-    panel.style.display = 'block';
-    if (arrow) arrow.textContent = '▲';
-    if (btn) btn.setAttribute('aria-expanded', 'true');
-  }
 
   const typeEl = document.getElementById('selGoldType');
   const unitEl = document.getElementById('selGoldUnit');
@@ -3027,19 +3015,15 @@ function saveForeignTaxState() {
 }
 
 function toggleForeignTaxAdvisor() {
-  const panel = document.getElementById('foreignTaxPanelBody');
-  const arrow = document.getElementById('foreignTaxToggleArrow');
-  const btn = document.getElementById('btnToggleForeignTax');
-  if (!panel) return;
-  const isHidden = panel.style.display === 'none' || !panel.style.display;
-  panel.style.display = isHidden ? 'block' : 'none';
-  if (arrow) arrow.textContent = isHidden ? '▲' : '▼';
-  if (btn) btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
-  foreignTaxState.isOpen = isHidden;
-  saveForeignTaxState();
-  if (isHidden) {
-    updateForeignTaxUI();
+  if (rebalanceLayoutManager) {
+    rebalanceLayoutManager.toggleCard('panelForeignTaxAdvisor');
+  } else {
+    const panel = document.getElementById('foreignTaxPanelBody');
+    if (!panel) return;
+    const isHidden = panel.classList.contains('card-collapsed-hidden');
+    panel.classList.toggle('card-collapsed-hidden', !isHidden);
   }
+  updateForeignTaxUI();
 }
 
 function setRemittancePreset(amt) {
@@ -3203,12 +3187,6 @@ function initForeignTaxAdvisor() {
   if (domesticNetEl && foreignTaxState.otherDomesticNetIncome != null)
     domesticNetEl.value = foreignTaxState.otherDomesticNetIncome;
 
-  if (foreignTaxState.isOpen && panel) {
-    panel.style.display = 'block';
-    if (arrow) arrow.textContent = '▲';
-    if (btn) btn.setAttribute('aria-expanded', 'true');
-  }
-
   updateForeignTaxUI();
 }
 
@@ -3247,19 +3225,15 @@ function saveGlidepathState() {
 }
 
 function toggleTargetDateGlidepath() {
-  const panel = document.getElementById('glidepathPanelBody');
-  const arrow = document.getElementById('glidepathToggleArrow');
-  const btn = document.getElementById('btnToggleGlidepath');
-  if (!panel) return;
-  const isHidden = panel.style.display === 'none' || !panel.style.display;
-  panel.style.display = isHidden ? 'block' : 'none';
-  if (arrow) arrow.textContent = isHidden ? '▲' : '▼';
-  if (btn) btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
-  glidepathState.isOpen = isHidden;
-  saveGlidepathState();
-  if (isHidden) {
-    updateGlidepathUI();
+  if (rebalanceLayoutManager) {
+    rebalanceLayoutManager.toggleCard('panelTargetDateGlidepath');
+  } else {
+    const panel = document.getElementById('glidepathPanelBody');
+    if (!panel) return;
+    const isHidden = panel.classList.contains('card-collapsed-hidden');
+    panel.classList.toggle('card-collapsed-hidden', !isHidden);
   }
+  updateGlidepathUI();
 }
 
 function setGlidepathCohortPreset(year) {
@@ -3428,19 +3402,9 @@ function initTargetDateGlidepath() {
   const ageEl = document.getElementById('inpGlideCurrentAge');
   const retireAgeEl = document.getElementById('inpGlideRetireAge');
   const riskEl = document.getElementById('selGlideRisk');
-  const panel = document.getElementById('glidepathPanelBody');
-  const arrow = document.getElementById('glidepathToggleArrow');
-  const btn = document.getElementById('btnToggleGlidepath');
-
   if (ageEl && glidepathState.currentAge != null) ageEl.value = glidepathState.currentAge;
   if (retireAgeEl && glidepathState.retireAge != null) retireAgeEl.value = glidepathState.retireAge;
   if (riskEl && glidepathState.riskTolerance) riskEl.value = glidepathState.riskTolerance;
-
-  if (glidepathState.isOpen && panel) {
-    panel.style.display = 'block';
-    if (arrow) arrow.textContent = '▲';
-    if (btn) btn.setAttribute('aria-expanded', 'true');
-  }
 
   updateGlidepathUI();
 }
@@ -3494,5 +3458,21 @@ if (typeof MoneyApp !== 'undefined' && MoneyApp.initCardLayoutManager) {
     container: document.querySelector('.content') || document.body,
     cardSelector: '.reorder-card',
     storageKey: 'moneySuperapp.layout.rebalance.v1',
+    defaultCollapsed: ['panelTargetDateGlidepath', 'panelThaiGold', 'panelForeignTaxAdvisor'],
+    defaultOrder: [
+      'panelBudget',
+      'panelBuckets',
+      'howto',
+      'panelTargetDateGlidepath',
+      'panelThaiGold',
+      'panelForeignTaxAdvisor',
+    ],
+    onToggle: (id, isCollapsed) => {
+      if (!isCollapsed) {
+        if (id === 'panelThaiGold') updateGoldCalculator();
+        else if (id === 'panelForeignTaxAdvisor') updateForeignTaxUI();
+        else if (id === 'panelTargetDateGlidepath') updateGlidepathUI();
+      }
+    },
   });
 }

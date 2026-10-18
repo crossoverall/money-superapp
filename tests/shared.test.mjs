@@ -548,6 +548,148 @@ describe('MoneyApp Shared Core Module', () => {
     it('exports initCardLayoutManager on MoneyApp', () => {
       assert.equal(typeof MoneyApp.initCardLayoutManager, 'function');
     });
+
+    it('manages card folding and reordering with multi-child support and default options', () => {
+      const storage = {};
+      const mockStorage = {
+        getItem: (k) => storage[k] || null,
+        setItem: (k, v) => {
+          storage[k] = v;
+        },
+        removeItem: (k) => {
+          delete storage[k];
+        },
+      };
+
+      function createMockElement(tag, id = '', className = '') {
+        const classListSet = new Set(className ? className.split(' ') : []);
+        const children = [];
+        const el = {
+          tagName: tag.toUpperCase(),
+          id,
+          className,
+          classList: {
+            add: (c) => {
+              classListSet.add(c);
+              el.className = Array.from(classListSet).join(' ');
+            },
+            remove: (c) => {
+              classListSet.delete(c);
+              el.className = Array.from(classListSet).join(' ');
+            },
+            contains: (c) => classListSet.has(c),
+            toggle: (c, force) => {
+              if (force === undefined) {
+                if (classListSet.has(c)) classListSet.delete(c);
+                else classListSet.add(c);
+              } else if (force) classListSet.add(c);
+              else classListSet.delete(c);
+              el.className = Array.from(classListSet).join(' ');
+            },
+          },
+          children,
+          parentNode: null,
+          style: {},
+          getAttribute: (attr) => (attr === 'data-card-id' ? el.id : null),
+          setAttribute: () => {},
+          querySelector: (sel) => {
+            if (sel.includes('.card-header') || sel.includes('.panel-header')) {
+              return (
+                children.find(
+                  (c) => c.className.includes('card-header') || c.className.includes('panel-header'),
+                ) || null
+              );
+            }
+            if (sel.includes('.btn-card-up')) {
+              return children.find((c) => c.className.includes('btn-card-up')) || null;
+            }
+            if (sel.includes('.btn-card-down')) {
+              return children.find((c) => c.className.includes('btn-card-down')) || null;
+            }
+            if (sel.includes('.btn-card-toggle')) {
+              return children.find((c) => c.className.includes('btn-card-toggle')) || null;
+            }
+            if (sel.includes('.card-reorder-controls')) {
+              return children.find((c) => c.className.includes('card-reorder-controls')) || null;
+            }
+            return null;
+          },
+          querySelectorAll: () => [],
+          appendChild: (c) => {
+            c.parentNode = el;
+            children.push(c);
+          },
+          insertBefore: (c, ref) => {
+            c.parentNode = el;
+            const idx = children.indexOf(ref);
+            if (idx !== -1) children.splice(idx, 0, c);
+            else children.push(c);
+          },
+        };
+        Object.defineProperty(el, 'firstElementChild', {
+          get: () => children[0] || null,
+        });
+        return el;
+      }
+
+      const container = createMockElement('div', 'mainContainer');
+      const card1 = createMockElement('div', 'card1', 'reorder-card');
+      const header1 = createMockElement('div', 'hdr1', 'card-header');
+      const bodyChild1 = createMockElement('div', 'b1');
+      const bodyChild2 = createMockElement('div', 'b2');
+      card1.appendChild(header1);
+      card1.appendChild(bodyChild1);
+      card1.appendChild(bodyChild2);
+
+      const card2 = createMockElement('div', 'card2', 'reorder-card');
+      const header2 = createMockElement('div', 'hdr2', 'card-header');
+      const bodyChild3 = createMockElement('div', 'b3');
+      card2.appendChild(header2);
+      card2.appendChild(bodyChild3);
+
+      container.appendChild(card1);
+      container.appendChild(card2);
+
+      container.querySelectorAll = (sel) => {
+        if (sel.includes('.reorder-card')) return [card1, card2];
+        return [];
+      };
+
+      const mockDoc = {
+        querySelector: (sel) => (sel === '#mainContainer' ? container : null),
+        getElementById: (id) => (id === 'card1' ? card1 : id === 'card2' ? card2 : null),
+        createElement: (tag) => createMockElement(tag),
+      };
+
+      const mockWin = {
+        document: mockDoc,
+        localStorage: mockStorage,
+        addEventListener: () => {},
+      };
+
+      const fn = new Function('window', 'document', 'localStorage', `${sharedCode}; return window.MoneyApp;`);
+      const app = fn(mockWin, mockDoc, mockStorage);
+
+      const mgr = app.initCardLayoutManager({
+        container: container,
+        cardSelector: '.reorder-card',
+        storageKey: 'test.layout.v1',
+        defaultCollapsed: ['card1'],
+        defaultOrder: ['card2', 'card1'],
+      });
+
+      assert.ok(mgr, 'initCardLayoutManager must return manager object');
+      // Verify card1 defaulted to collapsed, hiding ALL its non-header children
+      assert.ok(bodyChild1.classList.contains('card-collapsed-hidden'), 'child 1 of card1 must be collapsed');
+      assert.ok(bodyChild2.classList.contains('card-collapsed-hidden'), 'child 2 of card1 must also be collapsed');
+      // Verify card2 is not collapsed
+      assert.ok(!bodyChild3.classList.contains('card-collapsed-hidden'), 'card2 child must not be collapsed');
+
+      // Toggle card1 open
+      mgr.toggleCard('card1');
+      assert.ok(!bodyChild1.classList.contains('card-collapsed-hidden'), 'child 1 of card1 must be expanded');
+      assert.ok(!bodyChild2.classList.contains('card-collapsed-hidden'), 'child 2 of card1 must also be expanded');
+    });
   });
 
   describe('MoneyApp.generateExecutiveDossier (Phase 65 Wealth Dossier)', () => {

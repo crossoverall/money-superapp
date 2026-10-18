@@ -15,6 +15,15 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Card Layout Multi-Child Collapsing & Single Source of Truth for Panel Folding (v2.5.6)
+- **Date & Context:** 2026-10-18, fixing card folding bugs and auxiliary panel positioning in `rebalance.html` and `js/shared.js`.
+- **Problem:** Cards lacking a single enclosing `.card-body` wrapper (e.g. cards having 3-6 direct sibling children such as inputs, summaries, tables, action buttons) only hid `card.children[1]` when collapsed, leaving all remaining children visible and breaking layout. Simultaneously, auxiliary panels had legacy inline toggle click handlers (`onclick="toggle..."`) and chevron arrow icons (`▼`) manipulating inline `style.display`, which collided and desynchronized with the Card Layout Manager's injected toggle button and `.card-collapsed-hidden` class.
+- **Root Cause:** Assuming every card has a single `.card-body` container or at most 2 direct children, and failing to harmonize pre-existing local toggle controls with the newly introduced universal layout manager.
+- **Solution & Rule:**
+  1. In `initCardLayoutManager` (`js/shared.js`), implement `getCardBodies(card)` to return ALL direct non-header child elements of a card when no single body wrapper exists. Toggling collapsed state applies `.card-collapsed-hidden` to every child in the collection.
+  2. Single Source of Truth for visibility: Remove conflicting legacy toggle arrow spans and inline `style="display:none"`. Wire panel toggle actions directly to `rebalanceLayoutManager.toggleCard(id)`.
+  3. Support `defaultCollapsed` and `defaultOrder` options in `initCardLayoutManager` to allow tools to specify default bottom positioning and folded states out of the box.
+
 ### 2026-10-18: Atomic Commit-and-Push Workflow Policy
 - **Date & Context:** 2026-10-18, following delivery of Wave 4 Suite (v2.4.9 - v2.5.5).
 - **Problem:** Batching multiple feature phases locally before pushing can lead to divergence between local and remote states, delaying live deployment for users.
