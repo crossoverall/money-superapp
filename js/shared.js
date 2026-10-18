@@ -2526,6 +2526,170 @@
     };
   }
 
+  /**
+   * Phase 67: Emergency Fund & Income Shock Stress-Tester.
+   * Simulates sudden loss of income (layoff, resignation, illness, or total shock),
+   * compares Barebones survival vs Standard lifestyle drain, and models Section 33
+   * Social Security unemployment benefit offsets and severance buffers.
+   */
+  function calculateIncomeShockStressTest(params) {
+    var p = params || {};
+    var liquidReserve = Math.max(0, Number(p.liquidReserve) || 0);
+    var severanceBuffer = Math.max(0, Number(p.severanceBuffer) || 0);
+    var totalLiquidity = liquidReserve + severanceBuffer;
+
+    var monthlyNeeds = Math.max(0, Number(p.monthlyNeeds) || 0);
+    var monthlyWants = Math.max(0, Number(p.monthlyWants) || 0);
+    var monthlyDebt = Math.max(0, Number(p.monthlyDebtService) || 0);
+
+    var barebonesMonthly = monthlyNeeds + monthlyDebt;
+    var standardMonthly = monthlyNeeds + monthlyWants + monthlyDebt;
+
+    var shockType = p.shockType || 'layoff';
+    var ssoMonthly = 0;
+    var ssoDurationMonths = 0;
+
+    if (shockType === 'layoff') {
+      ssoMonthly = typeof p.customSsoMonthly === 'number' ? p.customSsoMonthly : 7500;
+      ssoDurationMonths = 6;
+    } else if (shockType === 'resignation') {
+      ssoMonthly = typeof p.customSsoMonthly === 'number' ? p.customSsoMonthly : 4500;
+      ssoDurationMonths = 3;
+    } else if (shockType === 'medical') {
+      ssoMonthly = typeof p.customSsoMonthly === 'number' ? p.customSsoMonthly : 7500;
+      ssoDurationMonths = 3;
+    } else {
+      // total_shock
+      ssoMonthly = 0;
+      ssoDurationMonths = 0;
+    }
+
+    // Calculate Barebones Runway without SSO
+    var barebonesRunway = barebonesMonthly > 0 ? totalLiquidity / barebonesMonthly : totalLiquidity > 0 ? 999 : 0;
+
+    // Calculate Standard Runway without SSO
+    var standardRunway = standardMonthly > 0 ? totalLiquidity / standardMonthly : totalLiquidity > 0 ? 999 : 0;
+
+    // Calculate Runway with SSO offset (month-by-month simulation)
+    var rem = totalLiquidity;
+    var ssoRunway = 0;
+    var m;
+    var maxMonths = 360; // 30 years cap
+    var benefit = 0;
+    var netDrain = 0;
+    if (barebonesMonthly <= 0) {
+      ssoRunway = totalLiquidity > 0 ? 999 : 0;
+    } else {
+      for (m = 1; m <= maxMonths; m++) {
+        benefit = m <= ssoDurationMonths ? ssoMonthly : 0;
+        netDrain = Math.max(0, barebonesMonthly - benefit);
+        if (netDrain === 0) {
+          ssoRunway += 1;
+          continue;
+        }
+        if (rem >= netDrain) {
+          rem -= netDrain;
+          ssoRunway += 1;
+        } else {
+          ssoRunway += rem / netDrain;
+          rem = 0;
+          break;
+        }
+      }
+    }
+
+    var extendedMonths = Math.max(0, ssoRunway - barebonesRunway);
+
+    // Risk Level Verdict
+    var riskLevel = 'critical';
+    if (ssoRunway >= 12) {
+      riskLevel = 'safe';
+    } else if (ssoRunway >= 6) {
+      riskLevel = 'moderate';
+    } else if (ssoRunway >= 3) {
+      riskLevel = 'high_risk';
+    } else {
+      riskLevel = 'critical';
+    }
+
+    var ladder = [
+      {
+        step: 1,
+        titleTh: 'เงินสดและเงินฝากออมทรัพย์ฉุกเฉิน (Cash First)',
+        titleEn: 'Emergency Cash & Liquid Savings (Cash First)',
+        amount: liquidReserve,
+        noteTh: 'ใช้สภาพคล่องส่วนนี้ก่อนเป็นลำดับแรกเพื่อหลีกเลี่ยงการขายสินทรัพย์ขาดทุน',
+        noteEn: 'Draw down pure liquid cash first to prevent forced asset fire-sales.',
+      },
+      {
+        step: 2,
+        titleTh: 'สิทธิประโยชน์ว่างงาน ปกส. ม.33 และเงินชดเชยเลิกจ้าง',
+        titleEn: 'Section 33 SSO Unemployment & Severance Buffer',
+        amount: severanceBuffer + ssoMonthly * ssoDurationMonths,
+        noteTh:
+          ssoMonthly > 0
+            ? 'ยื่นเงินชดเชยว่างงาน ปกส. ม.33 ภายใน 30 วัน ได้รับ ' +
+              formatMoney(ssoMonthly) +
+              ' บ./ด. นาน ' +
+              ssoDurationMonths +
+              ' เดือน'
+            : 'ไม่ได้รับเงินชดเชยว่างงานในสถานการณ์นี้',
+        noteEn:
+          ssoMonthly > 0
+            ? 'Claim SSO benefit within 30 days: ' +
+              formatMoney(ssoMonthly) +
+              ' THB/mo for ' +
+              ssoDurationMonths +
+              ' months.'
+            : 'No unemployment offset available under this scenario.',
+      },
+      {
+        step: 3,
+        titleTh: 'กองทุนรวมตลาดเงิน (MMF) และทองคำแท่งสภาพคล่องสูง',
+        titleEn: 'Money Market Funds (MMF) & High-Liquidity Gold',
+        noteTh: 'แปลงสินทรัพย์ความเสี่ยงต่ำเป็นเงินสดเมื่อเงินสำรองหลักเหลือน้อยกว่า 2 เดือน',
+        noteEn: 'Liquidate low-risk defensive holdings when cash buffer drops below 2 months.',
+      },
+      {
+        step: 4,
+        titleTh: 'มาตรการพักชำระหนี้หรือเจรจาปรับโครงสร้างหนี้ฉุกเฉิน',
+        titleEn: 'Debt Moratorium & Emergency Restructuring',
+        noteTh: 'ติดต่อสถาบันการเงินทันทีก่อนเกิดการค้างชำระเพื่อขอลดค่างวดหรือพักเงินต้น',
+        noteEn: 'Proactively contact lenders for loan restructuring or interest pause before default.',
+      },
+    ];
+
+    return {
+      totalAvailableLiquidity: totalLiquidity,
+      liquidReserve: liquidReserve,
+      severanceBuffer: severanceBuffer,
+      barebonesMonthlyExpense: barebonesMonthly,
+      standardMonthlyExpense: standardMonthly,
+      shockType: shockType,
+      ssoMonthlyBenefit: ssoMonthly,
+      ssoBenefitMonths: ssoDurationMonths,
+      scenarios: {
+        barebones: {
+          monthlyDrain: barebonesMonthly,
+          runwayMonths: Math.round(barebonesRunway * 10) / 10,
+          survivalDays: Math.round(barebonesRunway * 30),
+        },
+        standard: {
+          monthlyDrain: standardMonthly,
+          runwayMonths: Math.round(standardRunway * 10) / 10,
+          survivalDays: Math.round(standardRunway * 30),
+        },
+        withSsoOffset: {
+          runwayMonths: Math.round(ssoRunway * 10) / 10,
+          survivalDays: Math.round(ssoRunway * 30),
+          extendedMonths: Math.round(extendedMonths * 10) / 10,
+        },
+      },
+      riskLevel: riskLevel,
+      liquidityLadder: ladder,
+    };
+  }
+
   // Auto-initialize document theme, shortcuts, and swipe navigation when running in browser
   initTheme();
   initShortcutForwarding();
@@ -2567,6 +2731,7 @@
     generateExecutiveDossier: generateExecutiveDossier,
     formatMaskedAmount: formatMaskedAmount,
     calculateThaiEFilingWorksheet: calculateThaiEFilingWorksheet,
+    calculateIncomeShockStressTest: calculateIncomeShockStressTest,
   };
 
   // Expose on global window object
@@ -2614,5 +2779,7 @@
     if (typeof global.formatMaskedAmount === 'undefined') global.formatMaskedAmount = formatMaskedAmount;
     if (typeof global.calculateThaiEFilingWorksheet === 'undefined')
       global.calculateThaiEFilingWorksheet = calculateThaiEFilingWorksheet;
+    if (typeof global.calculateIncomeShockStressTest === 'undefined')
+      global.calculateIncomeShockStressTest = calculateIncomeShockStressTest;
   }
 })(typeof window !== 'undefined' ? window : this);

@@ -98,6 +98,20 @@ const EN = {
   lblTarget50: 'Target 50%',
   lblTarget30: 'Target 30%',
   lblTarget20: 'Target 20%',
+  shockTesterTitle: '⚡ Income Shock & Emergency Stress-Tester',
+  lblShockTesterDesc:
+    'Simulate sudden job loss or a 100% income shock to compare Barebones survival vs Standard lifestyle runway, with Section 33 SSO benefits and severance offsets.',
+  lblShockScenario: 'Shock Scenario',
+  lblShockSeverance: 'Severance Pay / Additional Emergency Cushion (THB)',
+  lblShockSeveranceUnit: 'THB',
+  lblShockBarebonesTitle: 'Barebones (Survival)',
+  lblShockSsoTitle: 'With SSO & Severance Offset',
+  lblShockStandardTitle: 'Standard (Current Lifestyle)',
+  lblShockLadderTitle: 'Liquidity Survival Ladder & Action Steps',
+  optShockLayoff: 'Layoff (SSO 50% max 7,500 THB/mo for 6 months)',
+  optShockResignation: 'Resignation (SSO 30% max 4,500 THB/mo for 3 months)',
+  optShockMedical: 'Medical Leave (SSO 50% max 7,500 THB/mo for 3 months)',
+  optShockTotal: '100% Sudden Shock (Zero SSO benefits)',
 };
 
 const T = {
@@ -230,10 +244,26 @@ if (LANG === 'en') {
     'lblTarget20',
     'txtRemainingTitle',
     'lblResetLayout',
+    'shockTesterTitle',
+    'lblShockTesterDesc',
+    'lblShockScenario',
+    'lblShockSeverance',
+    'lblShockSeveranceUnit',
+    'lblShockBarebonesTitle',
+    'lblShockSsoTitle',
+    'lblShockStandardTitle',
+    'lblShockLadderTitle',
   ].forEach((id) => {
     const el = document.getElementById(id);
     if (el && EN[id]) el.textContent = EN[id];
   });
+  const selShock = document.getElementById('selShockScenario');
+  if (selShock && selShock.options && selShock.options.length >= 4) {
+    selShock.options[0].text = EN.optShockLayoff;
+    selShock.options[1].text = EN.optShockResignation;
+    selShock.options[2].text = EN.optShockMedical;
+    selShock.options[3].text = EN.optShockTotal;
+  }
   const txtResInp = document.getElementById('txtCurrentReserve');
   if (txtResInp && EN.placeholderCurrentReserve) txtResInp.placeholder = EN.placeholderCurrentReserve;
   document.getElementById('incomeAddBtn').textContent = EN.addIncome;
@@ -421,6 +451,9 @@ const defaultState = {
   },
   showEmergencyRunway: false,
   currentEmergencyReserve: 0,
+  showIncomeShockTester: false,
+  shockScenario: 'layoff',
+  shockSeverance: 0,
 };
 
 const state = (() => {
@@ -463,6 +496,10 @@ const state = (() => {
       const showEmergencyRunway = typeof saved.showEmergencyRunway === 'boolean' ? saved.showEmergencyRunway : false;
       const currentEmergencyReserve =
         Number(saved.currentEmergencyReserve) >= 0 ? Number(saved.currentEmergencyReserve) : 0;
+      const showIncomeShockTester =
+        typeof saved.showIncomeShockTester === 'boolean' ? saved.showIncomeShockTester : false;
+      const shockScenario = typeof saved.shockScenario === 'string' ? saved.shockScenario : 'layoff';
+      const shockSeverance = Number(saved.shockSeverance) >= 0 ? Number(saved.shockSeverance) : 0;
       return {
         incomes: Array.isArray(saved.incomes) ? saved.incomes : defaultState.incomes,
         expenses,
@@ -470,6 +507,9 @@ const state = (() => {
         manualOverrides,
         showEmergencyRunway,
         currentEmergencyReserve,
+        showIncomeShockTester,
+        shockScenario,
+        shockSeverance,
       };
     }
   } catch (e) {
@@ -1468,6 +1508,7 @@ function compute() {
   }
 
   updateCashflowVisual(totalIncome, totalExpense, totalSavings, remaining);
+  renderIncomeShockStressTester();
 }
 
 // ── Visual Cashflow Allocation Bar & Waterfall ─────────────────────────────
@@ -2408,6 +2449,171 @@ function onCurrentReserveChange(val) {
   state.currentEmergencyReserve = num;
   compute();
   saveState();
+}
+
+function onToggleShockTester(checked) {
+  state.showIncomeShockTester = !!checked;
+  const content = document.getElementById('shockTesterContent');
+  if (content) {
+    content.style.display = checked ? '' : 'none';
+  }
+  if (checked) {
+    renderIncomeShockStressTester();
+  }
+  saveState();
+}
+
+function onShockScenarioChange(val) {
+  state.shockScenario = val || 'layoff';
+  renderIncomeShockStressTester();
+  saveState();
+}
+
+function onShockSeveranceChange(val) {
+  state.shockSeverance = Math.max(0, parseFloat(val) || 0);
+  renderIncomeShockStressTester();
+  saveState();
+}
+
+function renderIncomeShockStressTester() {
+  const content = document.getElementById('shockTesterContent');
+  if (!state.showIncomeShockTester || !content) return;
+
+  const isEN = LANG === 'en';
+  const reserve = Math.max(0, Number(state.currentEmergencyReserve) || 0);
+  const severance = Math.max(0, Number(state.shockSeverance) || 0);
+
+  const totalIncome = (state.incomes || []).reduce((s, item) => s + (item.value || 0), 0);
+  const totalExpense = (state.expenses || []).reduce((s, item) => s + (item.value || 0), 0);
+  const totalSavings = (state.savings || []).reduce((s, item) => s + (item.value || 0), 0);
+  const remaining = Math.round(totalIncome - totalExpense - totalSavings);
+
+  const budget = calculateBudgetRule503020({
+    totalIncome: totalIncome,
+    expenses: state.expenses,
+    savings: state.savings,
+    remaining: remaining,
+  });
+
+  let debtService = 0;
+  const DEBT_KEYWORDS = ['หนี้', 'ผ่อน', 'กู้', 'loan', 'debt', 'mortgage', 'บัตรเครดิต', 'card'];
+  (state.expenses || []).forEach((item) => {
+    const nm = (item.name || '').toLowerCase();
+    if (DEBT_KEYWORDS.some((kw) => nm.includes(kw))) {
+      debtService += Math.max(0, Number(item.value) || 0);
+    }
+  });
+
+  const shockRes = MoneyApp.calculateIncomeShockStressTest({
+    liquidReserve: reserve,
+    severanceBuffer: severance,
+    monthlyNeeds: budget.needsTotal > 0 ? budget.needsTotal : totalExpense,
+    monthlyWants: budget.wantsTotal,
+    monthlyDebtService: debtService,
+    shockType: state.shockScenario || 'layoff',
+  });
+
+  // 1. Barebones Runway Card
+  const barebonesMoEl = document.getElementById('valShockBarebonesMonths');
+  const barebonesDrainEl = document.getElementById('valShockBarebonesDrain');
+  if (barebonesMoEl) {
+    barebonesMoEl.textContent = `${shockRes.scenarios.barebones.runwayMonths.toFixed(1)} ${isEN ? 'mo.' : 'เดือน'}`;
+  }
+  if (barebonesDrainEl) {
+    barebonesDrainEl.textContent = `${isEN ? 'Monthly Burn' : 'รายจ่าย'}: ${fmt(shockRes.barebonesMonthlyExpense)} ${unit}`;
+  }
+
+  // 2. With SSO Offset Card
+  const ssoMoEl = document.getElementById('valShockSsoMonths');
+  const ssoBonusEl = document.getElementById('valShockSsoBonus');
+  if (ssoMoEl) {
+    ssoMoEl.textContent = `${shockRes.scenarios.withSsoOffset.runwayMonths.toFixed(1)} ${isEN ? 'mo.' : 'เดือน'}`;
+  }
+  if (ssoBonusEl) {
+    ssoBonusEl.textContent = isEN
+      ? `+${shockRes.scenarios.withSsoOffset.extendedMonths.toFixed(1)} mo. buffer from SSO`
+      : `ช่วยยืดเวลาได้ +${shockRes.scenarios.withSsoOffset.extendedMonths.toFixed(1)} เดือน จาก ปกส.`;
+  }
+
+  // 3. Standard Lifestyle Card
+  const stdMoEl = document.getElementById('valShockStandardMonths');
+  const stdDrainEl = document.getElementById('valShockStandardDrain');
+  if (stdMoEl) {
+    stdMoEl.textContent = `${shockRes.scenarios.standard.runwayMonths.toFixed(1)} ${isEN ? 'mo.' : 'เดือน'}`;
+  }
+  if (stdDrainEl) {
+    stdDrainEl.textContent = `${isEN ? 'Standard Burn' : 'รายจ่ายปกติ'}: ${fmt(shockRes.standardMonthlyExpense)} ${unit}`;
+  }
+
+  // 4. Verdict Box
+  const boxVerdict = document.getElementById('boxShockVerdict');
+  const icoVerdict = document.getElementById('icoShockVerdict');
+  const titVerdict = document.getElementById('txtShockVerdictTitle');
+  const descVerdict = document.getElementById('txtShockVerdictDesc');
+
+  if (boxVerdict && titVerdict && descVerdict) {
+    if (shockRes.riskLevel === 'safe') {
+      boxVerdict.style.background = 'rgba(34,197,94,0.12)';
+      boxVerdict.style.border = '1px solid rgba(34,197,94,0.3)';
+      boxVerdict.style.color = '#16a34a';
+      if (icoVerdict) icoVerdict.textContent = '🛡️';
+      titVerdict.textContent = isEN ? 'Safe Buffer (≥ 12 Months Survival)' : 'ระดับความปลอดภัยสูง (รอดได้ ≥ 12 เดือน)';
+      descVerdict.textContent = isEN
+        ? 'Your liquid reserves can sustain extended hardship and allow thorough career transition.'
+        : 'เงินสำรองและสิทธิประโยชน์ครอบคลุมเกิน 1 ปี คุณมีเวลาเพียงพอสำหรับการหางานใหม่หรือฟื้นฟูโดยไม่ต้องรีบร้อน';
+    } else if (shockRes.riskLevel === 'moderate') {
+      boxVerdict.style.background = 'rgba(234,179,8,0.12)';
+      boxVerdict.style.border = '1px solid rgba(234,179,8,0.3)';
+      boxVerdict.style.color = '#ca8a04';
+      if (icoVerdict) icoVerdict.textContent = '⚠️';
+      titVerdict.textContent = isEN
+        ? 'Moderate Buffer (6–12 Months Survival)'
+        : 'ระดับความปลอดภัยปานกลาง (รอดได้ 6–12 เดือน)';
+      descVerdict.textContent = isEN
+        ? 'Meets standard emergency cushion. Prioritize cutting non-essential wants immediately if income ceases.'
+        : 'ผ่านเกณฑ์มาตรฐาน 6 เดือน แนะนำให้เริ่มตัดรายจ่ายฟุ่มเฟือยทันทีเมื่อเกิดเหตุเพื่อขยายระยะเวลา';
+    } else if (shockRes.riskLevel === 'high_risk') {
+      boxVerdict.style.background = 'rgba(249,115,22,0.12)';
+      boxVerdict.style.border = '1px solid rgba(249,115,22,0.3)';
+      boxVerdict.style.color = '#ea580c';
+      if (icoVerdict) icoVerdict.textContent = '🚨';
+      titVerdict.textContent = isEN ? 'High Vulnerability (3–6 Months Survival)' : 'มีความเสี่ยงสูง (รอดได้ 3–6 เดือน)';
+      descVerdict.textContent = isEN
+        ? 'Tight survival window. Apply for SSO benefits immediately and secure emergency credit/moratorium.'
+        : 'ระยะเวลาสั้นมาก ควรยื่นขอรับเงินชดเชยว่างงาน ปกส. ทันทีใน 30 วัน และพิจารณาเจรจาพักหนี้';
+    } else {
+      // critical
+      boxVerdict.style.background = 'rgba(239,68,68,0.12)';
+      boxVerdict.style.border = '1px solid rgba(239,68,68,0.3)';
+      boxVerdict.style.color = '#dc2626';
+      if (icoVerdict) icoVerdict.textContent = '🔥';
+      titVerdict.textContent = isEN ? 'Critical Alert (< 3 Months Survival)' : 'วิกฤติต้องจัดการด่วน (รอดได้ < 3 เดือน)';
+      descVerdict.textContent = isEN
+        ? 'Severely inadequate reserves. Immediate barebones cut and debt restructuring required.'
+        : 'เงินสำรองไม่เพียงพอต่อการอยู่รอด ต้องตัดค่าใช้จ่ายฟุ่มเฟือย 100% ทันทีและเข้าโครงการปรับโครงสร้างหนี้';
+    }
+  }
+
+  // 5. Liquidity Ladder
+  const ladderEl = document.getElementById('listShockLadder');
+  if (ladderEl && shockRes.liquidityLadder) {
+    ladderEl.innerHTML = shockRes.liquidityLadder
+      .map((item) => {
+        const title = isEN ? item.titleEn : item.titleTh;
+        const note = isEN ? item.noteEn : item.noteTh;
+        const amtStr = typeof item.amount === 'number' ? ` · <strong>${fmt(item.amount)} ${unit}</strong>` : '';
+        return `
+          <div style="display:flex; align-items:flex-start; gap:8px; padding:6px 0; border-bottom:1px dashed var(--line);">
+            <div style="font-weight:700; color:var(--brand); min-width:54px;">ขั้นที่ ${item.step}:</div>
+            <div style="flex:1;">
+              <span style="font-weight:600; color:var(--ink);">${title}</span>${amtStr}
+              <div style="font-size:11px; color:var(--ink-dim); margin-top:1px;">${note}</div>
+            </div>
+          </div>
+        `;
+      })
+      .join('');
+  }
 }
 
 function sendToRebalance() {
@@ -3795,7 +4001,22 @@ if (chkShowRunway) chkShowRunway.checked = !!state.showEmergencyRunway;
 if (runwayContentEl) runwayContentEl.style.display = state.showEmergencyRunway ? '' : 'none';
 if (txtCurrentReserve && state.currentEmergencyReserve > 0) txtCurrentReserve.value = state.currentEmergencyReserve;
 
+const chkShowShock = document.getElementById('chkShowShockTester');
+const shockContentEl = document.getElementById('shockTesterContent');
+const selShockEl = document.getElementById('selShockScenario');
+const txtShockSevEl = document.getElementById('txtShockSeverance');
+if (chkShowShock) chkShowShock.checked = !!state.showIncomeShockTester;
+if (shockContentEl) shockContentEl.style.display = state.showIncomeShockTester ? '' : 'none';
+if (selShockEl && state.shockScenario) selShockEl.value = state.shockScenario;
+if (txtShockSevEl && state.shockSeverance > 0) txtShockSevEl.value = state.shockSeverance;
+
+window.onToggleShockTester = onToggleShockTester;
+window.onShockScenarioChange = onShockScenarioChange;
+window.onShockSeveranceChange = onShockSeveranceChange;
+window.renderIncomeShockStressTester = renderIncomeShockStressTester;
+
 compute();
+renderIncomeShockStressTester();
 renderQuickPresetsBar();
 initRemainingLayout();
 

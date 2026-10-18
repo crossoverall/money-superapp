@@ -709,4 +709,65 @@ describe('MoneyApp Shared Core Module', () => {
       assert.ok(res.totalAssessableIncome > res.income401);
     });
   });
+
+  describe('MoneyApp.calculateIncomeShockStressTest (Phase 67 Income Shock Stress-Tester)', () => {
+    const { MoneyApp } = createEnvironment();
+
+    it('models sudden layoff shock with Section 33 unemployment and severance buffer', () => {
+      const res = MoneyApp.calculateIncomeShockStressTest({
+        liquidReserve: 120000,
+        severanceBuffer: 60000, // total 180,000
+        monthlyNeeds: 18000,
+        monthlyWants: 12000,
+        monthlyDebtService: 7000,
+        shockType: 'layoff', // 7,500/mo for 6 months
+      });
+
+      assert.equal(res.totalAvailableLiquidity, 180000);
+      assert.equal(res.barebonesMonthlyExpense, 25000); // 18000 + 7000
+      assert.equal(res.standardMonthlyExpense, 37000); // 18000 + 12000 + 7000
+      assert.equal(res.ssoMonthlyBenefit, 7500);
+      assert.equal(res.ssoBenefitMonths, 6);
+
+      // Barebones without SSO: 180,000 / 25,000 = 7.2 months
+      assert.equal(res.scenarios.barebones.runwayMonths, 7.2);
+
+      // Standard without SSO: 180,000 / 37,000 = 4.9 months
+      assert.equal(res.scenarios.standard.runwayMonths, 4.9);
+
+      // With SSO Layoff Benefit:
+      // First 6 mos: drain = 25,000 - 7,500 = 17,500/mo * 6 = 105,000 spent
+      // Remainder at month 6 = 180,000 - 105,000 = 75,000
+      // Months 7+: drain = 25,000/mo -> 75,000 / 25,000 = 3.0 mos
+      // Total with SSO = 6 + 3.0 = 9.0 mos
+      assert.equal(res.scenarios.withSsoOffset.runwayMonths, 9.0);
+      assert.equal(res.scenarios.withSsoOffset.extendedMonths, 1.8);
+      assert.equal(res.riskLevel, 'moderate'); // >= 6 months
+      assert.ok(Array.isArray(res.liquidityLadder));
+      assert.equal(res.liquidityLadder.length, 4);
+      assert.equal(res.liquidityLadder[0].step, 1);
+    });
+
+    it('evaluates critical risk when reserves are low under total shock scenario', () => {
+      const res = MoneyApp.calculateIncomeShockStressTest({
+        liquidReserve: 30000,
+        severanceBuffer: 0,
+        monthlyNeeds: 20000,
+        monthlyWants: 5000,
+        monthlyDebtService: 5000,
+        shockType: 'total_shock',
+      });
+
+      assert.equal(res.barebonesMonthlyExpense, 25000);
+      assert.equal(res.scenarios.barebones.runwayMonths, 1.2);
+      assert.equal(res.riskLevel, 'critical'); // < 3 months
+    });
+
+    it('gracefully handles zero or missing parameters without throwing', () => {
+      const res = MoneyApp.calculateIncomeShockStressTest({});
+      assert.ok(res.scenarios);
+      assert.equal(res.totalAvailableLiquidity, 0);
+      assert.equal(res.scenarios.barebones.runwayMonths, 0);
+    });
+  });
 });

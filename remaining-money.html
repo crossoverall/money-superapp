@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.5.1">
+  <meta name="version" content="2.5.2">
   <title>คำนวณเงินคงเหลือ</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -610,6 +610,106 @@
           <div id="runwayTargetNote" style="margin-top:12px; font-size:12px; color:var(--ink-dim); line-height:1.6; text-align:left; border-top:1px dashed var(--line); padding-top:10px;"></div>
         </div>
       </div>
+  </div>
+
+  <!-- Phase 67: Emergency Fund & Income Shock Stress-Tester Card -->
+  <div class="panel reorder-card" id="panelEmergencyStressTester" style="margin-top:16px;">
+    <div class="panel-title" style="display:flex; align-items:center; justify-content:space-between; user-select:none;">
+      <label for="chkShowShockTester" style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; font-weight:700; color:var(--ink); margin:0;">
+        <input type="checkbox" id="chkShowShockTester" style="width:17px; height:17px; accent-color:var(--brand, #059669); cursor:pointer; margin:0;" onchange="onToggleShockTester(this.checked)">
+        <span id="shockTesterTitle">⚡ จำลองภาวะวิกฤตรายได้และสภาพคล่องฉุกเฉิน (Income Shock & Stress-Tester)</span>
+      </label>
+    </div>
+
+    <div id="panelEmergencyStressTesterBody">
+      <div id="shockTesterContent" style="display:none; margin-top:14px; border-top:1px solid var(--line); padding-top:14px;">
+        <div style="font-size:12px; color:var(--ink-dim); margin-bottom:14px; line-height:1.5;" id="lblShockTesterDesc">
+          จำลองสถานการณ์ตกงานกะทันหัน หรือสูญเสียรายได้ 100% เพื่อเปรียบเทียบระยะเวลาอยู่รอดระหว่างการใช้ชีวิตตามปกติ vs รัดเข็มขัดเฉพาะรายจ่ายจำเป็น พร้อมประเมินเงินชดเชยประกันสังคม ม.33 และเงินชดเชยตามกฎหมาย
+        </div>
+
+        <!-- Controls Grid -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:16px;">
+          <!-- Scenario selector -->
+          <div>
+            <label for="selShockScenario" id="lblShockScenario" style="display:block; font-size:12px; font-weight:600; color:var(--ink-dim); margin-bottom:6px;">
+              สถานการณ์วิกฤต (Shock Scenario)
+            </label>
+            <select id="selShockScenario" style="width:100%; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:8px 12px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" onchange="onShockScenarioChange(this.value)">
+              <option value="layoff">ถูกเลิกจ้าง (ปกส. ม.33 ชดเชย 50% สูงสุด 7,500 บ./ด. 6 เดือน)</option>
+              <option value="resignation">ลาออกเอง (ปกส. ม.33 ชดเชย 30% สูงสุด 4,500 บ./ด. 3 เดือน)</option>
+              <option value="medical">เจ็บป่วย/พักงาน (ปกส. ม.33 ชดเชย 50% สูงสุด 7,500 บ./ด. 3 เดือน)</option>
+              <option value="total_shock">วิกฤตสูญเสียรายได้ 100% (ไม่มีเงินชดเชยประกันสังคม)</option>
+            </select>
+          </div>
+
+          <!-- Severance Buffer -->
+          <div>
+            <label for="txtShockSeverance" id="lblShockSeverance" style="display:block; font-size:12px; font-weight:600; color:var(--ink-dim); margin-bottom:6px;">
+              เงินชดเชยเลิกจ้างตามกฎหมาย / เงินก้อนสำรองเสริม (บาท)
+            </label>
+            <div style="display:flex; align-items:center; gap:8px; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:8px 12px;">
+              <span style="font-size:15px;">🛡️</span>
+              <input type="number" id="txtShockSeverance" min="0" step="1000" placeholder="0" value="0"
+                     style="flex:1; border:none; background:transparent; font-size:14px; font-weight:600; font-variant-numeric:tabular-nums; color:var(--ink); outline:none;"
+                     oninput="onShockSeveranceChange(this.value)">
+              <span style="font-size:12px; color:var(--ink-faint);" id="lblShockSeveranceUnit">บาท</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3 Output Cards -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px; margin-bottom:16px;">
+          <!-- Card 1: Barebones Runway -->
+          <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px; text-align:center;">
+            <div style="font-size:11px; font-weight:700; color:var(--ink-dim); text-transform:uppercase;" id="lblShockBarebonesTitle">
+              รัดเข็มขัดสูงสุด (Barebones)
+            </div>
+            <div style="font-size:26px; font-weight:700; font-variant-numeric:tabular-nums; color:var(--brand, #059669); margin:6px 0 2px;" id="valShockBarebonesMonths">
+              —
+            </div>
+            <div style="font-size:11px; color:var(--ink-dim);" id="valShockBarebonesDrain">รายจ่ายจำเป็นเท่านั้น</div>
+          </div>
+
+          <!-- Card 2: With SSO Offset -->
+          <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px; text-align:center;">
+            <div style="font-size:11px; font-weight:700; color:var(--ink-dim); text-transform:uppercase;" id="lblShockSsoTitle">
+              รวมเงินชดเชย ปกส. ม.33
+            </div>
+            <div style="font-size:26px; font-weight:700; font-variant-numeric:tabular-nums; color:#2563eb; margin:6px 0 2px;" id="valShockSsoMonths">
+              —
+            </div>
+            <div style="font-size:11px; color:var(--ink-dim);" id="valShockSsoBonus">ช่วยยืดเวลาได้ +0 เดือน</div>
+          </div>
+
+          <!-- Card 3: Standard Lifestyle -->
+          <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px; text-align:center;">
+            <div style="font-size:11px; font-weight:700; color:var(--ink-dim); text-transform:uppercase;" id="lblShockStandardTitle">
+              ใช้ชีวิตปกติ (ไม่ลดรายจ่าย)
+            </div>
+            <div style="font-size:26px; font-weight:700; font-variant-numeric:tabular-nums; color:#e11d48; margin:6px 0 2px;" id="valShockStandardMonths">
+              —
+            </div>
+            <div style="font-size:11px; color:var(--ink-dim);" id="valShockStandardDrain">Needs + Wants + หนี้</div>
+          </div>
+        </div>
+
+        <!-- Risk Status Banner & Recommendations -->
+        <div id="boxShockVerdict" style="padding:12px 14px; border-radius:10px; margin-bottom:14px; display:flex; align-items:center; gap:12px;">
+          <span style="font-size:24px;" id="icoShockVerdict">🛡️</span>
+          <div>
+            <div style="font-size:13px; font-weight:700;" id="txtShockVerdictTitle">ระดับความปลอดภัยของเงินสำรอง</div>
+            <div style="font-size:12px; color:var(--ink-dim); margin-top:2px;" id="txtShockVerdictDesc"></div>
+          </div>
+        </div>
+
+        <!-- Liquidity Ladder Breakdown -->
+        <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:14px;">
+          <div style="font-size:12px; font-weight:700; color:var(--ink); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+            <span>🪜</span> <span id="lblShockLadderTitle">ลำดับขั้นการดึงสภาพคล่องมาใช้ยามวิกฤต (Liquidity Survival Ladder)</span>
+          </div>
+          <div id="listShockLadder" style="font-size:12px; color:var(--ink-dim); display:flex; flex-direction:column; gap:6px; line-height:1.5;"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -629,7 +729,7 @@
       <button class="reset-btn" id="resetBtn" style="color:var(--ink-faint);">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v2.5.1</p>
+  <p class="version-tag">v2.5.2</p>
 
   <!-- Import Preview Modal -->
   <div id="importModal" role="dialog" aria-modal="true" aria-labelledby="importModalTitle" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; display:none; align-items:center; justify-content:center; backdrop-filter:blur(2px);" onclick="if(event.target===this)closeImportModal()">

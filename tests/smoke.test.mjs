@@ -382,6 +382,39 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(dashContent.includes('id="dossier-networth-val"'), 'dashboard.html must define #dossier-networth-val');
     });
 
+    it('verifies remaining-money.html declares Income Shock & Emergency Stress-Tester card with controls', () => {
+      const remainingContent = fs.readFileSync(path.join(ROOT_DIR, 'remaining-money.html'), 'utf8');
+      assert.ok(
+        remainingContent.includes('id="panelEmergencyStressTester"'),
+        'remaining-money.html must define #panelEmergencyStressTester',
+      );
+      assert.ok(
+        remainingContent.includes('id="chkShowShockTester"'),
+        'remaining-money.html must define #chkShowShockTester',
+      );
+      assert.ok(
+        remainingContent.includes('id="selShockScenario"'),
+        'remaining-money.html must define #selShockScenario',
+      );
+      assert.ok(
+        remainingContent.includes('id="txtShockSeverance"'),
+        'remaining-money.html must define #txtShockSeverance',
+      );
+      assert.ok(
+        remainingContent.includes('id="valShockBarebonesMonths"'),
+        'remaining-money.html must define #valShockBarebonesMonths',
+      );
+      assert.ok(
+        remainingContent.includes('id="valShockSsoMonths"'),
+        'remaining-money.html must define #valShockSsoMonths',
+      );
+      assert.ok(
+        remainingContent.includes('id="valShockStandardMonths"'),
+        'remaining-money.html must define #valShockStandardMonths',
+      );
+      assert.ok(remainingContent.includes('id="listShockLadder"'), 'remaining-money.html must define #listShockLadder');
+    });
+
     it('verifies MoneyApp exports detectAndParseThaiBankStatement', () => {
       const sharedContent = fs.readFileSync(path.join(ROOT_DIR, 'js/shared.js'), 'utf8');
       assert.ok(
