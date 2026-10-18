@@ -1,5 +1,5 @@
 ---
-task_id: "SDLC-PHASE-89-ENGINE-MODULARIZATION-BATCH-2"
+task_id: "SDLC-PHASE-90-P2P-SYNC-VAULT-CRYPTO-EXTRACTION"
 status: "completed"
 current_stage: "release"
 complexity: "level_3"
@@ -7,15 +7,9 @@ iteration_count: 0
 pipeline: ["orchestrator", "planner", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Phase 89 Completion Summary (v2.5.32)
-1. Extracted 7 modular calculation engines into `js/engines/`:
-   - `js/engines/inheritance-tax.js` (`calculateThaiInheritanceAndGiftTax`)
-   - `js/engines/retirement-buckets.js` (`calculateRetirementThreeBuckets`)
-   - `js/engines/property-tax.js` (`calculateThaiLandAndBuildingTax`)
-   - `js/engines/bank-parser.js` (`detectAndParseThaiBankStatement`)
-   - `js/engines/glidepath.js` (`calculateTargetDateGlidepath`)
-   - `js/engines/refinance.js` (`simulateDebtPayoff`, `compareDebtVelocity`, `calculateTaxAccrualAndRefundPlan`, `calculateDebtConsolidation`)
-   - `js/engines/stress-test.js` (`calculateIncomeShockStressTest`, `calculateChildEducationFund`)
-2. De-duplicated `js/shared.js` from 3,810 lines down to 2,480 lines (35% reduction, 1,330 lines trimmed) with re-entrancy protected delegation stubs.
-3. Registered in `sw.js` cache manifest, `tests/smoke.test.mjs`, all 7 HTML sub-pages, and test harnesses.
-4. Verified 100% test pass (410 tests) and 0 Biome lint errors/warnings.
+### Phase 90 Completion Summary (v2.5.33)
+1. Extracted `js/engines/vault-crypto.js` (~170 LOC) containing Web Crypto AES-GCM (256-bit) encryption, PBKDF2 key derivation, salt generation, and SHA-256 PIN hashing.
+2. Extracted `js/engines/p2p-sync.js` (~670 LOC) containing the zero-dependency QR code matrix generator and chunked payload P2P device transfer engine.
+3. Trimmed `js/shared.js` from 2,569 lines down to 1,722 lines (cumulative 63% reduction from 4,654 lines).
+4. Registered both engines in `sw.js` cache manifest, `tests/smoke.test.mjs`, `index.html`, all 7 sub-pages, and test harnesses.
+5. All 410 tests pass, 0 Biome warnings, and 100% bilingual parity confirmed.

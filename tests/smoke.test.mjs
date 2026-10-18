@@ -30,6 +30,8 @@ const CORE_JS_SCRIPTS = [
   'js/engines/glidepath.js',
   'js/engines/refinance.js',
   'js/engines/stress-test.js',
+  'js/engines/vault-crypto.js',
+  'js/engines/p2p-sync.js',
   'js/app-shell.js',
   'js/dashboard.js',
   'js/remaining-money.js',

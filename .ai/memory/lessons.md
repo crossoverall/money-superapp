@@ -15,6 +15,18 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Offline P2P QR Engine & Vault Crypto Extraction (v2.5.33)
+- **Date & Context:** 2026-10-18, Phase 90 P2P Sync & Vault Crypto Engine Extraction (`v2.5.33`).
+- **Problem:**
+  1. `js/shared.js` still housed ~840 lines of non-core utilities: the entire Kazuhiko Arase QR Code Model generator / chunked P2P sync engine and Web Crypto AES-GCM vault encryption.
+  2. `index.html` contained the P2P Sync and Vault Encryption UI modals handled by `js/app-shell.js`, but was missing script dependencies for `shared.js`, `vault-crypto.js`, and `p2p-sync.js`.
+- **Root Cause:** P2P device transfer and vault security tools were originally placed directly in `shared.js`.
+- **Solution & Rule:**
+  1. **Modular Engine Extraction (`js/engines/`):** Extracted `js/engines/vault-crypto.js` (~170 LOC) and `js/engines/p2p-sync.js` (~670 LOC) into isolated, self-registering IIFEs attaching cleanly to `global.MoneyApp`.
+  2. **Monolith Shrinkage:** Trimmed `js/shared.js` down to 1,722 lines (a cumulative 63% reduction from its original 4,654 lines).
+  3. **App Shell Independence:** Explicitly loaded `vault-crypto.js`, `p2p-sync.js`, and `shared.js` in `index.html` before `app-shell.js`, fixing potential unhandled exceptions when exporting encrypted vaults or scanning transfer QR codes from the shell.
+  4. Verified 100% test pass (410 tests) and 0 Biome warnings.
+
 ### 2026-10-18: Core Engine Modularization Batch 2 & Monolith Shrinkage (v2.5.32)
 - **Date & Context:** 2026-10-18, Phase 89 Core Engine Modularization Batch 2 (`v2.5.32`).
 - **Problem:**
