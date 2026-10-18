@@ -168,6 +168,18 @@ const translations = {
     dossierUnderinsured: 'ยังขาดความคุ้มครอง',
     dossierTimestampNote: 'สร้างขึ้นอัตโนมัติจากข้อมูลจำลองในเครื่องผู้ใช้ 100% Client-Side Private',
     dossierPrivacyNote: '🔒 ความเป็นส่วนตัวสมบูรณ์ ไม่มีการส่งข้อมูลออกนอกอุปกรณ์',
+    eduTitle: '🎓 กองทุนการศึกษาบุตร & มหาวิทยาลัย (Child Education & Higher Learning Sinking Fund)',
+    eduBadgeDca: 'DCA แนะนำ',
+    eduChildAge: 'อายุปัจจุบันของบุตร (ปี)',
+    eduTargetAge: 'อายุเมื่อเริ่มเข้ามหาวิทยาลัย (ปี)',
+    eduTrack: 'เส้นทางการศึกษา (Education Track)',
+    eduExisting: 'เงินที่เตรียมไว้แล้วปัจจุบัน (บาท)',
+    eduInflation: 'อัตราเงินเฟ้อค่าเล่าเรียน (% ต่อปี)',
+    eduReturn: 'ผลตอบแทนลงทุนคาดหวัง (% ต่อปี)',
+    eduTileTotal: 'เงินกองทุนการศึกษาในอนาคต (4 ปี)',
+    eduTileShortfall: 'เป้าหมายที่ต้องสะสมเพิ่ม (หลังหักเงินเดิม)',
+    eduTileDca: 'ยอด DCA ลงทุนต่อเดือนที่แนะนำ',
+    eduBtnBridge: 'ส่งยอด DCA ไปยังงบประมาณ',
   },
   en: {
     title: 'Financial Dashboard',
@@ -338,6 +350,18 @@ const translations = {
     dossierUnderinsured: 'Coverage Gap',
     dossierTimestampNote: 'Synthesized automatically from local device state (100% Client-Side Private)',
     dossierPrivacyNote: '🔒 Zero Telemetry: Completely private, no data leaves your device',
+    eduTitle: '🎓 Child Education & Higher Learning Sinking Fund Planner',
+    eduBadgeDca: 'Recommended DCA',
+    eduChildAge: "Child's Current Age (Years)",
+    eduTargetAge: 'Target College Entry Age (Years)',
+    eduTrack: 'Education Track',
+    eduExisting: 'Existing Dedicated Savings (THB)',
+    eduInflation: 'Tuition Inflation Rate (% p.a.)',
+    eduReturn: 'Expected Investment Return (% p.a.)',
+    eduTileTotal: 'Future University Fund Needed (4 Yrs)',
+    eduTileShortfall: 'Net Sinking Fund Shortfall',
+    eduTileDca: 'Recommended Monthly DCA Target',
+    eduBtnBridge: 'Bridge Monthly DCA to Budget',
   },
 };
 
@@ -485,7 +509,36 @@ function applyLocalization() {
     'lbl-dossier-col6-title': t.dossierCol6Title,
     'dossier-timestamp-note': t.dossierTimestampNote,
     'dossier-privacy-indicator': t.dossierPrivacyNote,
+    'lbl-edu-title': t.eduTitle,
+    'badge-edu-dca': t.eduBadgeDca,
+    'lbl-edu-child-age': t.eduChildAge,
+    'lbl-edu-target-age': t.eduTargetAge,
+    'lbl-edu-track': t.eduTrack,
+    'lbl-edu-existing': t.eduExisting,
+    'lbl-edu-inflation': t.eduInflation,
+    'lbl-edu-return': t.eduReturn,
+    'lbl-tile-edu-total': t.eduTileTotal,
+    'lbl-tile-edu-shortfall': t.eduTileShortfall,
+    'lbl-tile-edu-dca': t.eduTileDca,
+    'lbl-btn-bridge-edu': t.eduBtnBridge,
   };
+
+  const selEdu = document.getElementById('selEduTrack');
+  if (selEdu && selEdu.options && selEdu.options.length >= 5) {
+    if (LANG === 'en') {
+      selEdu.options[0].text = 'Thai Public University (~60,000 THB/yr)';
+      selEdu.options[1].text = 'Bilingual / English Program (~200,000 THB/yr)';
+      selEdu.options[2].text = 'Thai Private University (~120,000 THB/yr)';
+      selEdu.options[3].text = 'International University in Thailand (~650,000 THB/yr)';
+      selEdu.options[4].text = 'Overseas University Degree (~1,800,000 THB/yr)';
+    } else {
+      selEdu.options[0].text = 'มหาวิทยาลัยรัฐบาลไทย (~60,000 บ./ปี)';
+      selEdu.options[1].text = 'หลักสูตรสองภาษา / EP (~200,000 บ./ปี)';
+      selEdu.options[2].text = 'มหาวิทยาลัยเอกชน (~120,000 บ./ปี)';
+      selEdu.options[3].text = 'มหาวิทยาลัยนานาชาติในไทย (~650,000 บ./ปี)';
+      selEdu.options[4].text = 'มหาวิทยาลัยต่างประเทศ (~1,800,000 บ./ปี)';
+    }
+  }
 
   const mcExplEl = document.getElementById('lbl-mc-expl');
   if (mcExplEl) mcExplEl.innerHTML = t.lblMcExpl;
@@ -1575,6 +1628,189 @@ function updateThreeBucketsCalculator() {
 
 window.syncThreeBucketsFromTools = syncThreeBucketsFromTools;
 window.updateThreeBucketsCalculator = updateThreeBucketsCalculator;
+
+// ── Phase 68: Child Education & Higher Learning Sinking Fund Planner ───────
+const CHILD_EDU_STORAGE_KEY = 'moneySuperapp.childEducation.v1';
+let childEducationState = {
+  childAge: 3,
+  targetAge: 18,
+  educationTrack: 'thai_public',
+  existingSavings: 0,
+  tuitionInflationRate: 5.0,
+  expectedReturn: 6.0,
+};
+
+function initChildEducationPlanner() {
+  try {
+    const raw = localStorage.getItem(CHILD_EDU_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        childEducationState = Object.assign({}, childEducationState, parsed);
+      }
+    }
+  } catch (_e) {}
+
+  const inpAge = document.getElementById('inpEduChildAge');
+  const inpTarget = document.getElementById('inpEduTargetAge');
+  const selTrack = document.getElementById('selEduTrack');
+  const inpExist = document.getElementById('inpEduExistingSavings');
+  const inpInf = document.getElementById('inpEduInflation');
+  const inpRet = document.getElementById('inpEduReturn');
+
+  if (inpAge) inpAge.value = childEducationState.childAge;
+  if (inpTarget) inpTarget.value = childEducationState.targetAge;
+  if (selTrack) selTrack.value = childEducationState.educationTrack;
+  if (inpExist) inpExist.value = childEducationState.existingSavings;
+  if (inpInf) inpInf.value = childEducationState.tuitionInflationRate;
+  if (inpRet) inpRet.value = childEducationState.expectedReturn;
+}
+
+function onChildEducationParamChange() {
+  updateChildEducationPlanner();
+}
+
+function onChildEducationTrackChange(val) {
+  childEducationState.educationTrack = val || 'thai_public';
+  updateChildEducationPlanner();
+}
+
+function updateChildEducationPlanner() {
+  const inpAge = document.getElementById('inpEduChildAge');
+  const inpTarget = document.getElementById('inpEduTargetAge');
+  const selTrack = document.getElementById('selEduTrack');
+  const inpExist = document.getElementById('inpEduExistingSavings');
+  const inpInf = document.getElementById('inpEduInflation');
+  const inpRet = document.getElementById('inpEduReturn');
+
+  const childAge = inpAge ? parseNum(inpAge.value) : 3;
+  const targetAge = inpTarget ? parseNum(inpTarget.value) : 18;
+  const educationTrack = selTrack ? selTrack.value : 'thai_public';
+  const existingSavings = inpExist ? parseNum(inpExist.value) : 0;
+  const tuitionInflationRate = inpInf ? parseNum(inpInf.value) : 5.0;
+  const expectedReturn = inpRet ? parseNum(inpRet.value) : 6.0;
+
+  childEducationState = {
+    childAge,
+    targetAge,
+    educationTrack,
+    existingSavings,
+    tuitionInflationRate,
+    expectedReturn,
+  };
+
+  try {
+    localStorage.setItem(CHILD_EDU_STORAGE_KEY, JSON.stringify(childEducationState));
+  } catch (_e) {}
+
+  const isEN = LANG === 'en';
+  const calc = MoneyApp.calculateChildEducationFund({
+    currentAge: childAge,
+    targetAge: targetAge,
+    educationTrack: educationTrack,
+    existingEducationSavings: existingSavings,
+    tuitionInflationRate: tuitionInflationRate,
+    expectedInvestmentReturn: expectedReturn,
+    degreeDurationYears: 4,
+  });
+
+  // Badge
+  const badgeDca = document.getElementById('badge-edu-dca');
+  if (badgeDca) {
+    if (calc.netFundShortfall <= 0) {
+      badgeDca.style.background = 'var(--ok-dim)';
+      badgeDca.style.color = 'var(--ok)';
+      badgeDca.style.borderColor = 'var(--ok)';
+      badgeDca.textContent = isEN ? '🎉 Fully Funded' : '🎉 กองทุนพร้อมแล้ว';
+    } else {
+      badgeDca.style.background = 'var(--core-dim, rgba(37,99,235,0.12))';
+      badgeDca.style.color = 'var(--core, #2563eb)';
+      badgeDca.style.borderColor = 'var(--core, #2563eb)';
+      badgeDca.textContent = isEN
+        ? `DCA ${formatMoney(calc.monthlyDcaNeeded)}/mo`
+        : `DCA ${formatMoney(calc.monthlyDcaNeeded)} บ./ด.`;
+    }
+  }
+
+  // Tile 1: Future Total
+  const valTotal = document.getElementById('val-edu-future-total');
+  const subTotal = document.getElementById('sub-edu-future-total');
+  if (valTotal) valTotal.textContent = `${formatMoney(calc.totalFutureTuitionNeeded)} ${unit}`;
+  if (subTotal) {
+    subTotal.textContent = isEN
+      ? `Base ${formatMoney(calc.baseAnnualTuition)}/yr + ${calc.tuitionInflationRate}% inflation over ${calc.yearsToCollege} yrs`
+      : `ฐาน ${formatMoney(calc.baseAnnualTuition)} บ./ปี + เงินเฟ้อ ${calc.tuitionInflationRate}% อีก ${calc.yearsToCollege} ปี`;
+  }
+
+  // Tile 2: Shortfall & Funded %
+  const valShortfall = document.getElementById('val-edu-shortfall');
+  const subFunded = document.getElementById('sub-edu-funded-pct');
+  if (valShortfall) valShortfall.textContent = `${formatMoney(calc.netFundShortfall)} ${unit}`;
+  if (subFunded) {
+    subFunded.textContent = isEN
+      ? `Funded: ${calc.fundedRatioPct}% (Future Value of Existing: ${formatMoney(calc.fvExistingSavings)} ${unit})`
+      : `ความพร้อม: ${calc.fundedRatioPct}% (มูลค่าเงินเดิมทบต้น: ${formatMoney(calc.fvExistingSavings)} บาท)`;
+  }
+
+  // Tile 3: Monthly DCA Target
+  const valDca = document.getElementById('val-edu-monthly-dca');
+  const subDca = document.getElementById('sub-edu-dca-horizon');
+  if (valDca) valDca.textContent = `${formatMoney(calc.monthlyDcaNeeded)} ${isEN ? 'THB / mo' : 'บาท / เดือน'}`;
+  if (subDca) {
+    const totalMonths = calc.yearsToCollege * 12;
+    subDca.textContent = isEN
+      ? `Invest continuously for ${totalMonths} months @ ${calc.expectedInvestmentReturn}% p.a.`
+      : `สะสมต่อเนื่อง ${totalMonths} เดือน ที่ผลตอบแทน ${calc.expectedInvestmentReturn}% ต่อปี`;
+  }
+
+  // Advice
+  const adviceEl = document.getElementById('txt-edu-advice');
+  if (adviceEl) {
+    if (calc.netFundShortfall <= 0) {
+      adviceEl.innerHTML = isEN
+        ? '🎉 <strong>Excellent:</strong> Your dedicated savings with compounding returns will comfortably cover expected university tuition!'
+        : '🎉 <strong>ยอดเยี่ยมมาก:</strong> เงินออมที่คุณสะสมไว้ร่วมกับผลตอบแทนทบต้นจะเพียงพอครอบคลุมค่าเล่าเรียนในอนาคตได้อย่างสบายใจ';
+    } else if (calc.yearsToCollege >= 10) {
+      adviceEl.innerHTML = isEN
+        ? `💡 <strong>Long Horizon (${calc.yearsToCollege} Years):</strong> You have a long runway. Compounding returns will fund a major portion of the goal if invested in a diversified growth portfolio.`
+        : `💡 <strong>ระยะเวลาสะสมยาว (${calc.yearsToCollege} ปี):</strong> มีเวลาเตรียมตัวนาน พลังดอกเบี้ยทบต้นจะช่วยทำงานให้คุณได้มาก ควรจัดพอร์ตเติบโต (Core Portfolio) เพื่อสู้เงินเฟ้อ`;
+    } else {
+      adviceEl.innerHTML = isEN
+        ? `⚠️ <strong>Approaching Horizon (${calc.yearsToCollege} Years):</strong> University is approaching soon. Gradually shift portfolio into defensive ballast (Bonds/MMF) to lock in gains.`
+        : `⚠️ <strong>ใกล้ถึงวัยเรียน (${calc.yearsToCollege} ปี):</strong> เหลือเวลาเตรียมตัวน้อย ควรเริ่มปรับสัดส่วนเงินลงทุนเข้าสู่สินทรัพย์ปลอดภัย (ตราสารหนี้/กองทุนตลาดเงิน) เพื่อป้องกันความผันผวน`;
+    }
+  }
+}
+
+function bridgeEduDcaToBudget() {
+  const calc = MoneyApp.calculateChildEducationFund({
+    currentAge: childEducationState.childAge,
+    targetAge: childEducationState.targetAge,
+    educationTrack: childEducationState.educationTrack,
+    existingEducationSavings: childEducationState.existingSavings,
+    tuitionInflationRate: childEducationState.tuitionInflationRate,
+    expectedInvestmentReturn: childEducationState.expectedReturn,
+    degreeDurationYears: 4,
+  });
+
+  if (calc.monthlyDcaNeeded > 0) {
+    try {
+      localStorage.setItem('moneySuperapp.pendingBudget', String(calc.monthlyDcaNeeded));
+    } catch (_e) {}
+    if (window.parent && typeof window.parent.switchToTab === 'function') {
+      window.parent.switchToTab('remaining');
+    } else {
+      const targetOrigin = window.location.origin && window.location.origin !== 'null' ? window.location.origin : '*';
+      window.parent.postMessage({ action: 'switchToTab', target: 'remaining' }, targetOrigin);
+    }
+  }
+}
+
+window.initChildEducationPlanner = initChildEducationPlanner;
+window.onChildEducationParamChange = onChildEducationParamChange;
+window.onChildEducationTrackChange = onChildEducationTrackChange;
+window.updateChildEducationPlanner = updateChildEducationPlanner;
+window.bridgeEduDcaToBudget = bridgeEduDcaToBudget;
 window.initThreeBucketsCalculator = initThreeBucketsCalculator;
 
 // --- Inflation Deflator & Purchasing Power Engine ---
@@ -3032,6 +3268,8 @@ renderDashboardKPIs();
 renderFinancialGoals();
 initInsuranceAdequacy();
 initThreeBucketsCalculator();
+initChildEducationPlanner();
+updateChildEducationPlanner();
 renderExecutiveDossier();
 renderSnapshotsTable();
 renderChart();
@@ -3296,6 +3534,7 @@ function refreshDashboard() {
   renderFinancialGoals();
   updateInsuranceAdequacy();
   updateThreeBucketsCalculator();
+  updateChildEducationPlanner();
   renderExecutiveDossier();
   renderSnapshotsTable();
   renderChart();

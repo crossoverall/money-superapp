@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.5.2">
+  <meta name="version" content="2.5.3">
   <title>ภาพรวมการเงิน</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -837,6 +837,140 @@
     </div>
   </div>
 
+  <!-- Phase 68: Child Education & Higher Learning Sinking Fund Planner -->
+  <div class="panel reorder-card" role="region" aria-label="Child Education &amp; Higher Learning Sinking Fund Planner" id="panelChildEducationPlanner">
+    <div class="panel-title" id="lbl-edu-panel-title">
+      <span id="lbl-edu-title">🎓 กองทุนการศึกษาบุตร &amp; มหาวิทยาลัย (Child Education &amp; Higher Learning Sinking Fund)</span>
+      <span id="badge-edu-dca" style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--ok-dim, #ecfdf5); color:var(--ok, #059669); border:1px solid var(--ok, #059669);">DCA แนะนำ</span>
+    </div>
+
+    <div id="panelChildEducationPlannerBody">
+      <!-- Controls Bar -->
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:12px;">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; font-size:11px;">
+          <!-- Child Current Age -->
+          <div>
+            <label for="inpEduChildAge" style="display:block; font-weight:700; color:var(--ink-dim); margin-bottom:4px;" id="lbl-edu-child-age">
+              อายุปัจจุบันของบุตร (ปี)
+            </label>
+            <input type="number" id="inpEduChildAge" min="0" max="25" step="1" value="3"
+                   style="width:100%; box-sizing:border-box; padding:6px 10px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--ink); font-size:12px; font-weight:700;"
+                   oninput="onChildEducationParamChange()">
+          </div>
+
+          <!-- Target University Start Age -->
+          <div>
+            <label for="inpEduTargetAge" style="display:block; font-weight:700; color:var(--ink-dim); margin-bottom:4px;" id="lbl-edu-target-age">
+              อายุเมื่อเริ่มเข้ามหาวิทยาลัย (ปี)
+            </label>
+            <input type="number" id="inpEduTargetAge" min="15" max="30" step="1" value="18"
+                   style="width:100%; box-sizing:border-box; padding:6px 10px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--ink); font-size:12px; font-weight:700;"
+                   oninput="onChildEducationParamChange()">
+          </div>
+
+          <!-- Education Track -->
+          <div>
+            <label for="selEduTrack" style="display:block; font-weight:700; color:var(--ink-dim); margin-bottom:4px;" id="lbl-edu-track">
+              เส้นทางการศึกษา (Education Track)
+            </label>
+            <select id="selEduTrack"
+                    style="width:100%; box-sizing:border-box; padding:6px 10px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--ink); font-size:12px; font-weight:700;"
+                    onchange="onChildEducationTrackChange(this.value)">
+              <option value="thai_public">มหาวิทยาลัยรัฐบาลไทย (~60,000 บ./ปี)</option>
+              <option value="bilingual">หลักสูตรสองภาษา / EP (~200,000 บ./ปี)</option>
+              <option value="private">มหาวิทยาลัยเอกชน (~120,000 บ./ปี)</option>
+              <option value="inter_thai">มหาวิทยาลัยนานาชาติในไทย (~650,000 บ./ปี)</option>
+              <option value="inter_overseas">มหาวิทยาลัยต่างประเทศ (~1,800,000 บ./ปี)</option>
+            </select>
+          </div>
+
+          <!-- Existing Dedicated Savings -->
+          <div>
+            <label for="inpEduExistingSavings" style="display:block; font-weight:700; color:var(--ink-dim); margin-bottom:4px;" id="lbl-edu-existing">
+              เงินที่เตรียมไว้แล้วปัจจุบัน (บาท)
+            </label>
+            <input type="number" id="inpEduExistingSavings" min="0" step="10000" value="0"
+                   style="width:100%; box-sizing:border-box; padding:6px 10px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--ink); font-size:12px; font-weight:700;"
+                   oninput="onChildEducationParamChange()">
+          </div>
+
+          <!-- Tuition Inflation Rate -->
+          <div>
+            <label for="inpEduInflation" style="display:block; font-weight:700; color:var(--ink-dim); margin-bottom:4px;" id="lbl-edu-inflation">
+              อัตราเงินเฟ้อค่าเล่าเรียน (% ต่อปี)
+            </label>
+            <input type="number" id="inpEduInflation" min="0" max="15" step="0.5" value="5.0"
+                   style="width:100%; box-sizing:border-box; padding:6px 10px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--ink); font-size:12px; font-weight:700;"
+                   oninput="onChildEducationParamChange()">
+          </div>
+
+          <!-- Expected Investment Return -->
+          <div>
+            <label for="inpEduReturn" style="display:block; font-weight:700; color:var(--ink-dim); margin-bottom:4px;" id="lbl-edu-return">
+              ผลตอบแทนลงทุนคาดหวัง (% ต่อปี)
+            </label>
+            <input type="number" id="inpEduReturn" min="0" max="20" step="0.5" value="6.0"
+                   style="width:100%; box-sizing:border-box; padding:6px 10px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--ink); font-size:12px; font-weight:700;"
+                   oninput="onChildEducationParamChange()">
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 Key Metric Tiles -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; margin-bottom:12px;">
+        <!-- Tile 1: Total Future Fund Needed -->
+        <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:12px; text-align:center;">
+          <span style="color:var(--ink-faint); font-size:11px; display:block; margin-bottom:2px;" id="lbl-tile-edu-total">
+            เงินกองทุนการศึกษาในอนาคต (4 ปี)
+          </span>
+          <span id="val-edu-future-total" style="font-size:20px; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums;">
+            0 บาท
+          </span>
+          <div style="font-size:10px; color:var(--ink-dim); margin-top:2px;" id="sub-edu-future-total">
+            รวมเงินเฟ้อสะสม 15 ปี
+          </div>
+        </div>
+
+        <!-- Tile 2: Net Sinking Fund Shortfall -->
+        <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:12px; text-align:center;">
+          <span style="color:var(--ink-faint); font-size:11px; display:block; margin-bottom:2px;" id="lbl-tile-edu-shortfall">
+            เป้าหมายที่ต้องสะสมเพิ่ม (หลังหักเงินเดิม)
+          </span>
+          <span id="val-edu-shortfall" style="font-size:20px; font-weight:800; color:var(--core, #2563eb); font-variant-numeric:tabular-nums;">
+            0 บาท
+          </span>
+          <div style="font-size:10px; color:var(--ink-dim); margin-top:2px;" id="sub-edu-funded-pct">
+            ความพร้อมปัจจุบัน: 0.0%
+          </div>
+        </div>
+
+        <!-- Tile 3: Recommended Monthly DCA -->
+        <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:12px; text-align:center;">
+          <span style="color:var(--ink-faint); font-size:11px; display:block; margin-bottom:2px;" id="lbl-tile-edu-dca">
+            ยอด DCA ลงทุนต่อเดือนที่แนะนำ
+          </span>
+          <span id="val-edu-monthly-dca" style="font-size:20px; font-weight:800; color:var(--ok, #059669); font-variant-numeric:tabular-nums;">
+            0 บาท / เดือน
+          </span>
+          <div style="font-size:10px; color:var(--ink-dim); margin-top:2px;" id="sub-edu-dca-horizon">
+            ลงทุนต่อเนื่อง 180 เดือน
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Bridge & Advice -->
+      <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px 14px; margin-bottom:12px;">
+        <div style="font-size:11.5px; color:var(--ink-dim); line-height:1.45; flex:1; min-width:260px;" id="txt-edu-advice">
+          💡 <strong>กลยุทธ์การออม:</strong> เงินเฟ้อค่าเล่าเรียนสูงกว่าเงินเฟ้อทั่วไป (เฉลี่ย 5% vs 2%) หากเริ่มออมตั้งแต่เนิ่นๆ ดอกเบี้ยทบต้นจะช่วยลดภาระเงินต้นที่ต้องเก็บได้มากกว่า 40%
+        </div>
+        <button type="button" class="btn-action" id="btnBridgeEduToBudget" onclick="bridgeEduDcaToBudget()"
+                style="padding:7px 14px; font-size:11.5px; font-weight:700; border-radius:8px; background:var(--brand, #059669); color:#fff; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+          <span>📊</span> <span id="lbl-btn-bridge-edu">ส่งยอด DCA ไปยังงบประมาณ</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Net Worth Real-Value Inflation Deflator & Purchasing Power Projection Engine -->
   <div class="panel reorder-card" role="region" aria-label="Inflation Deflator &amp; Real Purchasing Power Engine" id="panelInflationDeflator">
     <div class="panel-title" id="lbl-deflator-panel-title">
@@ -1139,7 +1273,7 @@
     </div>
   </div>
 
-  <p class="version-tag">Money Superapp v2.5.2</p>
+  <p class="version-tag">Money Superapp v2.5.3</p>
 
 <script src="js/shared.js"></script>
 <script src="js/dashboard.js"></script>

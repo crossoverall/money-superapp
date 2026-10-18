@@ -2690,6 +2690,115 @@
     };
   }
 
+  /**
+   * Phase 68: Child Education & Higher Learning Sinking Fund Planner.
+   * Models education tuition inflation (typically 4-7% p.a., exceeding headline CPI),
+   * evaluates future values across major Thai education pathways (Government, Bilingual,
+   * Private, Inter-Thai, and Overseas Degrees), factors existing dedicated savings,
+   * and computes required monthly investment DCA to bridge the education gap.
+   */
+  function calculateChildEducationFund(params) {
+    var p = params || {};
+    var currentAge = Math.max(0, Math.min(25, Number(p.currentAge) || 0));
+    var targetAge = Math.max(currentAge, Math.min(30, Number(p.targetAge) || 18));
+    var yearsToCollege = Math.max(0, targetAge - currentAge);
+    var degreeDuration = Math.max(1, Math.min(10, Number(p.degreeDurationYears) || 4));
+
+    // Preset base annual tuition estimates (present value THB)
+    var trackTuitionDefaults = {
+      thai_public: 60000, // Thai Government University ~60,000 THB/yr
+      bilingual: 200000, // Thai English Program / Bilingual ~200,000 THB/yr
+      private: 120000, // Private Thai University ~120,000 THB/yr
+      inter_thai: 650000, // International University in Thailand ~650,000 THB/yr
+      inter_overseas: 1800000, // Overseas University (Tuition + Living) ~1,800,000 THB/yr
+    };
+
+    var track = p.educationTrack || 'thai_public';
+    var baseTuition =
+      typeof p.customAnnualTuition === 'number' && p.customAnnualTuition > 0
+        ? p.customAnnualTuition
+        : trackTuitionDefaults[track] || trackTuitionDefaults.thai_public;
+
+    var inflationRate =
+      typeof p.tuitionInflationRate === 'number' && p.tuitionInflationRate >= 0
+        ? p.tuitionInflationRate / 100
+        : 0.05; // default 5.0% annual tuition inflation
+
+    var returnRate =
+      typeof p.expectedInvestmentReturn === 'number' && p.expectedInvestmentReturn >= 0
+        ? p.expectedInvestmentReturn / 100
+        : 0.06; // default 6.0% expected annual portfolio growth
+
+    var existingSavings = Math.max(0, Number(p.existingEducationSavings) || 0);
+
+    // Sum inflated tuition over degree duration
+    var totalFutureTuitionNeeded = 0;
+    var y;
+    var elapsed = 0;
+    var tuitionInYear = 0;
+    var yearlyProjections = [];
+
+    for (y = 0; y < degreeDuration; y++) {
+      elapsed = yearsToCollege + y;
+      tuitionInYear = Math.round(baseTuition * Math.pow(1 + inflationRate, elapsed));
+      totalFutureTuitionNeeded += tuitionInYear;
+      yearlyProjections.push({
+        degreeYear: y + 1,
+        childAge: targetAge + y,
+        tuitionCost: tuitionInYear,
+      });
+    }
+
+    // Future value of existing dedicated savings at the start of college (compounded over yearsToCollege)
+    var fvExistingSavings = Math.round(existingSavings * Math.pow(1 + returnRate, yearsToCollege));
+
+    // Net education shortfall needed in future
+    var netFundShortfall = Math.max(0, totalFutureTuitionNeeded - fvExistingSavings);
+
+    // Monthly DCA investment needed:
+    var monthlyDcaNeeded = 0;
+    var totalMonths = yearsToCollege * 12;
+    var monthlyRate = 0;
+    var compoundFactor = 0;
+
+    if (netFundShortfall > 0 && totalMonths > 0) {
+      if (returnRate > 0) {
+        monthlyRate = returnRate / 12;
+        // Sinking Fund Annuity Formula: PMT = FV * (r / ((1 + r)^n - 1))
+        compoundFactor = Math.pow(1 + monthlyRate, totalMonths);
+        monthlyDcaNeeded = Math.round(netFundShortfall * (monthlyRate / (compoundFactor - 1)));
+      } else {
+        monthlyDcaNeeded = Math.round(netFundShortfall / totalMonths);
+      }
+    } else if (netFundShortfall > 0 && totalMonths === 0) {
+      monthlyDcaNeeded = netFundShortfall;
+    }
+
+    // Progress percentage
+    var fundedRatio =
+      totalFutureTuitionNeeded > 0
+        ? Math.min(100, Math.round((fvExistingSavings / totalFutureTuitionNeeded) * 1000) / 10)
+        : 100;
+
+    return {
+      currentAge: currentAge,
+      targetAge: targetAge,
+      yearsToCollege: yearsToCollege,
+      degreeDurationYears: degreeDuration,
+      educationTrack: track,
+      baseAnnualTuition: baseTuition,
+      tuitionInflationRate: Math.round(inflationRate * 1000) / 10,
+      expectedInvestmentReturn: Math.round(returnRate * 1000) / 10,
+      existingSavings: existingSavings,
+      fvExistingSavings: fvExistingSavings,
+      totalFutureTuitionNeeded: totalFutureTuitionNeeded,
+      netFundShortfall: netFundShortfall,
+      monthlyDcaNeeded: monthlyDcaNeeded,
+      fundedRatioPct: fundedRatio,
+      yearlyProjections: yearlyProjections,
+    };
+  }
+
   // Auto-initialize document theme, shortcuts, and swipe navigation when running in browser
   initTheme();
   initShortcutForwarding();
@@ -2732,6 +2841,7 @@
     formatMaskedAmount: formatMaskedAmount,
     calculateThaiEFilingWorksheet: calculateThaiEFilingWorksheet,
     calculateIncomeShockStressTest: calculateIncomeShockStressTest,
+    calculateChildEducationFund: calculateChildEducationFund,
   };
 
   // Expose on global window object
@@ -2781,5 +2891,7 @@
       global.calculateThaiEFilingWorksheet = calculateThaiEFilingWorksheet;
     if (typeof global.calculateIncomeShockStressTest === 'undefined')
       global.calculateIncomeShockStressTest = calculateIncomeShockStressTest;
+    if (typeof global.calculateChildEducationFund === 'undefined')
+      global.calculateChildEducationFund = calculateChildEducationFund;
   }
 })(typeof window !== 'undefined' ? window : this);

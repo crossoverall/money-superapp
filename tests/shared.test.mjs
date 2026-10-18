@@ -770,4 +770,71 @@ describe('MoneyApp Shared Core Module', () => {
       assert.equal(res.scenarios.barebones.runwayMonths, 0);
     });
   });
+
+  describe('MoneyApp.calculateChildEducationFund (Phase 68 Child Education Sinking Fund)', () => {
+    const { MoneyApp } = createEnvironment();
+
+    it('calculates Thai public university pathway with inflation and monthly sinking fund DCA', () => {
+      const res = MoneyApp.calculateChildEducationFund({
+        currentAge: 3,
+        targetAge: 18, // 15 years to college
+        educationTrack: 'thai_public', // 60,000 THB/yr
+        tuitionInflationRate: 5.0, // 5%
+        expectedInvestmentReturn: 6.0, // 6%
+        existingEducationSavings: 50000,
+        degreeDurationYears: 4,
+      });
+
+      assert.equal(res.yearsToCollege, 15);
+      assert.equal(res.baseAnnualTuition, 60000);
+      assert.equal(res.yearlyProjections.length, 4);
+
+      // Total future tuition > present base * 4 (due to inflation compounding)
+      assert.ok(res.totalFutureTuitionNeeded > 60000 * 4);
+
+      // Future value of 50,000 over 15 years at 6% = 50,000 * 1.06^15 ~ 119,828
+      assert.ok(res.fvExistingSavings > 100000);
+      assert.ok(res.netFundShortfall > 0);
+      assert.ok(res.monthlyDcaNeeded > 0);
+      assert.ok(res.fundedRatioPct > 0 && res.fundedRatioPct < 100);
+    });
+
+    it('models international overseas pathway with high tuition and zero existing savings', () => {
+      const res = MoneyApp.calculateChildEducationFund({
+        currentAge: 8,
+        targetAge: 18, // 10 years to college
+        educationTrack: 'inter_overseas', // 1,800,000 THB/yr
+        tuitionInflationRate: 5.0,
+        expectedInvestmentReturn: 7.0,
+        existingEducationSavings: 0,
+        degreeDurationYears: 4,
+      });
+
+      assert.equal(res.yearsToCollege, 10);
+      assert.equal(res.existingSavings, 0);
+      assert.equal(res.fvExistingSavings, 0);
+      assert.equal(res.netFundShortfall, res.totalFutureTuitionNeeded);
+      assert.equal(res.fundedRatioPct, 0);
+      assert.ok(res.monthlyDcaNeeded > 0);
+    });
+
+    it('handles zero years to college (child already at target age)', () => {
+      const res = MoneyApp.calculateChildEducationFund({
+        currentAge: 18,
+        targetAge: 18,
+        educationTrack: 'bilingual',
+        existingEducationSavings: 0,
+      });
+
+      assert.equal(res.yearsToCollege, 0);
+      assert.equal(res.monthlyDcaNeeded, res.netFundShortfall);
+    });
+
+    it('gracefully handles missing or empty parameters without throwing', () => {
+      const res = MoneyApp.calculateChildEducationFund({});
+      assert.ok(res.totalFutureTuitionNeeded >= 0);
+      assert.ok(Array.isArray(res.yearlyProjections));
+      assert.equal(res.yearlyProjections.length, 4);
+    });
+  });
 });

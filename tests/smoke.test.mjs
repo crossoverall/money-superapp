@@ -316,6 +316,26 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(dashContent.includes('id="bar-bucket-3"'), 'dashboard.html must define #bar-bucket-3');
     });
 
+    it('verifies dashboard.html declares Child Education & Higher Learning Sinking Fund panel with controls', () => {
+      const dashContent = fs.readFileSync(path.join(ROOT_DIR, 'dashboard.html'), 'utf8');
+      assert.ok(
+        dashContent.includes('id="panelChildEducationPlanner"'),
+        'dashboard.html must define #panelChildEducationPlanner',
+      );
+      assert.ok(
+        dashContent.includes('aria-label="Child Education &amp; Higher Learning Sinking Fund Planner"'),
+        'dashboard.html must define semantic aria-label on child education panel',
+      );
+      assert.ok(dashContent.includes('id="inpEduChildAge"'), 'dashboard.html must define #inpEduChildAge');
+      assert.ok(dashContent.includes('id="inpEduTargetAge"'), 'dashboard.html must define #inpEduTargetAge');
+      assert.ok(dashContent.includes('id="selEduTrack"'), 'dashboard.html must define #selEduTrack');
+      assert.ok(dashContent.includes('id="inpEduExistingSavings"'), 'dashboard.html must define #inpEduExistingSavings');
+      assert.ok(dashContent.includes('id="val-edu-future-total"'), 'dashboard.html must define #val-edu-future-total');
+      assert.ok(dashContent.includes('id="val-edu-shortfall"'), 'dashboard.html must define #val-edu-shortfall');
+      assert.ok(dashContent.includes('id="val-edu-monthly-dca"'), 'dashboard.html must define #val-edu-monthly-dca');
+      assert.ok(dashContent.includes('id="btnBridgeEduToBudget"'), 'dashboard.html must define #btnBridgeEduToBudget');
+    });
+
     it('verifies tax-calculator-base.html declares Dividend Tax Credit panel with inputs and controls', () => {
       const taxContent = fs.readFileSync(path.join(ROOT_DIR, 'tax-calculator-base.html'), 'utf8');
       assert.ok(
