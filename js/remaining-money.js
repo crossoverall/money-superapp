@@ -969,15 +969,17 @@ function createRowContainer(items, type, container) {
              value="${safeDisplayVal}"
              aria-label="${typeLabel} ${i + 1} name"
              ${isAuto ? 'readonly' : ''} placeholder="${placeholder}">
-      <input class="value-input" type="text" inputmode="decimal" data-type="${type}" data-idx="${i}" data-field="value"
-             ${isAuto ? `data-auto="${autoType}"` : ''}
-             value="${item.value}" aria-label="${safeDisplayVal || typeLabel} amount">
-      <span class="unit">${unitText}</span>
-      ${isAuto ? `<span class="auto-badge" data-auto="${autoType}" title="${badgeTooltip}">${autoBadgeLabel}</span>` : ''}
-      <button class="remove-btn ${cannotDelete ? 'disabled' : ''}"
-              data-type="${type}" data-idx="${i}"
-              aria-label="${t('remove')} ${safeDisplayVal}"
-              title="${deleteTitle}">×</button>
+      <div class="entry-controls">
+        <input class="value-input" type="text" inputmode="decimal" data-type="${type}" data-idx="${i}" data-field="value"
+               ${isAuto ? `data-auto="${autoType}"` : ''}
+               value="${item.value}" aria-label="${safeDisplayVal || typeLabel} amount">
+        <span class="unit">${unitText}</span>
+        ${isAuto ? `<span class="auto-badge" data-auto="${autoType}" title="${badgeTooltip}">${autoBadgeLabel}</span>` : ''}
+        <button class="remove-btn ${cannotDelete ? 'disabled' : ''}"
+                data-type="${type}" data-idx="${i}"
+                aria-label="${t('remove')} ${safeDisplayVal}"
+                title="${deleteTitle}">×</button>
+      </div>
     `;
     container.appendChild(row);
   });
@@ -991,11 +993,13 @@ function renderPvdRow() {
     <input class="pvd-label" value="${
       LANG === 'en' ? 'PVD contribution (% of salary)' : 'กองทุนสำรองเลี้ยงชีพ (% ของเงินเดือน)'
     }" readonly aria-label="${LANG === 'en' ? 'PVD Contribution' : 'กองทุนสำรองเลี้ยงชีพ'}">
-    <input class="pvd-pct-input" type="number" id="pvdPctInput"
-           value="${pvdPercent}" min="0" max="100" step="0.5" inputmode="decimal"
-           aria-label="${LANG === 'en' ? 'PVD contribution percentage' : 'อัตราร้อยละเงินสะสมกองทุนสำรองเลี้ยงชีพ'}">
-    <span class="pvd-unit">%</span>
-    <span class="pvd-badge">PVD</span>
+    <div class="entry-controls">
+      <input class="pvd-pct-input" type="number" id="pvdPctInput"
+             value="${pvdPercent}" min="0" max="100" step="0.5" inputmode="decimal"
+             aria-label="${LANG === 'en' ? 'PVD contribution percentage' : 'อัตราร้อยละเงินสะสมกองทุนสำรองเลี้ยงชีพ'}">
+      <span class="pvd-unit">%</span>
+      <span class="pvd-badge">PVD</span>
+    </div>
   `;
   // Insert after salary (position 0), before any removable income rows
   const target = incomeContainer.children[1];

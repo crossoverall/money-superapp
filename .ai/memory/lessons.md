@@ -15,6 +15,21 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: WebKit Flex Control Grouping, Overflow Barriers & Mobile Suffix Breakout (v2.5.12)
+- **Date & Context:** 2026-10-18, eliminating mobile expense row breakout ("THB x" overflowing outside expense box) in `remaining-money.html` (`v2.5.12`).
+- **Problem:** On mobile screens (especially WebKit / iOS Safari, devices with system font scaling > 1.0x, or narrow viewports $\le 390\text{px}$), the text following the expense amount input—specifically `"THB"` and the delete button `"×"` (plus auto-badges)—broke through and protruded past the right border of `.entry-row` and `.panel`.
+- **Root Cause:**
+  1. **Ungrouped Trailing Flex Children:** `.entry-row` contained 5 loose sibling items (`.name-input`, `.value-input`, `.unit`, `.auto-badge`, `.remove-btn`). Because `.name-input` had `flex-basis: auto`, WebKit and mobile browsers refused to compress the input below its intrinsic placeholder/text width, shoving trailing items past the right edge.
+  2. **No Overflow Containment:** Neither `.entry-row` nor `.panel` declared `overflow: hidden;`, allowing uncontained flex items to visually penetrate past the card borders.
+  3. **Loose Spacing on Small Screens:** 82px value input + 6px gaps left insufficient clearance on <= 360px devices.
+- **Solution & Rule:**
+  1. **Dedicated Flex Grouping Container (`.entry-controls`):** Wrap trailing controls (`.value-input`, `.unit`, `.auto-badge`, `.remove-btn`) inside a dedicated container:
+     `<div class="entry-controls">...</div>`. Set `.entry-controls { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; margin-left: auto; }`.
+  2. **Truncate Name Inputs Fully:** Set `.entry-row .name-input { flex: 1 1 0%; min-width: 0; width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }`. This prevents the name from ever pushing the right-side controls out of view.
+  3. **Hard Overflow Barriers:** Always declare `overflow: hidden;` on `.entry-row`, `.panel`, and `.pvd-row`.
+  4. **Compact Mobile Calibration (`@media (max-width: 480px)`):** Set `.value-input` to `flex: 0 0 74px; width: 74px; padding: 4px 5px; font-size: 13.5px;`, `.remove-btn` to `width: 18px; font-size: 16px; padding: 0; text-align: center;`, and gaps to `3px`/`4px`.
+  5. **Cache Invalidation:** Always increment `CACHE_NAME` in `sw.js` (via `node scripts/bump.mjs patch`) so mobile PWAs purge stale cached HTML.
+
 ### 2026-10-18: Flexbox `min-width: auto` Input Overflow & Mobile Row Calibration (v2.5.11)
 - **Date & Context:** 2026-10-18, resolving mobile text breakout and flex overflow bugs in `remaining-money.html` (`v2.5.11`).
 - **Problem:** On mobile viewports ($\le 480\text{px}$, especially 360px–390px devices), budget item inputs (`.value-input`), unit text, badges, and delete buttons burst out past the right boundary of `.entry-row` and `.panel`. In `.pvd-row`, the long label `กองทุนสำรองเลี้ยงชีพ (% ของเงินเดือน)` pushed inputs off-screen. In `#cashflowPanel`, the header flex container forced the title and the 4-button view toggle group into an unwrapped 550px row, spilling off-screen.

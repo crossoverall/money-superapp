@@ -84,6 +84,15 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         remContent.includes('.pvd-label') && remContent.includes('min-width: 0'),
         'remaining-money.html must define min-width: 0 on .pvd-label to prevent flex overflow',
       );
+      assert.ok(
+        remContent.includes('.entry-controls'),
+        'remaining-money.html must define .entry-controls for anchored right-side inputs and units',
+      );
+      const remJs = fs.readFileSync(path.join(ROOT_DIR, 'js', 'remaining-money.js'), 'utf8');
+      assert.ok(
+        remJs.includes('entry-controls'),
+        'js/remaining-money.js must wrap right-side inputs and buttons in .entry-controls',
+      );
     });
   });
 
