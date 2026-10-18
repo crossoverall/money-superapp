@@ -1,5 +1,5 @@
 ---
-task_id: "SDLC-PHASE-76-TAX-ACCRUAL-AND-REFUND-CROSS-TOOL-BRIDGE"
+task_id: "SDLC-PHASE-77-DEBT-REFINANCE-SAVINGS-BRIDGE"
 status: "ready_for_release"
 current_stage: "release"
 complexity: "level_2"
@@ -7,16 +7,15 @@ iteration_count: 0
 pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Problem Diagnosis & Scope (Phase 76 - v2.5.19)
-1. **Annual Tax Due Liquidity Shock:**
-   - When taxpayers owe PIT in March/April, lack of proactive monthly accrual creates cash flow pinches.
-   - Adding 1-click bridge to reserve 1/12th (or 3-month installments) in `remaining-money.html`.
-2. **Underutilized Tax Refunds:**
-   - 1-click bridge from PIT refund in `tax-calculator-base.html` to `debt-calculator.html` as a lump-sum windfall (Month 3) to knock out debt, or to `rebalance.html`.
-3. **Verification & Delivery:**
-   - 100% Thai/English translation symmetry.
+### Problem Diagnosis & Scope (Phase 77 - v2.5.20)
+1. **Refinancing Cash Flow Relief Capture:**
+   - Debt refinancing frees up monthly cash flow (`monthlyPaymentDiff > 0`).
+   - Add 1-click bridge buttons in `debt-calculator.html` to direct freed cash into `remaining-money.html` (household budget) or `rebalance.html` (DCA investing).
+2. **Accelerated Elimination Budgeting:**
+   - When term shortening increases monthly payment (`monthlyPaymentDiff < 0`), bridge extra expense into `remaining-money.html`.
+3. **Core Math Normalization:**
+   - Standardize `calculateDebtConsolidation` into `js/shared.js` (`MoneyApp.calculateDebtConsolidation`).
+4. **Verification & Delivery:**
+   - Unit tests in `tests/shared.test.mjs`.
    - Headless CDP verification (Light, Dark, Mobile).
-   - Full test suite passing & Biome check clean.
-
-
-
+   - Biome clean & 0 errors.

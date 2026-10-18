@@ -1292,4 +1292,81 @@ describe('MoneyApp Shared Core Module', () => {
       assert.equal(empty.amount, 0);
     });
   });
+
+  describe('MoneyApp Debt Consolidation & Refinance Simulator (Phase 77)', () => {
+    it('correctly calculates optimal refinancing with cash flow relief and interest savings', () => {
+      const { MoneyApp } = createEnvironment('th');
+      assert.equal(typeof MoneyApp.calculateDebtConsolidation, 'function');
+
+      const debts = [
+        { balance: 60000, rate: 18, minPayment: 2500 },
+        { balance: 40000, rate: 24, minPayment: 2000 },
+      ];
+      // Total balance: 100,000. Total min: 4,500. Weighted rate: (60k*18 + 40k*24)/100k = 20.4%
+      // Refinance at 9.9% for 36 months:
+      // monthly payment ~ 3,222.
+      // monthlyPaymentDiff = 4500 - 3222 = +1,278 (cash flow relief)
+      const res = MoneyApp.calculateDebtConsolidation({
+        debts,
+        currentTotalInterest: 35000,
+        currentTotalMinPayment: 4500,
+        refinanceRate: 9.9,
+        refinanceTermMonths: 36,
+      });
+
+      assert.equal(res.totalBalance, 100000);
+      assert.equal(res.weightedRate, 20.4);
+      assert.equal(res.refinanceTermMonths, 36);
+      assert.ok(res.newMonthlyPayment > 3000 && res.newMonthlyPayment < 3500);
+      assert.ok(res.monthlyPaymentDiff > 1000, 'monthly payment diff should be positive');
+      assert.ok(res.interestSaved > 0, 'interest saved should be positive');
+      assert.equal(res.verdict, 'optimal');
+    });
+
+    it('correctly detects faster payoff when new term shortens and payment increases', () => {
+      const { MoneyApp } = createEnvironment('th');
+      const debts = [{ balance: 100000, rate: 18, minPayment: 3000 }];
+      // 12 months at 9.9% -> payment ~ 8,787 > 3,000 min payment
+      const res = MoneyApp.calculateDebtConsolidation({
+        debts,
+        currentTotalInterest: 40000,
+        currentTotalMinPayment: 3000,
+        refinanceRate: 9.9,
+        refinanceTermMonths: 12,
+      });
+
+      assert.ok(res.monthlyPaymentDiff < 0, 'payment should increase (diff < 0)');
+      assert.ok(res.interestSaved > 0, 'interest saved should be positive');
+      assert.equal(res.verdict, 'faster_payoff');
+    });
+
+    it('correctly detects higher interest when refinancing rate or term causes loss', () => {
+      const { MoneyApp } = createEnvironment('th');
+      const debts = [{ balance: 50000, rate: 8, minPayment: 2000 }];
+      // Refinance at 25% for 60 months
+      const res = MoneyApp.calculateDebtConsolidation({
+        debts,
+        currentTotalInterest: 5000,
+        currentTotalMinPayment: 2000,
+        refinanceRate: 25,
+        refinanceTermMonths: 60,
+      });
+
+      assert.ok(res.interestSaved <= 0, 'interest saved should be negative or zero');
+      assert.equal(res.verdict, 'higher_interest');
+    });
+
+    it('gracefully handles empty debts and zero balance without throwing', () => {
+      const { MoneyApp } = createEnvironment('th');
+      const empty = MoneyApp.calculateDebtConsolidation({ debts: [] });
+      assert.equal(empty.totalBalance, 0);
+      assert.equal(empty.newMonthlyPayment, 0);
+      assert.equal(empty.interestSaved, 0);
+      assert.equal(empty.monthlyPaymentDiff, 0);
+      assert.equal(empty.verdict, 'no_debt');
+
+      const nullInput = MoneyApp.calculateDebtConsolidation(null);
+      assert.equal(nullInput.verdict, 'no_debt');
+    });
+  });
 });

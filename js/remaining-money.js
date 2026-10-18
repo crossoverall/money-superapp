@@ -38,6 +38,7 @@ const EN = {
   lblBridgeDebtBtn: 'Use surplus to accelerate Debt Payoff',
   bridgeAlertDefault: '✓ Data imported successfully',
   taxAccrualAlertText: '✓ Imported annual tax provision into monthly expenses',
+  refinanceSavingsAlertText: '✓ Imported debt refinance savings / extra payment',
   runwayTitle: '🛡️ Calculate Emergency Runway',
   lblCurrentReserve: 'Current Accumulated Emergency Reserve (THB)',
   lblReserveUnit: 'THB',
@@ -289,6 +290,8 @@ if (LANG === 'en') {
   if (bridgeAlertEl) bridgeAlertEl.textContent = EN.bridgeAlertDefault;
   const taxAlertEl = document.getElementById('taxAccrualAlertText');
   if (taxAlertEl && EN.taxAccrualAlertText) taxAlertEl.textContent = EN.taxAccrualAlertText;
+  const refiAlertEl = document.getElementById('refinanceSavingsAlertText');
+  if (refiAlertEl && EN.refinanceSavingsAlertText) refiAlertEl.textContent = EN.refinanceSavingsAlertText;
   const flbl = document.getElementById('lblImportFile');
   if (flbl) flbl.textContent = EN.importFileLabel;
   const sMet = document.getElementById('lblImportMethod');
@@ -964,6 +967,88 @@ function checkPendingTaxAccrual() {
 
     const banner = document.getElementById('taxAccrualAlert');
     const bannerText = document.getElementById('taxAccrualAlertText');
+    if (bannerText) {
+      bannerText.textContent = notifyMsg;
+    }
+    if (banner) {
+      banner.style.display = 'flex';
+      setTimeout(() => {
+        banner.style.display = 'none';
+      }, 5500);
+    }
+    showBridgeNotification(notifyMsg);
+  } catch (_e) {}
+}
+
+function checkPendingRefinanceSavings() {
+  try {
+    const raw = localStorage.getItem('moneySuperapp.pendingRefinanceSavings');
+    if (!raw) return;
+    const payload = JSON.parse(raw);
+    localStorage.removeItem('moneySuperapp.pendingRefinanceSavings');
+    if (!payload || !payload.amount || payload.amount <= 0) return;
+
+    undoMgr.push(captureSnapshot());
+    const isSavings = payload.type === 'savings';
+    const amount = payload.amount;
+
+    if (isSavings) {
+      const nameTh = 'เงินประหยัดจากการรีไฟแนนซ์';
+      const nameEn = 'Refinance Debt Savings';
+      const itemName = LANG === 'en' ? nameEn : nameTh;
+
+      const existing = (state.savings || []).find(
+        (item) => item.name === nameTh || item.name === nameEn || item.name.includes('รีไฟแนนซ์'),
+      );
+      if (existing) {
+        existing.value = amount;
+        existing.name = itemName;
+      } else {
+        if (!state.savings) state.savings = [];
+        state.savings.push({
+          id: 'refinance_savings_' + Date.now(),
+          name: itemName,
+          value: amount,
+        });
+      }
+    } else {
+      const nameTh = 'ภาระผ่อนเพิ่มจากการรีไฟแนนซ์';
+      const nameEn = 'Refinance Extra Payment';
+      const itemName = LANG === 'en' ? nameEn : nameTh;
+
+      const existing = (state.expenses || []).find(
+        (item) => item.name === nameTh || item.name === nameEn || item.name.includes('รีไฟแนนซ์'),
+      );
+      if (existing) {
+        existing.value = amount;
+        existing.name = itemName;
+      } else {
+        if (!state.expenses) state.expenses = [];
+        state.expenses.push({
+          id: 'refinance_exp_' + Date.now(),
+          name: itemName,
+          value: amount,
+        });
+      }
+    }
+
+    renderRows();
+    renderPvdRow();
+    compute();
+    saveState();
+    updateUndoUI();
+
+    const formattedAmount = `${fmt(amount)} ${LANG === 'en' ? 'THB/month' : 'บาท/เดือน'}`;
+    const notifyMsg = isSavings
+      ? LANG === 'en'
+        ? `✓ Added +${formattedAmount} monthly debt refinance savings into your savings plan!`
+        : `✓ นำเข้าเงินประหยัดค่างวดจากการรีไฟแนนซ์ +${formattedAmount} ลงในแผนเงินออมแล้ว!`
+      : LANG === 'en'
+        ? `✓ Added +${formattedAmount} extra loan payment into monthly expenses!`
+        : `✓ นำเข้าภาระผ่อนเพิ่มจากการรีไฟแนนซ์ +${formattedAmount} ลงในค่าใช้จ่ายแล้ว!`;
+
+    const banner = document.getElementById('refinanceSavingsAlert');
+    const bannerText = document.getElementById('refinanceSavingsAlertText');
     if (bannerText) {
       bannerText.textContent = notifyMsg;
     }
@@ -4094,6 +4179,7 @@ window.renderQuickPresetsBar = renderQuickPresetsBar;
 checkPendingLumpSum();
 checkPendingSlipImport();
 checkPendingTaxAccrual();
+checkPendingRefinanceSavings();
 updateAutoExpenses(pvdPercent);
 renderRows();
 renderPvdRow();
@@ -4156,11 +4242,15 @@ window.addEventListener('storage', (e) => {
   if (e.key === 'moneySuperapp.pendingTaxAccrual') {
     checkPendingTaxAccrual();
   }
+  if (e.key === 'moneySuperapp.pendingRefinanceSavings') {
+    checkPendingRefinanceSavings();
+  }
 });
 window.addEventListener('message', (e) => {
   if (e.data && e.data.action === 'importPendingData') {
     checkPendingLumpSum();
     checkPendingSlipImport();
     checkPendingTaxAccrual();
+    checkPendingRefinanceSavings();
   }
 });

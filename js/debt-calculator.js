@@ -71,6 +71,10 @@ const translations = {
     refinancePmtLabel: 'ค่างวดใหม่/เดือน',
     refinanceSavedLabel: 'ประหยัดดอกเบี้ย',
     refinanceReliefLabel: 'ภาระผ่อน/เดือน',
+    refinanceBridgeHeading: '🚀 ส่งต่อผลลัพธ์ไปยังเครื่องมืออื่น (Cross-Tool Bridges):',
+    btnBridgeRefinanceToBudget: '💰 บันทึกเงินประหยัดค่างวด (+{amount} บ./ด.) เข้าสู่งบประมาณ',
+    btnBridgeRefinanceToRebalance: '📈 ส่งเงินประหยัดค่างวด (+{amount} บ./ด.) ไปจัดพอร์ตลงทุน DCA',
+    btnBridgeRefinanceExpenseToBudget: '⚠️ ส่งภาระผ่อนเพิ่ม (+{amount} บ./ด.) ไปบันทึกในงบประมาณ',
     milestoneRoadTitle: '🛣️ แผนที่สู่เสรีภาพทางการเงิน (Payoff Milestone Road)',
     prepayTitle: '🏡 จำลองโปะหนี้บ้าน & สินเชื่อ (Mortgage & Loan Prepayment)',
     enablePrepay: 'เปิดใช้งาน',
@@ -166,6 +170,10 @@ const translations = {
     refinancePmtLabel: 'New Payment / Mo',
     refinanceSavedLabel: 'Interest Saved',
     refinanceReliefLabel: 'Monthly Cash Flow',
+    refinanceBridgeHeading: '🚀 Next Steps via Cross-Tool Bridges:',
+    btnBridgeRefinanceToBudget: '💰 Send monthly savings (+{amount} /mo) to Budget',
+    btnBridgeRefinanceToRebalance: '📈 Send monthly savings (+{amount} /mo) to DCA Rebalancing',
+    btnBridgeRefinanceExpenseToBudget: '⚠️ Send extra monthly payment (+{amount} /mo) to Budget',
     milestoneRoadTitle: '🛣️ Payoff Milestone Road & Financial Freedom',
     prepayTitle: '🏡 Mortgage & Loan Prepayment Engine',
     enablePrepay: 'Enable',
@@ -259,6 +267,7 @@ if (LANG === 'en') {
     'lbl-refinance-pmt': t.refinancePmtLabel,
     'lbl-refinance-interest-saved': t.refinanceSavedLabel,
     'lbl-refinance-cashflow-relief': t.refinanceReliefLabel,
+    'lbl-refinance-bridge-heading': t.refinanceBridgeHeading,
     'lbl-milestone-road-title': t.milestoneRoadTitle,
     'lbl-print-debt-doc-sub': 'Debt Payoff Strategy & Freedom Horizon Simulation',
     'btn-wf-preset-1': '20K (Mo 1)',
@@ -1233,7 +1242,134 @@ function updateRefinanceVisual(totalDebt, totalMin, avgRate, simCurrent) {
           : `⚠️ <strong>ควรระวัง:</strong> การยืดเวลาผ่อนเป็น ${res.refinanceTermMonths} เดือน ทำให้เสียดอกเบี้ยรวมเพิ่มขึ้น <strong>${formatMoney(Math.abs(res.interestSaved))} ${unit}</strong> แม้ดอกเบี้ยจะต่ำลง`;
     }
   }
+
+  lastRefinanceResult = res;
+
+  const elBridgeContainer = document.getElementById('refinanceBridgeActionsContainer');
+  const btnToBudget = document.getElementById('btnBridgeRefinanceToBudget');
+  const btnToRebalance = document.getElementById('btnBridgeRefinanceToRebalance');
+  const btnExpToBudget = document.getElementById('btnBridgeRefinanceExpenseToBudget');
+
+  if (elBridgeContainer) {
+    if (res.verdict === 'no_debt') {
+      elBridgeContainer.style.display = 'none';
+    } else {
+      const t = translations[LANG] || translations.th;
+      if (res.monthlyPaymentDiff > 0) {
+        elBridgeContainer.style.display = 'block';
+        if (btnToBudget) {
+          btnToBudget.style.display = 'flex';
+          const lbl = document.getElementById('lblBridgeRefinanceToBudget');
+          if (lbl) {
+            lbl.textContent = (t.btnBridgeRefinanceToBudget || '').replace(
+              '{amount}',
+              formatMoney(res.monthlyPaymentDiff),
+            );
+          }
+        }
+        if (btnToRebalance) {
+          btnToRebalance.style.display = 'flex';
+          const lbl = document.getElementById('lblBridgeRefinanceToRebalance');
+          if (lbl) {
+            lbl.textContent = (t.btnBridgeRefinanceToRebalance || '').replace(
+              '{amount}',
+              formatMoney(res.monthlyPaymentDiff),
+            );
+          }
+        }
+        if (btnExpToBudget) {
+          btnExpToBudget.style.display = 'none';
+        }
+      } else if (res.monthlyPaymentDiff < 0) {
+        elBridgeContainer.style.display = 'block';
+        if (btnToBudget) btnToBudget.style.display = 'none';
+        if (btnToRebalance) btnToRebalance.style.display = 'none';
+        if (btnExpToBudget) {
+          btnExpToBudget.style.display = 'flex';
+          const lbl = document.getElementById('lblBridgeRefinanceExpenseToBudget');
+          if (lbl) {
+            lbl.textContent = (t.btnBridgeRefinanceExpenseToBudget || '').replace(
+              '{amount}',
+              formatMoney(Math.abs(res.monthlyPaymentDiff)),
+            );
+          }
+        }
+      } else {
+        elBridgeContainer.style.display = 'none';
+      }
+    }
+  }
 }
+
+let lastRefinanceResult = null;
+
+function sendRefinanceSavingsToBudget() {
+  if (!lastRefinanceResult || lastRefinanceResult.monthlyPaymentDiff <= 0) return;
+  const amount = lastRefinanceResult.monthlyPaymentDiff;
+  try {
+    localStorage.setItem(
+      'moneySuperapp.pendingRefinanceSavings',
+      JSON.stringify({
+        amount: amount,
+        type: 'savings',
+        timestamp: Date.now(),
+      }),
+    );
+  } catch (_e) {}
+  jumpToTab('remaining');
+}
+
+function sendRefinanceSavingsToRebalance() {
+  if (!lastRefinanceResult || lastRefinanceResult.monthlyPaymentDiff <= 0) return;
+  const amount = lastRefinanceResult.monthlyPaymentDiff;
+  try {
+    localStorage.setItem('moneySuperapp.pendingBudget', String(amount));
+    localStorage.setItem('moneySuperapp.pendingRebalanceSource', 'refinance');
+  } catch (_e) {}
+  jumpToTab('rebalance');
+}
+
+function sendRefinanceExpenseToBudget() {
+  if (!lastRefinanceResult || lastRefinanceResult.monthlyPaymentDiff >= 0) return;
+  const amount = Math.abs(lastRefinanceResult.monthlyPaymentDiff);
+  try {
+    localStorage.setItem(
+      'moneySuperapp.pendingRefinanceSavings',
+      JSON.stringify({
+        amount: amount,
+        type: 'expense',
+        timestamp: Date.now(),
+      }),
+    );
+  } catch (_e) {}
+  jumpToTab('remaining');
+}
+
+function jumpToTab(tabId) {
+  if (window.parent && typeof window.parent.switchToTab === 'function') {
+    window.parent.switchToTab(tabId);
+  } else {
+    const targetOrigin = window.location.origin && window.location.origin !== 'null' ? window.location.origin : '*';
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ action: 'switchToTab', target: tabId }, targetOrigin);
+    } else {
+      const fileMap = {
+        remaining: 'remaining-money.html',
+        debt: 'debt-calculator.html',
+        rebalance: 'rebalance.html',
+        dashboard: 'dashboard.html',
+      };
+      if (fileMap[tabId]) {
+        window.location.href = fileMap[tabId];
+      }
+    }
+  }
+}
+
+window.sendRefinanceSavingsToBudget = sendRefinanceSavingsToBudget;
+window.sendRefinanceSavingsToRebalance = sendRefinanceSavingsToRebalance;
+window.sendRefinanceExpenseToBudget = sendRefinanceExpenseToBudget;
+window.jumpToTab = jumpToTab;
 
 /**
  * Render SVG Debt Payoff Trajectory Chart offline without external libraries

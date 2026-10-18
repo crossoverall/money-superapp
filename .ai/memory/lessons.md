@@ -15,6 +15,21 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Debt Refinance Monthly Savings & Faster Payoff Outbound Bridge (v2.5.20)
+- **Date & Context:** 2026-10-18, implementing Phase 77 Debt Refinance Monthly Savings & Faster Payoff Outbound Bridge (`v2.5.20`).
+- **Problem:**
+  1. In `debt-calculator.html`, when debt consolidation or refinancing lowered monthly payments (`monthlyPaymentDiff > 0`), the cash flow relief was only shown as a passive figure. Users had no automated bridge to lock in those savings into their budget in `remaining-money.html` or DCA investment plan in `rebalance.html`, allowing freed cash flow to be easily absorbed into lifestyle creep.
+  2. Conversely, when users chose shorter terms to save massive interest (`monthlyPaymentDiff < 0`), their required monthly payment increased, but they lacked an automated bridge to budget for the extra loan expense in `remaining-money.html`.
+  3. `calculateDebtConsolidation` was previously trapped inside `js/debt-calculator.js` rather than exported via `js/shared.js`.
+- **Root Cause:**
+  1. The refinance simulator lacked an outbound bridge action container and inter-tool state hand-off keys (`moneySuperapp.pendingRefinanceSavings`, `moneySuperapp.pendingRebalanceSource`).
+  2. `remaining-money.html` and `rebalance.html` only handled generic budget or tax accrual inputs without recognizing refinance savings or extra payment payloads.
+- **Solution & Rule:**
+  1. **Standardized Engine:** Migrate and export `MoneyApp.calculateDebtConsolidation` in `js/shared.js`, returning `newMonthlyPayment`, `interestSaved`, `monthlyPaymentDiff`, and `verdict` ('optimal', 'faster_payoff', 'higher_interest', 'no_debt').
+  2. **Bi-Directional Refinance Bridges:** In `debt-calculator.html`, dynamically display `#refinanceBridgeActionsContainer`. For positive relief (`monthlyPaymentDiff > 0`), offer buttons to send savings to budget or to DCA investing. For accelerated payoff (`monthlyPaymentDiff < 0`), offer a button to send the extra loan payment to budget.
+  3. **Targeted Inbound Handlers:** In `remaining-money.html`, implement `checkPendingRefinanceSavings()` to append/update savings or expenses with defensive snapshots and clear feedback banners. In `rebalance.html`, tailor `pendingBudgetAlert` when `pendingRebalanceSource === 'refinance'`.
+
+
 ### 2026-10-18: Annual Tax Due Monthly Accrual & Tax Refund Windfall Cross-Tool Bridge (v2.5.19)
 - **Date & Context:** 2026-10-18, implementing Phase 76 Annual Tax Due Monthly Accrual & Tax Refund Windfall Cross-Tool Bridge (`v2.5.19`).
 - **Problem:**

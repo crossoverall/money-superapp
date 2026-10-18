@@ -3050,6 +3050,104 @@
   }
 
   /**
+   * Phase 77: Debt Consolidation & Refinance Calculation Engine.
+   * Calculates new monthly payment, total interest, interest savings, and monthly cash flow differential (relief or extra payment).
+   *
+   * @param {Object} options
+   * @param {Array<{balance: number, rate: number, minPayment: number}>} [options.debts=[]]
+   * @param {number} [options.currentTotalInterest=0]
+   * @param {number} [options.currentTotalMinPayment=0]
+   * @param {number} [options.refinanceRate=9.9]
+   * @param {number} [options.refinanceTermMonths=36]
+   * @returns {Object} Consolidation metrics including newMonthlyPayment, interestSaved, monthlyPaymentDiff, and verdict
+   */
+  function calculateDebtConsolidation(options) {
+    var opts = options || {};
+    var debts = opts.debts || [];
+    var currentTotalInterest = Math.max(0, Number(opts.currentTotalInterest) || 0);
+    var currentTotalMinPayment = Math.max(0, Number(opts.currentTotalMinPayment) || 0);
+    var refinanceRate = opts.refinanceRate !== undefined ? Math.max(0, Number(opts.refinanceRate) || 0) : 9.9;
+    var refinanceTermMonths =
+      opts.refinanceTermMonths !== undefined ? Math.max(1, Math.floor(Number(opts.refinanceTermMonths) || 36)) : 36;
+
+    var validDebts = [];
+    var totalBalance = 0;
+    var weightedSum = 0;
+    var calculatedMin = 0;
+    var i;
+    var d;
+    var bal;
+    var rate;
+    var min;
+
+    for (i = 0; i < debts.length; i++) {
+      d = debts[i];
+      bal = Math.max(0, Number(d && d.balance) || 0);
+      rate = Math.max(0, Number(d && d.rate) || 0);
+      min = Math.max(0, Number(d && d.minPayment) || 0);
+      if (bal > 0) {
+        validDebts.push({ balance: bal, rate: rate, minPayment: min });
+        totalBalance += bal;
+        weightedSum += bal * rate;
+        calculatedMin += min;
+      }
+    }
+
+    var totalMin = currentTotalMinPayment > 0 ? currentTotalMinPayment : calculatedMin;
+
+    if (totalBalance <= 0) {
+      return {
+        totalBalance: 0,
+        weightedRate: 0,
+        refinanceRate: refinanceRate,
+        refinanceTermMonths: refinanceTermMonths,
+        newMonthlyPayment: 0,
+        totalRefinanceInterest: 0,
+        totalRefinancePaid: 0,
+        interestSaved: 0,
+        monthlyPaymentDiff: 0,
+        verdict: 'no_debt',
+      };
+    }
+
+    var weightedRate = weightedSum / totalBalance;
+    var n = refinanceTermMonths;
+    var monthlyR = refinanceRate / 100 / 12;
+
+    var pmt = 0;
+    if (monthlyR > 0) {
+      pmt = (totalBalance * monthlyR) / (1 - Math.pow(1 + monthlyR, -n));
+    } else {
+      pmt = totalBalance / n;
+    }
+
+    var totalRefinancePaid = pmt * n;
+    var totalRefinanceInterest = Math.max(0, totalRefinancePaid - totalBalance);
+    var interestSaved = Math.round(currentTotalInterest - totalRefinanceInterest);
+    var monthlyPaymentDiff = Math.round(totalMin - pmt);
+
+    var verdict = 'optimal';
+    if (interestSaved <= 0) {
+      verdict = 'higher_interest';
+    } else if (monthlyPaymentDiff < 0) {
+      verdict = 'faster_payoff';
+    }
+
+    return {
+      totalBalance: Math.round(totalBalance),
+      weightedRate: parseFloat(weightedRate.toFixed(2)),
+      refinanceRate: refinanceRate,
+      refinanceTermMonths: n,
+      newMonthlyPayment: Math.round(pmt),
+      totalRefinanceInterest: Math.round(totalRefinanceInterest),
+      totalRefinancePaid: Math.round(totalRefinancePaid),
+      interestSaved: interestSaved,
+      monthlyPaymentDiff: monthlyPaymentDiff,
+      verdict: verdict,
+    };
+  }
+
+  /**
    * Phase 67: Emergency Fund & Income Shock Stress-Tester.
    * Simulates sudden loss of income (layoff, resignation, illness, or total shock),
    * compares Barebones survival vs Standard lifestyle drain, and models Section 33
@@ -4055,6 +4153,7 @@
     simulateDebtPayoff: simulateDebtPayoff,
     compareDebtVelocity: compareDebtVelocity,
     calculateTaxAccrualAndRefundPlan: calculateTaxAccrualAndRefundPlan,
+    calculateDebtConsolidation: calculateDebtConsolidation,
   };
 
   // Expose on global window object
@@ -4122,5 +4221,7 @@
     if (typeof global.compareDebtVelocity === 'undefined') global.compareDebtVelocity = compareDebtVelocity;
     if (typeof global.calculateTaxAccrualAndRefundPlan === 'undefined')
       global.calculateTaxAccrualAndRefundPlan = calculateTaxAccrualAndRefundPlan;
+    if (typeof global.calculateDebtConsolidation === 'undefined')
+      global.calculateDebtConsolidation = calculateDebtConsolidation;
   }
 })(typeof window !== 'undefined' ? window : this);

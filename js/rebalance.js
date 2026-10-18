@@ -2016,13 +2016,22 @@ function checkPendingBudget() {
         localStorage.removeItem('moneySuperapp.pendingBudget');
         saveState();
         updateUndoUI();
+        const source = localStorage.getItem('moneySuperapp.pendingRebalanceSource');
+        localStorage.removeItem('moneySuperapp.pendingRebalanceSource');
         const alertEl = document.getElementById('pendingBudgetAlert');
         const textEl = document.getElementById('pendingBudgetText');
         if (alertEl && textEl) {
-          textEl.textContent =
-            LANG === 'en'
-              ? `✓ Loaded remaining money (${fmt(budget)} THB) as investment budget!`
-              : `✓ ดึงยอดเงินคงเหลือ (${fmt(budget)} บาท) มาเป็นงบลงทุนแล้ว!`;
+          if (source === 'refinance') {
+            textEl.textContent =
+              LANG === 'en'
+                ? `✓ Loaded monthly debt refinance savings (+${fmt(budget)} THB/mo) as investment DCA budget!`
+                : `✓ ดึงเงินประหยัดจากการรีไฟแนนซ์หนี้ (+${fmt(budget)} บาท/เดือน) มาเป็นงบ DCA ลงทุนจัดพอร์ตแล้ว!`;
+          } else {
+            textEl.textContent =
+              LANG === 'en'
+                ? `✓ Loaded remaining money (${fmt(budget)} THB) as investment budget!`
+                : `✓ ดึงยอดเงินคงเหลือ (${fmt(budget)} บาท) มาเป็นงบลงทุนแล้ว!`;
+          }
           alertEl.style.display = 'flex';
         }
       }

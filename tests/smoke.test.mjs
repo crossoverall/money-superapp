@@ -713,6 +713,60 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'shared.js must export calculateTaxAccrualAndRefundPlan',
       );
     });
+
+    it('verifies debt-calculator, remaining-money, and rebalance declare Phase 77 Refinance Bridges and Alerts', () => {
+      const debtHtml = fs.readFileSync(path.join(ROOT_DIR, 'debt-calculator.html'), 'utf8');
+      assert.ok(
+        debtHtml.includes('id="refinanceBridgeActionsContainer"'),
+        'debt-calculator must define #refinanceBridgeActionsContainer',
+      );
+      assert.ok(
+        debtHtml.includes('id="btnBridgeRefinanceToBudget"'),
+        'debt-calculator must define #btnBridgeRefinanceToBudget',
+      );
+      assert.ok(
+        debtHtml.includes('id="btnBridgeRefinanceToRebalance"'),
+        'debt-calculator must define #btnBridgeRefinanceToRebalance',
+      );
+      assert.ok(
+        debtHtml.includes('id="btnBridgeRefinanceExpenseToBudget"'),
+        'debt-calculator must define #btnBridgeRefinanceExpenseToBudget',
+      );
+
+      const remHtml = fs.readFileSync(path.join(ROOT_DIR, 'remaining-money.html'), 'utf8');
+      assert.ok(remHtml.includes('id="refinanceSavingsAlert"'), 'remaining-money must define #refinanceSavingsAlert');
+      assert.ok(
+        remHtml.includes('id="refinanceSavingsAlertText"'),
+        'remaining-money must define #refinanceSavingsAlertText',
+      );
+
+      const debtJs = fs.readFileSync(path.join(ROOT_DIR, 'js/debt-calculator.js'), 'utf8');
+      assert.ok(
+        debtJs.includes('sendRefinanceSavingsToBudget'),
+        'debt-calculator js must define sendRefinanceSavingsToBudget',
+      );
+      assert.ok(
+        debtJs.includes('sendRefinanceSavingsToRebalance'),
+        'debt-calculator js must define sendRefinanceSavingsToRebalance',
+      );
+      assert.ok(
+        debtJs.includes('sendRefinanceExpenseToBudget'),
+        'debt-calculator js must define sendRefinanceExpenseToBudget',
+      );
+
+      const remJs = fs.readFileSync(path.join(ROOT_DIR, 'js/remaining-money.js'), 'utf8');
+      assert.ok(
+        remJs.includes('checkPendingRefinanceSavings'),
+        'remaining-money js must define checkPendingRefinanceSavings',
+      );
+      assert.ok(remJs.includes('pendingRefinanceSavings'), 'remaining-money js must check pendingRefinanceSavings');
+
+      const rebalanceJs = fs.readFileSync(path.join(ROOT_DIR, 'js/rebalance.js'), 'utf8');
+      assert.ok(rebalanceJs.includes('pendingRebalanceSource'), 'rebalance js must handle pendingRebalanceSource');
+
+      const sharedJs = fs.readFileSync(path.join(ROOT_DIR, 'js/shared.js'), 'utf8');
+      assert.ok(sharedJs.includes('calculateDebtConsolidation'), 'shared.js must export calculateDebtConsolidation');
+    });
   });
 
   describe('Bilingual Localization Structural Symmetry', () => {
