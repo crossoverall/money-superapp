@@ -352,6 +352,21 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(taxContent.includes('id="boxLandInstallment"'), 'tax-calculator.html must define #boxLandInstallment');
     });
 
+    it('verifies dashboard.html declares Executive Financial Dossier panel with privacy and print controls', () => {
+      const dashContent = fs.readFileSync(path.join(ROOT_DIR, 'dashboard.html'), 'utf8');
+      assert.ok(
+        dashContent.includes('id="panelExecutiveDossier"'),
+        'dashboard.html must define #panelExecutiveDossier',
+      );
+      assert.ok(
+        dashContent.includes('role="region" aria-label="Executive Financial Dossier"'),
+        'dashboard.html must define semantic aria-label on dossier panel',
+      );
+      assert.ok(dashContent.includes('id="btnTogglePrivacyMask"'), 'dashboard.html must define #btnTogglePrivacyMask');
+      assert.ok(dashContent.includes('id="btnPrintDossier"'), 'dashboard.html must define #btnPrintDossier');
+      assert.ok(dashContent.includes('id="dossier-networth-val"'), 'dashboard.html must define #dossier-networth-val');
+    });
+
     it('verifies MoneyApp exports detectAndParseThaiBankStatement', () => {
       const sharedContent = fs.readFileSync(path.join(ROOT_DIR, 'js/shared.js'), 'utf8');
       assert.ok(

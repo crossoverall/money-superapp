@@ -415,3 +415,37 @@ html { line-height: 1.5; -webkit-text-size-adjust: 100%; }
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
+/* Phase 65: Privacy Masking Mode & Executive Dossier */
+.privacy-mode-active .dossier-amount,
+.privacy-mode-active .privacy-masked {
+  filter: blur(6px);
+  user-select: none;
+  -webkit-user-select: none;
+  transition: filter 0.2s ease;
+}
+
+.privacy-mode-active .dossier-amount:hover,
+.privacy-mode-active .privacy-masked:hover {
+  filter: blur(2px);
+}
+
+@media print {
+  .no-print,
+  .card-action-cluster,
+  #btnResetDashboardLayout,
+  #btnResetRebalanceLayout,
+  #btnResetLayout,
+  #btnResetDebtLayout,
+  #btnResetTaxBaseLayout,
+  #btnResetTaxLayout,
+  #btnResetSlipsLayout {
+    display: none !important;
+  }
+
+  .panel.reorder-card,
+  .card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+

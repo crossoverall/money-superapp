@@ -549,4 +549,94 @@ describe('MoneyApp Shared Core Module', () => {
       assert.equal(typeof MoneyApp.initCardLayoutManager, 'function');
     });
   });
+
+  describe('MoneyApp.generateExecutiveDossier (Phase 65 Wealth Dossier)', () => {
+    const { MoneyApp } = createEnvironment();
+
+    it('synthesizes full multi-domain financial state into executive summary', () => {
+      const sampleData = {
+        dashboardState: {
+          netWorth: 2500000,
+          assets: 3000000,
+          debts: 500000,
+          monthlySavings: 35000,
+          runway: 12.5,
+          financialHealthScore: 88,
+          emergencyFund: 600000,
+        },
+        portfolioState: {
+          totalValue: 1800000,
+          monthlyBudget: 25000,
+        },
+        debtState: {
+          totalDebt: 500000,
+          monthlyPayment: 20000,
+          monthsToFreedom: 28,
+          strategy: 'avalanche',
+        },
+        taxBaseState: {
+          totalIncome: 1200000,
+          totalDeductions: 400000,
+          netTax: 75000,
+          withholding50Tawi: 90000,
+        },
+        insuranceState: {
+          totalNeed: 3000000,
+          existingCoverage: 2000000,
+          protectionGap: 1000000,
+        },
+        retire3bState: {
+          bucket1: 600000,
+          bucket2: 1200000,
+          bucket3: 2000000,
+          ssoPension: 7500,
+        },
+        glidepathState: {
+          equityPct: 75,
+        },
+        isMasked: false,
+      };
+
+      const res = MoneyApp.generateExecutiveDossier(sampleData);
+      assert.ok(res.timestamp);
+      assert.equal(res.isMasked, false);
+
+      // Summary
+      assert.equal(res.summary.netWorth, 2500000);
+      assert.equal(res.summary.grossAssets, 3000000);
+      assert.equal(res.summary.totalDebts, 500000);
+      assert.equal(res.summary.solvencyRatioPct, 83.3);
+      assert.equal(res.summary.runwayMonths, 12.5);
+      assert.equal(res.summary.healthScore, 88);
+
+      // Pillars
+      assert.equal(res.pillars.runway.status, 'healthy');
+      assert.equal(res.pillars.investments.portfolioValue, 1800000);
+      assert.equal(res.pillars.investments.monthlyDca, 25000);
+      assert.equal(res.pillars.investments.glidepathEquityPct, 75);
+      assert.equal(res.pillars.debts.monthsToFreedom, 28);
+      assert.equal(res.pillars.debts.isDebtFree, false);
+      assert.equal(res.pillars.insurance.protectionGap, 1000000);
+      assert.equal(res.pillars.insurance.adequacyPct, 67);
+      assert.equal(res.pillars.tax.refundOrPayable, 15000); // 90000 - 75000 = 15000 refund
+      assert.equal(res.pillars.retirement.monthlySsoPension, 7500);
+    });
+
+    it('gracefully handles missing or empty states with safe defaults', () => {
+      const res = MoneyApp.generateExecutiveDossier({});
+      assert.ok(res.summary);
+      assert.equal(res.summary.netWorth, 0);
+      assert.equal(res.summary.totalDebts, 0);
+      assert.equal(res.summary.solvencyRatioPct, 100); // 0 debt = 100% solvent
+      assert.equal(res.pillars.debts.isDebtFree, true);
+      assert.equal(res.pillars.runway.status, 'critical');
+    });
+
+    it('formats masked amounts when privacy mode is active', () => {
+      assert.equal(MoneyApp.formatMaskedAmount(150000, true), '฿ ••••••');
+      assert.equal(MoneyApp.formatMaskedAmount(150000, true, 'THB'), 'THB ••••••');
+      assert.equal(MoneyApp.formatMaskedAmount(150000, false), '150,000');
+      assert.equal(MoneyApp.formatMaskedAmount(150000, false, 'บาท'), '150,000 บาท');
+    });
+  });
 });

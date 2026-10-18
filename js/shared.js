@@ -2248,6 +2248,141 @@
     };
   }
 
+  /**
+   * Phase 65: Synthesizes high-level cross-domain financial metrics into an
+   * Executive Dossier data structure across Net Worth, Runway, Investments,
+   * Debts, Insurance, and Taxes.
+   */
+  function generateExecutiveDossier(params) {
+    var p = params || {};
+    var dash = p.dashboardState || {};
+    var port = p.portfolioState || {};
+    var debt = p.debtState || {};
+    var tax = p.taxBaseState || {};
+    var slips = p.slipsState || {};
+    var rem = p.remainingState || {};
+    var ins = p.insuranceState || {};
+    var ret3b = p.retire3bState || {};
+    var glide = p.glidepathState || {};
+    var isMasked = Boolean(p.isMasked);
+
+    // 1. Executive Summary & Net Worth
+    var netWorth = typeof dash.netWorth === 'number' ? dash.netWorth : (dash.assets || 0) - (dash.debts || 0);
+    var grossAssets = typeof dash.assets === 'number' ? dash.assets : netWorth + (dash.debts || 0);
+    var totalDebts = typeof dash.debts === 'number' ? dash.debts : debt.totalDebt || 0;
+    if (grossAssets < netWorth + totalDebts) {
+      grossAssets = Math.max(0, netWorth + totalDebts);
+    }
+    var solvencyRatioPct =
+      grossAssets > 0
+        ? Math.min(100, Math.max(0, Math.round((netWorth / grossAssets) * 1000) / 10))
+        : totalDebts === 0
+          ? 100
+          : 0;
+
+    var monthlyIncome = rem.monthlyIncome || slips.monthlySalary || 0;
+    var monthlyExpense = rem.monthlyExpense || dash.monthlyExpenses || 0;
+    var monthlySavings = rem.monthlySavings || dash.monthlySavings || Math.max(0, monthlyIncome - monthlyExpense);
+    var emergencyFunds = dash.emergencyFund || rem.emergencyFund || 0;
+    var runwayMonths =
+      typeof dash.runway === 'number'
+        ? dash.runway
+        : monthlyExpense > 0
+          ? Math.round((emergencyFunds / monthlyExpense) * 10) / 10
+          : 0;
+    var healthScore = typeof dash.financialHealthScore === 'number' ? dash.financialHealthScore : 75;
+
+    // 2. Pillars
+    var runwayStatus = runwayMonths >= 6 ? 'healthy' : runwayMonths >= 3 ? 'caution' : 'critical';
+
+    var portfolioValue = port.totalValue || dash.investments || 0;
+    var monthlyDca = port.monthlyBudget || 0;
+    var glidepathEquityPct = typeof glide.equityPct === 'number' ? glide.equityPct : 0;
+
+    var debtPayoffMonths =
+      debt.monthsToFreedom ||
+      (debt.totalDebt > 0 && debt.monthlyPayment > 0 ? Math.ceil(debt.totalDebt / debt.monthlyPayment) : 0);
+    var debtStrategy = debt.strategy || 'avalanche';
+    var isDebtFree = totalDebts <= 0;
+
+    var insNeed = ins.totalNeed || 0;
+    var insCoverage = ins.existingCoverage || 0;
+    var insGap = typeof ins.protectionGap === 'number' ? ins.protectionGap : Math.max(0, insNeed - insCoverage);
+    var insAdequacyPct = insNeed > 0 ? Math.round((insCoverage / insNeed) * 100) : insCoverage > 0 ? 100 : 0;
+
+    var assessableIncome = tax.totalIncome || slips.annualTotalIncome || 0;
+    var taxDeductions = tax.totalDeductions || slips.annualDeductions || 0;
+    var projectedTax = tax.netTax || slips.annualProjectedTax || 0;
+    var taxWithheld = tax.withholding50Tawi || slips.annualTaxWithheld || 0;
+    var taxBalance = taxWithheld - projectedTax; // > 0: refund, < 0: payable
+
+    var b1 = ret3b.bucket1 || 0;
+    var b2 = ret3b.bucket2 || 0;
+    var b3 = ret3b.bucket3 || 0;
+    var ssoPension = ret3b.ssoPension || 0;
+
+    return {
+      timestamp: Date.now(),
+      isMasked: isMasked,
+      summary: {
+        netWorth: netWorth,
+        grossAssets: grossAssets,
+        totalDebts: totalDebts,
+        solvencyRatioPct: solvencyRatioPct,
+        monthlyIncome: monthlyIncome,
+        monthlyExpense: monthlyExpense,
+        monthlySavings: monthlySavings,
+        runwayMonths: runwayMonths,
+        healthScore: healthScore,
+      },
+      pillars: {
+        runway: {
+          emergencyFunds: emergencyFunds,
+          monthlyExpenses: monthlyExpense,
+          runwayMonths: runwayMonths,
+          status: runwayStatus,
+        },
+        investments: {
+          portfolioValue: portfolioValue,
+          monthlyDca: monthlyDca,
+          glidepathEquityPct: glidepathEquityPct,
+        },
+        debts: {
+          totalDebt: totalDebts,
+          monthsToFreedom: debtPayoffMonths,
+          strategy: debtStrategy,
+          isDebtFree: isDebtFree,
+        },
+        insurance: {
+          totalNeed: insNeed,
+          existingCoverage: insCoverage,
+          protectionGap: insGap,
+          adequacyPct: insAdequacyPct,
+        },
+        tax: {
+          assessableIncome: assessableIncome,
+          deductions: taxDeductions,
+          projectedTax: projectedTax,
+          withheld50Tawi: taxWithheld,
+          refundOrPayable: taxBalance,
+        },
+        retirement: {
+          bucket1Cash: b1,
+          bucket2FixedIncome: b2,
+          bucket3Equities: b3,
+          monthlySsoPension: ssoPension,
+        },
+      },
+    };
+  }
+
+  function formatMaskedAmount(amount, isMasked, currency) {
+    if (isMasked) {
+      return (currency ? `${currency} ` : '฿ ') + '••••••';
+    }
+    return formatMoney(amount) + (currency ? ` ${currency}` : '');
+  }
+
   // Auto-initialize document theme, shortcuts, and swipe navigation when running in browser
   initTheme();
   initShortcutForwarding();
@@ -2286,6 +2421,8 @@
     calculateTargetDateGlidepath: calculateTargetDateGlidepath,
     calculateReorderLayout: calculateReorderLayout,
     initCardLayoutManager: initCardLayoutManager,
+    generateExecutiveDossier: generateExecutiveDossier,
+    formatMaskedAmount: formatMaskedAmount,
   };
 
   // Expose on global window object
@@ -2328,5 +2465,8 @@
       global.calculateForeignRepatriationTax = calculateForeignRepatriationTax;
     if (typeof global.calculateTargetDateGlidepath === 'undefined')
       global.calculateTargetDateGlidepath = calculateTargetDateGlidepath;
+    if (typeof global.generateExecutiveDossier === 'undefined')
+      global.generateExecutiveDossier = generateExecutiveDossier;
+    if (typeof global.formatMaskedAmount === 'undefined') global.formatMaskedAmount = formatMaskedAmount;
   }
 })(typeof window !== 'undefined' ? window : this);

@@ -151,6 +151,23 @@ const translations = {
     subCardB1: 'คุ้มครอง 1-2 ปีแรก',
     subCardB2: 'คุ้มครองปีที่ 3-7',
     subCardB3: 'ลงทุนยาว 8+ ปี',
+    dossierTitle: '📋 แฟ้มสรุปการเงินฉบับผู้บริหาร (Executive Financial Dossier)',
+    btnMaskAmounts: 'ซ่อนตัวเลข',
+    btnUnmaskAmounts: 'แสดงตัวเลข',
+    btnPrintDossier: 'พิมพ์แฟ้มสรุป',
+    dossierCol1Title: '💰 1. ความมั่งคั่งสุทธิ & หนี้สิน',
+    dossierCol2Title: '🛡️ 2. สายป่านฉุกเฉิน & การออม',
+    dossierCol3Title: '📈 3. พอร์ตลงทุน & Glidepath',
+    dossierCol4Title: '🚀 4. แผนปลดหนี้สิน',
+    dossierCol5Title: '🛡️ 5. ความคุ้มครองประกันชีวิต',
+    dossierCol6Title: '🧾 6. ภาษีเงินได้ & ขอคืน 50 ทวิ',
+    dossierTaxRefund: 'ขอคืน',
+    dossierTaxPayable: 'จ่ายเพิ่ม',
+    dossierDebtFree: 'ปลอดหนี้แล้ว 🎉',
+    dossierAdequate: 'เพียงพอ',
+    dossierUnderinsured: 'ยังขาดความคุ้มครอง',
+    dossierTimestampNote: 'สร้างขึ้นอัตโนมัติจากข้อมูลจำลองในเครื่องผู้ใช้ 100% Client-Side Private',
+    dossierPrivacyNote: '🔒 ความเป็นส่วนตัวสมบูรณ์ ไม่มีการส่งข้อมูลออกนอกอุปกรณ์',
   },
   en: {
     title: 'Financial Dashboard',
@@ -304,6 +321,23 @@ const translations = {
     subCardB1: 'First 1-2 Years Buffer',
     subCardB2: 'Years 3-7 Income Engine',
     subCardB3: 'Long-term 8+ Years Growth',
+    dossierTitle: '📋 Executive Financial Dossier',
+    btnMaskAmounts: 'Mask Amounts',
+    btnUnmaskAmounts: 'Show Amounts',
+    btnPrintDossier: 'Print Dossier',
+    dossierCol1Title: '💰 1. Net Worth & Liabilities',
+    dossierCol2Title: '🛡️ 2. Emergency Runway & Savings',
+    dossierCol3Title: '📈 3. Investment & Glidepath',
+    dossierCol4Title: '🚀 4. Debt Elimination Plan',
+    dossierCol5Title: '🛡️ 5. Life Insurance Protection',
+    dossierCol6Title: '🧾 6. PIT Tax & 50 Tawi Refund',
+    dossierTaxRefund: 'Refund',
+    dossierTaxPayable: 'Payable',
+    dossierDebtFree: 'Debt-Free 🎉',
+    dossierAdequate: 'Adequate',
+    dossierUnderinsured: 'Coverage Gap',
+    dossierTimestampNote: 'Synthesized automatically from local device state (100% Client-Side Private)',
+    dossierPrivacyNote: '🔒 Zero Telemetry: Completely private, no data leaves your device',
   },
 };
 
@@ -441,6 +475,16 @@ function applyLocalization() {
     'sub-card-b1': t.subCardB1,
     'sub-card-b2': t.subCardB2,
     'sub-card-b3': t.subCardB3,
+    'lbl-dossier-title': t.dossierTitle,
+    lblBtnPrintDossier: t.btnPrintDossier,
+    'lbl-dossier-col1-title': t.dossierCol1Title,
+    'lbl-dossier-col2-title': t.dossierCol2Title,
+    'lbl-dossier-col3-title': t.dossierCol3Title,
+    'lbl-dossier-col4-title': t.dossierCol4Title,
+    'lbl-dossier-col5-title': t.dossierCol5Title,
+    'lbl-dossier-col6-title': t.dossierCol6Title,
+    'dossier-timestamp-note': t.dossierTimestampNote,
+    'dossier-privacy-indicator': t.dossierPrivacyNote,
   };
 
   const mcExplEl = document.getElementById('lbl-mc-expl');
@@ -2988,10 +3032,242 @@ renderDashboardKPIs();
 renderFinancialGoals();
 initInsuranceAdequacy();
 initThreeBucketsCalculator();
+renderExecutiveDossier();
 renderSnapshotsTable();
 renderChart();
 updateStorageQuotaDisplay();
 initDashboardLayout();
+
+const PRIVACY_KEY = 'moneySuperapp.privacyMask.v1';
+
+function isPrivacyMaskActive() {
+  try {
+    return localStorage.getItem(PRIVACY_KEY) === 'true';
+  } catch (_e) {
+    return false;
+  }
+}
+
+function toggleDossierPrivacyMask() {
+  const current = isPrivacyMaskActive();
+  const next = !current;
+  try {
+    localStorage.setItem(PRIVACY_KEY, String(next));
+  } catch (_e) {}
+  applyPrivacyMaskUI(next);
+}
+window.toggleDossierPrivacyMask = toggleDossierPrivacyMask;
+
+function applyPrivacyMaskUI(isActive) {
+  const panel = document.getElementById('panelExecutiveDossier');
+  if (panel) {
+    panel.classList.toggle('privacy-mode-active', isActive);
+  }
+  const lbl = document.getElementById('lblBtnPrivacyMask');
+  const t = translations[LANG] || translations.th;
+  if (lbl) {
+    lbl.textContent = isActive ? t.btnUnmaskAmounts : t.btnMaskAmounts;
+  }
+}
+
+function printDossierExecutiveReport() {
+  const panel = document.getElementById('panelExecutiveDossier');
+  if (panel) {
+    const body = panel.querySelector('#panelExecutiveDossierBody');
+    if (body) body.classList.remove('card-collapsed-hidden');
+  }
+  const now = new Date();
+  const tsEl = document.getElementById('print-timestamp');
+  if (tsEl) {
+    const formatted = formatReportDate(now, LANG);
+    tsEl.textContent = `${LANG === 'en' ? 'Generated: ' : 'สร้างเมื่อ: '}${formatted}`;
+  }
+  window.print();
+}
+window.printDossierExecutiveReport = printDossierExecutiveReport;
+
+function renderExecutiveDossier() {
+  const panel = document.getElementById('panelExecutiveDossier');
+  if (!panel) return;
+
+  const t = translations[LANG] || translations.th;
+  const isEn = LANG === 'en';
+  const curUnit = isEn ? 'THB' : 'บาท';
+
+  const p = gatherFinancialProfile();
+
+  const portState = safeJsonParse('moneySuperapp.portfolio.v1', { totalValue: 0, monthlyBudget: 0 });
+  const debtState = safeJsonParse('debtCalculator.state.v1', {
+    totalDebt: 0,
+    monthlyPayment: 0,
+    monthsToFreedom: 0,
+    strategy: 'avalanche',
+  });
+  const taxBaseState = safeJsonParse('taxCalculatorBase.state.v1', {
+    totalIncome: 0,
+    totalDeductions: 0,
+    netTax: 0,
+    withholding50Tawi: 0,
+  });
+  const slipsState = safeJsonParse('moneySuperapp.slips.v1', {
+    annualTotalIncome: 0,
+    annualDeductions: 0,
+    annualProjectedTax: 0,
+    annualTaxWithheld: 0,
+  });
+  const remState = safeJsonParse(
+    'moneySuperapp.cashflow.v1',
+    safeJsonParse('remainingData', { monthlyIncome: 0, monthlyExpense: 0, monthlySavings: 0 }),
+  );
+  const insState =
+    typeof insuranceAdequacyState !== 'undefined' ? insuranceAdequacyState : safeJsonParse(INSURANCE_STORAGE_KEY, {});
+  const ret3bState =
+    typeof threeBucketState !== 'undefined' ? threeBucketState : safeJsonParse(THREE_BUCKET_STORAGE_KEY, {});
+  const glideState = safeJsonParse('moneySuperapp.glidepath.v1', { equityPct: 80 });
+
+  const isMasked = isPrivacyMaskActive();
+  applyPrivacyMaskUI(isMasked);
+
+  const dossier = MoneyApp.generateExecutiveDossier({
+    dashboardState: {
+      netWorth: p.netWorth,
+      assets: p.portfolioVal + p.emergencyReserve,
+      debts: p.totalDebt,
+      monthlySavings: p.monthlySavings + p.monthlyInvest,
+      runway: p.runwayMonths,
+      financialHealthScore: calculateHealthScoreMetrics().overallScore,
+      emergencyFund: p.emergencyReserve,
+    },
+    portfolioState: portState,
+    debtState: debtState,
+    taxBaseState: taxBaseState,
+    slipsState: slipsState,
+    remainingState: remState,
+    insuranceState: {
+      totalNeed: insState
+        ? insState.totalDebt +
+          insState.livingExpenses * insState.supportYears +
+          insState.childEducation +
+          insState.emergencyReserve
+        : 0,
+      existingCoverage: insState ? insState.liquidAssets + insState.existingLifeInsurance : 0,
+      protectionGap: insState
+        ? Math.max(
+            0,
+            insState.totalDebt +
+              insState.livingExpenses * insState.supportYears +
+              insState.childEducation +
+              insState.emergencyReserve -
+              (insState.liquidAssets + insState.existingLifeInsurance),
+          )
+        : 0,
+    },
+    retire3bState: {
+      bucket1: ret3bState ? ret3bState.annualLivingExpense * (ret3bState.bucket1Years || 2) : 0,
+      bucket2: ret3bState ? ret3bState.annualLivingExpense * (ret3bState.bucket2Years || 5) : 0,
+      bucket3: ret3bState ? Math.max(0, (ret3bState.totalAssets || 0) - ret3bState.annualLivingExpense * 7) : 0,
+      ssoPension: ret3bState ? ret3bState.ssoPensionMonthly : 0,
+    },
+    glidepathState: glideState,
+    isMasked: isMasked,
+  });
+
+  // Tile 1: Net Worth & Solvency
+  const elNw = document.getElementById('dossier-networth-val');
+  if (elNw) elNw.textContent = `${formatMoney(dossier.summary.netWorth)} ${curUnit}`;
+  const elAssets = document.getElementById('dossier-gross-assets');
+  if (elAssets) elAssets.textContent = `${formatMoney(dossier.summary.grossAssets)} ${curUnit}`;
+  const elDebt = document.getElementById('dossier-total-debt');
+  if (elDebt) elDebt.textContent = `${formatMoney(dossier.summary.totalDebts)} ${curUnit}`;
+  const badgeSolv = document.getElementById('dossier-solvency-badge');
+  if (badgeSolv) {
+    badgeSolv.textContent = `${dossier.summary.solvencyRatioPct}% ${isEn ? 'Solvent' : 'มั่นคง'}`;
+    badgeSolv.style.background = dossier.summary.solvencyRatioPct >= 70 ? 'var(--ok-dim)' : 'var(--warn-dim)';
+    badgeSolv.style.color = dossier.summary.solvencyRatioPct >= 70 ? 'var(--ok)' : 'var(--warn)';
+  }
+
+  // Tile 2: Runway & Liquidity
+  const elEmg = document.getElementById('dossier-emergency-val');
+  if (elEmg) elEmg.textContent = `${formatMoney(dossier.pillars.runway.emergencyFunds)} ${curUnit}`;
+  const elSav = document.getElementById('dossier-monthly-savings');
+  if (elSav) elSav.textContent = `${formatMoney(dossier.summary.monthlySavings)} ${curUnit}`;
+  const elSr = document.getElementById('dossier-savings-rate');
+  if (elSr) elSr.textContent = `${p.savingsRate.toFixed(1)}%`;
+  const badgeRw = document.getElementById('dossier-runway-badge');
+  if (badgeRw) {
+    badgeRw.textContent = `${dossier.pillars.runway.runwayMonths > 0 ? dossier.pillars.runway.runwayMonths.toFixed(1) : '-'} ${t.monthsUnit}`;
+    badgeRw.style.background = dossier.pillars.runway.status === 'healthy' ? 'var(--ok-dim)' : 'var(--warn-dim)';
+    badgeRw.style.color = dossier.pillars.runway.status === 'healthy' ? 'var(--ok)' : 'var(--warn)';
+  }
+
+  // Tile 3: Portfolio & Glidepath
+  const elPort = document.getElementById('dossier-portfolio-val');
+  if (elPort) elPort.textContent = `${formatMoney(dossier.pillars.investments.portfolioValue)} ${curUnit}`;
+  const elDca = document.getElementById('dossier-dca-budget');
+  if (elDca) elDca.textContent = `${formatMoney(dossier.pillars.investments.monthlyDca)} ${curUnit}`;
+  const badgeGlide = document.getElementById('dossier-glidepath-badge');
+  if (badgeGlide) badgeGlide.textContent = `Equity ${dossier.pillars.investments.glidepathEquityPct}%`;
+
+  // Tile 4: Debts & Payoff
+  const elDebtPayoff = document.getElementById('dossier-debt-payoff-date');
+  if (elDebtPayoff) {
+    if (dossier.pillars.debts.isDebtFree) {
+      elDebtPayoff.textContent = t.dossierDebtFree;
+      elDebtPayoff.style.color = 'var(--ok)';
+    } else {
+      elDebtPayoff.textContent =
+        p.debtFreeText ||
+        `${isEn ? 'Payoff in ' : 'ปลอดหนี้ใน '}${dossier.pillars.debts.monthsToFreedom} ${t.monthsUnit}`;
+      elDebtPayoff.style.color = 'var(--ink)';
+    }
+  }
+  const elDebtMonths = document.getElementById('dossier-debt-months');
+  if (elDebtMonths)
+    elDebtMonths.textContent =
+      dossier.pillars.debts.monthsToFreedom > 0 ? `${dossier.pillars.debts.monthsToFreedom} ${t.monthsUnit}` : '-';
+  const elDebtPay = document.getElementById('dossier-debt-payment');
+  if (elDebtPay) elDebtPay.textContent = `${formatMoney(debtState.monthlyPayment || 0)} ${curUnit}`;
+
+  // Tile 5: Insurance
+  const elInsCov = document.getElementById('dossier-ins-coverage-val');
+  if (elInsCov) elInsCov.textContent = `${formatMoney(dossier.pillars.insurance.existingCoverage)} ${curUnit}`;
+  const elInsNeed = document.getElementById('dossier-ins-need');
+  if (elInsNeed) elInsNeed.textContent = `${formatMoney(dossier.pillars.insurance.totalNeed)} ${curUnit}`;
+  const elInsGap = document.getElementById('dossier-ins-gap');
+  if (elInsGap) {
+    if (dossier.pillars.insurance.protectionGap <= 0) {
+      elInsGap.textContent = t.dossierAdequate;
+      elInsGap.style.color = 'var(--ok)';
+    } else {
+      elInsGap.textContent = `-${formatMoney(dossier.pillars.insurance.protectionGap)} ${curUnit}`;
+      elInsGap.style.color = 'var(--danger)';
+    }
+  }
+  const badgeIns = document.getElementById('dossier-ins-badge');
+  if (badgeIns) {
+    const isAdequate = dossier.pillars.insurance.protectionGap <= 0;
+    badgeIns.textContent = isAdequate ? t.dossierAdequate : t.dossierUnderinsured;
+    badgeIns.style.background = isAdequate ? 'var(--ok-dim)' : 'var(--warn-dim)';
+    badgeIns.style.color = isAdequate ? 'var(--ok)' : 'var(--warn)';
+  }
+
+  // Tile 6: Tax
+  const elTaxBal = document.getElementById('dossier-tax-balance-val');
+  if (elTaxBal) {
+    const bal = dossier.pillars.tax.refundOrPayable;
+    if (bal >= 0) {
+      elTaxBal.textContent = `${t.dossierTaxRefund} ${formatMoney(bal)} ${curUnit}`;
+      elTaxBal.style.color = 'var(--ok)';
+    } else {
+      elTaxBal.textContent = `${t.dossierTaxPayable} ${formatMoney(Math.abs(bal))} ${curUnit}`;
+      elTaxBal.style.color = 'var(--danger)';
+    }
+  }
+  const elTaxAnn = document.getElementById('dossier-annual-tax');
+  if (elTaxAnn) elTaxAnn.textContent = `${formatMoney(dossier.pillars.tax.projectedTax || p.estimatedTax)} ${curUnit}`;
+  const elTaxWith = document.getElementById('dossier-tax-withheld');
+  if (elTaxWith) elTaxWith.textContent = `${formatMoney(dossier.pillars.tax.withheld50Tawi)} ${curUnit}`;
+}
 
 let dashboardLayoutManager = null;
 function initDashboardLayout() {
@@ -3020,6 +3296,7 @@ function refreshDashboard() {
   renderFinancialGoals();
   updateInsuranceAdequacy();
   updateThreeBucketsCalculator();
+  renderExecutiveDossier();
   renderSnapshotsTable();
   renderChart();
   updateStorageQuotaDisplay();

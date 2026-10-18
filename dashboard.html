@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.4.9">
+  <meta name="version" content="2.5.0">
   <title>ภาพรวมการเงิน</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -198,6 +198,108 @@
     </div>
   </h1>
   <div class="sub" id="lbl-subtitle">สรุปความมั่งคั่งและประวัติการเติบโต</div>
+
+  <!-- Phase 65: Unified One-Page Financial Dossier & Executive PDF Report -->
+  <div class="panel reorder-card" id="panelExecutiveDossier" role="region" aria-label="Executive Financial Dossier">
+    <div class="panel-title" id="lbl-dossier-panel-title">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span id="lbl-dossier-title">📋 แฟ้มสรุปการเงินฉบับผู้บริหาร (Executive Financial Dossier)</span>
+        <span id="badge-dossier-sync" style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--panel-2); color:var(--ink-dim); border:1px solid var(--line);">7/7 Tools Synced</span>
+      </div>
+      <div style="display:flex; gap:6px; align-items:center;" class="no-print">
+        <button type="button" onclick="toggleDossierPrivacyMask()" class="action-btn" style="padding:4px 9px; margin:0; border-radius:8px; font-size:11px;" id="btnTogglePrivacyMask" title="ซ่อน/แสดงจำนวนเงิน / Mask Amounts" aria-label="Toggle Privacy Mask">👁️ <span id="lblBtnPrivacyMask">ซ่อนตัวเลข</span></button>
+        <button type="button" onclick="printDossierExecutiveReport()" class="action-btn" style="padding:4px 9px; margin:0; border-radius:8px; font-size:11px; background:var(--ok-dim); border-color:var(--ok); color:var(--ok);" id="btnPrintDossier" title="พิมพ์แฟ้มสรุปฉบับผู้บริหาร / Print Dossier PDF" aria-label="Print Executive Dossier PDF">🖨️ <span id="lblBtnPrintDossier">พิมพ์แฟ้มสรุป</span></button>
+      </div>
+    </div>
+    <div id="panelExecutiveDossierBody">
+      <!-- 6 Executive Dossier Section Cards Grid -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px; margin-top:4px;">
+        <!-- Card 1: ความมั่งคั่งสุทธิและความแข็งแกร่ง (Net Worth & Solvency) -->
+        <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div style="font-size:11px; font-weight:700; color:var(--blue);" id="lbl-dossier-col1-title">💰 1. ความมั่งคั่งสุทธิ &amp; หนี้สิน</div>
+            <span id="dossier-solvency-badge" style="font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:6px; background:var(--ok-dim); color:var(--ok);">Solvent</span>
+          </div>
+          <div style="font-size:18px; font-weight:800; color:var(--ink); margin:6px 0 2px 0;" id="dossier-networth-val" class="dossier-amount">0 บาท</div>
+          <div style="display:flex; justify-content:space-between; font-size:10.5px; color:var(--ink-dim); border-top:1px dashed var(--line); padding-top:6px; margin-top:6px;">
+            <span>สินทรัพย์: <b id="dossier-gross-assets" class="dossier-amount">0 บาท</b></span>
+            <span>หนี้สิน: <b id="dossier-total-debt" class="dossier-amount" style="color:var(--warn);">0 บาท</b></span>
+          </div>
+        </div>
+
+        <!-- Card 2: สภาพคล่อง & สายป่านฉุกเฉิน (Runway & Liquidity) -->
+        <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div style="font-size:11px; font-weight:700; color:var(--purple);" id="lbl-dossier-col2-title">🛡️ 2. สายป่านฉุกเฉิน &amp; การออม</div>
+            <span id="dossier-runway-badge" style="font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:6px; background:var(--ok-dim); color:var(--ok);">6.0 เดือน</span>
+          </div>
+          <div style="font-size:18px; font-weight:800; color:var(--ink); margin:6px 0 2px 0;" id="dossier-emergency-val" class="dossier-amount">0 บาท</div>
+          <div style="display:flex; justify-content:space-between; font-size:10.5px; color:var(--ink-dim); border-top:1px dashed var(--line); padding-top:6px; margin-top:6px;">
+            <span>เงินออม/เดือน: <b id="dossier-monthly-savings" class="dossier-amount" style="color:var(--ok);">0 บาท</b></span>
+            <span>อัตราการออม: <b id="dossier-savings-rate">0%</b></span>
+          </div>
+        </div>
+
+        <!-- Card 3: พอร์ตลงทุน & ไกลด์พาธ (Portfolio & Glidepath) -->
+        <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div style="font-size:11px; font-weight:700; color:var(--core);" id="lbl-dossier-col3-title">📈 3. พอร์ตลงทุน &amp; Glidepath</div>
+            <span id="dossier-glidepath-badge" style="font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:6px; background:var(--panel); border:1px solid var(--line); color:var(--ink);">Core 80%</span>
+          </div>
+          <div style="font-size:18px; font-weight:800; color:var(--ink); margin:6px 0 2px 0;" id="dossier-portfolio-val" class="dossier-amount">0 บาท</div>
+          <div style="display:flex; justify-content:space-between; font-size:10.5px; color:var(--ink-dim); border-top:1px dashed var(--line); padding-top:6px; margin-top:6px;">
+            <span>DCA/เดือน: <b id="dossier-dca-budget" class="dossier-amount">0 บาท</b></span>
+            <span>ทองคำ &amp; อื่นๆ: <b id="dossier-aux-invest" class="dossier-amount">0 บาท</b></span>
+          </div>
+        </div>
+
+        <!-- Card 4: การวางแผนปลดหนี้ (Debt Strategy & Payoff) -->
+        <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div style="font-size:11px; font-weight:700; color:var(--warn);" id="lbl-dossier-col4-title">🚀 4. แผนปลดหนี้สิน</div>
+            <span id="dossier-debt-strategy-badge" style="font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:6px; background:var(--warn-dim); color:var(--warn);">Avalanche</span>
+          </div>
+          <div style="font-size:18px; font-weight:800; color:var(--ink); margin:6px 0 2px 0;" id="dossier-debt-payoff-date">ปลอดหนี้ใน -</div>
+          <div style="display:flex; justify-content:space-between; font-size:10.5px; color:var(--ink-dim); border-top:1px dashed var(--line); padding-top:6px; margin-top:6px;">
+            <span>ระยะเวลา: <b id="dossier-debt-months">- เดือน</b></span>
+            <span>ผ่อนต่อเดือน: <b id="dossier-debt-payment" class="dossier-amount">0 บาท</b></span>
+          </div>
+        </div>
+
+        <!-- Card 5: ประกันชีวิต & ปกป้องความเสี่ยง (Protection & Insurance) -->
+        <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div style="font-size:11px; font-weight:700; color:var(--ok);" id="lbl-dossier-col5-title">🛡️ 5. ความคุ้มครองประกันชีวิต</div>
+            <span id="dossier-ins-badge" style="font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:6px; background:var(--ok-dim); color:var(--ok);">Adequate</span>
+          </div>
+          <div style="font-size:18px; font-weight:800; color:var(--ink); margin:6px 0 2px 0;" id="dossier-ins-coverage-val" class="dossier-amount">0 บาท</div>
+          <div style="display:flex; justify-content:space-between; font-size:10.5px; color:var(--ink-dim); border-top:1px dashed var(--line); padding-top:6px; margin-top:6px;">
+            <span>ทุนประกันควรมี: <b id="dossier-ins-need" class="dossier-amount">0 บาท</b></span>
+            <span>ส่วนต่าง: <b id="dossier-ins-gap" class="dossier-amount">-</b></span>
+          </div>
+        </div>
+
+        <!-- Card 6: ภาษี & การขอคืน (Tax Forecast & Withholding) -->
+        <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div style="font-size:11px; font-weight:700; color:var(--danger);" id="lbl-dossier-col6-title">🧾 6. ภาษีเงินได้ &amp; ขอคืน 50 ทวิ</div>
+            <span id="dossier-tax-status-badge" style="font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:6px; background:var(--panel); border:1px solid var(--line); color:var(--ink);">Bracket 10%</span>
+          </div>
+          <div style="font-size:18px; font-weight:800; color:var(--ink); margin:6px 0 2px 0;" id="dossier-tax-balance-val" class="dossier-amount">ขอคืน 0 บาท</div>
+          <div style="display:flex; justify-content:space-between; font-size:10.5px; color:var(--ink-dim); border-top:1px dashed var(--line); padding-top:6px; margin-top:6px;">
+            <span>ภาษีทั้งปี: <b id="dossier-annual-tax" class="dossier-amount">0 บาท</b></span>
+            <span>หักแล้ว: <b id="dossier-tax-withheld" class="dossier-amount">0 บาท</b></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dossier Footer Metadata -->
+      <div style="margin-top:12px; padding-top:8px; border-top:1px dashed var(--line); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; font-size:10px; color:var(--ink-faint);">
+        <span id="dossier-timestamp-note">สร้างขึ้นอัตโนมัติจากข้อมูลจำลองในเครื่องผู้ใช้ 100% Client-Side Private</span>
+        <span id="dossier-privacy-indicator">🔒 ความเป็นส่วนตัวสมบูรณ์ ไม่มีการส่งข้อมูลออกนอกอุปกรณ์</span>
+      </div>
+    </div>
+  </div>
 
   <div class="panel reorder-card" id="panelKPIs" role="region" aria-label="Key Financial Indicators">
     <div class="panel-title" id="lbl-kpi-panel-title">
@@ -1037,7 +1139,7 @@
     </div>
   </div>
 
-  <p class="version-tag">Money Superapp v2.4.9</p>
+  <p class="version-tag">Money Superapp v2.5.0</p>
 
 <script src="js/shared.js"></script>
 <script src="js/dashboard.js"></script>
