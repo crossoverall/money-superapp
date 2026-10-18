@@ -1681,5 +1681,98 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'rebalance.js must call MoneyApp.I18n.applyLocalization',
       );
     });
+
+    it('verifies Phase 104 Declarative data-i18n Localization Migration for Tax and Payslip Tools', () => {
+      const taxHtml = fs.readFileSync(path.join(ROOT_DIR, 'tax-calculator.html'), 'utf8');
+      const taxBaseHtml = fs.readFileSync(path.join(ROOT_DIR, 'tax-calculator-base.html'), 'utf8');
+      const slipsHtml = fs.readFileSync(path.join(ROOT_DIR, 'months-slips.html'), 'utf8');
+
+      const taxJs = fs.readFileSync(path.join(ROOT_DIR, 'js/tax-calculator.js'), 'utf8');
+      const taxBaseJs = fs.readFileSync(path.join(ROOT_DIR, 'js/tax-calculator-base.js'), 'utf8');
+      const slipsJs = fs.readFileSync(path.join(ROOT_DIR, 'js/months-slips.js'), 'utf8');
+
+      assert.ok(taxHtml.includes('data-i18n="lbl-h1"'), 'tax-calculator.html must contain data-i18n="lbl-h1"');
+      assert.ok(
+        taxHtml.includes('data-i18n="lbl-severance"'),
+        'tax-calculator.html must contain data-i18n="lbl-severance"',
+      );
+      assert.ok(
+        taxHtml.includes('data-i18n="lbl-pvdSection"'),
+        'tax-calculator.html must contain data-i18n="lbl-pvdSection"',
+      );
+      assert.ok(
+        taxHtml.includes('data-i18n="lbl-sso-title"'),
+        'tax-calculator.html must contain data-i18n="lbl-sso-title"',
+      );
+
+      assert.ok(
+        taxBaseHtml.includes('data-i18n="lbl-title"'),
+        'tax-calculator-base.html must contain data-i18n="lbl-title"',
+      );
+      assert.ok(
+        taxBaseHtml.includes('data-i18n="lbl-tab-monthly"'),
+        'tax-calculator-base.html must contain data-i18n="lbl-tab-monthly"',
+      );
+      assert.ok(
+        taxBaseHtml.includes('data-i18n="lbl-tab-yearly"'),
+        'tax-calculator-base.html must contain data-i18n="lbl-tab-yearly"',
+      );
+      assert.ok(
+        taxBaseHtml.includes('data-i18n="lbl-panel-deductions"'),
+        'tax-calculator-base.html must contain data-i18n="lbl-panel-deductions"',
+      );
+      assert.ok(
+        taxBaseHtml.includes('data-i18n="txt-withheld-label"'),
+        'tax-calculator-base.html must contain data-i18n="txt-withheld-label"',
+      );
+      assert.ok(
+        taxBaseHtml.includes('data-i18n="lbl-panel-efiling"'),
+        'tax-calculator-base.html must contain data-i18n="lbl-panel-efiling"',
+      );
+      assert.ok(
+        taxBaseHtml.includes('data-i18n="lbl-panel-calendar"'),
+        'tax-calculator-base.html must contain data-i18n="lbl-panel-calendar"',
+      );
+
+      assert.ok(slipsHtml.includes('data-i18n="lbl-setup"'), 'months-slips.html must contain data-i18n="lbl-setup"');
+      assert.ok(
+        slipsHtml.includes('data-i18n="lbl-earnings"'),
+        'months-slips.html must contain data-i18n="lbl-earnings"',
+      );
+      assert.ok(
+        slipsHtml.includes('data-i18n="lbl-deductions"'),
+        'months-slips.html must contain data-i18n="lbl-deductions"',
+      );
+      assert.ok(slipsHtml.includes('data-i18n="lbl-annual"'), 'months-slips.html must contain data-i18n="lbl-annual"');
+      assert.ok(
+        slipsHtml.includes('data-i18n="lblCompareTitle"'),
+        'months-slips.html must contain data-i18n="lblCompareTitle"',
+      );
+      assert.ok(
+        slipsHtml.includes('data-i18n="lbl-reconcile-title"'),
+        'months-slips.html must contain data-i18n="lbl-reconcile-title"',
+      );
+
+      assert.ok(taxJs.includes('window.MoneyApp.I18n.register'), 'tax-calculator.js must register with MoneyApp.I18n');
+      assert.ok(
+        taxJs.includes('window.MoneyApp.I18n.applyLocalization'),
+        'tax-calculator.js must call MoneyApp.I18n.applyLocalization',
+      );
+
+      assert.ok(
+        taxBaseJs.includes('MoneyApp.I18n.register'),
+        'tax-calculator-base.js must register with MoneyApp.I18n',
+      );
+      assert.ok(
+        taxBaseJs.includes('MoneyApp.I18n.applyLocalization'),
+        'tax-calculator-base.js must call MoneyApp.I18n.applyLocalization',
+      );
+
+      assert.ok(slipsJs.includes('MoneyApp.I18n.register'), 'months-slips.js must register with MoneyApp.I18n');
+      assert.ok(
+        slipsJs.includes('MoneyApp.I18n.applyLocalization'),
+        'months-slips.js must call MoneyApp.I18n.applyLocalization',
+      );
+    });
   });
 });

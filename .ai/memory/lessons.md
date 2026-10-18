@@ -15,6 +15,18 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Declarative data-i18n Localization Migration for Tax & Payslip Tools (v2.5.47)
+- **Date & Context:** 2026-10-18, Phase 104 Declarative data-i18n Migration (`v2.5.47`).
+- **Problem:**
+  1. `tax-calculator.html`, `tax-calculator-base.html`, and `months-slips.html` possessed huge amounts of static and dynamic UI markup (withholding tax, dividend tax credits, e-filing worksheets, severance & PVD tax tiers, 12-month payslip streams, PromptPay refund trackers, and job scenario comparisons) that were partially localized through ad-hoc `EN` dictionaries and manual DOM replacements.
+  2. One-way `EN` dictionaries in `js/tax-calculator.js`, `js/tax-calculator-base.js`, and `js/months-slips.js` prevented key symmetry auditing and could not leverage the new `MoneyApp.I18n` declarative engine.
+- **Root Cause:** Legacy per-page scripts written with unidirectional English overrides before the unified i18n engine was introduced.
+- **Solution & Rule:**
+  1. **Declarative DOM Localization (`data-i18n`):** Decorated all static section headings, subtitles, card headers, helper notes, and button controls across `tax-calculator.html`, `tax-calculator-base.html`, and `months-slips.html` with declarative `data-i18n` attributes.
+  2. **Bidirectional Translation Symmetry:** Converted one-way `const EN` in all three scripts into symmetrical `const translations = { th: {...}, en: {...} }` containing 102 keys (tax-calculator-base), 66 keys (months-slips), and 40+ keys (tax-calculator), registering them with `MoneyApp.I18n.register()` and applying with `MoneyApp.I18n.applyLocalization()`.
+  3. **Backward Compatibility Preservation:** Retained `const EN = translations.en` in all three files to ensure legacy runtime references and tests continue functioning without regressions.
+  4. **Quality Gates & Test Integration:** Added all three files to `LOCALIZED_MODULES` in `tests/bilingual-parity.test.mjs`, added Phase 104 smoke invariants in `tests/smoke.test.mjs`, and verified 498/498 passing tests (0 failures), 0 Biome warnings, and 0 headless Chrome live DOM bilingual discrepancies across all 8 core application pages.
+
 ### 2026-10-18: Declarative data-i18n Localization Migration for Remaining Money & Rebalance Tools (v2.5.46)
 - **Date & Context:** 2026-10-18, Phase 103 Declarative data-i18n Migration (`v2.5.46`).
 - **Problem:**

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="2.5.46">
+    <meta name="version" content="2.5.47">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self';">
     <script>
       try {
@@ -126,7 +126,7 @@
 
     <div class="w-full max-w-4xl flex flex-col gap-6">
         <div class="flex items-center justify-between no-print px-1 flex-wrap gap-2">
-            <span class="text-xs" style="color:var(--ink-dim);" id="lbl-slips-subtitle">สามารถจัดเรียงหรือพับย่อการ์ดแต่ละส่วนได้ตามต้องการ</span>
+            <span class="text-xs" style="color:var(--ink-dim);" id="lbl-slips-subtitle" data-i18n="lbl-slips-subtitle">สามารถจัดเรียงหรือพับย่อการ์ดแต่ละส่วนได้ตามต้องการ</span>
             <div id="cardLayoutToolbar" class="card-layout-toolbar no-print" style="margin-bottom:0;"></div>
         </div>
         
@@ -136,50 +136,50 @@
         <!-- 1. Input Section -->
         <div id="panelPayslipSetup" class="reorder-card bg-white p-6 rounded-2xl shadow-md md:col-span-5 h-fit border-t-4" style="border-top-color: var(--core);" role="region" aria-labelledby="lbl-setup">
             <div class="panel-header flex items-center justify-between mb-5">
-                <h2 class="text-xl font-semibold text-gray-800 panel-title" id="lbl-setup">ตั้งค่าข้อมูลรายได้</h2>
+                <h2 class="text-xl font-semibold text-gray-800 panel-title" id="lbl-setup" data-i18n="lbl-setup">ตั้งค่าข้อมูลรายได้</h2>
             </div>
             <div id="panelPayslipSetupBody" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-salary" for="salary">เงินเดือนพื้นฐาน (บาท/เดือน)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-salary" for="salary" data-i18n="lbl-salary">เงินเดือนพื้นฐาน (บาท/เดือน)</label>
                     <input type="number" id="salary" placeholder="เช่น 50000" inputmode="decimal" aria-labelledby="lbl-salary" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none transition-all font-medium" oninput="calculateSlip()">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-allowance" for="allowance">เงินได้อื่นๆ / Allowance (บาท/เดือน)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-allowance" for="allowance" data-i18n="lbl-allowance">เงินได้อื่นๆ / Allowance (บาท/เดือน)</label>
                     <input type="number" id="allowance" placeholder="เช่น 7000" inputmode="decimal" aria-labelledby="lbl-allowance" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none transition-all font-medium" oninput="calculateSlip()">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-bonus" for="bonus">โบนัสประจำปี (บาท/ปี)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-bonus" for="bonus" data-i18n="lbl-bonus">โบนัสประจำปี (บาท/ปี)</label>
                     <input type="number" id="bonus" placeholder="เช่น 100000" inputmode="decimal" aria-labelledby="lbl-bonus" class="w-full px-4 py-2 bg-green-50 border border-green-200 rounded-lg focus:outline-none transition-all font-medium" oninput="calculateSlip()">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-bonus-month" for="bonusMonth">เดือนที่จ่ายโบนัส (Bonus Payout Month)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-bonus-month" for="bonusMonth" data-i18n="lbl-bonus-month">เดือนที่จ่ายโบนัส (Bonus Payout Month)</label>
                     <select id="bonusMonth" aria-labelledby="lbl-bonus-month" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none transition-all text-sm font-medium" onchange="calculateSlip()">
-                        <option value="12" id="opt-bm-12" selected>ธันวาคม (สิ้นปี / Dec)</option>
-                        <option value="1" id="opt-bm-1">มกราคม (Jan)</option>
-                        <option value="2" id="opt-bm-2">กุมภาพันธ์ (Feb)</option>
-                        <option value="3" id="opt-bm-3">มีนาคม (Mar - สิ้นปีงบประมาณ)</option>
-                        <option value="4" id="opt-bm-4">เมษายน (Apr)</option>
-                        <option value="6" id="opt-bm-6">มิถุนายน (กลางปี / Jun)</option>
-                        <option value="0" id="opt-bm-0">ไม่มี / เฉลี่ยเท่ากันทุกเดือน</option>
+                        <option value="12" id="opt-bm-12" data-i18n="opt-bm-12" selected>ธันวาคม (สิ้นปี / Dec)</option>
+                        <option value="1" id="opt-bm-1" data-i18n="opt-bm-1">มกราคม (Jan)</option>
+                        <option value="2" id="opt-bm-2" data-i18n="opt-bm-2">กุมภาพันธ์ (Feb)</option>
+                        <option value="3" id="opt-bm-3" data-i18n="opt-bm-3">มีนาคม (Mar - สิ้นปีงบประมาณ)</option>
+                        <option value="4" id="opt-bm-4" data-i18n="opt-bm-4">เมษายน (Apr)</option>
+                        <option value="6" id="opt-bm-6" data-i18n="opt-bm-6">มิถุนายน (กลางปี / Jun)</option>
+                        <option value="0" id="opt-bm-0" data-i18n="opt-bm-0">ไม่มี / เฉลี่ยเท่ากันทุกเดือน</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-pvd" for="pvd">กองทุนสำรองเลี้ยงชีพ หักกี่ %</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-pvd" for="pvd" data-i18n="lbl-pvd">กองทุนสำรองเลี้ยงชีพ หักกี่ %</label>
                     <input type="number" id="pvd" placeholder="เช่น 15" inputmode="decimal" aria-labelledby="lbl-pvd" aria-describedby="lbl-pvd-note" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none transition-all font-medium" oninput="calculateSlip()">
-                    <p class="text-xs text-gray-500 mt-1" id="lbl-pvd-note">* หักจากฐานเงินเดือนพื้นฐานเท่านั้น</p>
+                    <p class="text-xs text-gray-500 mt-1" id="lbl-pvd-note" data-i18n="lbl-pvd-note">* หักจากฐานเงินเดือนพื้นฐานเท่านั้น</p>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-sso-ceiling" for="ssoCap">เพดานประกันสังคม</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-sso-ceiling" for="ssoCap" data-i18n="lbl-sso-ceiling">เพดานประกันสังคม</label>
                     <select id="ssoCap" aria-labelledby="lbl-sso-ceiling" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none transition-all text-sm font-medium" onchange="calculateSlip()">
-                        <option value="750" id="opt-sso-750">750 บาท (เพดานเดิม 15,000)</option>
-                        <option value="875" id="opt-sso-875" selected>875 บาท (เพดานใหม่ 17,500)</option>
-                        <option value="1000" id="opt-sso-1000">1,000 บาท (เพดานใหม่ 20,000)</option>
-                        <option value="1150" id="opt-sso-1150">1,150 บาท (เพดานใหม่ 23,000)</option>
+                        <option value="750" id="opt-sso-750" data-i18n="opt-sso-750">750 บาท (เพดานเดิม 15,000)</option>
+                        <option value="875" id="opt-sso-875" data-i18n="opt-sso-875" selected>875 บาท (เพดานใหม่ 17,500)</option>
+                        <option value="1000" id="opt-sso-1000" data-i18n="opt-sso-1000">1,000 บาท (เพดานใหม่ 20,000)</option>
+                        <option value="1150" id="opt-sso-1150" data-i18n="opt-sso-1150">1,150 บาท (เพดานใหม่ 23,000)</option>
                     </select>
                 </div>
 
                 <div class="mt-6 p-4 rounded-lg text-sm" style="background:var(--panel-2); border:1px solid var(--line); color:var(--ink-dim);">
-                    <p id="lbl-taxnote"><strong>หลักการคำนวณภาษี:</strong> ระบบจะนำ โบนัส ไปรวมกับรายได้ทั้งปี เพื่อหาฐานภาษีรวม จากนั้นจะหาร 12 เพื่อเฉลี่ยเป็นยอดหักภาษีต่อเดือน (วิธี Annualized)</p>
+                    <p id="lbl-taxnote" data-i18n="lbl-taxnote"><strong>หลักการคำนวณภาษี:</strong> ระบบจะนำ โบนัส ไปรวมกับรายได้ทั้งปี เพื่อหาฐานภาษีรวม จากนั้นจะหาร 12 เพื่อเฉลี่ยเป็นยอดหักภาษีต่อเดือน (วิธี Annualized)</p>
                 </div>
             </div>
         </div>
@@ -187,7 +187,7 @@
         <!-- 2. Slip Section -->
         <div id="panelPayslipCard" class="reorder-card bg-white rounded-xl shadow-lg md:col-span-7 overflow-hidden border border-gray-200" role="region" aria-labelledby="lbl-payslip">
             <div class="panel-header bg-gray-800 text-white text-center py-4 px-6 relative overflow-hidden flex items-center justify-between">
-                <h2 class="text-xl font-semibold tracking-wide panel-title" id="lbl-payslip">สลิปเงินเดือน</h2>
+                <h2 class="text-xl font-semibold tracking-wide panel-title" id="lbl-payslip" data-i18n="lbl-payslip">สลิปเงินเดือน</h2>
                 <div class="absolute top-0 right-0 w-16 h-16 bg-white opacity-5 transform rotate-45 translate-x-4 -translate-y-4"></div>
             </div>
             
@@ -195,30 +195,30 @@
                 <div class="grid grid-cols-2 gap-x-8 gap-y-4 border-b border-gray-300 pb-4 mb-4">
                     <!-- Earnings -->
                     <div>
-                        <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider mb-3 border-b-2 border-gray-800 inline-block" id="lbl-earnings">รายได้ (Earnings)</h3>
+                        <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider mb-3 border-b-2 border-gray-800 inline-block" id="lbl-earnings" data-i18n="lbl-earnings">รายได้ (Earnings)</h3>
                         <div class="flex justify-between text-sm mb-2">
-                            <span class="text-gray-600" id="lbl-basicSalary">เงินเดือนพื้นฐาน (Basic Salary)</span>
+                            <span class="text-gray-600" id="lbl-basicSalary" data-i18n="lbl-basicSalary">เงินเดือนพื้นฐาน (Basic Salary)</span>
                             <span id="out-salary" class="font-medium text-gray-900">0.00</span>
                         </div>
                         <div class="flex justify-between text-sm mb-2">
-                            <span class="text-gray-600" id="lbl-slipAllowance">เงินได้อื่นๆ (Allowance)</span>
+                            <span class="text-gray-600" id="lbl-slipAllowance" data-i18n="lbl-slipAllowance">เงินได้อื่นๆ (Allowance)</span>
                             <span id="out-allowance" class="font-medium text-gray-900">0.00</span>
                         </div>
                     </div>
                     
                     <!-- Deductions -->
                     <div>
-                        <h3 class="text-sm font-bold text-red-600 uppercase tracking-wider mb-3 border-b-2 border-red-600 inline-block" id="lbl-deductions">รายการหัก (Deductions)</h3>
+                        <h3 class="text-sm font-bold text-red-600 uppercase tracking-wider mb-3 border-b-2 border-red-600 inline-block" id="lbl-deductions" data-i18n="lbl-deductions">รายการหัก (Deductions)</h3>
                         <div class="flex justify-between text-sm mb-2">
-                            <span class="text-gray-600" id="lbl-taxPeriod">ภาษีเดือนนี้ (Tax)</span>
+                            <span class="text-gray-600" id="lbl-taxPeriod" data-i18n="lbl-taxPeriod">ภาษีเดือนนี้ (Tax)</span>
                             <span id="out-tax" class="font-medium text-red-500">0.00</span>
                         </div>
                         <div class="flex justify-between text-sm mb-2">
-                            <span class="text-gray-600" id="lbl-ssoAmount">เงินสมทบประกันสังคม (SSO)</span>
+                            <span class="text-gray-600" id="lbl-ssoAmount" data-i18n="lbl-ssoAmount">เงินสมทบประกันสังคม (SSO)</span>
                             <span id="out-sso" class="font-medium text-red-500">0.00</span>
                         </div>
                         <div class="flex justify-between text-sm mb-2">
-                            <span class="text-gray-600" id="lbl-pvdAmount">เงินสะสม PVD (PF Contribution)</span>
+                            <span class="text-gray-600" id="lbl-pvdAmount" data-i18n="lbl-pvdAmount">เงินสะสม PVD (PF Contribution)</span>
                             <span id="out-pvd" class="font-medium text-red-500">0.00</span>
                         </div>
                     </div>
@@ -226,17 +226,17 @@
 
                 <div class="grid grid-cols-2 gap-x-8 text-sm font-semibold text-gray-800 pb-4 border-b-2 border-dashed border-gray-300 mb-4">
                     <div class="flex justify-between">
-                        <span id="lbl-totalGross">รายได้รวม (Total Gross)</span>
+                        <span id="lbl-totalGross" data-i18n="lbl-totalGross">รายได้รวม (Total Gross)</span>
                         <span id="out-total-income">0.00</span>
                     </div>
                     <div class="flex justify-between">
-                        <span id="lbl-totalDedns">รายการหักรวม (Total Dedns)</span>
+                        <span id="lbl-totalDedns" data-i18n="lbl-totalDedns">รายการหักรวม (Total Dedns)</span>
                         <span id="out-total-deduct" class="text-red-600">0.00</span>
                     </div>
                 </div>
 
                 <div class="flex justify-between items-center p-4 rounded-lg border mb-4" role="status" aria-live="polite" style="background:var(--ok-dim); border-color:var(--ok);">
-                    <span class="text-lg font-bold" style="color:var(--ok);" id="lbl-netPayment">เงินได้สุทธิ (Net Payment)</span>
+                    <span class="text-lg font-bold" style="color:var(--ok);" id="lbl-netPayment" data-i18n="lbl-netPayment">เงินได้สุทธิ (Net Payment)</span>
                     <div class="text-right">
                         <span id="out-net" class="text-2xl font-black tracking-tight" style="color:var(--ok);">0.00</span>
                     </div>
@@ -244,28 +244,28 @@
 
                 <!-- YTD Summary (Year to Date) -->
                 <div class="border rounded-lg p-4 text-xs" style="background:var(--panel-2); border-color:var(--line); color:var(--ink-dim);" role="region" aria-labelledby="lbl-annual">
-                    <h4 class="font-bold mb-2 uppercase border-b pb-1" style="color:var(--ink); border-color:var(--line);" id="lbl-annual">ประมาณการรวมทั้งปี (Annual Estimate)</h4>
+                    <h4 class="font-bold mb-2 uppercase border-b pb-1" style="color:var(--ink); border-color:var(--line);" id="lbl-annual" data-i18n="lbl-annual">ประมาณการรวมทั้งปี (Annual Estimate)</h4>
                     <div class="grid grid-cols-2 gap-4 mt-2">
-                        <div class="flex justify-between"><span id="lbl-ytd-income">รายได้รวมทั้งปี:</span><span id="ytd-income" class="font-medium" style="color:var(--ink);">0.00</span></div>
-                        <div class="flex justify-between"><span id="lbl-ytd-tax">ภาษีรวมทั้งปี:</span><span id="ytd-tax" class="font-medium" style="color:var(--danger);">0.00</span></div>
-                        <div class="flex justify-between"><span id="lbl-ytd-pvd">หัก PVD ทั้งปี:</span><span id="ytd-pvd" class="font-medium" style="color:var(--ink);">0.00</span></div>
-                        <div class="flex justify-between"><span id="lbl-ytd-taxable">ฐานภาษีสุทธิ:</span><span id="ytd-taxable" class="font-medium" style="color:var(--ink);">0.00</span></div>
+                        <div class="flex justify-between"><span id="lbl-ytd-income" data-i18n="lbl-ytd-income">รายได้รวมทั้งปี:</span><span id="ytd-income" class="font-medium" style="color:var(--ink);">0.00</span></div>
+                        <div class="flex justify-between"><span id="lbl-ytd-tax" data-i18n="lbl-ytd-tax">ภาษีรวมทั้งปี:</span><span id="ytd-tax" class="font-medium" style="color:var(--danger);">0.00</span></div>
+                        <div class="flex justify-between"><span id="lbl-ytd-pvd" data-i18n="lbl-ytd-pvd">หัก PVD ทั้งปี:</span><span id="ytd-pvd" class="font-medium" style="color:var(--ink);">0.00</span></div>
+                        <div class="flex justify-between"><span id="lbl-ytd-taxable" data-i18n="lbl-ytd-taxable">ฐานภาษีสุทธิ:</span><span id="ytd-taxable" class="font-medium" style="color:var(--ink);">0.00</span></div>
                     </div>
                     <div class="mt-3 pt-3 border-t" style="border-color:var(--line);">
-                        <p class="font-bold mb-2 uppercase" style="color:var(--ink);" id="lbl-breakdownTitle">รายละเอียดภาษีตามขั้นบันได (ทั้งปี)</p>
+                        <p class="font-bold mb-2 uppercase" style="color:var(--ink);" id="lbl-breakdownTitle" data-i18n="lbl-breakdownTitle">รายละเอียดภาษีตามขั้นบันได (ทั้งปี)</p>
                         <div id="taxBreakdown" class="space-y-1"></div>
                     </div>
                     <div class="flex flex-wrap items-center gap-2 mt-3 pt-2 border-t no-print" style="border-color:var(--line);">
                         <button onclick="copySlipSummary()" id="btn-copy-slip" class="py-1.5 px-3 border text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 cursor-pointer" style="background:var(--panel); border-color:var(--line); color:var(--ink);" aria-label="คัดลอกสรุปสลิป / Copy Payslip Summary">
-                            <span id="lbl-copy-text">📋 คัดลอกสรุปสลิป</span>
+                            <span id="lbl-copy-text" data-i18n="lbl-copy-text">📋 คัดลอกสรุปสลิป</span>
                         </button>
                         <button onclick="exportSlipToRemaining()" id="btn-export-slip" class="py-1.5 px-3 text-white text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-xs" style="background:var(--core);" aria-label="ส่งเงินเดือนไปยัง เงินคงเหลือ / Export to Remaining Money">
-                            <span id="lbl-export-slip">📤 ส่งเงินเดือนไปยัง เงินคงเหลือ</span>
+                            <span id="lbl-export-slip" data-i18n="lbl-export-slip">📤 ส่งเงินเดือนไปยัง เงินคงเหลือ</span>
                         </button>
                         <button onclick="window.print()" id="btn-print-slip" class="py-1.5 px-3 text-white text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-xs" style="background:var(--core);" aria-label="พิมพ์ / บันทึก PDF / Print or Save PDF">
-                            <span id="lbl-print-slip">🖨️ พิมพ์ / บันทึก PDF</span>
+                            <span id="lbl-print-slip" data-i18n="lbl-print-slip">🖨️ พิมพ์ / บันทึก PDF</span>
                         </button>
-                        <p class="text-xs ml-auto" style="color:var(--ink-faint);">v2.5.46</p>
+                        <p class="text-xs ml-auto" style="color:var(--ink-faint);">v2.5.47</p>
                     </div>
                 </div>
             </div>
@@ -275,10 +275,10 @@
         <div id="panelCashflowStream" class="reorder-card w-full md:col-span-12 bg-white rounded-xl shadow-lg p-5 border border-gray-200 no-print" role="region" aria-labelledby="lbl-stream-title">
             <div class="panel-header flex flex-wrap items-center justify-between gap-2 mb-4">
                 <div>
-                    <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5 panel-title" id="lbl-stream-title">
+                    <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5 panel-title" id="lbl-stream-title" data-i18n="lbl-stream-title">
                         📅 กราฟการกระจายรายรับสุทธิ 12 เดือน (Annual Net Cashflow Stream)
                     </h3>
-                    <p class="text-xs text-gray-500 mt-0.5" id="lbl-stream-sub">
+                    <p class="text-xs text-gray-500 mt-0.5" id="lbl-stream-sub" data-i18n="lbl-stream-sub">
                         แสดงสัดส่วนเงินได้สุทธิ, ภาษี, ประกันสังคม, กองทุนสำรองเลี้ยงชีพ และโบนัสในแต่ละเดือน
                     </p>
                 </div>
@@ -302,23 +302,23 @@
                 <div class="flex flex-wrap items-center justify-center gap-4 mt-3 pt-3 border-t border-gray-100 text-xs text-gray-600">
                     <div class="flex items-center gap-1.5">
                         <span style="width:10px; height:10px; border-radius:2px; background:var(--ok, #10b981);" class="inline-block"></span>
-                        <span id="leg-stream-net">เงินได้สุทธิ (Net Pay)</span>
+                        <span id="leg-stream-net" data-i18n="leg-stream-net">เงินได้สุทธิ (Net Pay)</span>
                     </div>
                     <div class="flex items-center gap-1.5">
                         <span style="width:10px; height:10px; border-radius:2px; background:var(--purple, #8b5cf6);" class="inline-block"></span>
-                        <span id="leg-stream-bonus">โบนัสพิเศษ (Bonus)</span>
+                        <span id="leg-stream-bonus" data-i18n="leg-stream-bonus">โบนัสพิเศษ (Bonus)</span>
                     </div>
                     <div class="flex items-center gap-1.5">
                         <span style="width:10px; height:10px; border-radius:2px; background:var(--core, #3b82f6);" class="inline-block"></span>
-                        <span id="leg-stream-pvd">PVD</span>
+                        <span id="leg-stream-pvd" data-i18n="leg-stream-pvd">PVD</span>
                     </div>
                     <div class="flex items-center gap-1.5">
                         <span style="width:10px; height:10px; border-radius:2px; background:var(--warn, #f59e0b);" class="inline-block"></span>
-                        <span id="leg-stream-sso">ประกันสังคม (SSO)</span>
+                        <span id="leg-stream-sso" data-i18n="leg-stream-sso">ประกันสังคม (SSO)</span>
                     </div>
                     <div class="flex items-center gap-1.5">
                         <span style="width:10px; height:10px; border-radius:2px; background:var(--danger, #ef4444);" class="inline-block"></span>
-                        <span id="leg-stream-tax">ภาษี (Tax)</span>
+                        <span id="leg-stream-tax" data-i18n="leg-stream-tax">ภาษี (Tax)</span>
                     </div>
                 </div>
             </div>
@@ -328,10 +328,10 @@
         <div id="pitReconciliationCard" class="reorder-card w-full md:col-span-12 rounded-xl shadow-lg p-5 no-print" role="region" aria-labelledby="lbl-reconcile-title" style="background:var(--panel); border:1px solid var(--line);">
             <div class="panel-header flex flex-wrap items-center justify-between gap-2 mb-3">
                 <div>
-                    <h3 class="text-sm font-bold uppercase tracking-wider flex items-center gap-1.5 panel-title" style="color:var(--ink);" id="lbl-reconcile-title">
+                    <h3 class="text-sm font-bold uppercase tracking-wider flex items-center gap-1.5 panel-title" style="color:var(--ink);" id="lbl-reconcile-title" data-i18n="lbl-reconcile-title">
                         🔄 การกระทบยอดภาษีสิ้นปี ภ.ง.ด.91 &amp; ขอคืนเงินภาษี (Year-End PIT Reconciliation &amp; Refund Tracker)
                     </h3>
-                    <p class="text-xs mt-0.5" style="color:var(--ink-dim);" id="lbl-reconcile-sub">
+                    <p class="text-xs mt-0.5" style="color:var(--ink-dim);" id="lbl-reconcile-sub" data-i18n="lbl-reconcile-sub">
                         เปรียบเทียบภาษีหัก ณ ที่จ่ายสะสมทั้งปี (50 ทวิ) กับภาษีที่ต้องจ่ายจริงหลังหักลดหย่อนเพิ่มเติม พร้อมจำลองสิทธิ์ขอคืนภาษีผ่านพร้อมเพย์
                     </p>
                 </div>
@@ -345,47 +345,47 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-3.5 rounded-lg text-xs mb-4" style="background:var(--panel-2); border:1px solid var(--line);">
                     <div>
                         <div class="flex justify-between items-center mb-1">
-                            <label class="font-semibold" style="color:var(--ink);" id="lbl-recon-withheld" for="reconWithheldInput">
+                            <label class="font-semibold" style="color:var(--ink);" id="lbl-recon-withheld" for="reconWithheldInput" data-i18n="lbl-recon-withheld">
                                 ภาษีหัก ณ ที่จ่ายสะสมทั้งปี (50 ทวิ):
                             </label>
-                            <button type="button" onclick="syncWithholdingFromStream()" class="text-[11px] font-medium hover:underline" style="color:var(--core); background:none; border:none; cursor:pointer;" id="btn-recon-sync">
+                            <button type="button" onclick="syncWithholdingFromStream()" class="text-[11px] font-medium hover:underline" style="color:var(--core); background:none; border:none; cursor:pointer;" id="btn-recon-sync" data-i18n="btn-recon-sync">
                                 🔄 ใช้ยอดจากสลิป 12 เดือน
                             </button>
                         </div>
                         <div class="relative">
                             <input type="number" id="reconWithheldInput" min="0" step="100" aria-labelledby="lbl-recon-withheld" aria-describedby="lbl-recon-withheld-hint" class="w-full px-3 py-2 rounded-lg text-sm font-semibold" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="onWithheldManualInput()">
-                            <span class="absolute right-3 top-2.5 text-xs font-medium" style="color:var(--ink-faint);" id="lbl-recon-unit1">บาท</span>
+                            <span class="absolute right-3 top-2.5 text-xs font-medium" style="color:var(--ink-faint);" id="lbl-recon-unit1" data-i18n="lbl-recon-unit1">บาท</span>
                         </div>
-                        <p class="text-[11px] mt-1" style="color:var(--ink-faint);" id="lbl-recon-withheld-hint">ยอดภาษีสะสมที่นายจ้างหักส่งกรมสรรพากรตลอดทั้งปี</p>
+                        <p class="text-[11px] mt-1" style="color:var(--ink-faint);" id="lbl-recon-withheld-hint" data-i18n="lbl-recon-withheld-hint">ยอดภาษีสะสมที่นายจ้างหักส่งกรมสรรพากรตลอดทั้งปี</p>
                     </div>
 
                     <div>
                         <div class="flex justify-between items-center mb-1">
-                            <label class="font-semibold" style="color:var(--ink);" id="lbl-recon-extraded" for="reconExtraDeductionsInput">
+                            <label class="font-semibold" style="color:var(--ink);" id="lbl-recon-extraded" for="reconExtraDeductionsInput" data-i18n="lbl-recon-extraded">
                                 ค่าลดหย่อนภาษีเพิ่มเติมสิ้นปี (Extra Deductions):
                             </label>
                             <span class="text-[11px] font-semibold" style="color:var(--ok);" id="lbl-recon-ded-save">ประหยัดภาษีได้: 0.00 บาท</span>
                         </div>
                         <div class="relative">
                             <input type="number" id="reconExtraDeductionsInput" min="0" step="1000" value="0" placeholder="0" aria-labelledby="lbl-recon-extraded" aria-describedby="lbl-recon-extraded-hint" class="w-full px-3 py-2 rounded-lg text-sm font-semibold" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="runReconciliation()">
-                            <span class="absolute right-3 top-2.5 text-xs font-medium" style="color:var(--ink-faint);" id="lbl-recon-unit2">บาท</span>
+                            <span class="absolute right-3 top-2.5 text-xs font-medium" style="color:var(--ink-faint);" id="lbl-recon-unit2" data-i18n="lbl-recon-unit2">บาท</span>
                         </div>
-                        <p class="text-[11px] mt-1" style="color:var(--ink-faint);" id="lbl-recon-extraded-hint">เช่น ประกันชีวิต/สุขภาพ, กองทุนลดหย่อน ThaiESG/SSF/RMF, ดอกเบี้ยบ้าน, บริจาค</p>
+                        <p class="text-[11px] mt-1" style="color:var(--ink-faint);" id="lbl-recon-extraded-hint" data-i18n="lbl-recon-extraded-hint">เช่น ประกันชีวิต/สุขภาพ, กองทุนลดหย่อน ThaiESG/SSF/RMF, ดอกเบี้ยบ้าน, บริจาค</p>
                     </div>
                 </div>
 
                 <!-- Metric Cards Result -->
                 <div id="reconResultPanel" role="region" aria-label="Reconciliation Results" class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs mb-3">
                     <div class="p-3 rounded-lg shadow-sm" style="background:var(--panel); border:1px solid var(--line);">
-                        <span class="block mb-0.5" style="color:var(--ink-faint);" id="lbl-recon-card-withheld">ภาษีที่ถูกหักไว้แล้ว (50 ทวิ)</span>
+                        <span class="block mb-0.5" style="color:var(--ink-faint);" id="lbl-recon-card-withheld" data-i18n="lbl-recon-card-withheld">ภาษีที่ถูกหักไว้แล้ว (50 ทวิ)</span>
                         <span id="reconCardWithheld" class="text-sm font-bold" style="color:var(--ink);">0.00 บาท</span>
                     </div>
                     <div class="p-3 rounded-lg shadow-sm" style="background:var(--panel); border:1px solid var(--line);">
-                        <span class="block mb-0.5" style="color:var(--ink-faint);" id="lbl-recon-card-liability">ภาษีที่ต้องจ่ายจริงสิ้นปี</span>
+                        <span class="block mb-0.5" style="color:var(--ink-faint);" id="lbl-recon-card-liability" data-i18n="lbl-recon-card-liability">ภาษีที่ต้องจ่ายจริงสิ้นปี</span>
                         <span id="reconCardLiability" class="text-sm font-bold" style="color:var(--ink);">0.00 บาท</span>
                     </div>
                     <div class="p-3 rounded-lg border shadow-sm transition-colors" id="reconCardSettlementBox" style="background:var(--panel-2); border-color:var(--line);">
-                        <span class="block mb-0.5" style="color:var(--ink-faint);" id="lbl-recon-card-settlement">ผลลัพธ์การกระทบยอด</span>
+                        <span class="block mb-0.5" style="color:var(--ink-faint);" id="lbl-recon-card-settlement" data-i18n="lbl-recon-card-settlement">ผลลัพธ์การกระทบยอด</span>
                         <span id="reconCardSettlement" class="text-sm font-black" style="color:var(--ink);">0.00 บาท</span>
                     </div>
                 </div>
@@ -400,19 +400,19 @@
         <!-- 5. Job Scenario Comparison Panel (At Bottom) -->
         <div id="panelJobCompare" class="reorder-card w-full md:col-span-12 no-print p-4 rounded-xl shadow-md border" style="background:var(--panel); border:1px solid var(--line);">
             <div class="panel-header flex items-center justify-between mb-2 cursor-pointer" onclick="toggleCompare()" role="button" tabindex="0">
-                <h3 class="font-bold text-sm panel-title" style="color:var(--ink);" id="lblCompareTitle">📊 เปรียบเทียบข้อเสนองาน (Scenario A vs B)</h3>
+                <h3 class="font-bold text-sm panel-title" style="color:var(--ink);" id="lblCompareTitle" data-i18n="lblCompareTitle">📊 เปรียบเทียบข้อเสนองาน (Scenario A vs B)</h3>
             </div>
             <div id="panelJobCompareBody" class="panel-body">
                 <div id="comparePanel" role="region" aria-labelledby="lblCompareTitle" style="background:var(--panel-2); border:1px solid var(--line);" class="rounded-xl p-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                         <div>
-                            <label class="font-semibold block mb-1" style="color:var(--ink);" id="lblScenarioA">Scenario A</label>
+                            <label class="font-semibold block mb-1" style="color:var(--ink);" id="lblScenarioA" data-i18n="lblScenarioA">Scenario A</label>
                             <input type="number" id="cmpSalaryA" placeholder="เงินเดือน" class="w-full px-3 py-2 rounded-lg text-sm mb-2 font-medium" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="runCompare()">
                             <input type="number" id="cmpBonusA" placeholder="โบนัส (เดือน)" value="0" class="w-full px-3 py-2 rounded-lg text-sm mb-2 font-medium" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="runCompare()">
                             <input type="number" id="cmpPvdA" placeholder="PVD %" value="0" class="w-full px-3 py-2 rounded-lg text-sm font-medium" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="runCompare()">
                         </div>
                         <div>
-                            <label class="font-semibold block mb-1" style="color:var(--ink);" id="lblScenarioB">Scenario B</label>
+                            <label class="font-semibold block mb-1" style="color:var(--ink);" id="lblScenarioB" data-i18n="lblScenarioB">Scenario B</label>
                             <input type="number" id="cmpSalaryB" placeholder="เงินเดือน" class="w-full px-3 py-2 rounded-lg text-sm mb-2 font-medium" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="runCompare()">
                             <input type="number" id="cmpBonusB" placeholder="โบนัส (เดือน)" value="0" class="w-full px-3 py-2 rounded-lg text-sm mb-2 font-medium" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="runCompare()">
                             <input type="number" id="cmpPvdB" placeholder="PVD %" value="0" class="w-full px-3 py-2 rounded-lg text-sm font-medium" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="runCompare()">

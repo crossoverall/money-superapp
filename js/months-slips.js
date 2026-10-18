@@ -1,7 +1,77 @@
 // Language: read once from localStorage (shared origin with the shell nav's toggle).
-if (LANG === 'en') {
-  document.title = 'Payslip Simulator (with bonus)';
-  const EN = {
+const translations = {
+  th: {
+    'lbl-setup': 'ตั้งค่าข้อมูลรายได้',
+    'lbl-salary': 'เงินเดือนพื้นฐาน (บาท/เดือน)',
+    'lbl-allowance': 'เงินได้อื่นๆ / Allowance (บาท/เดือน)',
+    'lbl-bonus': 'โบนัสประจำปี (บาท/ปี)',
+    'lbl-pvd': 'กองทุนสำรองเลี้ยงชีพ หักกี่ %',
+    'lbl-pvd-note': '* หักจากฐานเงินเดือนพื้นฐานเท่านั้น',
+    'lbl-sso-ceiling': 'เพดานประกันสังคม',
+    'opt-sso-750': '750 บาท (เพดานเดิม 15,000)',
+    'opt-sso-875': '875 บาท (เพดานใหม่ 17,500)',
+    'opt-sso-1000': '1,000 บาท (เพดานใหม่ 20,000)',
+    'opt-sso-1150': '1,150 บาท (เพดานใหม่ 23,000)',
+    'lbl-taxnote':
+      '<strong>หลักการคำนวณภาษี:</strong> ระบบจะนำ โบนัส ไปรวมกับรายได้ทั้งปี เพื่อหาฐานภาษีรวม จากนั้นจะหาร 12 เพื่อเฉลี่ยเป็นยอดหักภาษีต่อเดือน (วิธี Annualized)',
+    'lbl-earnings': 'รายได้ (Earnings)',
+    'lbl-deductions': 'รายการหัก (Deductions)',
+    'lbl-annual': 'ประมาณการรวมทั้งปี (Annual Estimate)',
+    'lbl-ytd-income': 'รายได้รวมทั้งปี:',
+    'lbl-ytd-tax': 'ภาษีรวมทั้งปี:',
+    'lbl-ytd-pvd': 'หัก PVD ทั้งปี:',
+    'lbl-ytd-taxable': 'ฐานภาษีสุทธิ:',
+    'lbl-payslip': 'สลิปเงินเดือน',
+    'lbl-basicSalary': 'เงินเดือนพื้นฐาน (Basic Salary)',
+    'lbl-slipAllowance': 'เงินได้อื่นๆ (Allowance)',
+    'lbl-taxPeriod': 'ภาษีเดือนนี้ (Tax)',
+    'lbl-ssoAmount': 'เงินสมทบประกันสังคม (SSO)',
+    'lbl-pvdAmount': 'เงินสะสม PVD (PF Contribution)',
+    'lbl-totalGross': 'รายได้รวม (Total Gross)',
+    'lbl-totalDedns': 'รายการหักรวม (Total Dedns)',
+    'lbl-netPayment': 'เงินได้สุทธิ (Net Payment)',
+    'lbl-breakdownTitle': 'รายละเอียดภาษีตามขั้นบันได (ทั้งปี)',
+    'lbl-copy-text': '📋 คัดลอกสรุปสลิป',
+    'lbl-export-slip': '📤 ส่งเงินเดือนไปยัง เงินคงเหลือ',
+    'lbl-print-slip': '🖨️ พิมพ์ / บันทึก PDF',
+    lblCompareToggle: '⚖️ เปรียบเทียบข้อเสนองาน',
+    lblCompareTitle: '📊 เปรียบเทียบข้อเสนองาน (Scenario A vs B)',
+    lblScenarioA: 'Scenario A',
+    lblScenarioB: 'Scenario B',
+    'lbl-bonus-month': 'เดือนที่จ่ายโบนัส (Bonus Payout Month)',
+    'opt-bm-12': 'ธันวาคม (สิ้นปี / Dec)',
+    'opt-bm-1': 'มกราคม (Jan)',
+    'opt-bm-2': 'กุมภาพันธ์ (Feb)',
+    'opt-bm-3': 'มีนาคม (Mar - สิ้นปีงบประมาณ)',
+    'opt-bm-4': 'เมษายน (Apr)',
+    'opt-bm-6': 'มิถุนายน (กลางปี / Jun)',
+    'opt-bm-0': 'ไม่มี / เฉลี่ยเท่ากันทุกเดือน',
+    'lbl-stream-title': '📅 กราฟการกระจายรายรับสุทธิ 12 เดือน (Annual Net Cashflow Stream)',
+    'lbl-stream-sub': 'แสดงสัดส่วนเงินได้สุทธิ, ภาษี, ประกันสังคม, กองทุนสำรองเลี้ยงชีพ และโบนัสในแต่ละเดือน',
+    'leg-stream-net': 'เงินได้สุทธิ (Net Pay)',
+    'leg-stream-bonus': 'โบนัสพิเศษ (Bonus)',
+    'leg-stream-pvd': 'PVD',
+    'leg-stream-sso': 'ประกันสังคม (SSO)',
+    'leg-stream-tax': 'ภาษี (Tax)',
+    'lbl-reconcile-title':
+      '🔄 การกระทบยอดภาษีสิ้นปี ภ.ง.ด.91 &amp; ขอคืนเงินภาษี (Year-End PIT Reconciliation &amp; Refund Tracker)',
+    'lbl-reconcile-sub':
+      'เปรียบเทียบภาษีหัก ณ ที่จ่ายสะสมทั้งปี (50 ทวิ) กับภาษีที่ต้องจ่ายจริงหลังหักลดหย่อนเพิ่มเติม พร้อมจำลองสิทธิ์ขอคืนภาษีผ่านพร้อมเพย์',
+    'lbl-recon-withheld': 'ภาษีหัก ณ ที่จ่ายสะสมทั้งปี (50 ทวิ):',
+    'btn-recon-sync': '🔄 ใช้ยอดจากสลิป 12 เดือน',
+    'lbl-recon-withheld-hint': 'ยอดภาษีสะสมที่นายจ้างหักส่งกรมสรรพากรตลอดทั้งปี',
+    'lbl-recon-extraded': 'ค่าลดหย่อนภาษีเพิ่มเติมสิ้นปี (Extra Deductions):',
+    'lbl-recon-ded-save': 'ประหยัดภาษีได้: 0.00 บาท',
+    'lbl-recon-extraded-hint': 'เช่น ประกันชีวิต/สุขภาพ, กองทุนลดหย่อน ThaiESG/SSF/RMF, ดอกเบี้ยบ้าน, บริจาค',
+    'lbl-recon-unit1': 'บาท',
+    'lbl-recon-unit2': 'บาท',
+    'lbl-recon-card-withheld': 'ภาษีที่ถูกหักไว้แล้ว (50 ทวิ)',
+    'lbl-recon-card-liability': 'ภาษีที่ต้องจ่ายจริงสิ้นปี',
+    'lbl-recon-card-settlement': 'ผลลัพธ์การกระทบยอด',
+    'lbl-slips-subtitle': 'สามารถจัดเรียงหรือพับย่อการ์ดแต่ละส่วนได้ตามต้องการ',
+    'lbl-reset-slips-layout': 'รีเซ็ตเลย์เอาต์',
+  },
+  en: {
     'lbl-setup': 'Income settings',
     'lbl-salary': 'Basic salary (THB/month)',
     'lbl-allowance': 'Allowance / Other (THB/month)',
@@ -70,7 +140,19 @@ if (LANG === 'en') {
     'lbl-recon-card-settlement': 'Reconciliation Result',
     'lbl-slips-subtitle': 'Reorder and collapse cards to customize your payslip workspace',
     'lbl-reset-slips-layout': 'Reset Layout',
-  };
+  },
+};
+
+if (typeof window !== 'undefined' && window.MoneyApp?.I18n) {
+  MoneyApp.I18n.register('th', translations.th);
+  MoneyApp.I18n.register('en', translations.en);
+  MoneyApp.I18n.applyLocalization(document, LANG);
+}
+
+const EN = translations.en;
+
+if (LANG === 'en') {
+  document.title = 'Payslip Simulator (with bonus)';
   Object.keys(EN).forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = EN[id];

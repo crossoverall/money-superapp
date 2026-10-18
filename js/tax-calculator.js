@@ -1,7 +1,122 @@
 // Language: read once from localStorage (shared origin with the shell nav's toggle).
-if (LANG === 'en') {
-  document.title = 'Severance & PVD Tax Calculator';
-  const EN = {
+const translations = {
+  th: {
+    'lbl-h1': 'คำนวณภาษีเงินชดเชย + PVD',
+    'lbl-subtitle': 'เลือกเงื่อนไขที่ตรงกับสถานการณ์ของคุณ',
+    'lbl-severance': 'เงินชดเชย',
+    'lbl-severanceLegal': 'เงินชดเชยตามกฎหมาย',
+    'badge-severanceLegal': 'ยกเว้น 600,000 บาท',
+    'lbl-severanceExtra': 'เงินชดเชยพิเศษ (นอกเหนือกฎหมาย)',
+    'badge-severanceExtra': 'ต้องเสียภาษีทั้งหมด',
+    'badge-pvdEmpContrib': 'ยกเว้นภาษี',
+    'lbl-pvdSection': 'กองทุนสำรองเลี้ยงชีพ (PVD)',
+    'lbl-pvdEmpContrib': 'เงินสะสม (ส่วนลูกจ้าง)',
+    'lbl-pvdEmpReturn': 'ผลประโยชน์เงินสะสม',
+    'lbl-pvdEmrContrib': 'เงินสมทบ (ส่วนนายจ้าง)',
+    'lbl-pvdEmrReturn': 'ผลประโยชน์เงินสมทบ',
+    'lbl-years': 'จำนวนปีที่ทำงาน',
+    'btn-calc': 'คำนวณภาษี',
+    'lbl-res-legal-excess': 'เงินชดเชยตามกฎหมาย (ส่วนเกิน)',
+    'lbl-res-extra': 'เงินชดเชยพิเศษ',
+    'lbl-res-pvd': 'PVD ที่ต้องเสียภาษี',
+    'lbl-res-taxable': 'รวมส่วนที่นำมาคิดภาษี',
+    'lbl-res-tax': 'ภาษีที่ต้องจ่าย',
+    'btn-reset': 'ล้างข้อมูล',
+    'tip-legal-excess': 'เงินชดเชยตามกฎหมายแรงงาน หักส่วนที่ยกเว้น 600,000 บาท<br>= เงินชดเชยตามกฎหมาย − 600,000 (ไม่ต่ำกว่า 0)',
+    'tip-extra': 'เงินชดเชยนอกเหนือกฎหมาย ไม่มีส่วนยกเว้น<br>นำมาคิดภาษีทั้งจำนวน',
+    'tip-pvd': '= ผลประโยชน์เงินสะสม + เงินสมทบนายจ้าง<br>+ ผลประโยชน์เงินสมทบ<br>(ไม่รวมเงินสะสมส่วนลูกจ้างซึ่งยกเว้นภาษี)',
+    'tip-tax':
+      'คำนวณจากอัตราภาษีก้าวหน้า<br>0–300k: 5% / 300k–500k: 10%<br>500k–750k: 15% / 750k–1M: 20%<br>1M–2M: 25% / 2M–4M: 30% / &gt;4M: 35%',
+    'btn-toggle-sev-calc': '🧮 ช่วยคำนวณตามอายุงาน',
+    'lbl-sev-calc-title': 'คำนวณเงินชดเชยตามอายุงาน (พ.ร.บ. คุ้มครองแรงงาน)',
+    'lbl-last-wage': 'เงินเดือนงวดสุดท้าย (บาท)',
+    'lbl-tenure-bracket': 'เกณฑ์อายุงาน',
+    'lbl-sev-calc-result': 'ยอดชดเชยตามสิทธิ์:',
+    'btn-apply-sev': '✓ นำค่ายอดเงินชดเชยไปใช้',
+    'lbl-res-net': 'ยอดรับสุทธิหลังหักภาษี',
+    'tip-net': '= ยอดเงินชดเชยทั้งหมด + ยอด PVD ทั้งหมด − ภาษีที่ต้องจ่าย',
+    'lbl-export-remaining': 'ส่งยอดสุทธินี้ไปยัง เงินคงเหลือ (Remaining Money)',
+    'lbl-rmf-opt-title': '🔄 เปรียบเทียบ: รับเงินก้อน vs โอนเข้า RMF',
+    'lbl-rmf-opt-subtitle': 'กลยุทธ์ประหยัดภาษีเมื่ออายุงาน ≥ 5 ปี และอายุ < 55 ปี',
+    'lbl-opt-lump-title': 'ทางเลือก A: รับเงินก้อน',
+    'lbl-reset-tax-layout': 'รีเซ็ตลำดับ',
+    'lbl-panel-sev-inputs': '1. ข้อมูลเงินชดเชยและกองทุนสำรองเลี้ยงชีพ',
+    'lbl-panel-sev-results': '2. ผลการคำนวณภาษี & สิทธิโอนย้าย RMF',
+    'lbl-opt-lump-tax-lbl': 'ภาษี ม.48(5):',
+    'lbl-opt-lump-net-lbl': 'เงินสดรับสุทธิทันที:',
+    'lbl-opt-rmf-title': 'ทางเลือก B: โอนเข้า RMF',
+    'lbl-opt-rmf-tax-lbl': 'ภาษี ม.48(5) (ชดเชย):',
+    'lbl-opt-rmf-invested-lbl': 'ยอดสะสมลงทุนต่อใน RMF:',
+    'lbl-opt-rmf-total-lbl': 'รวมความมั่งคั่งสุทธิ:',
+    'lbl-opt-note':
+      '💡 <strong>ข้อแนะนำ:</strong> การโอนย้าย PVD เข้ากองทุน RMF for PVD ภายใน 30 วันหลังสิ้นสุดสภาพพนักงาน ทำให้ยอด PVD ทั้งหมดได้รับยกเว้นภาษีทันที และคงสถานะการลงทุนต่อเนื่องจนถึงอายุ 55 ปีบริบูรณ์เพื่อถอนออกโดยปลอดภาษี 100%',
+    'lbl-sso-title': '🏥 จำลองสิทธิประโยชน์ &amp; บำนาญชราภาพ ประกันสังคม (Social Security Benefits &amp; Pension)',
+    'lbl-sso-subtitle': 'มาตรา 33 (พนักงานประจำ), มาตรา 39 (ภาคสมัครใจ), มาตรา 40 (อิสระ)',
+    'lbl-sso-sec': 'มาตรา (Section)',
+    'opt-sso-33': 'ม.33 (ลูกจ้างประจำ)',
+    'opt-sso-39': 'ม.39 (ผู้ประกันตนภาคสมัครใจ)',
+    'opt-sso-40': 'ม.40 (อาชีพอิสระ/ฟรีแลนซ์)',
+    'lbl-sso-wage': 'เงินเดือนเฉลี่ย 60 เดือนสุดท้าย',
+    'lbl-sso-years': 'ระยะเวลาส่งเงินสมทบ (ปี)',
+    'lbl-sso-res-pension': 'บำนาญชราภาพตลอดชีพ:',
+    'lbl-sso-res-lump': 'บำเหน็จ (หากส่งไม่ถึง 15 ปี) / รวม 20 ปี:',
+    'lbl-inher-title': '🏛️ จำลองภาษีการรับมรดก &amp; ภาษีการรับการให้ (Thai Inheritance &amp; Gift Tax)',
+    'lbl-inher-subtitle': 'พ.ร.บ. ภาษีการรับมรดก พ.ศ. 2558 &amp; ประมวลรัษฎากร ม.42(26)-(28)',
+    lblSubTabInher: 'ภาษีมรดก',
+    lblSubTabGift: 'ภาษีการให้',
+    lblSubTabStrategy: 'กลยุทธ์ส่งต่อ',
+    lblEstateValue: 'มูลค่าทรัพย์สินมรดกสุทธิ (Total Estate Value)',
+    lblHeirRel: 'ความสัมพันธ์ของผู้รับมรดก',
+    optHeirChild: 'บุพการี / ผู้สืบสันดาน (เสีย 5% ส่วนเกิน)',
+    optHeirSpouse: 'คู่สมรสตามกฎหมาย (ยกเว้น 100%)',
+    optHeirOther: 'บุคคลอื่น / ญาติพี่น้อง (เสีย 10% ส่วนเกิน)',
+    lblHeirCount: 'จำนวนผู้รับมรดก (แบ่งเท่ากัน)',
+    lblCardInherPortion: 'ส่วนแบ่งมรดกต่อคน:',
+    lblCardInherTax: 'ภาษีมรดกที่ต้องจ่ายรวม:',
+    lblGiftType: 'ประเภทการให้ระหว่างมีชีวิต (Gift Category)',
+    optGiftMovable: 'ม.42(27) ครอบครัวให้เงิน/สังหาริมทรัพย์ (ยกเว้น 20M/ปี)',
+    optGiftRealestate: 'ม.42(26) พ่อแม่ยกอสังหาฯ ให้บุตรชอบด้วย กม. (ยกเว้น 20M/ปี)',
+    optGiftOther: 'ม.42(28) บุคคลอื่นให้ตามประเพณี/เสน่หา (ยกเว้น 10M/ปี)',
+    lblAnnualGiftValue: 'มูลค่าทรัพย์สินที่ให้ในรอบปีภาษี (Annual Gift Value)',
+    lblCardGiftExempt: 'สิทธิยกเว้นภาษีประจำปี:',
+    lblCardGiftTax: 'ภาษีการให้ (5% Final Tax):',
+    lblStrategyYears: 'ระยะเวลาวางแผนทยอยให้ก่อนเสียชีวิต (ปี)',
+    lblStrategyOptATitle: 'ทางเลือก 1: มรดกทีเดียว',
+    lblStrategyTaxALbl: 'ภาษีมรดกที่ต้องจ่าย:',
+    lblStrategyNetALbl: 'มรดกสุทธิส่งถึงทายาท:',
+    lblStrategyOptBTitle: 'ทางเลือก 2: ทยอยให้ + มรดก',
+    lblStrategyGiftsBLbl: 'ทยอยให้ปลอดภาษีรวม:',
+    lblStrategyTaxBLbl: 'ภาษีมรดกส่วนที่เหลือ:',
+    lblStrategySavingsTitle: '🎉 ประหยัดภาษีได้สูงสุด:',
+    lblInherLawTitle: 'ข้อมูลทางกฎหมาย:',
+    txtInherLawDesc:
+      'พ.ร.บ. ภาษีการรับมรดก พ.ศ. 2558 กำหนดให้ผู้รับมรดกแต่ละคนได้รับยกเว้น 100 ล้านบาทแรก ส่วนเกินเสียภาษี 5% (บุพการี/ผู้สืบสันดาน) หรือ 10% (บุคคลอื่น) โดยคู่สมรสตามกฎหมายได้รับยกเว้น 100% ต้องยื่นแบบ ภ.ม.1 ภายใน 150 วันนับแต่วันรับมรดก',
+    'lbl-land-title': '🏡 จำลองภาษีที่ดินและสิ่งปลูกสร้าง (Land &amp; Building Tax)',
+    'lbl-land-subtitle': 'พ.ร.บ. ภาษีที่ดินและสิ่งปลูกสร้าง พ.ศ. 2562 (คำนวณตามราคาประเมินทุนทรัพย์)',
+    lblLandCategory: 'ประเภทการใช้ประโยชน์ที่ดิน/สิ่งปลูกสร้าง (Usage Category)',
+    optLandResPrimary: 'ที่อยู่อาศัยหลัก (บ้าน+ที่ดิน มีชื่อในทะเบียนบ้าน - ยกเว้น 50 ล้าน)',
+    optLandResBldg: 'ที่อยู่อาศัยหลัก (เฉพาะตัวบ้าน มีชื่อในทะเบียนบ้าน - ยกเว้น 10 ล้าน)',
+    optLandResSecondary: 'ที่อยู่อาศัยหลังอื่น / คอนโดปล่อยเช่า (เสียตั้งแต่บาทแรก)',
+    optLandAgri: 'เกษตรกรรม (บุคคลธรรมดา ยกเว้น 50 ล้านบาทแรก)',
+    optLandComm: 'พาณิชยกรรม / อุตสาหกรรม / อื่นๆ (อัตราปกติ 0.3% - 0.7%)',
+    optLandVacant: 'ที่ดินรกร้างว่างเปล่า (อัตราปกติ + เพิ่ม 0.3% ทุก 3 ปี)',
+    lblLandAppraisal: 'ราคาประเมินทุนทรัพย์ตามบัญชีกรมธนารักษ์ (Appraisal Value)',
+    lblVacantYears: 'จำนวนปีติดต่อกันที่ปล่อยทิ้งไว้รกร้างว่างเปล่า (ปี)',
+    txtVacantRule: '* กฎหมายกำหนดหากทิ้งไว้ว่างเปล่าติดต่อกันตั้งแต่ 3 ปีขึ้นไป จะเสียภาษีเพิ่มขึ้น +0.3% ทุกๆ 3 ปี สูงสุดไม่เกิน 3.0%',
+    lblCardLandTaxableBase: 'ฐานภาษีที่ต้องคำนวณ:',
+    lblCardLandTotalTax: 'ภาษีที่ดินที่ต้องชำระต่อปี:',
+    lblLandInstallmentTitle: '💳 สิทธิผ่อนชำระ 3 งวด (ไม่เสียดอกเบี้ย):',
+    txtLandInstallmentDesc: 'ยอดภาษีตั้งแต่ 3,000 บาทขึ้นไป สามารถแบ่งผ่อนกับ อปท. ได้ 3 งวดเท่าๆ กัน (เม.ย., พ.ค., มิ.ย.)',
+    lblLandTiersHeader: 'รายละเอียดการคำนวณตามขั้นบันได (Statutory Tiers):',
+    lblLandLawTitle: 'ข้อมูลทางกฎหมาย:',
+    txtLandLawDesc:
+      'จัดเก็บโดย อปท. (กทม., เมืองพัทยา, เทศบาล, หรือ อบต.) ตามราคาประเมินทุนทรัพย์ที่ดินและสิ่งปลูกสร้างของกรมธนารักษ์ (ไม่ใช่ราคาตลาด) มีหนังสือแจ้งประเมิน (ภ.ด.ส. 6 / ภ.ด.ส. 7) ในช่วง ก.พ.–มี.ค. กำหนดชำระภาษีภายในวันที่ 30 เมษายนของทุกปี',
+    tab0: 'สมาชิก<br>&lt; 5 ปี',
+    tab1: '≥ 5 ปี<br>อายุ &lt; 55',
+    tab2: '≥ 5 ปี<br>อายุ ≥ 55',
+    resultsEmptyHint: '💡 กรอกข้อมูลในส่วนที่ 1 แล้วกด "คำนวณภาษี" เพื่อแสดงผลลัพธ์',
+  },
+  en: {
     'lbl-h1': 'Severance & PVD Tax Calculator',
     'lbl-subtitle': 'Choose the condition that matches your situation',
     'lbl-severance': 'Severance Pay',
@@ -116,7 +231,24 @@ if (LANG === 'en') {
     lblLandLawTitle: 'Statutory Legal Reference:',
     txtLandLawDesc:
       'Administered by Local Admin Orgs (BMA, Pattaya, Municipalities, SAO) based on Treasury Dept appraisal value (not market price). Tax notices (P.D.S. 6/7) issued Feb–Mar, payment due April 30 annually.',
-  };
+    tab0: 'Member<br>&lt; 5 yrs',
+    tab1: '≥ 5 yrs<br>age &lt; 55',
+    tab2: '≥ 5 yrs<br>age ≥ 55',
+    resultsEmptyHint: '💡 Fill in Section 1 and click "Calculate Tax" to view results',
+  },
+};
+
+const EN = translations.en;
+
+if (typeof window !== 'undefined' && window.MoneyApp?.I18n) {
+  window.MoneyApp.I18n.register('th', translations.th);
+  window.MoneyApp.I18n.register('en', translations.en);
+  window.MoneyApp.I18n.setLanguage(LANG);
+  window.MoneyApp.I18n.applyLocalization(document, LANG);
+}
+
+if (LANG === 'en') {
+  document.title = 'Severance & PVD Tax Calculator';
   Object.keys(EN).forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = EN[id];

@@ -38,6 +38,9 @@ describe('Bilingual Parity & Localization Regression Suite', () => {
       'js/debt-calculator.js',
       'js/remaining-money.js',
       'js/rebalance.js',
+      'js/tax-calculator.js',
+      'js/tax-calculator-base.js',
+      'js/months-slips.js',
     ];
 
     for (const file of LOCALIZED_MODULES) {

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="version" content="2.5.46">
+  <meta name="version" content="2.5.47">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self';">
   <script>
     try {
@@ -364,11 +364,11 @@
   <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
       <div>
-        <h1 id="lbl-h1" style="margin:0;">คำนวณภาษีเงินชดเชย + PVD</h1>
-        <p class="subtitle" id="lbl-subtitle" style="margin:4px 0 0;">เลือกเงื่อนไขที่ตรงกับสถานการณ์ของคุณ</p>
+        <h1 id="lbl-h1" style="margin:0;" data-i18n="lbl-h1">คำนวณภาษีเงินชดเชย + PVD</h1>
+        <p class="subtitle" id="lbl-subtitle" style="margin:4px 0 0;" data-i18n="lbl-subtitle">เลือกเงื่อนไขที่ตรงกับสถานการณ์ของคุณ</p>
       </div>
       <button type="button" id="btnResetTaxLayout" onclick="resetTaxLayout()" class="reset-btn" style="width:auto; padding:5px 12px; font-size:0.75rem; margin-top:0;" title="รีเซ็ตลำดับการแสดงผล / Reset Layout">
-        ↺ <span id="lbl-reset-tax-layout">รีเซ็ตลำดับ</span>
+        ↺ <span id="lbl-reset-tax-layout" data-i18n="lbl-reset-tax-layout">รีเซ็ตลำดับ</span>
       </button>
     </div>
 
@@ -377,29 +377,29 @@
       <!-- 1. Severance & PVD Inputs Panel -->
       <div id="panelSeveranceInputs" class="reorder-card" style="background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:16px;">
         <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <h2 class="panel-title" style="font-size:0.95rem; font-weight:700; color:var(--ink); margin:0;" id="lbl-panel-sev-inputs">
+          <h2 class="panel-title" style="font-size:0.95rem; font-weight:700; color:var(--ink); margin:0;" id="lbl-panel-sev-inputs" data-i18n="lbl-panel-sev-inputs">
             1. ข้อมูลเงินชดเชยและกองทุนสำรองเลี้ยงชีพ
           </h2>
         </div>
         <div id="panelSeveranceInputsBody">
           <div class="tabs" role="tablist" aria-label="เงื่อนไขอายุสมาชิก PVD">
-      <button type="button" role="tab" class="tab active" onclick="setTab(0)" id="tab0" aria-selected="true">สมาชิก<br>&lt; 5 ปี</button>
-      <button type="button" role="tab" class="tab" onclick="setTab(1)" id="tab1" aria-selected="false">≥ 5 ปี<br>อายุ &lt; 55</button>
-      <button type="button" role="tab" class="tab" onclick="setTab(2)" id="tab2" aria-selected="false">≥ 5 ปี<br>อายุ ≥ 55</button>
+      <button type="button" role="tab" class="tab active" onclick="setTab(0)" id="tab0" aria-selected="true" data-i18n="tab0">สมาชิก<br>&lt; 5 ปี</button>
+      <button type="button" role="tab" class="tab" onclick="setTab(1)" id="tab1" aria-selected="false" data-i18n="tab1">≥ 5 ปี<br>อายุ &lt; 55</button>
+      <button type="button" role="tab" class="tab" onclick="setTab(2)" id="tab2" aria-selected="false" data-i18n="tab2">≥ 5 ปี<br>อายุ ≥ 55</button>
     </div>
 
     <div class="condition-note" id="condNote">
       สมาชิก PVD <strong>น้อยกว่า 5 ปี</strong> — PVD ส่วนที่ต้องเสียภาษีถูกนำมาคิดแบบปกติ ไม่ได้รับสิทธิ์หักค่าใช้จ่ายพิเศษ
     </div>
-    <div class="section-label" id="lbl-severance">เงินชดเชย</div>
+    <div class="section-label" id="lbl-severance" data-i18n="lbl-severance">เงินชดเชย</div>
     <div class="pvd-group">
       <div class="field">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
           <label style="margin-bottom: 0;">
-            <span id="lbl-severanceLegal">เงินชดเชยตามกฎหมาย</span>
-            <span class="badge-exempt" id="badge-severanceLegal">ยกเว้น 600,000 บาท</span>
+            <span id="lbl-severanceLegal" data-i18n="lbl-severanceLegal">เงินชดเชยตามกฎหมาย</span>
+            <span class="badge-exempt" id="badge-severanceLegal" data-i18n="badge-severanceLegal">ยกเว้น 600,000 บาท</span>
           </label>
-          <button type="button" id="btn-toggle-sev-calc" onclick="toggleSeveranceCalc()" style="background: none; border: none; color: var(--accent); font-size: 0.75rem; font-weight: 600; cursor: pointer; padding: 2px 4px; text-decoration: underline; font-family: inherit;">
+          <button type="button" id="btn-toggle-sev-calc" onclick="toggleSeveranceCalc()" style="background: none; border: none; color: var(--accent); font-size: 0.75rem; font-weight: 600; cursor: pointer; padding: 2px 4px; text-decoration: underline; font-family: inherit;" data-i18n="btn-toggle-sev-calc">
             🧮 ช่วยคำนวณตามอายุงาน
           </button>
         </div>
@@ -407,16 +407,16 @@
 
         <!-- Severance Auto-Calculator Panel -->
         <div id="severance-calc-panel" style="display: none; margin-top: 8px; padding: 12px; background: var(--surface-2); border: 1px dashed var(--line); border-radius: 8px;">
-          <div style="font-size: 0.78rem; font-weight: 700; color: var(--ink); margin-bottom: 8px;" id="lbl-sev-calc-title">
+          <div style="font-size: 0.78rem; font-weight: 700; color: var(--ink); margin-bottom: 8px;" id="lbl-sev-calc-title" data-i18n="lbl-sev-calc-title">
             คำนวณเงินชดเชยตามอายุงาน (พ.ร.บ. คุ้มครองแรงงาน)
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
             <div>
-              <label style="font-size: 0.72rem; color: var(--ink-dim); margin-bottom: 2px;" id="lbl-last-wage">เงินเดือนงวดสุดท้าย (บาท)</label>
+              <label style="font-size: 0.72rem; color: var(--ink-dim); margin-bottom: 2px;" id="lbl-last-wage" data-i18n="lbl-last-wage">เงินเดือนงวดสุดท้าย (บาท)</label>
               <input type="number" id="lastMonthlyWage" placeholder="50000" min="0" step="0.01" style="font-size: 0.82rem; padding: 6px 8px;" oninput="updateSeveranceCalc()" />
             </div>
             <div>
-              <label style="font-size: 0.72rem; color: var(--ink-dim); margin-bottom: 2px;" id="lbl-tenure-bracket">เกณฑ์อายุงาน</label>
+              <label style="font-size: 0.72rem; color: var(--ink-dim); margin-bottom: 2px;" id="lbl-tenure-bracket" data-i18n="lbl-tenure-bracket">เกณฑ์อายุงาน</label>
               <select id="tenureBracket" style="width: 100%; font-size: 0.82rem; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--card-bg); color: var(--ink); height: 32px;" onchange="updateSeveranceCalc()">
                 <option value="0">&lt; 120 วัน (0 วัน)</option>
                 <option value="1">120 วัน – &lt; 1 ปี (30 วัน / 1 เดือน)</option>
@@ -429,50 +429,50 @@
             </div>
           </div>
           <div style="display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 8px 10px; border-radius: 6px; margin-bottom: 8px;">
-            <span style="font-size: 0.75rem; color: var(--ink-dim);" id="lbl-sev-calc-result">ยอดชดเชยตามสิทธิ์:</span>
+            <span style="font-size: 0.75rem; color: var(--ink-dim);" id="lbl-sev-calc-result" data-i18n="lbl-sev-calc-result">ยอดชดเชยตามสิทธิ์:</span>
             <span style="font-size: 0.85rem; font-weight: 700; color: var(--accent);" id="sev-calc-preview">0.00 บาท (180 วัน)</span>
           </div>
-          <button type="button" class="calc-btn" onclick="applySeveranceCalc()" style="margin-top: 0; padding: 6px 12px; font-size: 0.78rem; width: 100%;" id="btn-apply-sev">
+          <button type="button" class="calc-btn" onclick="applySeveranceCalc()" style="margin-top: 0; padding: 6px 12px; font-size: 0.78rem; width: 100%;" id="btn-apply-sev" data-i18n="btn-apply-sev">
             ✓ นำค่ายอดเงินชดเชยไปใช้
           </button>
         </div>
       </div>
       <div class="field">
         <label>
-          <span id="lbl-severanceExtra">เงินชดเชยพิเศษ (นอกเหนือกฎหมาย)</span>
-          <span class="badge-taxable" id="badge-severanceExtra">ต้องเสียภาษีทั้งหมด</span>
+          <span id="lbl-severanceExtra" data-i18n="lbl-severanceExtra">เงินชดเชยพิเศษ (นอกเหนือกฎหมาย)</span>
+          <span class="badge-taxable" id="badge-severanceExtra" data-i18n="badge-severanceExtra">ต้องเสียภาษีทั้งหมด</span>
         </label>
         <input type="number" id="severanceExtra" placeholder="0" min="0" step="0.01" />
       </div>
     </div>
 
     <!-- PVD group -->
-    <div class="section-label" id="lbl-pvdSection">กองทุนสำรองเลี้ยงชีพ (PVD)</div>
+    <div class="section-label" id="lbl-pvdSection" data-i18n="lbl-pvdSection">กองทุนสำรองเลี้ยงชีพ (PVD)</div>
     <div class="pvd-group">
       <div class="field">
         <label>
-          <span id="lbl-pvdEmpContrib">เงินสะสม (ส่วนลูกจ้าง)</span>
-          <span class="badge-exempt" id="badge-pvdEmpContrib">ยกเว้นภาษี</span>
+          <span id="lbl-pvdEmpContrib" data-i18n="lbl-pvdEmpContrib">เงินสะสม (ส่วนลูกจ้าง)</span>
+          <span class="badge-exempt" id="badge-pvdEmpContrib" data-i18n="badge-pvdEmpContrib">ยกเว้นภาษี</span>
         </label>
         <input type="number" id="pvdEmpContrib" placeholder="0" min="0" step="0.01" />
       </div>
       <div class="field">
         <label>
-          <span id="lbl-pvdEmpReturn">ผลประโยชน์เงินสะสม</span>
+          <span id="lbl-pvdEmpReturn" data-i18n="lbl-pvdEmpReturn">ผลประโยชน์เงินสะสม</span>
           <span class="badge-taxable" id="badge2">ต้องเสียภาษี</span>
         </label>
         <input type="number" id="pvdEmpReturn" placeholder="0" min="0" step="0.01" />
       </div>
       <div class="field">
         <label>
-          <span id="lbl-pvdEmrContrib">เงินสมทบ (ส่วนนายจ้าง)</span>
+          <span id="lbl-pvdEmrContrib" data-i18n="lbl-pvdEmrContrib">เงินสมทบ (ส่วนนายจ้าง)</span>
           <span class="badge-taxable" id="badge3">ต้องเสียภาษี</span>
         </label>
         <input type="number" id="pvdEmrContrib" placeholder="0" min="0" step="0.01" />
       </div>
       <div class="field">
         <label>
-          <span id="lbl-pvdEmrReturn">ผลประโยชน์เงินสมทบ</span>
+          <span id="lbl-pvdEmrReturn" data-i18n="lbl-pvdEmrReturn">ผลประโยชน์เงินสมทบ</span>
           <span class="badge-taxable" id="badge4">ต้องเสียภาษี</span>
         </label>
         <input type="number" id="pvdEmrReturn" placeholder="0" min="0" step="0.01" />
@@ -481,11 +481,11 @@
 
     <!-- Years -->
     <div class="field">
-      <label><span id="lbl-years">จำนวนปีที่ทำงาน</span> <span class="label-en">Years of Service</span></label>
+      <label><span id="lbl-years" data-i18n="lbl-years">จำนวนปีที่ทำงาน</span> <span class="label-en">Years of Service</span></label>
       <input type="number" id="years" placeholder="10" min="1" step="1" />
     </div>
 
-    <button class="calc-btn" onclick="calculate()" id="btn-calc">คำนวณภาษี</button>
+    <button class="calc-btn" onclick="calculate()" id="btn-calc" data-i18n="btn-calc">คำนวณภาษี</button>
     <div class="error" id="errorMsg"></div>
         </div>
       </div>
@@ -493,7 +493,7 @@
       <!-- 2. Severance Results Panel -->
       <div id="panelSeveranceResults" class="reorder-card" style="background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:16px;">
         <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <h2 class="panel-title" style="font-size:0.95rem; font-weight:700; color:var(--ink); margin:0;" id="lbl-panel-sev-results">
+          <h2 class="panel-title" style="font-size:0.95rem; font-weight:700; color:var(--ink); margin:0;" id="lbl-panel-sev-results" data-i18n="lbl-panel-sev-results">
             2. ผลการคำนวณภาษี &amp; สิทธิโอนย้าย RMF
           </h2>
         </div>
@@ -501,43 +501,43 @@
           <div class="results" id="results">
       <div class="result-row">
         <span class="result-label">
-          <span id="lbl-res-legal-excess">เงินชดเชยตามกฎหมาย (ส่วนเกิน)</span>
-          <span class="tip">?<span class="tip-box" id="tip-legal-excess">เงินชดเชยตามกฎหมายแรงงาน หักส่วนที่ยกเว้น 600,000 บาท<br>= เงินชดเชยตามกฎหมาย − 600,000 (ไม่ต่ำกว่า 0)</span></span>
+          <span id="lbl-res-legal-excess" data-i18n="lbl-res-legal-excess">เงินชดเชยตามกฎหมาย (ส่วนเกิน)</span>
+          <span class="tip">?<span class="tip-box" id="tip-legal-excess" data-i18n="tip-legal-excess">เงินชดเชยตามกฎหมายแรงงาน หักส่วนที่ยกเว้น 600,000 บาท<br>= เงินชดเชยตามกฎหมาย − 600,000 (ไม่ต่ำกว่า 0)</span></span>
         </span>
         <span class="result-value" id="res-legal-excess"></span>
       </div>
       <div class="result-row">
         <span class="result-label">
-          <span id="lbl-res-extra">เงินชดเชยพิเศษ</span>
-          <span class="tip">?<span class="tip-box" id="tip-extra">เงินชดเชยนอกเหนือกฎหมาย ไม่มีส่วนยกเว้น<br>นำมาคิดภาษีทั้งจำนวน</span></span>
+          <span id="lbl-res-extra" data-i18n="lbl-res-extra">เงินชดเชยพิเศษ</span>
+          <span class="tip">?<span class="tip-box" id="tip-extra" data-i18n="tip-extra">เงินชดเชยนอกเหนือกฎหมาย ไม่มีส่วนยกเว้น<br>นำมาคิดภาษีทั้งจำนวน</span></span>
         </span>
         <span class="result-value" id="res-extra"></span>
       </div>
       <div class="result-row">
         <span class="result-label">
-          <span id="lbl-res-pvd">PVD ที่ต้องเสียภาษี</span>
-          <span class="tip">?<span class="tip-box" id="tip-pvd">= ผลประโยชน์เงินสะสม + เงินสมทบนายจ้าง<br>+ ผลประโยชน์เงินสมทบ<br>(ไม่รวมเงินสะสมส่วนลูกจ้างซึ่งยกเว้นภาษี)</span></span>
+          <span id="lbl-res-pvd" data-i18n="lbl-res-pvd">PVD ที่ต้องเสียภาษี</span>
+          <span class="tip">?<span class="tip-box" id="tip-pvd" data-i18n="tip-pvd">= ผลประโยชน์เงินสะสม + เงินสมทบนายจ้าง<br>+ ผลประโยชน์เงินสมทบ<br>(ไม่รวมเงินสะสมส่วนลูกจ้างซึ่งยกเว้นภาษี)</span></span>
         </span>
         <span class="result-value" id="res-pvd"></span>
       </div>
       <div class="result-row">
         <span class="result-label">
-          <span id="lbl-res-taxable">รวมส่วนที่นำมาคิดภาษี</span>
+          <span id="lbl-res-taxable" data-i18n="lbl-res-taxable">รวมส่วนที่นำมาคิดภาษี</span>
           <span class="tip">?<span class="tip-box" id="tip-taxable"></span></span>
         </span>
         <span class="result-value" id="res-taxable"></span>
       </div>
       <div class="result-row highlight">
         <span class="result-label">
-          <span id="lbl-res-tax">ภาษีที่ต้องจ่าย</span>
-          <span class="tip">?<span class="tip-box" id="tip-tax">คำนวณจากอัตราภาษีก้าวหน้า<br>0–300k: 5% / 300k–500k: 10%<br>500k–750k: 15% / 750k–1M: 20%<br>1M–2M: 25% / 2M–4M: 30% / &gt;4M: 35%</span></span>
+          <span id="lbl-res-tax" data-i18n="lbl-res-tax">ภาษีที่ต้องจ่าย</span>
+          <span class="tip">?<span class="tip-box" id="tip-tax" data-i18n="tip-tax">คำนวณจากอัตราภาษีก้าวหน้า<br>0–300k: 5% / 300k–500k: 10%<br>500k–750k: 15% / 750k–1M: 20%<br>1M–2M: 25% / 2M–4M: 30% / &gt;4M: 35%</span></span>
         </span>
         <span class="result-value" id="res-tax"></span>
       </div>
       <div class="result-row highlight" style="background: var(--ok-dim, rgba(47, 139, 118, 0.12)); border: 1px solid var(--ok); border-radius: 8px; padding: 10px; margin-top: 8px; border-bottom: none;">
         <span class="result-label" style="color: var(--ok); font-weight: 700;">
-          <span id="lbl-res-net">ยอดรับสุทธิหลังหักภาษี</span>
-          <span class="tip" style="background: var(--ok); color: #fff;">?<span class="tip-box" id="tip-net">= ยอดเงินชดเชยทั้งหมด + ยอด PVD ทั้งหมด − ภาษีที่ต้องจ่าย</span></span>
+          <span id="lbl-res-net" data-i18n="lbl-res-net">ยอดรับสุทธิหลังหักภาษี</span>
+          <span class="tip" style="background: var(--ok); color: #fff;">?<span class="tip-box" id="tip-net" data-i18n="tip-net">= ยอดเงินชดเชยทั้งหมด + ยอด PVD ทั้งหมด − ภาษีที่ต้องจ่าย</span></span>
         </span>
         <span class="result-value" id="res-net" style="color: var(--ok); font-size: 1.25rem; font-weight: 700;"></span>
       </div>
@@ -546,10 +546,10 @@
       <div id="rmf-optimizer-card" style="display: none; margin-top: 14px; padding: 14px; background: var(--surface-2); border: 1px solid var(--accent); border-radius: 10px;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
           <div>
-            <div style="font-size: 0.88rem; font-weight: 700; color: var(--ink);" id="lbl-rmf-opt-title">
+            <div style="font-size: 0.88rem; font-weight: 700; color: var(--ink);" id="lbl-rmf-opt-title" data-i18n="lbl-rmf-opt-title">
               🔄 เปรียบเทียบ: รับเงินก้อน vs โอนเข้า RMF
             </div>
-            <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-rmf-opt-subtitle">
+            <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-rmf-opt-subtitle" data-i18n="lbl-rmf-opt-subtitle">
               กลยุทธ์ประหยัดภาษีเมื่ออายุงาน ≥ 5 ปี และอายุ &lt; 55 ปี
             </div>
           </div>
@@ -561,43 +561,43 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
           <!-- Option A: Full Lump Sum -->
           <div style="background: var(--card-bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px;">
-            <div style="font-size: 0.78rem; font-weight: 700; color: var(--danger); margin-bottom: 6px;" id="lbl-opt-lump-title">
+            <div style="font-size: 0.78rem; font-weight: 700; color: var(--danger); margin-bottom: 6px;" id="lbl-opt-lump-title" data-i18n="lbl-opt-lump-title">
               ทางเลือก A: รับเงินก้อน
             </div>
-            <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-opt-lump-tax-lbl">ภาษี ม.48(5):</div>
+            <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-opt-lump-tax-lbl" data-i18n="lbl-opt-lump-tax-lbl">ภาษี ม.48(5):</div>
             <div style="font-size: 0.95rem; font-weight: 700; color: var(--danger); margin-bottom: 6px;" id="opt-lump-tax">0.00 บาท</div>
             
-            <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-opt-lump-net-lbl">เงินสดรับสุทธิทันที:</div>
+            <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-opt-lump-net-lbl" data-i18n="lbl-opt-lump-net-lbl">เงินสดรับสุทธิทันที:</div>
             <div style="font-size: 0.95rem; font-weight: 700; color: var(--ink);" id="opt-lump-net">0.00 บาท</div>
           </div>
 
           <!-- Option B: Rollover to RMF -->
           <div style="background: var(--card-bg); border: 1px solid var(--ok); border-radius: 8px; padding: 10px;">
-            <div style="font-size: 0.78rem; font-weight: 700; color: var(--ok); margin-bottom: 6px;" id="lbl-opt-rmf-title">
+            <div style="font-size: 0.78rem; font-weight: 700; color: var(--ok); margin-bottom: 6px;" id="lbl-opt-rmf-title" data-i18n="lbl-opt-rmf-title">
               ทางเลือก B: โอนเข้า RMF
             </div>
-            <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-opt-rmf-tax-lbl">ภาษี ม.48(5) (ชดเชย):</div>
+            <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-opt-rmf-tax-lbl" data-i18n="lbl-opt-rmf-tax-lbl">ภาษี ม.48(5) (ชดเชย):</div>
             <div style="font-size: 0.95rem; font-weight: 700; color: var(--ok); margin-bottom: 6px;" id="opt-rmf-tax">0.00 บาท</div>
 
-            <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-opt-rmf-invested-lbl">ยอดสะสมลงทุนต่อใน RMF:</div>
+            <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-opt-rmf-invested-lbl" data-i18n="lbl-opt-rmf-invested-lbl">ยอดสะสมลงทุนต่อใน RMF:</div>
             <div style="font-size: 0.95rem; font-weight: 700; color: var(--accent); margin-bottom: 6px;" id="opt-rmf-invested">0.00 บาท</div>
 
-            <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-opt-rmf-total-lbl">รวมความมั่งคั่งสุทธิ:</div>
+            <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-opt-rmf-total-lbl" data-i18n="lbl-opt-rmf-total-lbl">รวมความมั่งคั่งสุทธิ:</div>
             <div style="font-size: 0.95rem; font-weight: 700; color: var(--ok);" id="opt-rmf-total">0.00 บาท</div>
           </div>
         </div>
 
-        <div style="margin-top: 10px; font-size: 0.72rem; line-height: 1.45; color: var(--ink-dim); background: var(--card-bg); border-radius: 6px; padding: 8px;" id="lbl-opt-note">
+        <div style="margin-top: 10px; font-size: 0.72rem; line-height: 1.45; color: var(--ink-dim); background: var(--card-bg); border-radius: 6px; padding: 8px;" id="lbl-opt-note" data-i18n="lbl-opt-note">
           💡 <strong>ข้อแนะนำ:</strong> การโอนย้าย PVD เข้ากองทุน RMF for PVD ภายใน 30 วันหลังสิ้นสุดสภาพพนักงาน ทำให้ยอด PVD ทั้งหมดได้รับยกเว้นภาษีทันที และคงสถานะการลงทุนต่อเนื่องจนถึงอายุ 55 ปีบริบูรณ์เพื่อถอนออกโดยปลอดภาษี 100%
         </div>
       </div>
 
           <button type="button" class="calc-btn" id="btn-export-to-remaining" onclick="exportPayoutToRemaining()" style="background: var(--core); margin-top: 14px; width: 100%;">
-            📤 <span id="lbl-export-remaining">ส่งยอดสุทธินี้ไปยัง เงินคงเหลือ (Remaining Money)</span>
+            📤 <span id="lbl-export-remaining" data-i18n="lbl-export-remaining">ส่งยอดสุทธินี้ไปยัง เงินคงเหลือ (Remaining Money)</span>
           </button>
-          <button class="reset-btn" onclick="reset()" id="btn-reset">ล้างข้อมูล</button>
+          <button class="reset-btn" onclick="reset()" id="btn-reset" data-i18n="btn-reset">ล้างข้อมูล</button>
         </div>
-        <div id="resultsEmptyHint" style="font-size:0.8rem; color:var(--ink-faint); text-align:center; padding:12px 0;">
+        <div id="resultsEmptyHint" style="font-size:0.8rem; color:var(--ink-faint); text-align:center; padding:12px 0;" data-i18n="resultsEmptyHint">
           💡 กรอกข้อมูลในส่วนที่ 1 แล้วกด "คำนวณภาษี" เพื่อแสดงผลลัพธ์
         </div>
       </div>
@@ -607,10 +607,10 @@
     <div id="sso-simulator-card" class="reorder-card" style="margin-top: 0; padding: 14px; background: var(--surface-2); border: 1px solid var(--accent); border-radius: 10px;">
       <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleSsoSimulator()" id="btn-toggle-sso" role="button" tabindex="0" aria-expanded="false">
         <div>
-          <div style="font-size: 0.88rem; font-weight: 700; color: var(--ink);" class="panel-title" id="lbl-sso-title">
+          <div style="font-size: 0.88rem; font-weight: 700; color: var(--ink);" class="panel-title" id="lbl-sso-title" data-i18n="lbl-sso-title">
             🏥 จำลองสิทธิประโยชน์ &amp; บำนาญชราภาพ ประกันสังคม (Social Security Benefits &amp; Pension)
           </div>
-          <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-sso-subtitle">
+          <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-sso-subtitle" data-i18n="lbl-sso-subtitle">
             มาตรา 33 (พนักงานประจำ), มาตรา 39 (ภาคสมัครใจ), มาตรา 40 (อิสระ)
           </div>
         </div>
@@ -620,19 +620,19 @@
         <div id="sso-panel-body" style="display: none; margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px;">
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 6px;">
             <div>
-              <label for="ssoSectionSelect" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lbl-sso-sec">มาตรา (Section)</label>
+              <label for="ssoSectionSelect" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lbl-sso-sec" data-i18n="lbl-sso-sec">มาตรา (Section)</label>
               <select id="ssoSectionSelect" class="input-field" style="width: 100%; font-size: 0.82rem; padding: 6px;" onchange="onSsoSectionChange()">
-                <option value="33" selected id="opt-sso-33">ม.33 (ลูกจ้างประจำ)</option>
-                <option value="39" id="opt-sso-39">ม.39 (ผู้ประกันตนภาคสมัครใจ)</option>
-                <option value="40" id="opt-sso-40">ม.40 (อาชีพอิสระ/ฟรีแลนซ์)</option>
+                <option value="33" selected id="opt-sso-33" data-i18n="opt-sso-33">ม.33 (ลูกจ้างประจำ)</option>
+                <option value="39" id="opt-sso-39" data-i18n="opt-sso-39">ม.39 (ผู้ประกันตนภาคสมัครใจ)</option>
+                <option value="40" id="opt-sso-40" data-i18n="opt-sso-40">ม.40 (อาชีพอิสระ/ฟรีแลนซ์)</option>
               </select>
             </div>
             <div id="ssoWageGroup">
-              <label for="txtSsoWage" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lbl-sso-wage">เงินเดือนเฉลี่ย 60 เดือนสุดท้าย</label>
+              <label for="txtSsoWage" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lbl-sso-wage" data-i18n="lbl-sso-wage">เงินเดือนเฉลี่ย 60 เดือนสุดท้าย</label>
               <input type="number" id="txtSsoWage" value="15000" min="1650" max="100000" step="500" class="input-field" style="width: 100%; font-size: 0.82rem; padding: 6px;" oninput="calculateSsoBenefits()" />
             </div>
             <div>
-              <label for="txtSsoYears" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lbl-sso-years">ระยะเวลาส่งเงินสมทบ (ปี)</label>
+              <label for="txtSsoYears" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lbl-sso-years" data-i18n="lbl-sso-years">ระยะเวลาส่งเงินสมทบ (ปี)</label>
               <input type="number" id="txtSsoYears" value="20" min="1" max="50" step="1" class="input-field" style="width: 100%; font-size: 0.82rem; padding: 6px;" oninput="calculateSsoBenefits()" />
             </div>
           </div>
@@ -640,12 +640,12 @@
           <!-- Results Cards -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px;">
             <div style="background: var(--card-bg); border: 1px solid var(--ok); border-radius: 8px; padding: 10px;">
-              <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-sso-res-pension">บำนาญชราภาพตลอดชีพ:</div>
+              <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-sso-res-pension" data-i18n="lbl-sso-res-pension">บำนาญชราภาพตลอดชีพ:</div>
               <div style="font-size: 1.1rem; font-weight: 700; color: var(--ok); margin: 4px 0;" id="valSsoPension">4,125.00 บาท/เดือน</div>
               <div style="font-size: 0.70rem; color: var(--ink-faint);" id="valSsoPensionFormula">อัตรา 27.5% (ฐาน 20% + เพิ่ม 7.5% จาก 5 ปีส่วนเกิน)</div>
             </div>
             <div style="background: var(--card-bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px;">
-              <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-sso-res-lump">บำเหน็จ (หากส่งไม่ถึง 15 ปี) / รวม 20 ปี:</div>
+              <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-sso-res-lump" data-i18n="lbl-sso-res-lump">บำเหน็จ (หากส่งไม่ถึง 15 ปี) / รวม 20 ปี:</div>
               <div style="font-size: 1.1rem; font-weight: 700; color: var(--accent); margin: 4px 0;" id="valSsoCumulative">990,000.00 บาท</div>
               <div style="font-size: 0.70rem; color: var(--ink-faint);" id="valSsoCumulativeDesc">ประมาณการรับบำนาญสะสมรวม 20 ปีหลังเกษียณ</div>
             </div>
@@ -660,10 +660,10 @@
       <div id="inheritance-tax-card" class="reorder-card" style="margin-top: 0; padding: 14px; background: var(--surface-2); border: 1px solid var(--accent); border-radius: 10px;" role="region" aria-label="Thai Inheritance & Gift Tax Simulator">
         <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleInheritanceTaxCard()" id="btn-toggle-inher" role="button" tabindex="0" aria-expanded="false">
           <div>
-            <div style="font-size: 0.88rem; font-weight: 700; color: var(--ink);" class="panel-title" id="lbl-inher-title">
+            <div style="font-size: 0.88rem; font-weight: 700; color: var(--ink);" class="panel-title" id="lbl-inher-title" data-i18n="lbl-inher-title">
               🏛️ จำลองภาษีการรับมรดก &amp; ภาษีการรับการให้ (Thai Inheritance &amp; Gift Tax)
             </div>
-            <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-inher-subtitle">
+            <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-inher-subtitle" data-i18n="lbl-inher-subtitle">
               พ.ร.บ. ภาษีการรับมรดก พ.ศ. 2558 &amp; ประมวลรัษฎากร ม.42(26)-(28)
             </div>
           </div>
@@ -674,20 +674,20 @@
           <!-- Sub-mode Selector -->
           <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: var(--card-bg); border: 1px solid var(--line); border-radius: 8px; padding: 3px; margin-bottom: 12px;">
             <button type="button" class="tab active" id="btnSubTabInher" onclick="setInherSubTab('inher')" style="font-size: 0.70rem; padding: 6px 2px;">
-              <span id="lblSubTabInher">ภาษีมรดก</span>
+              <span id="lblSubTabInher" data-i18n="lblSubTabInher">ภาษีมรดก</span>
             </button>
             <button type="button" class="tab" id="btnSubTabGift" onclick="setInherSubTab('gift')" style="font-size: 0.70rem; padding: 6px 2px;">
-              <span id="lblSubTabGift">ภาษีการให้</span>
+              <span id="lblSubTabGift" data-i18n="lblSubTabGift">ภาษีการให้</span>
             </button>
             <button type="button" class="tab" id="btnSubTabStrategy" onclick="setInherSubTab('strategy')" style="font-size: 0.70rem; padding: 6px 2px;">
-              <span id="lblSubTabStrategy">กลยุทธ์ส่งต่อ</span>
+              <span id="lblSubTabStrategy" data-i18n="lblSubTabStrategy">กลยุทธ์ส่งต่อ</span>
             </button>
           </div>
 
           <!-- Sub-panel 1: Inheritance Tax -->
           <div id="subpanel-inher" style="display: block;">
             <div style="margin-bottom: 10px;">
-              <label for="txtEstateValue" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lblEstateValue">
+              <label for="txtEstateValue" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lblEstateValue" data-i18n="lblEstateValue">
                 มูลค่าทรัพย์สินมรดกสุทธิ (Total Estate Value)
               </label>
               <input type="number" id="txtEstateValue" value="160000000" min="0" step="1000000" class="input-field" style="width: 100%; font-size: 0.82rem; padding: 6px;" oninput="updateInheritanceTaxUI()" />
@@ -702,17 +702,17 @@
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 12px;">
               <div>
-                <label for="selHeirRel" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lblHeirRel">
+                <label for="selHeirRel" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lblHeirRel" data-i18n="lblHeirRel">
                   ความสัมพันธ์ของผู้รับมรดก
                 </label>
                 <select id="selHeirRel" class="input-field" style="width: 100%; font-size: 0.82rem; padding: 6px;" onchange="updateInheritanceTaxUI()">
-                  <option value="ascendant_descendant" selected id="optHeirChild">บุพการี / ผู้สืบสันดาน (เสีย 5% ส่วนเกิน)</option>
-                  <option value="spouse" id="optHeirSpouse">คู่สมรสตามกฎหมาย (ยกเว้น 100%)</option>
-                  <option value="other" id="optHeirOther">บุคคลอื่น / ญาติพี่น้อง (เสีย 10% ส่วนเกิน)</option>
+                  <option value="ascendant_descendant" selected id="optHeirChild" data-i18n="optHeirChild">บุพการี / ผู้สืบสันดาน (เสีย 5% ส่วนเกิน)</option>
+                  <option value="spouse" id="optHeirSpouse" data-i18n="optHeirSpouse">คู่สมรสตามกฎหมาย (ยกเว้น 100%)</option>
+                  <option value="other" id="optHeirOther" data-i18n="optHeirOther">บุคคลอื่น / ญาติพี่น้อง (เสีย 10% ส่วนเกิน)</option>
                 </select>
               </div>
               <div>
-                <label for="txtHeirCount" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lblHeirCount">
+                <label for="txtHeirCount" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lblHeirCount" data-i18n="lblHeirCount">
                   จำนวนผู้รับมรดก (แบ่งเท่ากัน)
                 </label>
                 <input type="number" id="txtHeirCount" value="1" min="1" max="20" step="1" class="input-field" style="width: 100%; font-size: 0.82rem; padding: 6px;" oninput="updateInheritanceTaxUI()" />
@@ -722,12 +722,12 @@
             <!-- Inheritance Cards Grid -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
               <div style="background: var(--card-bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px;">
-                <div style="font-size: 0.70rem; color: var(--ink-dim);" id="lblCardInherPortion">ส่วนแบ่งมรดกต่อคน:</div>
+                <div style="font-size: 0.70rem; color: var(--ink-dim);" id="lblCardInherPortion" data-i18n="lblCardInherPortion">ส่วนแบ่งมรดกต่อคน:</div>
                 <div style="font-size: 0.95rem; font-weight: 700; color: var(--ink);" id="valInherPortion">0.00 บาท</div>
                 <div style="font-size: 0.68rem; color: var(--ok); margin-top: 2px;" id="valInherExempt">ยกเว้น 100,000,000 บาท</div>
               </div>
               <div style="background: var(--card-bg); border: 1px solid var(--danger); border-radius: 8px; padding: 8px;">
-                <div style="font-size: 0.70rem; color: var(--danger);" id="lblCardInherTax">ภาษีมรดกที่ต้องจ่ายรวม:</div>
+                <div style="font-size: 0.70rem; color: var(--danger);" id="lblCardInherTax" data-i18n="lblCardInherTax">ภาษีมรดกที่ต้องจ่ายรวม:</div>
                 <div style="font-size: 0.95rem; font-weight: 700; color: var(--danger);" id="valInherTotalTax">0.00 บาท</div>
                 <div style="font-size: 0.68rem; color: var(--ink-dim); margin-top: 2px;" id="valInherNet">มรดกสุทธิ: 0.00 บาท</div>
               </div>
@@ -737,17 +737,17 @@
           <!-- Sub-panel 2: Annual Gift Tax -->
           <div id="subpanel-gift" style="display: none;">
             <div style="margin-bottom: 10px;">
-              <label for="selGiftType" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lblGiftType">
+              <label for="selGiftType" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lblGiftType" data-i18n="lblGiftType">
                 ประเภทการให้ระหว่างมีชีวิต (Gift Category)
               </label>
               <select id="selGiftType" class="input-field" style="width: 100%; font-size: 0.82rem; padding: 6px;" onchange="updateInheritanceTaxUI()">
-                <option value="family_movable" selected id="optGiftMovable">ม.42(27) ครอบครัวให้เงิน/สังหาริมทรัพย์ (ยกเว้น 20M/ปี)</option>
-                <option value="parent_to_child_realestate" id="optGiftRealestate">ม.42(26) พ่อแม่ยกอสังหาฯ ให้บุตรชอบด้วย กม. (ยกเว้น 20M/ปี)</option>
-                <option value="other_customary" id="optGiftOther">ม.42(28) บุคคลอื่นให้ตามประเพณี/เสน่หา (ยกเว้น 10M/ปี)</option>
+                <option value="family_movable" selected id="optGiftMovable" data-i18n="optGiftMovable">ม.42(27) ครอบครัวให้เงิน/สังหาริมทรัพย์ (ยกเว้น 20M/ปี)</option>
+                <option value="parent_to_child_realestate" id="optGiftRealestate" data-i18n="optGiftRealestate">ม.42(26) พ่อแม่ยกอสังหาฯ ให้บุตรชอบด้วย กม. (ยกเว้น 20M/ปี)</option>
+                <option value="other_customary" id="optGiftOther" data-i18n="optGiftOther">ม.42(28) บุคคลอื่นให้ตามประเพณี/เสน่หา (ยกเว้น 10M/ปี)</option>
               </select>
             </div>
             <div style="margin-bottom: 10px;">
-              <label for="txtAnnualGiftValue" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lblAnnualGiftValue">
+              <label for="txtAnnualGiftValue" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lblAnnualGiftValue" data-i18n="lblAnnualGiftValue">
                 มูลค่าทรัพย์สินที่ให้ในรอบปีภาษี (Annual Gift Value)
               </label>
               <input type="number" id="txtAnnualGiftValue" value="25000000" min="0" step="500000" class="input-field" style="width: 100%; font-size: 0.82rem; padding: 6px;" oninput="updateInheritanceTaxUI()" />
@@ -755,12 +755,12 @@
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
               <div style="background: var(--card-bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px;">
-                <div style="font-size: 0.70rem; color: var(--ink-dim);" id="lblCardGiftExempt">สิทธิยกเว้นภาษีประจำปี:</div>
+                <div style="font-size: 0.70rem; color: var(--ink-dim);" id="lblCardGiftExempt" data-i18n="lblCardGiftExempt">สิทธิยกเว้นภาษีประจำปี:</div>
                 <div style="font-size: 0.95rem; font-weight: 700; color: var(--ok);" id="valGiftExempt">20,000,000.00 บาท</div>
                 <div style="font-size: 0.68rem; color: var(--ink-dim); margin-top: 2px;" id="valGiftTaxable">ส่วนเกินเสียภาษี: 0.00 บาท</div>
               </div>
               <div style="background: var(--card-bg); border: 1px solid var(--warn); border-radius: 8px; padding: 8px;">
-                <div style="font-size: 0.70rem; color: var(--warn);" id="lblCardGiftTax">ภาษีการให้ (5% Final Tax):</div>
+                <div style="font-size: 0.70rem; color: var(--warn);" id="lblCardGiftTax" data-i18n="lblCardGiftTax">ภาษีการให้ (5% Final Tax):</div>
                 <div style="font-size: 0.95rem; font-weight: 700; color: var(--danger);" id="valGiftTax">250,000.00 บาท</div>
                 <div style="font-size: 0.68rem; color: var(--ink-dim); margin-top: 2px;" id="valGiftNet">ยอดรับสุทธิ: 24,750,000.00 บาท</div>
               </div>
@@ -770,7 +770,7 @@
           <!-- Sub-panel 3: Wealth Transfer Strategy Optimizer -->
           <div id="subpanel-strategy" style="display: none;">
             <div style="margin-bottom: 10px;">
-              <label for="txtStrategyYears" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lblStrategyYears">
+              <label for="txtStrategyYears" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lblStrategyYears" data-i18n="lblStrategyYears">
                 ระยะเวลาวางแผนทยอยให้ก่อนเสียชีวิต (ปี)
               </label>
               <input type="number" id="txtStrategyYears" value="3" min="1" max="20" step="1" class="input-field" style="width: 100%; font-size: 0.82rem; padding: 6px;" oninput="updateInheritanceTaxUI()" />
@@ -779,37 +779,37 @@
             <!-- Strategy Comparison Grid -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
               <div style="background: var(--card-bg); border: 1px solid var(--danger); border-radius: 8px; padding: 8px;">
-                <div style="font-size: 0.72rem; font-weight: 700; color: var(--danger); margin-bottom: 4px;" id="lblStrategyOptATitle">
+                <div style="font-size: 0.72rem; font-weight: 700; color: var(--danger); margin-bottom: 4px;" id="lblStrategyOptATitle" data-i18n="lblStrategyOptATitle">
                   ทางเลือก 1: มรดกทีเดียว
                 </div>
-                <div style="font-size: 0.68rem; color: var(--ink-dim);" id="lblStrategyTaxALbl">ภาษีมรดกที่ต้องจ่าย:</div>
+                <div style="font-size: 0.68rem; color: var(--ink-dim);" id="lblStrategyTaxALbl" data-i18n="lblStrategyTaxALbl">ภาษีมรดกที่ต้องจ่าย:</div>
                 <div style="font-size: 0.90rem; font-weight: 700; color: var(--danger); margin-bottom: 4px;" id="valStrategyTaxA">0.00 บาท</div>
-                <div style="font-size: 0.68rem; color: var(--ink-dim);" id="lblStrategyNetALbl">มรดกสุทธิส่งถึงทายาท:</div>
+                <div style="font-size: 0.68rem; color: var(--ink-dim);" id="lblStrategyNetALbl" data-i18n="lblStrategyNetALbl">มรดกสุทธิส่งถึงทายาท:</div>
                 <div style="font-size: 0.82rem; font-weight: 700; color: var(--ink);" id="valStrategyNetA">0.00 บาท</div>
               </div>
 
               <div style="background: var(--card-bg); border: 1px solid var(--ok); border-radius: 8px; padding: 8px;">
-                <div style="font-size: 0.72rem; font-weight: 700; color: var(--ok); margin-bottom: 4px;" id="lblStrategyOptBTitle">
+                <div style="font-size: 0.72rem; font-weight: 700; color: var(--ok); margin-bottom: 4px;" id="lblStrategyOptBTitle" data-i18n="lblStrategyOptBTitle">
                   ทางเลือก 2: ทยอยให้ + มรดก
                 </div>
-                <div style="font-size: 0.68rem; color: var(--ink-dim);" id="lblStrategyGiftsBLbl">ทยอยให้ปลอดภาษีรวม:</div>
+                <div style="font-size: 0.68rem; color: var(--ink-dim);" id="lblStrategyGiftsBLbl" data-i18n="lblStrategyGiftsBLbl">ทยอยให้ปลอดภาษีรวม:</div>
                 <div style="font-size: 0.82rem; font-weight: 700; color: var(--accent); margin-bottom: 4px;" id="valStrategyGiftsB">0.00 บาท</div>
-                <div style="font-size: 0.68rem; color: var(--ink-dim);" id="lblStrategyTaxBLbl">ภาษีมรดกส่วนที่เหลือ:</div>
+                <div style="font-size: 0.68rem; color: var(--ink-dim);" id="lblStrategyTaxBLbl" data-i18n="lblStrategyTaxBLbl">ภาษีมรดกส่วนที่เหลือ:</div>
                 <div style="font-size: 0.90rem; font-weight: 700; color: var(--ok);" id="valStrategyTaxB">0.00 บาท</div>
               </div>
             </div>
 
             <!-- Tax Savings Banner -->
             <div style="background: var(--ok-dim, rgba(47, 139, 118, 0.12)); border: 1px solid var(--ok); border-radius: 8px; padding: 8px 10px; margin-bottom: 10px; text-align: center;">
-              <span style="font-size: 0.72rem; color: var(--ok); font-weight: 600;" id="lblStrategySavingsTitle">🎉 ประหยัดภาษีได้สูงสุด:</span>
+              <span style="font-size: 0.72rem; color: var(--ok); font-weight: 600;" id="lblStrategySavingsTitle" data-i18n="lblStrategySavingsTitle">🎉 ประหยัดภาษีได้สูงสุด:</span>
               <div style="font-size: 1.15rem; font-weight: 800; color: var(--ok); margin-top: 2px;" id="valStrategySavings">3,000,000.00 บาท (ลดลง 100%)</div>
             </div>
           </div>
 
           <!-- Statutory Guidance Note -->
           <div style="background: var(--card-bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 0.70rem; line-height: 1.45; color: var(--ink-dim);" id="boxInheritanceGuidance">
-            ⚖️ <strong id="lblInherLawTitle">ข้อมูลทางกฎหมาย:</strong>
-            <span id="txtInherLawDesc">พ.ร.บ. ภาษีการรับมรดก พ.ศ. 2558 กำหนดให้ผู้รับมรดกแต่ละคนได้รับยกเว้น 100 ล้านบาทแรก ส่วนเกินเสียภาษี 5% (บุพการี/ผู้สืบสันดาน) หรือ 10% (บุคคลอื่น) โดยคู่สมรสตามกฎหมายได้รับยกเว้น 100% ต้องยื่นแบบ ภ.ม.1 ภายใน 150 วันนับแต่วันรับมรดก</span>
+            ⚖️ <strong id="lblInherLawTitle" data-i18n="lblInherLawTitle">ข้อมูลทางกฎหมาย:</strong>
+            <span id="txtInherLawDesc" data-i18n="txtInherLawDesc">พ.ร.บ. ภาษีการรับมรดก พ.ศ. 2558 กำหนดให้ผู้รับมรดกแต่ละคนได้รับยกเว้น 100 ล้านบาทแรก ส่วนเกินเสียภาษี 5% (บุพการี/ผู้สืบสันดาน) หรือ 10% (บุคคลอื่น) โดยคู่สมรสตามกฎหมายได้รับยกเว้น 100% ต้องยื่นแบบ ภ.ม.1 ภายใน 150 วันนับแต่วันรับมรดก</span>
           </div>
         </div>
       </div>
@@ -818,10 +818,10 @@
       <div id="land-building-tax-card" class="reorder-card" style="margin-top: 0; padding: 14px; background: var(--surface-2); border: 1px solid var(--accent); border-radius: 10px;" role="region" aria-label="Thai Land & Building Tax Calculator">
         <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleLandTaxCard()" id="btn-toggle-land" role="button" tabindex="0" aria-expanded="false">
           <div>
-            <div style="font-size: 0.88rem; font-weight: 700; color: var(--ink);" class="panel-title" id="lbl-land-title">
+            <div style="font-size: 0.88rem; font-weight: 700; color: var(--ink);" class="panel-title" id="lbl-land-title" data-i18n="lbl-land-title">
               🏡 จำลองภาษีที่ดินและสิ่งปลูกสร้าง (Land &amp; Building Tax)
             </div>
-            <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-land-subtitle">
+            <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-land-subtitle" data-i18n="lbl-land-subtitle">
               พ.ร.บ. ภาษีที่ดินและสิ่งปลูกสร้าง พ.ศ. 2562 (คำนวณตามราคาประเมินทุนทรัพย์)
             </div>
           </div>
@@ -831,23 +831,23 @@
         <div id="land-panel-body" style="display: none; margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px;">
           <!-- Land Classification Category Selector -->
           <div style="margin-bottom: 10px;">
-            <label for="selLandCategory" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lblLandCategory">
+            <label for="selLandCategory" style="display: block; font-size: 0.72rem; font-weight: 600; color: var(--label); margin-bottom: 4px;" id="lblLandCategory" data-i18n="lblLandCategory">
               ประเภทการใช้ประโยชน์ที่ดิน/สิ่งปลูกสร้าง (Usage Category)
             </label>
             <select id="selLandCategory" class="input-field" style="width: 100%; font-size: 0.82rem; padding: 6px;" onchange="updateLandTaxUI()">
-              <option value="residential_primary" selected id="optLandResPrimary">ที่อยู่อาศัยหลัก (บ้าน+ที่ดิน มีชื่อในทะเบียนบ้าน - ยกเว้น 50 ล้าน)</option>
-              <option value="residential_building_only" id="optLandResBldg">ที่อยู่อาศัยหลัก (เฉพาะตัวบ้าน มีชื่อในทะเบียนบ้าน - ยกเว้น 10 ล้าน)</option>
-              <option value="residential_secondary" id="optLandResSecondary">ที่อยู่อาศัยหลังอื่น / คอนโดปล่อยเช่า (เสียตั้งแต่บาทแรก)</option>
-              <option value="agricultural" id="optLandAgri">เกษตรกรรม (บุคคลธรรมดา ยกเว้น 50 ล้านบาทแรก)</option>
-              <option value="commercial" id="optLandComm">พาณิชยกรรม / อุตสาหกรรม / อื่นๆ (อัตราปกติ 0.3% - 0.7%)</option>
-              <option value="vacant" id="optLandVacant">ที่ดินรกร้างว่างเปล่า (อัตราปกติ + เพิ่ม 0.3% ทุก 3 ปี)</option>
+              <option value="residential_primary" selected id="optLandResPrimary" data-i18n="optLandResPrimary">ที่อยู่อาศัยหลัก (บ้าน+ที่ดิน มีชื่อในทะเบียนบ้าน - ยกเว้น 50 ล้าน)</option>
+              <option value="residential_building_only" id="optLandResBldg" data-i18n="optLandResBldg">ที่อยู่อาศัยหลัก (เฉพาะตัวบ้าน มีชื่อในทะเบียนบ้าน - ยกเว้น 10 ล้าน)</option>
+              <option value="residential_secondary" id="optLandResSecondary" data-i18n="optLandResSecondary">ที่อยู่อาศัยหลังอื่น / คอนโดปล่อยเช่า (เสียตั้งแต่บาทแรก)</option>
+              <option value="agricultural" id="optLandAgri" data-i18n="optLandAgri">เกษตรกรรม (บุคคลธรรมดา ยกเว้น 50 ล้านบาทแรก)</option>
+              <option value="commercial" id="optLandComm" data-i18n="optLandComm">พาณิชยกรรม / อุตสาหกรรม / อื่นๆ (อัตราปกติ 0.3% - 0.7%)</option>
+              <option value="vacant" id="optLandVacant" data-i18n="optLandVacant">ที่ดินรกร้างว่างเปล่า (อัตราปกติ + เพิ่ม 0.3% ทุก 3 ปี)</option>
             </select>
           </div>
 
           <!-- Official Appraisal Value Input -->
           <div style="margin-bottom: 10px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <label for="txtLandAppraisalValue" style="font-size: 0.72rem; font-weight: 600; color: var(--label);" id="lblLandAppraisal">
+              <label for="txtLandAppraisalValue" style="font-size: 0.72rem; font-weight: 600; color: var(--label);" id="lblLandAppraisal" data-i18n="lblLandAppraisal">
                 ราคาประเมินทุนทรัพย์ตามบัญชีกรมธนารักษ์ (Appraisal Value)
               </label>
               <span id="badgeLandExemption" style="font-size: 0.70rem; font-weight: 700; color: var(--ok); background: var(--card-bg); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--ok);">
@@ -869,7 +869,7 @@
           <!-- Vacant Land Consecutive Years (conditional) -->
           <div id="rowVacantYears" style="display: none; margin-bottom: 10px; background: var(--card-bg); padding: 8px 10px; border-radius: 8px; border: 1px dashed var(--warn);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <label for="txtVacantYears" style="font-size: 0.72rem; font-weight: 600; color: var(--warn);" id="lblVacantYears">
+              <label for="txtVacantYears" style="font-size: 0.72rem; font-weight: 600; color: var(--warn);" id="lblVacantYears" data-i18n="lblVacantYears">
                 จำนวนปีติดต่อกันที่ปล่อยทิ้งไว้รกร้างว่างเปล่า (ปี)
               </label>
               <span id="badgeVacantSurcharge" style="font-size: 0.70rem; font-weight: 700; color: var(--danger);">
@@ -877,7 +877,7 @@
               </span>
             </div>
             <input type="number" id="txtVacantYears" value="0" min="0" max="30" step="1" class="input-field" style="width: 100%; font-size: 0.82rem; padding: 6px;" oninput="updateLandTaxUI()" />
-            <div style="font-size: 0.68rem; color: var(--ink-dim); margin-top: 4px;" id="txtVacantRule">
+            <div style="font-size: 0.68rem; color: var(--ink-dim); margin-top: 4px;" id="txtVacantRule" data-i18n="txtVacantRule">
               * กฎหมายกำหนดหากทิ้งไว้ว่างเปล่าติดต่อกันตั้งแต่ 3 ปีขึ้นไป จะเสียภาษีเพิ่มขึ้น +0.3% ทุกๆ 3 ปี สูงสุดไม่เกิน 3.0%
             </div>
           </div>
@@ -885,12 +885,12 @@
           <!-- Primary Result Cards Grid -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
             <div style="background: var(--card-bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px;">
-              <div style="font-size: 0.70rem; color: var(--ink-dim);" id="lblCardLandTaxableBase">ฐานภาษีที่ต้องคำนวณ:</div>
+              <div style="font-size: 0.70rem; color: var(--ink-dim);" id="lblCardLandTaxableBase" data-i18n="lblCardLandTaxableBase">ฐานภาษีที่ต้องคำนวณ:</div>
               <div style="font-size: 0.95rem; font-weight: 700; color: var(--ink);" id="valLandTaxableBase">0.00 บาท</div>
               <div style="font-size: 0.68rem; color: var(--ok); margin-top: 2px;" id="valLandExemptSummary">ยกเว้น: 50,000,000 บาท</div>
             </div>
             <div style="background: var(--card-bg); border: 1px solid var(--accent); border-radius: 8px; padding: 8px;">
-              <div style="font-size: 0.70rem; color: var(--accent);" id="lblCardLandTotalTax">ภาษีที่ดินที่ต้องชำระต่อปี:</div>
+              <div style="font-size: 0.70rem; color: var(--accent);" id="lblCardLandTotalTax" data-i18n="lblCardLandTotalTax">ภาษีที่ดินที่ต้องชำระต่อปี:</div>
               <div style="font-size: 0.95rem; font-weight: 700; color: var(--accent);" id="valLandTotalTax">0.00 บาท</div>
               <div style="font-size: 0.68rem; color: var(--ink-dim); margin-top: 2px;" id="valLandEffectiveRate">อัตราเฉลี่ย: 0.00%</div>
             </div>
@@ -899,21 +899,21 @@
           <!-- Installment Box (3 งวด) -->
           <div id="boxLandInstallment" style="display: none; background: var(--ok-dim, rgba(47, 139, 118, 0.12)); border: 1px solid var(--ok); border-radius: 8px; padding: 8px 10px; margin-bottom: 10px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 0.72rem; color: var(--ok); font-weight: 700;" id="lblLandInstallmentTitle">
+              <span style="font-size: 0.72rem; color: var(--ok); font-weight: 700;" id="lblLandInstallmentTitle" data-i18n="lblLandInstallmentTitle">
                 💳 สิทธิผ่อนชำระ 3 งวด (ไม่เสียดอกเบี้ย):
               </span>
               <span style="font-size: 0.85rem; font-weight: 800; color: var(--ok);" id="valLandInstallmentMonthly">
                 0.00 บาท/งวด
               </span>
             </div>
-            <div style="font-size: 0.68rem; color: var(--ink-dim); margin-top: 3px;" id="txtLandInstallmentDesc">
+            <div style="font-size: 0.68rem; color: var(--ink-dim); margin-top: 3px;" id="txtLandInstallmentDesc" data-i18n="txtLandInstallmentDesc">
               ยอดภาษีตั้งแต่ 3,000 บาทขึ้นไป สามารถแบ่งผ่อนกับ อปท. ได้ 3 งวดเท่าๆ กัน (เม.ย., พ.ค., มิ.ย.)
             </div>
           </div>
 
           <!-- Progressive Tier Breakdown Accordion/Container -->
           <div id="landTaxTiersContainer" style="margin-bottom: 10px; background: var(--card-bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px;">
-            <div style="font-size: 0.70rem; font-weight: 700; color: var(--ink-dim); margin-bottom: 6px;" id="lblLandTiersHeader">
+            <div style="font-size: 0.70rem; font-weight: 700; color: var(--ink-dim); margin-bottom: 6px;" id="lblLandTiersHeader" data-i18n="lblLandTiersHeader">
               รายละเอียดการคำนวณตามขั้นบันได (Statutory Tiers):
             </div>
             <div id="landTaxTiersList" style="display: flex; flex-direction: column; gap: 4px; font-size: 0.72rem;"></div>
@@ -921,13 +921,13 @@
 
           <!-- Statutory Guidance Note -->
           <div style="background: var(--card-bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 0.70rem; line-height: 1.45; color: var(--ink-dim);" id="boxLandGuidance">
-            🏛️ <strong id="lblLandLawTitle">ข้อมูลทางกฎหมาย:</strong>
-            <span id="txtLandLawDesc">จัดเก็บโดย อปท. (กทม., เมืองพัทยา, เทศบาล, หรือ อบต.) ตามราคาประเมินทุนทรัพย์ที่ดินและสิ่งปลูกสร้างของกรมธนารักษ์ (ไม่ใช่ราคาตลาด) มีหนังสือแจ้งประเมิน (ภ.ด.ส. 6 / ภ.ด.ส. 7) ในช่วง ก.พ.–มี.ค. กำหนดชำระภาษีภายในวันที่ 30 เมษายนของทุกปี</span>
+            🏛️ <strong id="lblLandLawTitle" data-i18n="lblLandLawTitle">ข้อมูลทางกฎหมาย:</strong>
+            <span id="txtLandLawDesc" data-i18n="txtLandLawDesc">จัดเก็บโดย อปท. (กทม., เมืองพัทยา, เทศบาล, หรือ อบต.) ตามราคาประเมินทุนทรัพย์ที่ดินและสิ่งปลูกสร้างของกรมธนารักษ์ (ไม่ใช่ราคาตลาด) มีหนังสือแจ้งประเมิน (ภ.ด.ส. 6 / ภ.ด.ส. 7) ในช่วง ก.พ.–มี.ค. กำหนดชำระภาษีภายในวันที่ 30 เมษายนของทุกปี</span>
           </div>
         </div>
       </div>
     </div> <!-- end #taxPanelsContainer -->
-    <p style="text-align:center;font-size:0.72rem;color:#94a3b8;margin-top:16px;">v2.5.46</p>
+    <p style="text-align:center;font-size:0.72rem;color:#94a3b8;margin-top:16px;">v2.5.47</p>
   </div>
 
   <script src="js/engines/thai-pit.js"></script>
