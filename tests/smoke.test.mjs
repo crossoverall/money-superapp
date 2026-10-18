@@ -1471,5 +1471,56 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'rebalance.js must expose toggleTargetDateGlidepath',
       );
     });
+
+    it('verifies Phase 99 E-Filing Worksheet & Tax Dossier Engine modularization and clean delegation', () => {
+      const wsPath = path.join(ROOT_DIR, 'js/engines/tax-worksheet.js');
+      assert.ok(fs.existsSync(wsPath), 'js/engines/tax-worksheet.js must exist');
+      const wsContent = fs.readFileSync(wsPath, 'utf8');
+      assert.ok(
+        wsContent.includes('MoneyApp.TaxWorksheet = TaxWorksheet'),
+        'tax-worksheet.js must export MoneyApp.TaxWorksheet',
+      );
+      assert.ok(!wsContent.includes('eval('), 'tax-worksheet.js must never invoke eval()');
+      assert.ok(!wsContent.includes('document.write'), 'tax-worksheet.js must never invoke document.write()');
+
+      // Verify all 8 core HTML files register tax-worksheet.js
+      const htmlFiles = [
+        'dashboard.html',
+        'debt-calculator.html',
+        'index.html',
+        'months-slips.html',
+        'rebalance.html',
+        'remaining-money.html',
+        'tax-calculator-base.html',
+        'tax-calculator.html',
+      ];
+      for (const file of htmlFiles) {
+        const content = fs.readFileSync(path.join(ROOT_DIR, file), 'utf8');
+        assert.ok(
+          content.includes('src="js/engines/tax-worksheet.js"'),
+          `${file} must include js/engines/tax-worksheet.js`,
+        );
+      }
+
+      // Verify service worker registers tax-worksheet.js
+      const swContent = fs.readFileSync(path.join(ROOT_DIR, 'sw.js'), 'utf8');
+      assert.ok(swContent.includes("'./js/engines/tax-worksheet.js'"), 'sw.js must cache js/engines/tax-worksheet.js');
+
+      // Verify js/tax-calculator-base.js delegates worksheet and dossier cleanly
+      const taxContent = fs.readFileSync(path.join(ROOT_DIR, 'js/tax-calculator-base.js'), 'utf8');
+      assert.ok(taxContent.includes('TaxWorksheet'), 'tax-calculator-base.js must reference MoneyApp.TaxWorksheet');
+      assert.ok(
+        taxContent.includes('window.copyEFilingField = copyEFilingField;'),
+        'tax-calculator-base.js must expose window.copyEFilingField',
+      );
+      assert.ok(
+        taxContent.includes('window.copyAllEFilingSummary = copyAllEFilingSummary;'),
+        'tax-calculator-base.js must expose window.copyAllEFilingSummary',
+      );
+      assert.ok(
+        taxContent.includes('window.updateDividendTaxCreditUI = updateDividendTaxCreditUI;'),
+        'tax-calculator-base.js must expose window.updateDividendTaxCreditUI',
+      );
+    });
   });
 });

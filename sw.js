@@ -1,4 +1,4 @@
-const CACHE_NAME = 'money-superapp-v2.5.41';
+const CACHE_NAME = 'money-superapp-v2.5.42';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -29,6 +29,7 @@ const ASSETS_TO_CACHE = [
   './js/engines/budget-import.js',
   './js/engines/financial-health.js',
   './js/engines/rebalance-subtools.js',
+  './js/engines/tax-worksheet.js',
   './js/app-shell.js',
   './js/dashboard.js',
   './js/remaining-money.js',

@@ -15,6 +15,18 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Decompose tax-calculator-base.js: E-Filing Worksheet & Tax Dossier Engine (v2.5.42)
+- **Date & Context:** 2026-10-18, Phase 99 Engine Modularization (`v2.5.42`).
+- **Problem:**
+  1. `js/tax-calculator-base.js` was 3,101 lines long, mixing tax bracket stepping and deduction models with over 700 lines of e-filing worksheet coordinate logic (ภ.ง.ด. 90/91 field mapping, Section 47 500k statutory retirement pool warnings, preflight compliance checklists, clipboard synchronizers, Section 47 bis dividend tax credit UI, and formal tax dossier print rendering).
+  2. The e-filing worksheet and dossier generation logic was tightly bound to the tax calculator DOM controller, preventing headless integration and unit testing.
+- **Root Cause:** E-filing synchronization and printable tax dossier reporting were appended directly into `tax-calculator-base.js` across multiple feature phases.
+- **Solution & Rule:**
+  1. **Modular Worksheet & Dossier Engine (`js/engines/tax-worksheet.js`):** Extracted `MoneyApp.TaxWorksheet` providing `formatReportDate`, `showCopyFeedback`, `copyEFilingField`, `copyAllEFilingSummary`, `updateDividendTaxCreditUI`, `updateEFilingWorksheetView`, and `updatePrintReportView`.
+  2. **Clean Tax Controller Delegation:** Delegated dividend tax credit UI, worksheet coordinate rendering, and print dossier reporting in `js/tax-calculator-base.js` to `MoneyApp.TaxWorksheet`, shrinking `tax-calculator-base.js` from 3,101 down to 2,470 lines (shrunk by 631 lines).
+  3. **Backward-Compatible Global Exposure:** Preserved global function attachments (`window.copyEFilingField`, `window.copyAllEFilingSummary`, `window.updateDividendTaxCreditUI`) for unbroken onclick handler execution from `tax-calculator-base.html`.
+  4. **Quality Gates & Invariants:** Added `tests/tax-worksheet.test.mjs` (4 unit tests), updated `tests/smoke.test.mjs` (67 smoke tests), verified full test suite (478 passing tests across 109 suites), zero Biome errors/warnings, and zero CSP violations.
+
 ### 2026-10-18: Decompose rebalance.js: Portfolio Auxiliary Sub-tools Engine (v2.5.41)
 - **Date & Context:** 2026-10-18, Phase 98 Engine Modularization (`v2.5.41`).
 - **Problem:**
