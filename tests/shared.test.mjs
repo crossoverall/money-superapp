@@ -639,4 +639,74 @@ describe('MoneyApp Shared Core Module', () => {
       assert.equal(MoneyApp.formatMaskedAmount(150000, false, 'บาท'), '150,000 บาท');
     });
   });
+
+  describe('MoneyApp.calculateThaiEFilingWorksheet (Phase 66 ภ.ง.ด. 90/91 e-Filing)', () => {
+    const { MoneyApp } = createEnvironment();
+
+    it('correctly maps 40(1) salary, deductions, and computes tax refund', () => {
+      const res = MoneyApp.calculateThaiEFilingWorksheet({
+        salary: 50000, // 600,000/yr
+        bonus: 100000, // total 40(1) = 700,000
+        pvd: 35000,
+        sso: 9000,
+        lifeInsurance: 50000,
+        thaiEsg: 50000,
+        taxWithheld50Tawi: 40000,
+      });
+
+      assert.equal(res.income401, 700000);
+      assert.equal(res.statutoryExpenseDeduction, 100000); // 50% max 100k
+      assert.equal(res.incomeAfterExpense, 600000);
+
+      // Deductions: Group A = 60,000. Group B = 9,000 (sso) + 50,000 (life) + 35,000 (pvd) + 50,000 (thaiEsg) = 144,000
+      assert.equal(res.deductions.groupA, 60000);
+      assert.equal(res.deductions.groupB, 144000);
+      assert.equal(res.deductions.totalDeductions, 204000);
+
+      // Net Taxable = 600,000 - 204,000 = 396,000
+      assert.equal(res.netTaxableIncome, 396000);
+
+      // Tax brackets:
+      // 0 - 150k @ 0% = 0
+      // 150k - 300k @ 5% = 7,500
+      // 300k - 396k @ 10% (96,000 * 0.10) = 9,600
+      // Total tax = 17,100
+      assert.equal(res.grossCalculatedTax, 17100);
+      assert.equal(res.taxBracketPct, 10);
+
+      // 50 Tawi withheld = 40,000 -> Refund = 40,000 - 17,100 = 22,900
+      assert.equal(res.taxWithheld50Tawi, 40000);
+      assert.equal(res.netTaxDueOrRefund, 22900);
+      assert.equal(res.isRefund, true);
+      assert.equal(res.isPayable, false);
+    });
+
+    it('handles additional tax payable and 3-month installment calculation', () => {
+      const res = MoneyApp.calculateThaiEFilingWorksheet({
+        salary: 100000, // 1,200,000/yr
+        bonus: 300000, // total 40(1) = 1,500,000
+        taxWithheld50Tawi: 50000, // under-withheld
+      });
+
+      assert.equal(res.income401, 1500000);
+      assert.equal(res.isPayable, true);
+      assert.ok(res.netTaxDueOrRefund < 0);
+      assert.ok(res.canInstallment); // payable >= 3000
+      assert.ok(res.installment3Months > 0);
+    });
+
+    it('calculates Section 40(4)(b) dividend tax credit offset correctly', () => {
+      const res = MoneyApp.calculateThaiEFilingWorksheet({
+        salary: 30000, // 360,000
+        dividend404b: 100000,
+        dividendCitRate: 0.2,
+        applyDividendCredit: true,
+        taxWithheld50Tawi: 10000,
+      });
+
+      // Credit = 100,000 * (0.20 / 0.80) = 25,000
+      assert.equal(res.dividendCredit, 25000);
+      assert.ok(res.totalAssessableIncome > res.income401);
+    });
+  });
 });

@@ -337,6 +337,21 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       );
     });
 
+    it('verifies tax-calculator-base.html declares ภ.ง.ด. 90/91 e-Filing Worksheet with copy buttons', () => {
+      const taxContent = fs.readFileSync(path.join(ROOT_DIR, 'tax-calculator-base.html'), 'utf8');
+      assert.ok(
+        taxContent.includes('id="panelEFilingWorksheet"'),
+        'tax-calculator-base.html must define #panelEFilingWorksheet',
+      );
+      assert.ok(
+        taxContent.includes('id="btnCopyAllEFiling"'),
+        'tax-calculator-base.html must define #btnCopyAllEFiling',
+      );
+      assert.ok(taxContent.includes('id="valEf401"'), 'tax-calculator-base.html must define #valEf401');
+      assert.ok(taxContent.includes('id="valEfGroupA"'), 'tax-calculator-base.html must define #valEfGroupA');
+      assert.ok(taxContent.includes('id="valEfNetBalance"'), 'tax-calculator-base.html must define #valEfNetBalance');
+    });
+
     it('verifies tax-calculator.html declares Land & Building Tax card with controls', () => {
       const taxContent = fs.readFileSync(path.join(ROOT_DIR, 'tax-calculator.html'), 'utf8');
       assert.ok(

@@ -2383,6 +2383,149 @@
     return formatMoney(amount) + (currency ? ` ${currency}` : '');
   }
 
+  /**
+   * Phase 66: Thai Revenue Department (ภ.ง.ด. 90/91) e-Filing Form Pre-fill Worksheet Engine.
+   * Maps taxable incomes (40(1), 40(2), 40(4)(b)), statutory standard 50% expenses,
+   * 4-group tax deductions, progressive PIT tax brackets, dividend tax credit,
+   * and 50 Tawi withholding into statutory RD online e-filing boxes.
+   */
+  function calculateThaiEFilingWorksheet(params) {
+    var p = params || {};
+    var salary = Number(p.salary) || 0;
+    var bonus = Number(p.bonus) || 0;
+    var yearlyIncome = Number(p.yearlyIncome) || 0;
+    var income401 = salary * 12 + bonus + yearlyIncome;
+    var income402 = Number(p.freelance402) || 0;
+    var dividend404b = Number(p.dividend404b) || 0;
+    var citRate = typeof p.dividendCitRate === 'number' ? p.dividendCitRate : 0.2;
+    var applyDividendCredit = Boolean(p.applyDividendCredit);
+
+    // Standard 50% statutory expenses capped at 100,000 THB for 40(1) + 40(2)
+    var combinedEarned = income401 + income402;
+    var statutoryExpense = Math.min(100000, combinedEarned * 0.5);
+
+    // Dividend tax credit
+    var dividendCredit = 0;
+    if (applyDividendCredit && dividend404b > 0 && citRate < 1 && citRate > 0) {
+      dividendCredit = Math.round(dividend404b * (citRate / (1 - citRate)));
+    }
+
+    var assessableTotal = combinedEarned + (applyDividendCredit ? dividend404b + dividendCredit : 0);
+    var incomeAfterExpense =
+      Math.max(0, combinedEarned - statutoryExpense) + (applyDividendCredit ? dividend404b + dividendCredit : 0);
+
+    // Group A: Personal & Family
+    var selfDeduction = 60000;
+    var spouse = Number(p.spouseDeduction) || 0;
+    var children = (Number(p.childrenCount) || 0) * 30000;
+    var parents = (Number(p.parentCount) || 0) * 30000;
+    var disabled = (Number(p.disabledCount) || 0) * 60000;
+    var antenatal = Math.min(60000, Number(p.antenatalDeduction) || 0);
+    var groupA = selfDeduction + spouse + children + parents + disabled + antenatal;
+
+    // Group B: Insurance & Retirement Funds
+    var sso = Math.min(10500, Number(p.sso) || 0);
+    var lifeIns = Math.min(100000, Number(p.lifeInsurance) || 0);
+    var healthIns = Math.min(25000, Number(p.healthInsurance) || 0);
+    var combinedLifeHealth = Math.min(100000, lifeIns + healthIns);
+    var parentHealth = Math.min(15000, Number(p.parentHealthInsurance) || 0);
+
+    // 500k retirement bundle
+    var rmf = Number(p.rmf) || 0;
+    var ssf = Number(p.ssf) || 0;
+    var pvd = Number(p.pvd) || 0;
+    var gpf = Number(p.gpf) || 0;
+    var nsf = Number(p.nsf) || 0;
+    var pensionIns = Number(p.pensionInsurance) || 0;
+    var retirementBundle = Math.min(500000, rmf + ssf + pvd + gpf + nsf + pensionIns);
+
+    var thaiEsg = Math.min(300000, Number(p.thaiEsg) || 0);
+    var groupB = sso + combinedLifeHealth + parentHealth + retirementBundle + thaiEsg;
+
+    // Group C: Real estate & mortgage interest
+    var mortgageInterest = Math.min(100000, Number(p.homeLoanInterest) || 0);
+    var groupC = mortgageInterest;
+
+    // Group D: Donations
+    var netBeforeDonation = Math.max(0, incomeAfterExpense - (groupA + groupB + groupC));
+    var maxDonationCap = netBeforeDonation * 0.1;
+    var donationEdu = (Number(p.donationEdu) || 0) * 2; // 2x allowance
+    var donationGeneral = Number(p.donationGeneral) || 0;
+    var totalDonationAllowable = Math.min(maxDonationCap, donationEdu + donationGeneral);
+    var groupD = totalDonationAllowable;
+
+    var totalDeductions = groupA + groupB + groupC + groupD;
+    var netTaxableIncome = Math.max(0, incomeAfterExpense - totalDeductions);
+
+    // Progressive Tax Calculation
+    var tiers = [
+      { limit: 150000, rate: 0.0 },
+      { limit: 150000, rate: 0.05 },
+      { limit: 200000, rate: 0.1 },
+      { limit: 250000, rate: 0.15 },
+      { limit: 250000, rate: 0.2 },
+      { limit: 1000000, rate: 0.25 },
+      { limit: 3000000, rate: 0.3 },
+      { limit: Infinity, rate: 0.35 },
+    ];
+
+    var remaining = netTaxableIncome;
+    var grossTax = 0;
+    var topRatePct = 0;
+    var i;
+    var t;
+    var taxableInTier;
+    for (i = 0; i < tiers.length; i++) {
+      if (remaining <= 0) break;
+      t = tiers[i];
+      taxableInTier = Math.min(remaining, t.limit);
+      grossTax += Math.round(taxableInTier * t.rate);
+      remaining -= taxableInTier;
+      if (t.rate > 0 && taxableInTier > 0) {
+        topRatePct = Math.round(t.rate * 100);
+      }
+    }
+
+    var taxAfterDividendCredit = Math.max(0, grossTax - dividendCredit);
+    var taxWithheld = Number(p.taxWithheld50Tawi) || 0;
+
+    // Net outcome: positive = refund, negative = payable
+    var netOutcome = taxWithheld + dividendCredit - grossTax;
+
+    var isRefund = netOutcome > 0;
+    var isPayable = netOutcome < 0;
+    var payableAmount = Math.max(0, -netOutcome);
+    var canInstallment = payableAmount >= 3000;
+    var installmentAmount = canInstallment ? Math.ceil(payableAmount / 3) : 0;
+
+    return {
+      income401: income401,
+      income402: income402,
+      income404b: dividend404b,
+      dividendCredit: dividendCredit,
+      totalAssessableIncome: assessableTotal,
+      statutoryExpenseDeduction: statutoryExpense,
+      incomeAfterExpense: incomeAfterExpense,
+      deductions: {
+        groupA: groupA,
+        groupB: groupB,
+        groupC: groupC,
+        groupD: groupD,
+        totalDeductions: totalDeductions,
+      },
+      netTaxableIncome: netTaxableIncome,
+      taxBracketPct: topRatePct,
+      grossCalculatedTax: grossTax,
+      taxAfterDividendCredit: taxAfterDividendCredit,
+      taxWithheld50Tawi: taxWithheld,
+      netTaxDueOrRefund: netOutcome,
+      isRefund: isRefund,
+      isPayable: isPayable,
+      canInstallment: canInstallment,
+      installment3Months: installmentAmount,
+    };
+  }
+
   // Auto-initialize document theme, shortcuts, and swipe navigation when running in browser
   initTheme();
   initShortcutForwarding();
@@ -2423,6 +2566,7 @@
     initCardLayoutManager: initCardLayoutManager,
     generateExecutiveDossier: generateExecutiveDossier,
     formatMaskedAmount: formatMaskedAmount,
+    calculateThaiEFilingWorksheet: calculateThaiEFilingWorksheet,
   };
 
   // Expose on global window object
@@ -2468,5 +2612,7 @@
     if (typeof global.generateExecutiveDossier === 'undefined')
       global.generateExecutiveDossier = generateExecutiveDossier;
     if (typeof global.formatMaskedAmount === 'undefined') global.formatMaskedAmount = formatMaskedAmount;
+    if (typeof global.calculateThaiEFilingWorksheet === 'undefined')
+      global.calculateThaiEFilingWorksheet = calculateThaiEFilingWorksheet;
   }
 })(typeof window !== 'undefined' ? window : this);

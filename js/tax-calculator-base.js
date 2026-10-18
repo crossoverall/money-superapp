@@ -141,6 +141,30 @@ if (LANG === 'en') {
     'lbl-opt-claim-credit': 'Option 2: Claim Tax Credit (Sec 47 bis)',
     'desc-opt-claim-credit': 'Gross-up dividend & claim refund credit',
     'lbl-apply-div-tax': 'Include in total annual tax computation',
+    'lbl-panel-efiling': '📋 ภ.ง.ด. 90/91 e-Filing Worksheet (Revenue Dept.)',
+    lblBtnCopyAllEFiling: 'Copy Full Summary',
+    lblEFilingPortalDesc:
+      'Ordered to match the Revenue Department e-Filing screen (efiling.rd.go.th). Click copy icons to paste into RD online.',
+    linkRdOnline: 'Open RD Online ➔',
+    lblEfStep1Title: 'Step 1: Assessable Income (RD Step 2)',
+    lblEf401: 'Section 40(1) Salary & Bonus',
+    subEf401: 'Annual salary + bonus total',
+    lblEf402: 'Section 40(2) Freelance & Commission',
+    subEf402: 'Commissions & service fees',
+    lblEf404b: 'Section 40(4)(b) Thai Share Dividends',
+    subEf404b: 'With dividend tax credit',
+    lblEfExpense: 'Statutory expense deduction (50% max 100k)',
+    lblEfStep2Title: 'Step 2: Tax Deductions (RD Step 3)',
+    lblEfGroupA: 'Group A: Personal & Family',
+    subEfGroupA: 'Self 60k + spouse/children/parents',
+    lblEfGroupB: 'Group B: Insurance & Retirement',
+    subEfGroupB: 'SSO + PVD + SSF + RMF + ThaiESG + Life Ins',
+    lblEfGroupC: 'Group C: Mortgage Interest',
+    subEfGroupC: 'Home loan interest (max 100k)',
+    lblEfGroupD: 'Group D: Donations',
+    subEfGroupD: 'e-Donation (2x) + General donation',
+    lblEfNetBalanceTitle: 'Net Tax Outcome:',
+    descEfNetBalance: 'Reconciled with 50 Tawi withholding and dividend tax credit',
   };
   Object.keys(EN).forEach((id) => {
     const el = document.getElementById(id);
@@ -1054,6 +1078,177 @@ function calculateTax() {
     withheldTax: totalTaxCredits,
     refundMetrics,
   });
+
+  updateEFilingWorksheetView();
+}
+
+function updateEFilingWorksheetView() {
+  const panel = document.getElementById('panelEFilingWorksheet');
+  if (!panel || typeof MoneyApp === 'undefined' || !MoneyApp.calculateThaiEFilingWorksheet) return;
+
+  const isEn = LANG === 'en';
+  const curUnit = isEn ? 'THB' : 'บาท';
+
+  const isDivApplied = Boolean(document.getElementById('chkApplyDividendToTax')?.checked);
+  const divAmount = parseNum(document.getElementById('inpDividendAmount')?.value);
+  const citRate = parseNum(document.getElementById('selCitRate')?.value);
+  const salaryVal = parseNum(document.getElementById('salary')?.value);
+  const bonusVal = parseNum(document.getElementById('bonus')?.value);
+  const yearlyIncVal = parseNum(document.getElementById('yearlyIncome')?.value);
+  const yearlyBonusVal = parseNum(document.getElementById('yearlyBonus')?.value);
+
+  const ws = MoneyApp.calculateThaiEFilingWorksheet({
+    salary: incomeMode === 'yearly' ? 0 : salaryVal,
+    bonus: incomeMode === 'yearly' ? 0 : bonusVal,
+    yearlyIncome: incomeMode === 'yearly' ? yearlyIncVal + yearlyBonusVal : 0,
+    freelance402: 0,
+    dividend404b: isDivApplied ? divAmount : 0,
+    dividendCitRate: citRate,
+    applyDividendCredit: isDivApplied,
+    pvd: parseNum(document.getElementById('pvdDeduct')?.innerText?.replace(/[^0-9.-]/g, '')),
+    sso: parseNum(document.getElementById('ssoDeduct')?.innerText?.replace(/[^0-9.-]/g, '')),
+    lifeInsurance: parseNum(document.getElementById('insurance')?.value),
+    rmf: parseNum(document.getElementById('fund')?.value),
+    thaiEsg: parseNum(document.getElementById('thaiesg')?.value),
+    homeLoanInterest: parseNum(document.getElementById('mortgage')?.value),
+    donationGeneral: parseNum(document.getElementById('otherDeductions')?.value),
+    taxWithheld50Tawi: parseNum(document.getElementById('withheldTax')?.value),
+  });
+
+  // Populate box elements
+  const el401 = document.getElementById('valEf401');
+  if (el401) {
+    el401.textContent = formatMoney(ws.income401);
+    el401.dataset.raw = ws.income401;
+  }
+  const el402 = document.getElementById('valEf402');
+  if (el402) {
+    el402.textContent = formatMoney(ws.income402);
+    el402.dataset.raw = ws.income402;
+  }
+  const el404b = document.getElementById('valEf404b');
+  if (el404b) {
+    el404b.textContent = formatMoney(ws.income404b);
+    el404b.dataset.raw = ws.income404b;
+  }
+  const elExp = document.getElementById('valEfExpense');
+  if (elExp) elExp.textContent = `- ${formatMoney(ws.statutoryExpenseDeduction)}`;
+
+  const elGrpA = document.getElementById('valEfGroupA');
+  if (elGrpA) {
+    elGrpA.textContent = `- ${formatMoney(ws.deductions.groupA)}`;
+    elGrpA.dataset.raw = ws.deductions.groupA;
+  }
+  const elGrpB = document.getElementById('valEfGroupB');
+  if (elGrpB) {
+    elGrpB.textContent = `- ${formatMoney(ws.deductions.groupB)}`;
+    elGrpB.dataset.raw = ws.deductions.groupB;
+  }
+  const elGrpC = document.getElementById('valEfGroupC');
+  if (elGrpC) {
+    elGrpC.textContent = `- ${formatMoney(ws.deductions.groupC)}`;
+    elGrpC.dataset.raw = ws.deductions.groupC;
+  }
+  const elGrpD = document.getElementById('valEfGroupD');
+  if (elGrpD) {
+    elGrpD.textContent = `- ${formatMoney(ws.deductions.groupD)}`;
+    elGrpD.dataset.raw = ws.deductions.groupD;
+  }
+
+  const elNetBal = document.getElementById('valEfNetBalance');
+  if (elNetBal) {
+    if (ws.isRefund) {
+      elNetBal.textContent = `${isEn ? 'Tax Refund: ' : 'ขอคืนภาษี: '}${formatMoney(ws.netTaxDueOrRefund)} ${curUnit}`;
+      elNetBal.style.color = 'var(--ok)';
+      elNetBal.dataset.raw = ws.netTaxDueOrRefund;
+    } else if (ws.isPayable) {
+      const payable = Math.abs(ws.netTaxDueOrRefund);
+      elNetBal.textContent = `${isEn ? 'Additional Tax Payable: ' : 'ภาษีชำระเพิ่ม: '}${formatMoney(payable)} ${curUnit}`;
+      elNetBal.style.color = 'var(--danger)';
+      elNetBal.dataset.raw = payable;
+    } else {
+      elNetBal.textContent = isEn ? 'Tax Balanced (0 THB)' : 'ภาษีพอดี (0 บาท)';
+      elNetBal.style.color = 'var(--core)';
+      elNetBal.dataset.raw = 0;
+    }
+  }
+
+  const descBal = document.getElementById('descEfNetBalance');
+  if (descBal) {
+    if (ws.canInstallment) {
+      descBal.textContent = isEn
+        ? `Option to pay in 3 installments: ~${formatMoney(ws.installment3Months)} THB/month`
+        : `สามารถเลือกผ่อนชำระ 3 งวดได้: งวดละ ~${formatMoney(ws.installment3Months)} บาท`;
+    } else if (ws.isRefund) {
+      descBal.textContent = isEn
+        ? 'PromptPay direct deposit with Thai National ID ready'
+        : 'พร้อมโอนเงินคืนเข้าบัญชี PromptPay ผูกเลขประจำตัวประชาชน';
+    } else {
+      descBal.textContent = isEn
+        ? 'Reconciled with 50 Tawi withholding and dividend tax credit'
+        : 'คำนวณหักภาษี ณ ที่จ่าย 50 ทวิ และเครดิตภาษีเงินปันผลแล้ว';
+    }
+  }
+}
+
+function copyEFilingField(valElementId, btnEl) {
+  const el = document.getElementById(valElementId);
+  if (!el) return;
+  const raw = el.dataset.raw || el.textContent.replace(/[^0-9.-]/g, '');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(raw).then(() => {
+      showCopyFeedback(btnEl);
+    });
+  } else {
+    const input = document.createElement('input');
+    input.value = raw;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand('copy');
+    document.body.removeChild(input);
+    showCopyFeedback(btnEl);
+  }
+}
+window.copyEFilingField = copyEFilingField;
+
+function copyAllEFilingSummary() {
+  const btn = document.getElementById('btnCopyAllEFiling');
+  const v401 = document.getElementById('valEf401')?.dataset.raw || '0';
+  const v402 = document.getElementById('valEf402')?.dataset.raw || '0';
+  const v404b = document.getElementById('valEf404b')?.dataset.raw || '0';
+  const grpA = document.getElementById('valEfGroupA')?.dataset.raw || '0';
+  const grpB = document.getElementById('valEfGroupB')?.dataset.raw || '0';
+  const grpC = document.getElementById('valEfGroupC')?.dataset.raw || '0';
+  const grpD = document.getElementById('valEfGroupD')?.dataset.raw || '0';
+  const netBal = document.getElementById('valEfNetBalance')?.textContent || '';
+
+  const summary = [
+    '=== Money Superapp ภ.ง.ด. 90/91 e-Filing Worksheet ===',
+    `[เงินได้ 40(1)]: ${formatMoney(v401)} บาท`,
+    `[เงินได้ 40(2)]: ${formatMoney(v402)} บาท`,
+    `[เงินได้ 40(4)(ข)]: ${formatMoney(v404b)} บาท`,
+    `[ลดหย่อนกลุ่ม A ตนเอง/ครอบครัว]: ${formatMoney(grpA)} บาท`,
+    `[ลดหย่อนกลุ่ม B ประกัน/กองทุน]: ${formatMoney(grpB)} บาท`,
+    `[ลดหย่อนกลุ่ม C ดอกเบี้ยบ้าน]: ${formatMoney(grpC)} บาท`,
+    `[ลดหย่อนกลุ่ม D เงินบริจาค]: ${formatMoney(grpD)} บาท`,
+    `[ผลลัพธ์สุทธิ]: ${netBal}`,
+  ].join('\n');
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(summary).then(() => {
+      showCopyFeedback(btn);
+    });
+  }
+}
+window.copyAllEFilingSummary = copyAllEFilingSummary;
+
+function showCopyFeedback(btn) {
+  if (!btn) return;
+  const original = btn.innerHTML;
+  btn.innerHTML = '✓';
+  setTimeout(() => {
+    btn.innerHTML = original;
+  }, 1200);
 }
 
 function formatReportDate(d, lang) {
@@ -2194,6 +2389,7 @@ const taxBaseLayoutManager =
           'dividendTaxCreditCard',
           'panelTaxResults',
           'taxAdvisorCard',
+          'panelEFilingWorksheet',
           'panelTaxScenario',
           'panelTaxCalendar',
         ],

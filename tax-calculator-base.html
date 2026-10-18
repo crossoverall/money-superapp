@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="2.5.0">
+    <meta name="version" content="2.5.1">
     <meta name="description" content="คำนวณภาษีเงินได้บุคคลธรรมดา — ประมาณการภาษีเงินได้จากเงินเดือนและโบนัส พร้อมแสดงรายละเอียดตามขั้นบันได">
     <title>คำนวณภาษีเงินได้บุคคลธรรมดา</title>
     <link rel="stylesheet" href="css/tailwind-lite.css">
@@ -619,6 +619,154 @@
                 </div>
             </div>
 
+            <!-- Phase 66: Thai Revenue Dept. ภ.ง.ด. 90/91 Statutory e-Filing Form Pre-fill Worksheet -->
+            <div id="panelEFilingWorksheet" class="reorder-card bg-white p-4 rounded-xl border" style="border-color:var(--line);">
+                <div class="panel-header flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <h3 class="panel-title text-base font-bold text-gray-800" id="lbl-panel-efiling">
+                            📋 ใบกรอก ภ.ง.ด. 90/91 e-Filing (Revenue Dept. Worksheet)
+                        </h3>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="background:var(--ok-dim); color:var(--ok); border:1px solid var(--ok);">
+                            RD Online Match
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2 no-print">
+                        <button type="button" onclick="copyAllEFilingSummary()" class="py-1 px-2.5 text-xs font-semibold rounded-lg" style="background:var(--panel-2); color:var(--ink); border:1px solid var(--line); cursor:pointer;" id="btnCopyAllEFiling" title="คัดลอกข้อมูลสรุปทั้งหมดสำหรับยื่นภาษี">
+                            📋 <span id="lblBtnCopyAllEFiling">คัดลอกสรุปทั้งหมด</span>
+                        </button>
+                    </div>
+                </div>
+                <div id="panelEFilingWorksheetBody" class="space-y-4">
+                    <!-- Guidance Bar -->
+                    <div class="p-2.5 rounded-lg border text-xs flex items-center justify-between flex-wrap gap-2" style="background:var(--panel-2); border-color:var(--line);">
+                        <div class="flex items-center gap-2">
+                            <span>🌐</span>
+                            <span id="lblEFilingPortalDesc" class="text-xs" style="color:var(--ink-dim);">
+                                ตัวเลขจัดเรียงตรงตามหน้าจอระบบยื่นแบบออนไลน์ของกรมสรรพากร (efiling.rd.go.th) กดปุ่มคัดลอกเพื่อนำไปวางได้ทันที
+                            </span>
+                        </div>
+                        <a href="https://efiling.rd.go.th" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 text-xs font-semibold rounded-md text-white flex items-center gap-1" style="background:var(--core);" id="linkRdOnline">
+                            <span>เปิดเว็บสรรพากร ➔</span>
+                        </a>
+                    </div>
+
+                    <!-- 4 Step Boxes Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                        <!-- Box 1: รายการเงินได้พึงประเมิน 40(1) - 40(8) -->
+                        <div class="p-3 rounded-xl border space-y-2.5" style="background:var(--panel-2); border-color:var(--line);">
+                            <div class="font-bold flex justify-between items-center pb-1.5 border-b" style="border-color:var(--line); color:var(--ink);">
+                                <span id="lblEfStep1Title">ขั้นที่ 1: รายการเงินได้ (Assessable Income)</span>
+                                <span class="text-[10px] text-gray-500 font-normal">RD Step 2</span>
+                            </div>
+                            <!-- 40(1) -->
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-semibold text-gray-800" id="lblEf401">มาตรา 40(1) เงินเดือน / โบนัส</div>
+                                    <div class="text-[10px] text-gray-500" id="subEf401">เงินเดือนรวมทั้งปี + โบนัส</div>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-mono font-bold" id="valEf401">0.00</span>
+                                    <button type="button" onclick="copyEFilingField('valEf401', this)" class="p-1 px-1.5 rounded hover:bg-gray-200 border text-[10px]" style="border-color:var(--line); color:var(--ink-dim);" title="คัดลอกค่านี้">📋</button>
+                                </div>
+                            </div>
+                            <!-- 40(2) -->
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-semibold text-gray-800" id="lblEf402">มาตรา 40(2) ค่าจ้าง / ฟรีแลนซ์</div>
+                                    <div class="text-[10px] text-gray-500" id="subEf402">ค่านายหน้า / เบี้ยประชุม</div>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-mono font-bold" id="valEf402">0.00</span>
+                                    <button type="button" onclick="copyEFilingField('valEf402', this)" class="p-1 px-1.5 rounded hover:bg-gray-200 border text-[10px]" style="border-color:var(--line); color:var(--ink-dim);" title="คัดลอกค่านี้">📋</button>
+                                </div>
+                            </div>
+                            <!-- 40(4)(ข) -->
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-semibold text-gray-800" id="lblEf404b">มาตรา 40(4)(ข) เงินปันผลหุ้นไทย</div>
+                                    <div class="text-[10px] text-gray-500" id="subEf404b">พร้อมเครดิตภาษีเงินปันผล</div>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-mono font-bold" id="valEf404b">0.00</span>
+                                    <button type="button" onclick="copyEFilingField('valEf404b', this)" class="p-1 px-1.5 rounded hover:bg-gray-200 border text-[10px]" style="border-color:var(--line); color:var(--ink-dim);" title="คัดลอกค่านี้">📋</button>
+                                </div>
+                            </div>
+                            <!-- ค่าใช้จ่าย 50% -->
+                            <div class="flex justify-between items-center pt-1 border-t" style="border-color:var(--line);">
+                                <div class="text-gray-600" id="lblEfExpense">หักค่าใช้จ่ายตามกฎหมาย (50% สูงสุด 1 แสน)</div>
+                                <span class="font-mono font-semibold text-red-500" id="valEfExpense">- 0.00</span>
+                            </div>
+                        </div>
+
+                        <!-- Box 2: รายการหักลดหย่อนภาษี 4 กลุ่ม -->
+                        <div class="p-3 rounded-xl border space-y-2.5" style="background:var(--panel-2); border-color:var(--line);">
+                            <div class="font-bold flex justify-between items-center pb-1.5 border-b" style="border-color:var(--line); color:var(--ink);">
+                                <span id="lblEfStep2Title">ขั้นที่ 2: ค่าลดหย่อน (Deductions)</span>
+                                <span class="text-[10px] text-gray-500 font-normal">RD Step 3</span>
+                            </div>
+                            <!-- กลุ่ม A -->
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-semibold text-gray-800" id="lblEfGroupA">กลุ่ม A: ตนเองและครอบครัว</div>
+                                    <div class="text-[10px] text-gray-500" id="subEfGroupA">ตนเอง 60k + คู่สมรส/บุตร/บิดามารดา</div>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-mono font-bold text-red-500" id="valEfGroupA">- 60,000.00</span>
+                                    <button type="button" onclick="copyEFilingField('valEfGroupA', this)" class="p-1 px-1.5 rounded hover:bg-gray-200 border text-[10px]" style="border-color:var(--line); color:var(--ink-dim);" title="คัดลอกค่านี้">📋</button>
+                                </div>
+                            </div>
+                            <!-- กลุ่ม B -->
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-semibold text-gray-800" id="lblEfGroupB">กลุ่ม B: ประกัน &amp; กองทุนเกษียณ</div>
+                                    <div class="text-[10px] text-gray-500" id="subEfGroupB">SSO + PVD + SSF + RMF + ThaiESG + ประกัน</div>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-mono font-bold text-red-500" id="valEfGroupB">- 0.00</span>
+                                    <button type="button" onclick="copyEFilingField('valEfGroupB', this)" class="p-1 px-1.5 rounded hover:bg-gray-200 border text-[10px]" style="border-color:var(--line); color:var(--ink-dim);" title="คัดลอกค่านี้">📋</button>
+                                </div>
+                            </div>
+                            <!-- กลุ่ม C -->
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-semibold text-gray-800" id="lblEfGroupC">กลุ่ม C: ดอกเบี้ยกู้ยืมบ้าน</div>
+                                    <div class="text-[10px] text-gray-500" id="subEfGroupC">ดอกเบี้ยเงินกู้ซื้อที่อยู่อาศัย (สูงสุด 100k)</div>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-mono font-bold text-red-500" id="valEfGroupC">- 0.00</span>
+                                    <button type="button" onclick="copyEFilingField('valEfGroupC', this)" class="p-1 px-1.5 rounded hover:bg-gray-200 border text-[10px]" style="border-color:var(--line); color:var(--ink-dim);" title="คัดลอกค่านี้">📋</button>
+                                </div>
+                            </div>
+                            <!-- กลุ่ม D -->
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-semibold text-gray-800" id="lblEfGroupD">กลุ่ม D: เงินบริจาค</div>
+                                    <div class="text-[10px] text-gray-500" id="subEfGroupD">e-Donation การศึกษา/กีฬา (2x) + ทั่วไป</div>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-mono font-bold text-red-500" id="valEfGroupD">- 0.00</span>
+                                    <button type="button" onclick="copyEFilingField('valEfGroupD', this)" class="p-1 px-1.5 rounded hover:bg-gray-200 border text-[10px]" style="border-color:var(--line); color:var(--ink-dim);" title="คัดลอกค่านี้">📋</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Summary & Balance Strip -->
+                    <div class="p-3.5 rounded-xl border flex flex-col sm:flex-row justify-between items-center gap-3" style="background:var(--panel-2); border-color:var(--line);">
+                        <div>
+                            <div class="text-xs font-semibold text-gray-500" id="lblEfNetBalanceTitle">สรุปยอดภาษีสุทธิ (Net Tax Outcome):</div>
+                            <div class="text-xl font-extrabold" id="valEfNetBalance" style="color:var(--ok);">ภาษีพอดี (0.00 บาท)</div>
+                            <div class="text-[11px] text-gray-500" id="descEfNetBalance">คำนวณหักภาษี ณ ที่จ่าย 50 ทวิ และเครดิตภาษีเงินปันผลแล้ว</div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="copyEFilingField('valEfNetBalance', this)" class="py-2 px-3.5 text-xs font-semibold rounded-lg flex items-center gap-1 text-white shadow-xs" style="background:var(--ok);" id="btnCopyNetBalance">
+                                <span>📋 คัดลอกยอดสุทธิ</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- 6. Tax Scenario Comparator & Bracket Inflation Stress-Tester -->
             <div id="panelTaxScenario" class="reorder-card mt-4 p-4 rounded-xl border text-xs space-y-3 no-print" style="background:var(--panel-2); border-color:var(--line);">
                 <div class="panel-header flex items-center justify-between mb-2">
@@ -730,7 +878,7 @@
                     <span id="lbl-reset-tax">ล้างข้อมูล</span>
                 </button>
             </div>
-            <p class="text-xs text-gray-400">v2.5.0</p>
+            <p class="text-xs text-gray-400">v2.5.1</p>
         </div>
     </div>
 
