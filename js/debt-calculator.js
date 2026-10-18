@@ -766,14 +766,14 @@ function computePayoff() {
     totalDebt > 0 ? debts.reduce((sum, d) => sum + parseNum(d.balance) * parseNum(d.rate), 0) / totalDebt : 0;
 
   if (document.getElementById('footTotalBalance'))
-    document.getElementById('footTotalBalance').textContent = formatMoney(totalDebt) + ' ' + unit;
+    document.getElementById('footTotalBalance').textContent = `${formatMoney(totalDebt)} ${unit}`;
   if (document.getElementById('footTotalMin'))
-    document.getElementById('footTotalMin').textContent = formatMoney(totalMin) + ' ' + unit;
+    document.getElementById('footTotalMin').textContent = `${formatMoney(totalMin)} ${unit}`;
   if (document.getElementById('footAvgRate'))
-    document.getElementById('footAvgRate').textContent = avgRate > 0 ? avgRate.toFixed(1) + '%' : '-';
+    document.getElementById('footAvgRate').textContent = avgRate > 0 ? `${avgRate.toFixed(1)}%` : '-';
 
   if (document.getElementById('kpi-total-debt'))
-    document.getElementById('kpi-total-debt').textContent = formatMoney(totalDebt) + ' ' + unit;
+    document.getElementById('kpi-total-debt').textContent = `${formatMoney(totalDebt)} ${unit}`;
   if (document.getElementById('kpi-debt-count'))
     document.getElementById('kpi-debt-count').textContent = debts.length + (LANG === 'en' ? ' accounts' : ' รายการ');
 
@@ -825,16 +825,16 @@ function computePayoff() {
       totalDebt <= 0 ? '0' : `${simCurrent.months} ${LANG === 'en' ? 'months' : 'เดือน'}`;
 
   if (document.getElementById('kpi-total-interest'))
-    document.getElementById('kpi-total-interest').textContent = formatMoney(simCurrent.totalInterest) + ' ' + unit;
+    document.getElementById('kpi-total-interest').textContent = `${formatMoney(simCurrent.totalInterest)} ${unit}`;
   if (document.getElementById('kpi-total-paid'))
     document.getElementById('kpi-total-paid').textContent =
-      (LANG === 'en' ? 'Total paid: ' : 'รวมจ่ายทั้งหมด ') + formatMoney(simCurrent.totalPaid) + ' ' + unit;
+      `${(LANG === 'en' ? 'Total paid: ' : 'รวมจ่ายทั้งหมด ') + formatMoney(simCurrent.totalPaid)} ${unit}`;
 
   const interestSaved = Math.max(0, simMinOnly.totalInterest - simCurrent.totalInterest);
   const monthsSaved = Math.max(0, simMinOnly.months - simCurrent.months);
 
   if (document.getElementById('kpi-interest-saved'))
-    document.getElementById('kpi-interest-saved').textContent = formatMoney(interestSaved) + ' ' + unit;
+    document.getElementById('kpi-interest-saved').textContent = `${formatMoney(interestSaved)} ${unit}`;
   if (document.getElementById('kpi-months-saved'))
     document.getElementById('kpi-months-saved').textContent =
       (LANG === 'en' ? 'Faster by ' : 'เร็วขึ้น ') + monthsSaved + (LANG === 'en' ? ' mos' : ' เดือน');
@@ -1013,7 +1013,7 @@ function renderDebtMilestoneRoad(simCurrent, simMinOnly, totalDebt, now) {
   const badgeDrop = document.getElementById('badge-velocity-drop');
   if (!container || !checkList) return;
 
-  if (!simCurrent || !simCurrent.payoffOrder || simCurrent.payoffOrder.length === 0 || totalDebt <= 0) {
+  if (!simCurrent?.payoffOrder || simCurrent.payoffOrder.length === 0 || totalDebt <= 0) {
     container.style.display = 'none';
     return;
   }
@@ -1167,7 +1167,7 @@ function calculateDebtConsolidation({
   };
 }
 
-function updateRefinanceVisual(totalDebt, totalMin, avgRate, simCurrent) {
+function updateRefinanceVisual(_totalDebt, totalMin, avgRate, simCurrent) {
   if (!state.refinanceEnabled) return;
   const debts = state.debts;
   const curInterest = simCurrent ? simCurrent.totalInterest : 0;
@@ -1183,18 +1183,18 @@ function updateRefinanceVisual(totalDebt, totalMin, avgRate, simCurrent) {
   });
 
   const elW = document.getElementById('valCurrentWeightedRate');
-  if (elW) elW.textContent = (avgRate || res.weightedRate || 0).toFixed(1) + '%';
+  if (elW) elW.textContent = `${(avgRate || res.weightedRate || 0).toFixed(1)}%`;
 
   const elPmt = document.getElementById('valRefinancePmt');
-  if (elPmt) elPmt.textContent = formatMoney(res.newMonthlyPayment) + ' ' + unit;
+  if (elPmt) elPmt.textContent = `${formatMoney(res.newMonthlyPayment)} ${unit}`;
 
   const elSaved = document.getElementById('valRefinanceInterestSaved');
   if (elSaved) {
     if (res.interestSaved >= 0) {
-      elSaved.textContent = '+' + formatMoney(res.interestSaved) + ' ' + unit;
+      elSaved.textContent = `+${formatMoney(res.interestSaved)} ${unit}`;
       elSaved.style.color = 'var(--ok)';
     } else {
-      elSaved.textContent = '-' + formatMoney(Math.abs(res.interestSaved)) + ' ' + unit;
+      elSaved.textContent = `-${formatMoney(Math.abs(res.interestSaved))} ${unit}`;
       elSaved.style.color = 'var(--warn)';
     }
   }
@@ -1202,15 +1202,15 @@ function updateRefinanceVisual(totalDebt, totalMin, avgRate, simCurrent) {
   const elRelief = document.getElementById('valRefinanceCashflowRelief');
   if (elRelief) {
     if (res.monthlyPaymentDiff > 0) {
-      elRelief.textContent = '-' + formatMoney(res.monthlyPaymentDiff) + (LANG === 'en' ? ' /mo' : ' /ด.');
+      elRelief.textContent = `-${formatMoney(res.monthlyPaymentDiff)}${LANG === 'en' ? ' /mo' : ' /ด.'}`;
       elRelief.style.color = 'var(--ok)';
       elRelief.title = LANG === 'en' ? 'Monthly payment decreases' : 'ผ่อนลดลงต่อเดือน';
     } else if (res.monthlyPaymentDiff < 0) {
-      elRelief.textContent = '+' + formatMoney(Math.abs(res.monthlyPaymentDiff)) + (LANG === 'en' ? ' /mo' : ' /ด.');
+      elRelief.textContent = `+${formatMoney(Math.abs(res.monthlyPaymentDiff))}${LANG === 'en' ? ' /mo' : ' /ด.'}`;
       elRelief.style.color = 'var(--ink)';
       elRelief.title = LANG === 'en' ? 'Monthly payment increases for faster payoff' : 'ต้องผ่อนเพิ่มต่อเดือนเพื่อให้หมดไว';
     } else {
-      elRelief.textContent = '0 ' + unit;
+      elRelief.textContent = `0 ${unit}`;
       elRelief.style.color = 'var(--ink)';
     }
   }
@@ -1499,9 +1499,9 @@ function renderPayoffChart(
 
     let labelText = '';
     if (val >= 1000000) {
-      labelText = (val / 1000000).toFixed(1) + 'M';
+      labelText = `${(val / 1000000).toFixed(1)}M`;
     } else if (val >= 1000) {
-      labelText = Math.round(val / 1000) + 'k';
+      labelText = `${Math.round(val / 1000)}k`;
     } else {
       labelText = Math.round(val);
     }
@@ -1532,7 +1532,7 @@ function renderPayoffChart(
       .map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${mapX(p.month).toFixed(1)} ${mapY(p.balance).toFixed(1)}`)
       .join(' ');
     svgHtml += `<path d="${minPathD}" fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-dasharray="4,4" opacity="0.8">
-              <title>${LANG === 'en' ? 'Minimum Payments Only: ' + simMinOnly.months + ' months' : 'จ่ายขั้นต่ำเท่านั้น: ' + simMinOnly.months + ' เดือน'}</title>
+              <title>${LANG === 'en' ? `Minimum Payments Only: ${simMinOnly.months} months` : `จ่ายขั้นต่ำเท่านั้น: ${simMinOnly.months} เดือน`}</title>
             </path>`;
   }
 
@@ -1542,7 +1542,7 @@ function renderPayoffChart(
       .map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${mapX(p.month).toFixed(1)} ${mapY(p.balance).toFixed(1)}`)
       .join(' ');
     svgHtml += `<path d="${baseLinePathD}" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="3,3" opacity="0.75">
-              <title>${LANG === 'en' ? 'Baseline without windfall: ' + simBaseline.months + ' months' : 'เส้นทางปกติก่อนโปะเงินก้อน: ' + simBaseline.months + ' เดือน'}</title>
+              <title>${LANG === 'en' ? `Baseline without windfall: ${simBaseline.months} months` : `เส้นทางปกติก่อนโปะเงินก้อน: ${simBaseline.months} เดือน`}</title>
             </path>`;
   }
 
@@ -1869,7 +1869,7 @@ function onPrepayChange() {
   const em = Math.max(0, parseNum(document.getElementById('txtPrepayExtraMonthly')?.value));
   const ls = Math.max(0, parseNum(document.getElementById('txtPrepayLumpSum')?.value));
   const stratReducePmt = document.getElementById('stratReducePmt');
-  const strategy = stratReducePmt && stratReducePmt.checked ? 'reduce_payment' : 'reduce_term';
+  const strategy = stratReducePmt?.checked ? 'reduce_payment' : 'reduce_term';
 
   state.prepayPrincipal = p;
   state.prepayRate = r;
@@ -1957,7 +1957,7 @@ function calculateCarLoanFlatVsEffective({ loanAmount = 600000, flatRatePct = 2.
     let high = 1.0;
     for (let iter = 0; iter < 50; iter++) {
       const mid = (low + high) / 2;
-      const pv = mid === 0 ? monthlyPaymentExVat * n : (monthlyPaymentExVat * (1 - Math.pow(1 + mid, -n))) / mid;
+      const pv = mid === 0 ? monthlyPaymentExVat * n : (monthlyPaymentExVat * (1 - (1 + mid) ** -n)) / mid;
       if (pv > p) {
         low = mid;
       } else {
@@ -2187,7 +2187,7 @@ function initDebtLayout() {
 }
 
 function resetDebtLayout() {
-  if (debtLayoutManager && debtLayoutManager.reset) {
+  if (debtLayoutManager?.reset) {
     debtLayoutManager.reset();
   } else {
     localStorage.removeItem('moneySuperapp.layout.debt.v1');

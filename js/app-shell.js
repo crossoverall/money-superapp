@@ -234,9 +234,9 @@ function applyLang(lang) {
   const activeBtn =
     document.querySelector('.top-nav button.active') || document.querySelector('.bottom-nav button.active');
   if (activeBtn) {
-    const desktopBtn = document.querySelector('.top-nav button[data-tab="' + activeBtn.dataset.tab + '"]');
-    const titleText = (desktopBtn && desktopBtn.dataset[lang]) || activeBtn.dataset[lang] || activeBtn.textContent;
-    document.title = 'Money Superapp — ' + titleText;
+    const desktopBtn = document.querySelector(`.top-nav button[data-tab="${activeBtn.dataset.tab}"]`);
+    const titleText = desktopBtn?.dataset[lang] || activeBtn.dataset[lang] || activeBtn.textContent;
+    document.title = `Money Superapp — ${titleText}`;
   }
   const t = translations[lang] || translations.th;
   if (document.getElementById('skipLink') && t.skipLink) document.getElementById('skipLink').textContent = t.skipLink;
@@ -402,7 +402,7 @@ function applyLang(lang) {
     document.getElementById('gdrive-sync-spinner').textContent = t.gdriveWorking;
 
   const selAutoLock = document.getElementById('selAutoLockTimeout');
-  if (selAutoLock && selAutoLock.options && selAutoLock.options.length >= 5) {
+  if (selAutoLock?.options && selAutoLock.options.length >= 5) {
     selAutoLock.options[0].text = t.autoLockOpt0;
     selAutoLock.options[1].text = t.autoLockOpt1;
     selAutoLock.options[2].text = t.autoLockOpt5;
@@ -428,12 +428,12 @@ function applyLang(lang) {
 
   updateGoogleUI();
   try {
-    if (frame && frame.contentDocument && frame.contentDocument.documentElement) {
+    if (frame?.contentDocument?.documentElement) {
       frame.contentDocument.documentElement.lang = lang;
     }
   } catch (_e) {}
   try {
-    if (frame && frame.contentWindow) {
+    if (frame?.contentWindow) {
       frame.contentWindow.postMessage({ type: 'LANG_CHANGE', lang: lang }, '*');
     }
   } catch (_e) {}
@@ -556,7 +556,7 @@ function handleGoogleSignIn(afterSignInCallback) {
 }
 
 function handleGoogleSignOut() {
-  if (googleAccessToken && typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
+  if (googleAccessToken && typeof google !== 'undefined' && google.accounts?.oauth2) {
     try {
       google.accounts.oauth2.revoke(googleAccessToken, () => {});
     } catch (_e) {}
@@ -594,7 +594,7 @@ function updateGoogleUI() {
     inputClientEl.value = getGoogleClientId();
   }
 
-  if (user && user.email) {
+  if (user?.email) {
     if (signedOutEl) signedOutEl.style.display = 'none';
     if (signedInEl) signedInEl.style.display = 'flex';
     if (emailEl) emailEl.textContent = user.email;
@@ -859,7 +859,7 @@ function inspectStorageHealth(storageMap, schemas) {
     const isAppKey = allowedPrefixes.some((p) => k.startsWith(p));
     if (isAppKey) {
       appBytes += keySize;
-      const schema = schemas && schemas[k];
+      const schema = schemas?.[k];
       const shouldBeJson = schema ? schema.isJson : rawVal.trim().startsWith('{') || rawVal.trim().startsWith('[');
       let isCorrupted = false;
 
@@ -1168,7 +1168,7 @@ async function exportEncryptedVault() {
 }
 
 function handleImportFile(input) {
-  if (!input.files || !input.files[0]) return;
+  if (!input.files?.[0]) return;
   const file = input.files[0];
   const reader = new FileReader();
   const isEn = getLang() === 'en';
@@ -1221,7 +1221,7 @@ function handleImportFile(input) {
       reloadFrame();
       closeSettingsModal();
     } catch (err) {
-      alert(isEn ? 'Error reading backup file: ' + err.message : 'เกิดข้อผิดพลาดในการอ่านไฟล์สำรอง: ' + err.message);
+      alert(isEn ? `Error reading backup file: ${err.message}` : `เกิดข้อผิดพลาดในการอ่านไฟล์สำรอง: ${err.message}`);
     }
   };
   reader.readAsText(file);
@@ -1276,7 +1276,7 @@ async function openQrExportModal() {
     const encryptedVaultJson = await encryptFn(plainJson, passphrase);
 
     const chunkFn = (typeof MoneyApp !== 'undefined' && MoneyApp.chunkPayload) || window.chunkPayload;
-    const transferId = 'tx_' + Math.random().toString(36).slice(2, 8);
+    const transferId = `tx_${Math.random().toString(36).slice(2, 8)}`;
     qrExportChunks = chunkFn
       ? chunkFn(encryptedVaultJson, 180, transferId)
       : [{ c: 1, t: 1, d: encryptedVaultJson, id: transferId }];
@@ -1358,9 +1358,9 @@ function toggleQrExportAutoPlay() {
 }
 
 function copyQrCurrentChunk() {
-  if (!qrExportChunks || !qrExportChunks[qrExportIndex]) return;
+  if (!qrExportChunks?.[qrExportIndex]) return;
   const chunkJson = JSON.stringify(qrExportChunks[qrExportIndex]);
-  if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+  if (navigator?.clipboard?.writeText) {
     navigator.clipboard.writeText(chunkJson).then(() => {
       const isEn = getLang() === 'en';
       alert(isEn ? 'Copied QR slice JSON to clipboard!' : 'คัดลอกโค้ดชิ้นส่วนลง Clipboard แล้ว!');
@@ -1565,8 +1565,8 @@ async function finalizeQrImport(payloadCiphertext) {
   } catch (err) {
     alert(
       isEn
-        ? '❌ Decryption failed: Incorrect passphrase or corrupted QR data (' + err.message + ')'
-        : '❌ ถอดรหัสไม่สำเร็จ: รหัสผ่านไม่ถูกต้อง หรือข้อมูล QR เสียหาย (' + err.message + ')',
+        ? `❌ Decryption failed: Incorrect passphrase or corrupted QR data (${err.message})`
+        : `❌ ถอดรหัสไม่สำเร็จ: รหัสผ่านไม่ถูกต้อง หรือข้อมูล QR เสียหาย (${err.message})`,
     );
   }
 }
@@ -1737,9 +1737,9 @@ async function toggleBiometricsEnrollment() {
 
   try {
     const challenge = new Uint8Array(32);
-    if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(challenge);
+    if (window.crypto?.getRandomValues) window.crypto.getRandomValues(challenge);
     const userId = new Uint8Array(16);
-    if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(userId);
+    if (window.crypto?.getRandomValues) window.crypto.getRandomValues(userId);
 
     const credential = await navigator.credentials.create({
       publicKey: {
@@ -1759,7 +1759,7 @@ async function toggleBiometricsEnrollment() {
       },
     });
 
-    if (credential && credential.id) {
+    if (credential?.id) {
       appLockConfig.biometricEnabled = true;
       appLockConfig.biometricCredId = credential.id;
       saveAppLockConfig();
@@ -1888,7 +1888,7 @@ async function triggerBiometricUnlock() {
   const isEn = getLang() === 'en';
   try {
     const challenge = new Uint8Array(32);
-    if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(challenge);
+    if (window.crypto?.getRandomValues) window.crypto.getRandomValues(challenge);
     const assertion = await navigator.credentials.get({
       publicKey: {
         challenge: challenge,
@@ -2005,12 +2005,12 @@ function applyTheme(theme) {
     b.classList.toggle('active', b.dataset.themeBtn === theme);
   });
   try {
-    if (frame && frame.contentDocument && frame.contentDocument.documentElement) {
+    if (frame?.contentDocument?.documentElement) {
       frame.contentDocument.documentElement.dataset.theme = theme;
     }
   } catch (_e) {}
   try {
-    if (frame && frame.contentWindow) {
+    if (frame?.contentWindow) {
       frame.contentWindow.postMessage({ type: 'THEME_CHANGE', theme: theme }, '*');
     }
   } catch (_e) {}
@@ -2057,7 +2057,7 @@ if (frame) {
     try {
       const curTheme = getTheme();
       const curLang = getLang();
-      if (frame.contentDocument && frame.contentDocument.documentElement) {
+      if (frame.contentDocument?.documentElement) {
         frame.contentDocument.documentElement.dataset.theme = curTheme;
         frame.contentDocument.documentElement.lang = curLang;
       }
@@ -2083,7 +2083,7 @@ function activateTab(tabIdOrSrc, updateHash = true) {
   });
 
   const versionMeta = document.querySelector('meta[name="version"]')?.content || '';
-  const versionQuery = versionMeta ? '?v=' + encodeURIComponent(versionMeta) : '';
+  const versionQuery = versionMeta ? `?v=${encodeURIComponent(versionMeta)}` : '';
   const fullTargetSrc = targetSrc + versionQuery;
 
   if (frame.getAttribute('src') !== fullTargetSrc) {
@@ -2094,15 +2094,15 @@ function activateTab(tabIdOrSrc, updateHash = true) {
   triggerHaptic(10);
 
   const lang = getLang();
-  const desktopBtn = document.querySelector('.top-nav button[data-tab="' + activeTab + '"]');
-  const titleText = (desktopBtn && desktopBtn.dataset[lang]) || target.dataset[lang] || activeTab;
-  document.title = 'Money Superapp — ' + titleText;
+  const desktopBtn = document.querySelector(`.top-nav button[data-tab="${activeTab}"]`);
+  const titleText = desktopBtn?.dataset[lang] || target.dataset[lang] || activeTab;
+  document.title = `Money Superapp — ${titleText}`;
 
   try {
     localStorage.setItem('moneySuperapp.activeTab', activeTab);
   } catch (_e) {}
-  if (updateHash && window.location.hash !== '#' + activeTab) {
-    history.replaceState(null, '', '#' + activeTab);
+  if (updateHash && window.location.hash !== `#${activeTab}`) {
+    history.replaceState(null, '', `#${activeTab}`);
   }
 }
 
@@ -2158,13 +2158,13 @@ window.addEventListener('message', (e) => {
     if (e.data.target) {
       activateTab(e.data.target, true);
     } else if (e.data.key) {
-      const tabIndex = parseInt(e.data.key) - 1;
+      const tabIndex = parseInt(e.data.key, 10) - 1;
       const btn = topNavButtons[tabIndex];
       if (btn) activateTab(btn.dataset.tab, true);
     }
   }
   if (e.data && e.data.action === 'shortcutKey') {
-    const tabIndex = parseInt(e.data.key) - 1;
+    const tabIndex = parseInt(e.data.key, 10) - 1;
     const btn = topNavButtons[tabIndex];
     if (btn) activateTab(btn.dataset.tab, true);
   }
@@ -2737,7 +2737,7 @@ async function checkIncomingShareTarget() {
     const payload = await cachedResp.json();
     await cache.delete('./api/shared-target-payload');
 
-    if (!payload || !payload.content) return;
+    if (!payload?.content) return;
 
     const fileName = payload.name || 'shared_statement.csv';
     const content = payload.content;
@@ -2763,7 +2763,7 @@ async function checkIncomingShareTarget() {
               if (!decryptFn) throw new Error('Decryption module not loaded');
               const decryptedStr = await decryptFn(content, pass);
               const backupObj = JSON.parse(decryptedStr);
-              if (backupObj && backupObj.data) {
+              if (backupObj?.data) {
                 const allowedPrefixes = ['moneySuperapp.', 'remainingMoneyCalculator.', 'rebalanceCalculator.'];
                 Object.keys(backupObj.data).forEach((k) => {
                   if (allowedPrefixes.some((p) => k.startsWith(p)) && typeof backupObj.data[k] === 'string') {
@@ -2782,7 +2782,7 @@ async function checkIncomingShareTarget() {
         } else {
           try {
             const backupObj = JSON.parse(content);
-            if (backupObj && backupObj.data) {
+            if (backupObj?.data) {
               const allowedPrefixes = ['moneySuperapp.', 'remainingMoneyCalculator.', 'rebalanceCalculator.'];
               Object.keys(backupObj.data).forEach((k) => {
                 if (allowedPrefixes.some((p) => k.startsWith(p)) && typeof backupObj.data[k] === 'string') {

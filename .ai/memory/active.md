@@ -8,11 +8,11 @@ pipeline: ["orchestrator", "planner", "coder", "debugger", "reviewer", "release"
 ---
 
 ### Last Completed Task
-- **Task ID**: `SDLC-PHASE-84-BILINGUAL-PARITY-AND-MISMATCH-RESOLUTION`
-- **Version**: `v2.5.27`
+- **Task ID**: `SDLC-PHASE-85-LINT-WARNINGS-ELIMINATION`
+- **Version**: `v2.5.28`
 - **Summary**:
-  1. Resolved 100% of untranslated Thai elements appearing in English mode across all 8 core application pages (`dashboard.html`, `rebalance.html`, `months-slips.html`, `tax-calculator-base.html`, `tax-calculator.html`, `remaining-money.html`, `debt-calculator.html`, `index.html`).
-  2. Fixed Temporal Dead Zone (TDZ) `ReferenceError` on `deflatorState` in `js/dashboard.js` that blocked KPI rendering in EN mode.
-  3. Ensured 100% dictionary structural symmetry between `.th` and `.en` in `js/app-shell.js`, `js/dashboard.js`, and `js/debt-calculator.js`.
-  4. Localized dynamic UI elements and badges (Dividend Tax Credit status, P.N.D. 90/91 pre-flight checklists, retirement pool excess alerts, car loan APR multiplier, emergency runway units, and onboarding modal badges).
-  5. All 398 automated smoke and integration tests pass cleanly with zero Biome linter errors.
+  1. Eliminated 100% of the 101 Biome lint warnings across all JavaScript files and test suites.
+  2. Applied safe assist transforms: optional chaining `?.` (`useOptionalChain`), lexical arrow functions (`useArrowFunction`), template literals (`useTemplate`), and safe NaN checks (`noGlobalIsNan`).
+  3. Refactored `updateTaxAdvisor` in `js/tax-calculator-base.js` to use ES6 rest parameters (`...extraArgs`) instead of the legacy `arguments` object (`noArguments`).
+  4. Verified zero lint errors and zero warnings across all 23 files via `npm run lint`.
+  5. Verified 100% test pass rate (398/398 passed) via `npm test`.

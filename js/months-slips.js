@@ -320,7 +320,7 @@ function renderStreamChart(streamData) {
   const badge = document.getElementById('badge-total-annual-net');
   const unit = LANG === 'en' ? 'THB' : 'บาท';
   if (badge) {
-    badge.textContent = (LANG === 'en' ? 'Annual Net Pay: ' : 'รับสุทธิทั้งปี: ') + formatMoney(totalAnnualNet) + ' ' + unit;
+    badge.textContent = `${(LANG === 'en' ? 'Annual Net Pay: ' : 'รับสุทธิทั้งปี: ') + formatMoney(totalAnnualNet)} ${unit}`;
   }
 
   if (!stream || stream.length === 0 || maxMonthlyGross <= 0) {
@@ -401,7 +401,7 @@ function renderStreamChart(streamData) {
 
 function showStreamTip(e, monthIdx) {
   const tip = document.getElementById('streamTooltip');
-  if (!tip || !currentStreamData || !currentStreamData.stream[monthIdx]) return;
+  if (!tip || !currentStreamData?.stream[monthIdx]) return;
   const item = currentStreamData.stream[monthIdx];
   const enMonths = [
     'January',
@@ -705,7 +705,7 @@ function loadState() {
 }
 
 function toggleCompare() {
-  if (typeof slipsLayoutManager !== 'undefined' && slipsLayoutManager && slipsLayoutManager.toggleCard) {
+  if (slipsLayoutManager?.toggleCard) {
     slipsLayoutManager.toggleCard('panelJobCompare');
     return;
   }
@@ -882,7 +882,7 @@ const slipsLayoutManager =
 
 window.slipsLayoutManager = slipsLayoutManager;
 
-window.resetSlipsLayout = function () {
+window.resetSlipsLayout = () => {
   if (slipsLayoutManager) {
     slipsLayoutManager.resetLayout();
   }

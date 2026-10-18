@@ -542,7 +542,7 @@
   async function deriveVaultKey(passphrase, saltUint8, usage) {
     var enc = new TextEncoder();
     var cryptoObj = typeof crypto !== 'undefined' ? crypto : typeof window !== 'undefined' ? window.crypto : null;
-    if (!cryptoObj || !cryptoObj.subtle) {
+    if (!cryptoObj?.subtle) {
       throw new Error('Web Cryptography API is not supported in this environment');
     }
     var keyMaterial = await cryptoObj.subtle.importKey('raw', enc.encode(passphrase), { name: 'PBKDF2' }, false, [
@@ -567,7 +567,7 @@
       throw new Error('Passphrase cannot be empty');
     }
     var cryptoObj = typeof crypto !== 'undefined' ? crypto : typeof window !== 'undefined' ? window.crypto : null;
-    if (!cryptoObj || !cryptoObj.subtle) {
+    if (!cryptoObj?.subtle) {
       throw new Error('Web Cryptography API is not supported');
     }
     var salt = cryptoObj.getRandomValues(new Uint8Array(16));
@@ -597,18 +597,12 @@
     if (typeof vaultPayloadOrString === 'string') {
       envelope = JSON.parse(vaultPayloadOrString);
     }
-    if (
-      !envelope ||
-      envelope.format !== 'money-superapp-vault-v1' ||
-      !envelope.salt ||
-      !envelope.iv ||
-      !envelope.ciphertext
-    ) {
+    if (envelope?.format !== 'money-superapp-vault-v1' || !envelope.salt || !envelope.iv || !envelope.ciphertext) {
       throw new Error('Invalid vault envelope format');
     }
 
     var cryptoObj = typeof crypto !== 'undefined' ? crypto : typeof window !== 'undefined' ? window.crypto : null;
-    if (!cryptoObj || !cryptoObj.subtle) {
+    if (!cryptoObj?.subtle) {
       throw new Error('Web Cryptography API is not supported');
     }
 
@@ -636,7 +630,7 @@
     if (cryptoObj && typeof cryptoObj.getRandomValues === 'function') {
       bytes = cryptoObj.getRandomValues(new Uint8Array(len));
       for (i = 0; i < bytes.length; i++) {
-        hex += ('00' + bytes[i].toString(16)).slice(-2);
+        hex += `00${bytes[i].toString(16)}`.slice(-2);
       }
       return hex;
     }
@@ -660,25 +654,21 @@
     var h;
     var str;
     var i;
-    if (cryptoObj && cryptoObj.subtle && typeof cryptoObj.subtle.digest === 'function') {
+    if (cryptoObj?.subtle && typeof cryptoObj.subtle.digest === 'function') {
       enc = new TextEncoder();
-      data = enc.encode(saltStr + ':' + pin);
+      data = enc.encode(`${saltStr}:${pin}`);
       hashBuffer = await cryptoObj.subtle.digest('SHA-256', data);
       hashArray = Array.from(new Uint8Array(hashBuffer));
-      hex = hashArray
-        .map(function (b) {
-          return ('00' + b.toString(16)).slice(-2);
-        })
-        .join('');
+      hex = hashArray.map((b) => `00${b.toString(16)}`.slice(-2)).join('');
       return hex;
     }
     h = 0x811c9dc5;
-    str = saltStr + ':' + pin;
+    str = `${saltStr}:${pin}`;
     for (i = 0; i < str.length; i++) {
       h ^= str.charCodeAt(i);
       h += (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24);
     }
-    return ('00000000' + (h >>> 0).toString(16)).slice(-8);
+    return `00000000${(h >>> 0).toString(16)}`.slice(-8);
   }
 
   async function verifyPin(pin, salt, expectedHash) {
@@ -695,7 +685,7 @@
     if (sec === 300) return isEn ? '5 minutes (Recommended)' : '5 นาที (แนะนำ)';
     if (sec === 900) return isEn ? '15 minutes' : '15 นาที';
     if (sec === -1) return isEn ? 'Never (Manual lock only)' : 'ไม่ล็อกอัตโนมัติ (ล็อกด้วยตนเองเท่านั้น)';
-    return isEn ? sec + ' seconds' : sec + ' วินาที';
+    return isEn ? `${sec} seconds` : `${sec} วินาที`;
   }
 
   var TAX_DEADLINE_MILESTONES = [
@@ -796,7 +786,7 @@
     var currentYear = current.getFullYear();
     var startOfDay = new Date(current.getFullYear(), current.getMonth(), current.getDate());
 
-    var computedEvents = TAX_DEADLINE_MILESTONES.map(function (ev) {
+    var computedEvents = TAX_DEADLINE_MILESTONES.map((ev) => {
       var targetYear = currentYear;
       var targetDate = new Date(targetYear, ev.month - 1, ev.day);
       if (targetDate < startOfDay) {
@@ -824,9 +814,7 @@
       };
     });
 
-    computedEvents.sort(function (a, b) {
-      return a.daysRemaining - b.daysRemaining;
-    });
+    computedEvents.sort((a, b) => a.daysRemaining - b.daysRemaining);
 
     return {
       referenceDate: current,
@@ -1004,7 +992,7 @@
         totalTrancheCost += trTotalCost;
 
         processedTranches.push({
-          id: tr.id || 'tranche_' + i,
+          id: tr.id || `tranche_${i}`,
           date: tr.date || '',
           goldType: trType,
           weightBaht: Math.round(trBaht * 10000) / 10000,
@@ -1378,7 +1366,7 @@
     var lots = [];
     var singleAmt;
     if (Array.isArray(params.dividends)) {
-      lots = params.dividends.map(function (lot) {
+      lots = params.dividends.map((lot) => {
         var amt = Math.max(0, parseNum(lot.amount !== undefined ? lot.amount : lot.dividend));
         var cit = lot.corporateTaxRate !== undefined ? parseNum(lot.corporateTaxRate) : defaultCitRate;
         var whtRate = lot.withholdingRate !== undefined ? parseNum(lot.withholdingRate) : 0.1;
@@ -1770,7 +1758,7 @@
     }
 
     // Determine bank brand
-    var fullHeaderStr = (headerRow.join(' ') + ' ' + fileName).toLowerCase();
+    var fullHeaderStr = `${headerRow.join(' ')} ${fileName}`.toLowerCase();
     var bankCode = 'generic_bank';
     var bankName = 'Bank Statement';
 
@@ -2086,13 +2074,13 @@
     var currentYear = parseInt(params.currentYear, 10);
     var riskTolerance = params.riskTolerance || 'moderate';
 
-    var nowYear = !isNaN(currentYear) && currentYear > 1900 ? currentYear : new Date().getFullYear();
+    var nowYear = !Number.isNaN(currentYear) && currentYear > 1900 ? currentYear : new Date().getFullYear();
 
-    if (isNaN(currentAge) || currentAge < 15) currentAge = 30;
-    if (isNaN(targetRetirementAge) || targetRetirementAge < 40) targetRetirementAge = 60;
+    if (Number.isNaN(currentAge) || currentAge < 15) currentAge = 30;
+    if (Number.isNaN(targetRetirementAge) || targetRetirementAge < 40) targetRetirementAge = 60;
 
     var yearsToRetire;
-    if (!isNaN(targetYear) && targetYear > nowYear) {
+    if (!Number.isNaN(targetYear) && targetYear > nowYear) {
       yearsToRetire = targetYear - nowYear;
       targetRetirementAge = currentAge + yearsToRetire;
     } else {
@@ -2782,7 +2770,7 @@
 
   function formatMaskedAmount(amount, isMasked, currency) {
     if (isMasked) {
-      return (currency ? `${currency} ` : '฿ ') + '••••••';
+      return `${currency ? `${currency} ` : '฿ '}••••••`;
     }
     return formatMoney(amount) + (currency ? ` ${currency}` : '');
   }
@@ -2810,7 +2798,7 @@
     var ins = p.insurance || {};
     var tax = p.tax || {};
 
-    var fmt = function (val) {
+    var fmt = (val) => {
       if (isMasked) {
         return isEn ? 'THB ••••••' : '฿ ••••••';
       }
@@ -2848,10 +2836,10 @@
       (isEn ? '📅 Date: ' : '📅 วันที่สรุป: ') + dateStr,
       '',
       isEn ? '💰 1. Net Worth & Liabilities' : '💰 1. ความมั่งคั่งสุทธิ & หนี้สิน',
-      '   • ' + (isEn ? 'Net Worth: ' : 'ความมั่งคั่งสุทธิ: ') + fmt(s.netWorth || 0),
-      '   • ' + (isEn ? 'Gross Assets: ' : 'สินทรัพย์รวม: ') + fmt(s.grossAssets || 0),
-      '   • ' + (isEn ? 'Total Debts: ' : 'หนี้สินรวม: ') + fmt(s.totalDebts || 0),
-      '   • ' + (isEn ? 'Solvency: ' : 'ความมั่นคง: ') + (s.solvencyRatioPct || 0) + '%',
+      `   • ${isEn ? 'Net Worth: ' : 'ความมั่งคั่งสุทธิ: '}${fmt(s.netWorth || 0)}`,
+      `   • ${isEn ? 'Gross Assets: ' : 'สินทรัพย์รวม: '}${fmt(s.grossAssets || 0)}`,
+      `   • ${isEn ? 'Total Debts: ' : 'หนี้สินรวม: '}${fmt(s.totalDebts || 0)}`,
+      `   • ${isEn ? 'Solvency: ' : 'ความมั่นคง: '}${s.solvencyRatioPct || 0}%`,
       '',
       isEn ? '🛡️ 2. Emergency Runway & Savings' : '🛡️ 2. สายป่านฉุกเฉิน & การออม',
       '   • ' +
@@ -2860,23 +2848,23 @@
         ' (' +
         (runway.runwayMonths || 0) +
         (isEn ? ' mos)' : ' เดือน)'),
-      '   • ' + (isEn ? 'Monthly Savings: ' : 'เงินออม/เดือน: ') + fmt(s.monthlySavings || 0),
+      `   • ${isEn ? 'Monthly Savings: ' : 'เงินออม/เดือน: '}${fmt(s.monthlySavings || 0)}`,
       '',
       isEn ? '📈 3. Investment & Portfolio' : '📈 3. พอร์ตลงทุน & DCA',
-      '   • ' + (isEn ? 'Portfolio Value: ' : 'มูลค่าพอร์ต: ') + fmt(inv.portfolioValue || 0),
-      '   • ' + (isEn ? 'Monthly DCA: ' : 'DCA/เดือน: ') + fmt(inv.monthlyDca || 0),
+      `   • ${isEn ? 'Portfolio Value: ' : 'มูลค่าพอร์ต: '}${fmt(inv.portfolioValue || 0)}`,
+      `   • ${isEn ? 'Monthly DCA: ' : 'DCA/เดือน: '}${fmt(inv.monthlyDca || 0)}`,
       '',
       isEn ? '🚀 4. Debt Elimination' : '🚀 4. แผนปลดหนี้สิน',
-      '   • ' + (isEn ? 'Strategy: ' : 'กลยุทธ์: ') + (debt.strategy || 'avalanche').toUpperCase(),
-      '   • ' + (isEn ? 'Status: ' : 'สถานะ: ') + debtStatusStr,
+      `   • ${isEn ? 'Strategy: ' : 'กลยุทธ์: '}${(debt.strategy || 'avalanche').toUpperCase()}`,
+      `   • ${isEn ? 'Status: ' : 'สถานะ: '}${debtStatusStr}`,
       '',
       isEn ? '🛡️ 5. Life Insurance Protection' : '🛡️ 5. ความคุ้มครองประกันชีวิต',
-      '   • ' + (isEn ? 'Current Coverage: ' : 'ทุนประกันปัจจุบัน: ') + fmt(ins.existingCoverage || 0),
-      '   • ' + (isEn ? 'Status: ' : 'สถานะ: ') + insStatusStr,
+      `   • ${isEn ? 'Current Coverage: ' : 'ทุนประกันปัจจุบัน: '}${fmt(ins.existingCoverage || 0)}`,
+      `   • ${isEn ? 'Status: ' : 'สถานะ: '}${insStatusStr}`,
       '',
       isEn ? '🧾 6. Tax Forecast & Withholding' : '🧾 6. ภาษีเงินได้ & ขอคืน 50 ทวิ',
-      '   • ' + (isEn ? 'Annual Tax: ' : 'ภาษีทั้งปี: ') + fmt(tax.projectedTax || 0),
-      '   • ' + (isEn ? 'Tax Balance: ' : 'ยอดสุทธิ: ') + taxStatusStr,
+      `   • ${isEn ? 'Annual Tax: ' : 'ภาษีทั้งปี: '}${fmt(tax.projectedTax || 0)}`,
+      `   • ${isEn ? 'Tax Balance: ' : 'ยอดสุทธิ: '}${taxStatusStr}`,
       '',
       isEn
         ? '🔒 100% Client-Side Private • Generated by Money Superapp'
@@ -2922,7 +2910,7 @@
     // 2. Bank statement check (CSV or bank-like content)
     if (fileName.endsWith('.csv') || fileName.endsWith('.txt')) {
       bankRes = detectAndParseThaiBankStatement(content, fileName);
-      if (bankRes && bankRes.isBankStatement) {
+      if (bankRes?.isBankStatement) {
         return { isValid: true, kind: 'statement', bankCode: bankRes.bankCode, bankName: bankRes.bankName };
       }
       if (content.includes(',') || content.includes('\t') || content.includes('\n')) {
@@ -3049,9 +3037,7 @@
       { id: 'promptPayCitizen', completed: itemPromptPay },
     ];
 
-    var completedCount = checklist.filter(function (item) {
-      return item.completed;
-    }).length;
+    var completedCount = checklist.filter((item) => item.completed).length;
     var totalCount = checklist.length;
     var completionPct = Math.round((completedCount / totalCount) * 100);
     var isReady = completedCount === totalCount && !hasExcess;
@@ -3496,9 +3482,9 @@
 
     for (i = 0; i < debts.length; i++) {
       d = debts[i];
-      bal = Math.max(0, Number(d && d.balance) || 0);
-      rate = Math.max(0, Number(d && d.rate) || 0);
-      min = Math.max(0, Number(d && d.minPayment) || 0);
+      bal = Math.max(0, Number(d?.balance) || 0);
+      rate = Math.max(0, Number(d?.rate) || 0);
+      min = Math.max(0, Number(d?.minPayment) || 0);
       if (bal > 0) {
         validDebts.push({ balance: bal, rate: rate, minPayment: min });
         totalBalance += bal;
@@ -3530,7 +3516,7 @@
 
     var pmt = 0;
     if (monthlyR > 0) {
-      pmt = (totalBalance * monthlyR) / (1 - Math.pow(1 + monthlyR, -n));
+      pmt = (totalBalance * monthlyR) / (1 - (1 + monthlyR) ** -n);
     } else {
       pmt = totalBalance / n;
     }
@@ -3773,7 +3759,7 @@
 
     for (y = 0; y < degreeDuration; y++) {
       elapsed = yearsToCollege + y;
-      tuitionInYear = Math.round(baseTuition * Math.pow(1 + inflationRate, elapsed));
+      tuitionInYear = Math.round(baseTuition * (1 + inflationRate) ** elapsed);
       totalFutureTuitionNeeded += tuitionInYear;
       yearlyProjections.push({
         degreeYear: y + 1,
@@ -3783,7 +3769,7 @@
     }
 
     // Future value of existing dedicated savings at the start of college (compounded over yearsToCollege)
-    var fvExistingSavings = Math.round(existingSavings * Math.pow(1 + returnRate, yearsToCollege));
+    var fvExistingSavings = Math.round(existingSavings * (1 + returnRate) ** yearsToCollege);
 
     // Net education shortfall needed in future
     var netFundShortfall = Math.max(0, totalFutureTuitionNeeded - fvExistingSavings);
@@ -3798,7 +3784,7 @@
       if (returnRate > 0) {
         monthlyRate = returnRate / 12;
         // Sinking Fund Annuity Formula: PMT = FV * (r / ((1 + r)^n - 1))
-        compoundFactor = Math.pow(1 + monthlyRate, totalMonths);
+        compoundFactor = (1 + monthlyRate) ** totalMonths;
         monthlyDcaNeeded = Math.round(netFundShortfall * (monthlyRate / (compoundFactor - 1)));
       } else {
         monthlyDcaNeeded = Math.round(netFundShortfall / totalMonths);
@@ -3851,11 +3837,11 @@
   };
 
   var QRMath = {
-    glog: function (n) {
-      if (n < 1) throw new Error('glog(' + n + ')');
+    glog: (n) => {
+      if (n < 1) throw new Error(`glog(${n})`);
       return QRMath.LOG_TABLE[n];
     },
-    gexp: function (n) {
+    gexp: (n) => {
       var val = n;
       while (val < 0) val += 255;
       while (val >= 256) val -= 255;
@@ -3883,7 +3869,7 @@
   function QRPolynomial(num, shift) {
     var offset = 0;
     var i = 0;
-    if (num.length === undefined) throw new Error(num.length + '/' + shift);
+    if (num.length === undefined) throw new Error(`${num.length}/${shift}`);
     while (offset < num.length && num[offset] === 0) offset++;
     this.num = new Array(num.length - offset + shift);
     for (i = 0; i < num.length - offset; i++) this.num[i] = num[i + offset];
@@ -3970,7 +3956,7 @@
     [6, 43, 15, 2, 44, 16],
   ];
 
-  QRRSBlock.getRSBlocks = function (typeNumber, errorCorrectLevel) {
+  QRRSBlock.getRSBlocks = (typeNumber, errorCorrectLevel) => {
     var rsBlock = QRRSBlock.getRsBlockTable(typeNumber, errorCorrectLevel);
     var length = 0;
     var list = [];
@@ -3980,7 +3966,7 @@
     var totalCount = 0;
     var dataCount = 0;
     if (rsBlock === undefined) {
-      throw new Error('bad rs block @ typeNumber:' + typeNumber + '/errorCorrectLevel:' + errorCorrectLevel);
+      throw new Error(`bad rs block @ typeNumber:${typeNumber}/errorCorrectLevel:${errorCorrectLevel}`);
     }
     length = rsBlock.length / 3;
     for (i = 0; i < length; i++) {
@@ -3992,7 +3978,7 @@
     return list;
   };
 
-  QRRSBlock.getRsBlockTable = function (typeNumber, errorCorrectLevel) {
+  QRRSBlock.getRsBlockTable = (typeNumber, errorCorrectLevel) => {
     switch (errorCorrectLevel) {
       case QRErrorCorrectLevel.L:
         return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
@@ -4062,14 +4048,14 @@
     ],
     G15: (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0),
     G15_MASK: (1 << 14) | (1 << 12) | (1 << 10) | (1 << 4) | (1 << 1),
-    getBCHTypeInfo: function (data) {
+    getBCHTypeInfo: (data) => {
       var d = data << 10;
       while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15) >= 0) {
         d ^= QRUtil.G15 << (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15));
       }
       return ((data << 10) | d) ^ QRUtil.G15_MASK;
     },
-    getBCHDigit: function (data) {
+    getBCHDigit: (data) => {
       var digit = 0;
       var d = data;
       while (d !== 0) {
@@ -4078,10 +4064,8 @@
       }
       return digit;
     },
-    getPatternPosition: function (typeNumber) {
-      return QRUtil.PATTERN_POSITION_TABLE[typeNumber - 1] || [];
-    },
-    getMask: function (maskPattern, i, j) {
+    getPatternPosition: (typeNumber) => QRUtil.PATTERN_POSITION_TABLE[typeNumber - 1] || [],
+    getMask: (maskPattern, i, j) => {
       switch (maskPattern) {
         case QRMaskPattern.PATTERN000:
           return (i + j) % 2 === 0;
@@ -4100,10 +4084,10 @@
         case QRMaskPattern.PATTERN111:
           return (((i * j) % 3) + ((i + j) % 2)) % 2 === 0;
         default:
-          throw new Error('bad maskPattern:' + maskPattern);
+          throw new Error(`bad maskPattern:${maskPattern}`);
       }
     },
-    getErrorCorrectPolynomial: function (errorCorrectLength) {
+    getErrorCorrectPolynomial: (errorCorrectLength) => {
       var a = new QRPolynomial([1], 0);
       var i = 0;
       for (i = 0; i < errorCorrectLength; i++) {
@@ -4111,7 +4095,7 @@
       }
       return a;
     },
-    getLengthInBits: function (mode, type) {
+    getLengthInBits: (mode, type) => {
       if (1 <= type && type < 10) {
         switch (mode) {
           case QRMode.MODE_NUMBER:
@@ -4123,7 +4107,7 @@
           case QRMode.MODE_KANJI:
             return 8;
           default:
-            throw new Error('mode:' + mode);
+            throw new Error(`mode:${mode}`);
         }
       } else {
         switch (mode) {
@@ -4136,7 +4120,7 @@
           case QRMode.MODE_KANJI:
             return 12;
           default:
-            throw new Error('mode:' + mode);
+            throw new Error(`mode:${mode}`);
         }
       }
     },
@@ -4159,7 +4143,7 @@
     },
     isDark: function (row, col) {
       if (row < 0 || this.moduleCount <= row || col < 0 || this.moduleCount <= col) {
-        throw new Error(row + ',' + col);
+        throw new Error(`${row},${col}`);
       }
       return this.modules[row][col];
     },
@@ -4302,7 +4286,7 @@
     },
   };
 
-  QRCodeModel.createData = function (typeNumber, errorCorrectLevel, dataList) {
+  QRCodeModel.createData = (typeNumber, errorCorrectLevel, dataList) => {
     var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectLevel);
     var buffer = new QRBitBuffer();
     var i = 0;
@@ -4326,7 +4310,7 @@
     return QRCodeModel.createBytes(buffer, rsBlocks);
   };
 
-  QRCodeModel.createBytes = function (buffer, rsBlocks) {
+  QRCodeModel.createBytes = (buffer, rsBlocks) => {
     var offset = 0;
     var maxDcCount = 0;
     var maxEcCount = 0;
@@ -4411,7 +4395,7 @@
     for (r = 0; r < count; r++) {
       for (c = 0; c < count; c++) {
         if (qr.isDark(r, c)) {
-          rects.push('<rect x="' + (c + margin) + '" y="' + (r + margin) + '" width="1" height="1"/>');
+          rects.push(`<rect x="${c + margin}" y="${r + margin}" width="1" height="1"/>`);
         }
       }
     }
@@ -4441,7 +4425,7 @@
   function chunkPayload(payload, maxChunkSize, transferId) {
     var size = Math.max(50, maxChunkSize || 200);
     var str = String(payload || '');
-    var id = transferId || 'v_' + Math.random().toString(36).substring(2, 8);
+    var id = transferId || `v_${Math.random().toString(36).substring(2, 8)}`;
     var totalChunks = Math.ceil(str.length / size) || 1;
     var chunks = [];
     var i = 0;

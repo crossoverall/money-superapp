@@ -376,7 +376,7 @@ describe('MoneyApp Shared Core Module', () => {
       const envelope = JSON.parse(encrypted);
 
       // Tamper ciphertext
-      envelope.ciphertext = envelope.ciphertext.slice(0, -4) + 'AAAA';
+      envelope.ciphertext = `${envelope.ciphertext.slice(0, -4)}AAAA`;
 
       await assert.rejects(
         async () => {

@@ -602,7 +602,7 @@ function applyLocalization() {
   };
 
   const selEdu = document.getElementById('selEduTrack');
-  if (selEdu && selEdu.options && selEdu.options.length >= 5) {
+  if (selEdu?.options && selEdu.options.length >= 5) {
     if (LANG === 'en') {
       selEdu.options[0].text = 'Thai Public University (~60,000 THB/yr)';
       selEdu.options[1].text = 'Bilingual / English Program (~200,000 THB/yr)';
@@ -869,7 +869,7 @@ function gatherFinancialProfile() {
             ];
             const mName = LANG === 'en' ? mEn[targetDate.getMonth()] : mTh[targetDate.getMonth()];
             const yName = LANG === 'en' ? targetDate.getFullYear() : targetDate.getFullYear() + 543;
-            debtFreeText = (LANG === 'en' ? 'Target: ' : 'เป้าหมาย: ') + `${mName} ${yName}`;
+            debtFreeText = `${LANG === 'en' ? 'Target: ' : 'เป้าหมาย: '}${mName} ${yName}`;
           } else {
             debtFreeText = (LANG === 'en' ? 'Debts: ' : 'รายการ: ') + s.debts.length;
           }
@@ -910,35 +910,35 @@ function renderDashboardKPIs() {
   const t = translations[LANG] || translations.th;
 
   if (document.getElementById('kpi-networth-val'))
-    document.getElementById('kpi-networth-val').textContent = formatMoney(p.netWorth) + ' ' + unit;
+    document.getElementById('kpi-networth-val').textContent = `${formatMoney(p.netWorth)} ${unit}`;
   if (document.getElementById('kpi-savings-rate-val'))
     document.getElementById('kpi-savings-rate-val').textContent =
-      (LANG === 'en' ? 'Savings Rate: ' : 'อัตราการออม: ') + p.savingsRate.toFixed(1) + '%';
+      `${(LANG === 'en' ? 'Savings Rate: ' : 'อัตราการออม: ') + p.savingsRate.toFixed(1)}%`;
   if (document.getElementById('kpi-monthly-savings-val'))
     document.getElementById('kpi-monthly-savings-val').textContent =
-      formatMoney(p.monthlySavings + p.monthlyInvest) + ' ' + unit;
+      `${formatMoney(p.monthlySavings + p.monthlyInvest)} ${unit}`;
   if (document.getElementById('kpi-runway-months'))
     document.getElementById('kpi-runway-months').textContent =
-      p.runwayMonths > 0 ? p.runwayMonths.toFixed(1) + ' ' + (LANG === 'en' ? 'mos' : 'เดือน') : '-';
+      p.runwayMonths > 0 ? `${p.runwayMonths.toFixed(1)} ${LANG === 'en' ? 'mos' : 'เดือน'}` : '-';
   if (document.getElementById('kpi-debt-val'))
-    document.getElementById('kpi-debt-val').textContent = formatMoney(p.totalDebt) + ' ' + unit;
+    document.getElementById('kpi-debt-val').textContent = `${formatMoney(p.totalDebt)} ${unit}`;
   if (document.getElementById('kpi-debtfree-date'))
     document.getElementById('kpi-debtfree-date').textContent = p.debtFreeText;
   if (document.getElementById('kpi-tax-bracket-val'))
     document.getElementById('kpi-tax-bracket-val').textContent = `${p.topMarginalRate}%`;
   if (document.getElementById('kpi-tax-amount'))
-    document.getElementById('kpi-tax-amount').textContent = formatMoney(p.estimatedTax) + ' ' + unit;
+    document.getElementById('kpi-tax-amount').textContent = `${formatMoney(p.estimatedTax)} ${unit}`;
 
   const deadlineEl = document.getElementById('kpi-tax-deadline-text');
   if (deadlineEl && typeof MoneyApp.calculateThaiTaxDeadlines === 'function') {
     const deadlines = MoneyApp.calculateThaiTaxDeadlines();
-    if (deadlines && deadlines.nextDeadline) {
+    if (deadlines?.nextDeadline) {
       const next = deadlines.nextDeadline;
       const isEn = LANG === 'en';
       const days = next.daysRemaining;
       deadlineEl.textContent = isEn
-        ? `${next.badgeEn}: ${days === 0 ? 'Today' : days + 'd left'}`
-        : `${next.badgeTh}: ${days === 0 ? 'วันนี้' : 'อีก ' + days + ' วัน'}`;
+        ? `${next.badgeEn}: ${days === 0 ? 'Today' : `${days}d left`}`
+        : `${next.badgeTh}: ${days === 0 ? 'วันนี้' : `อีก ${days} วัน`}`;
     }
   }
 
@@ -1432,19 +1432,19 @@ function renderNetWorthComposition(p, t) {
   const txtGross = document.getElementById('txt-gross-assets');
   const txtDebtRatio = document.getElementById('txt-debt-ratio');
 
-  if (donutCenter) donutCenter.textContent = formatMoney(nw) + ' ' + unit;
-  if (valCash) valCash.textContent = formatMoney(c) + ' ' + unit;
+  if (donutCenter) donutCenter.textContent = `${formatMoney(nw)} ${unit}`;
+  if (valCash) valCash.textContent = `${formatMoney(c)} ${unit}`;
   if (pctCash) pctCash.textContent = `(${cashPct.toFixed(1)}%)`;
-  if (valInvest) valInvest.textContent = formatMoney(inv) + ' ' + unit;
+  if (valInvest) valInvest.textContent = `${formatMoney(inv)} ${unit}`;
   if (pctInvest) pctInvest.textContent = `(${investPct.toFixed(1)}%)`;
 
   if (rowGold) {
     rowGold.style.display = gold > 0 ? 'flex' : 'none';
   }
-  if (valGold) valGold.textContent = formatMoney(gold) + ' ' + unit;
+  if (valGold) valGold.textContent = `${formatMoney(gold)} ${unit}`;
   if (pctGold) pctGold.textContent = `(${goldPct.toFixed(1)}%)`;
 
-  if (valDebt) valDebt.textContent = formatMoney(d) + ' ' + unit;
+  if (valDebt) valDebt.textContent = `${formatMoney(d)} ${unit}`;
   if (pctDebt)
     pctDebt.textContent =
       grossAssets > 0 ? `(${debtRatio.toFixed(1)}% ${LANG === 'en' ? 'of assets' : 'ของสินทรัพย์'})` : '';
@@ -1476,14 +1476,14 @@ function renderNetWorthComposition(p, t) {
   const clampedSolvency = Math.max(0, Math.min(100, solvencyRatio));
   if (barSolvency) barSolvency.style.width = `${clampedSolvency.toFixed(1)}%`;
   if (txtSolvency) txtSolvency.textContent = `${solvencyRatio.toFixed(1)}%`;
-  if (txtGross) txtGross.textContent = (t.grossAssetsLabel || 'สินทรัพย์รวม: ') + formatMoney(grossAssets) + ' ' + unit;
+  if (txtGross) txtGross.textContent = `${(t.grossAssetsLabel || 'สินทรัพย์รวม: ') + formatMoney(grossAssets)} ${unit}`;
   if (txtDebtRatio) {
     txtDebtRatio.textContent =
       d <= 0
         ? LANG === 'en'
           ? 'Debt-to-Asset (D/A): 0% (Debt-Free)'
           : 'หนี้สินต่อสินทรัพย์ (D/A): 0% (ปลอดหนี้)'
-        : (t.debtRatioLabel || 'หนี้สินต่อสินทรัพย์ (D/A): ') + `${debtRatio.toFixed(1)}%`;
+        : `${t.debtRatioLabel || 'หนี้สินต่อสินทรัพย์ (D/A): '}${debtRatio.toFixed(1)}%`;
   }
 
   if (badgeSolvency) {
@@ -2537,7 +2537,7 @@ function getProjectedDateString(months, refDate = new Date(), lang = 'th') {
   return `${mName} ${yName} (~${months} ${monthUnit})`;
 }
 
-function computeGoalProgress(curNW, targetNW, curRunway, targetRunway, totalDebt, monthlyExpense, emergencyReserve) {
+function computeGoalProgress(curNW, targetNW, curRunway, targetRunway, totalDebt, monthlyExpense, _emergencyReserve) {
   const safeTargetNW = Math.max(1, targetNW || 1000000);
   const safeTargetRunway = Math.max(0.1, targetRunway || 6);
 
@@ -3216,7 +3216,7 @@ async function updateStorageQuotaDisplay() {
         archived = await MoneyApp.idbStorage.get(ARCHIVE_KEY);
       } catch (_e) {}
     }
-    if (!archived || !archived.length) {
+    if (!archived?.length) {
       try {
         const raw = localStorage.getItem(ARCHIVE_KEY);
         if (raw) archived = JSON.parse(raw);
@@ -3246,7 +3246,7 @@ async function archiveOldSnapshots() {
       existingArchive = (await MoneyApp.idbStorage.get(ARCHIVE_KEY)) || [];
     } catch (_e) {}
   }
-  if (!existingArchive || !existingArchive.length) {
+  if (!existingArchive?.length) {
     try {
       const raw = localStorage.getItem(ARCHIVE_KEY);
       if (raw) existingArchive = JSON.parse(raw) || [];
@@ -3284,7 +3284,7 @@ async function restoreArchivedSnapshots() {
       archived = await MoneyApp.idbStorage.get(ARCHIVE_KEY);
     } catch (_e) {}
   }
-  if (!archived || !archived.length) {
+  if (!archived?.length) {
     try {
       const raw = localStorage.getItem(ARCHIVE_KEY);
       if (raw) archived = JSON.parse(raw);
@@ -3635,7 +3635,7 @@ function renderChart() {
   for (let i = 0; i <= gridSteps; i++) {
     const yVal = minVal + range * (i / gridSteps);
     const yPos = padding.top + plotHeight - (i / gridSteps) * plotHeight;
-    const labelStr = isCurrency ? formatMoney(yVal) : yVal.toFixed(0) + '%';
+    const labelStr = isCurrency ? formatMoney(yVal) : `${yVal.toFixed(0)}%`;
     gridHtml += `
                 <line x1="${padding.left}" y1="${yPos}" x2="${width - padding.right}" y2="${yPos}" stroke="var(--line)" stroke-dasharray="3,3" />
                 <text x="${padding.left - 8}" y="${yPos + 4}" text-anchor="end" fill="var(--ink-faint)" font-size="10">${labelStr}</text>
@@ -3668,7 +3668,7 @@ function renderChart() {
   // Interactive point dots
   let dotsHtml = '';
   points.forEach((p) => {
-    const valStr = isCurrency ? formatMoney(p.val) + ' ' + unit : p.val + '%';
+    const valStr = isCurrency ? `${formatMoney(p.val)} ${unit}` : `${p.val}%`;
     dotsHtml += `
                 <circle cx="${p.x}" cy="${p.y}" r="4.5" fill="${strokeColor}" stroke="var(--panel)" stroke-width="2.5" class="cursor-pointer chart-dot"
                     data-date="${escapeHtml(p.date)}" data-val="${escapeHtml(valStr)}" />
@@ -3699,7 +3699,7 @@ function renderChart() {
 
   if (legend) {
     const latestVal = values[values.length - 1];
-    const latestStr = isCurrency ? formatMoney(latestVal) + ' ' + unit : latestVal + '%';
+    const latestStr = isCurrency ? `${formatMoney(latestVal)} ${unit}` : `${latestVal}%`;
     legend.innerHTML = `
                 <div class="flex items-center gap-1.5">
                     <span class="inline-block w-3 h-3 rounded-full" style="background:${strokeColor};"></span>
@@ -4101,7 +4101,7 @@ function initDashboardLayout() {
 }
 
 function resetDashboardLayout() {
-  if (dashboardLayoutManager && dashboardLayoutManager.reset) {
+  if (dashboardLayoutManager?.reset) {
     dashboardLayoutManager.reset();
   } else {
     localStorage.removeItem('moneySuperapp.layout.dashboard.v1');

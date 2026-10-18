@@ -6121,7 +6121,7 @@ describe('Financial Math Verification', () => {
         let high = 1.0;
         for (let iter = 0; iter < 50; iter++) {
           const mid = (low + high) / 2;
-          const pv = mid === 0 ? monthlyPaymentExVat * n : (monthlyPaymentExVat * (1 - Math.pow(1 + mid, -n))) / mid;
+          const pv = mid === 0 ? monthlyPaymentExVat * n : (monthlyPaymentExVat * (1 - (1 + mid) ** -n)) / mid;
           if (pv > p) {
             low = mid;
           } else {

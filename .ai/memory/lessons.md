@@ -15,6 +15,19 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Automated Lint Warning Elimination & Arguments Rest Parameters (v2.5.28)
+- **Date & Context:** 2026-10-18, implementing Phase 85 Lint Warning Elimination (`v2.5.28`).
+- **Problem:**
+  1. The codebase had accumulated 101 Biome warnings across 9 JS files and 2 test files (72 `useOptionalChain`, 21 `useArrowFunction`, 4 `noGlobalIsNan`, 3 `noUnusedFunctionParameters`, 1 `noArguments`).
+  2. In `js/tax-calculator-base.js`, `updateTaxAdvisor` used `arguments.length <= 6` to determine whether legacy 6-arg or full 8-arg signatures were invoked.
+- **Root Cause:**
+  1. Safe assist transforms were postponed during feature expansion.
+  2. Legacy function signatures relied on ES5 `arguments` object rather than ES6 rest parameters.
+- **Solution & Rule:**
+  1. Use Biome's safe & assisted transforms to upgrade to optional chaining `?.` and lexical arrow functions across all controllers.
+  2. Replace `arguments` in `updateTaxAdvisor` with `...extraArgs` rest parameter (`extraArgs.length <= 1`), maintaining 100% backward compatibility.
+  3. Achieved 0 warnings and 0 errors across all 23 files with all 398 tests passing.
+
 ### 2026-10-18: Bilingual Parity, TDZ Hoisting & Translation Symmetry (v2.5.27)
 - **Date & Context:** 2026-10-18, implementing Phase 84 Bilingual Parity & Mismatch Resolution (`v2.5.27`).
 - **Problem:**

@@ -356,13 +356,7 @@ const CURRENCY_SYMBOLS = {
 function getFxRate(currency) {
   if (!currency || currency === 'THB') return 1.0;
   const curr = String(currency).toUpperCase().trim();
-  if (
-    typeof state !== 'undefined' &&
-    state &&
-    state.fxRates &&
-    typeof state.fxRates[curr] === 'number' &&
-    state.fxRates[curr] > 0
-  ) {
+  if (state?.fxRates && typeof state.fxRates[curr] === 'number' && state.fxRates[curr] > 0) {
     return state.fxRates[curr];
   }
   if (
@@ -1116,7 +1110,7 @@ function renderAssetRows(bucket) {
   bucket.assets.forEach((a, i) => {
     const row = document.createElement('div');
     const isExcluded = a.enabled === false;
-    row.className = 'asset-row' + (isExcluded ? ' excluded' : '');
+    row.className = `asset-row${isExcluded ? ' excluded' : ''}`;
     const safeName = escapeAttr(a.name);
     const safeBucket = escapeAttr(bucket.label);
     const defName = escapeAttr(t('assetDefaultName', i + 1));
@@ -1197,7 +1191,7 @@ function renderAssetRows(bucket) {
   rowsEl.querySelectorAll('input.asset-enable-cb').forEach((cb) => {
     cb.addEventListener('change', (e) => {
       const b = state.buckets.find((bk) => bk.id === e.target.dataset.bucket);
-      const idx = parseInt(e.target.dataset.idx);
+      const idx = parseInt(e.target.dataset.idx, 10);
       b.assets[idx].enabled = e.target.checked;
       const parentRow = e.target.closest('.asset-row');
       if (parentRow) parentRow.classList.toggle('excluded', !e.target.checked);
@@ -1210,7 +1204,7 @@ function renderAssetRows(bucket) {
     .forEach((inp) => {
       inp.addEventListener('input', (e) => {
         const b = state.buckets.find((bk) => bk.id === e.target.dataset.bucket);
-        const idx = parseInt(e.target.dataset.idx);
+        const idx = parseInt(e.target.dataset.idx, 10);
         const field = e.target.dataset.field;
         if (field === 'name') {
           b.assets[idx].name = e.target.value || t('assetDefaultName', idx + 1);
@@ -1236,7 +1230,7 @@ function renderAssetRows(bucket) {
   rowsEl.querySelectorAll('select[data-field="currency"]').forEach((sel) => {
     sel.addEventListener('change', (e) => {
       const b = state.buckets.find((bk) => bk.id === e.target.dataset.bucket);
-      const idx = parseInt(e.target.dataset.idx);
+      const idx = parseInt(e.target.dataset.idx, 10);
       b.assets[idx].currency = e.target.value;
       const a = b.assets[idx];
       if (a.units > 0 && a.lastPrice > 0) {
@@ -1254,7 +1248,7 @@ function renderAssetRows(bucket) {
   rowsEl.querySelectorAll('input[data-field="units"], input[data-field="lastPrice"]').forEach((inp) => {
     inp.addEventListener('input', (e) => {
       const b = state.buckets.find((bk) => bk.id === e.target.dataset.bucket);
-      const idx = parseInt(e.target.dataset.idx);
+      const idx = parseInt(e.target.dataset.idx, 10);
       const field = e.target.dataset.field;
       const val = parseFloat(e.target.value);
       b.assets[idx][field] = Number.isNaN(val) ? 0 : val;
@@ -1275,16 +1269,16 @@ function renderAssetRows(bucket) {
 
   rowsEl.querySelectorAll('input[data-field="value"]').forEach((inp) => {
     const bucketId = inp.dataset.bucket;
-    const idx = parseInt(inp.dataset.idx);
+    const idx = parseInt(inp.dataset.idx, 10);
     enableDeltaInput(
       inp,
       () => {
         const b = state.buckets.find((bk) => bk.id === bucketId);
-        return b && b.assets[idx] ? b.assets[idx].value : 0;
+        return b?.assets[idx] ? b.assets[idx].value : 0;
       },
       (val) => {
         const b = state.buckets.find((bk) => bk.id === bucketId);
-        if (b && b.assets[idx]) b.assets[idx].value = val;
+        if (b?.assets[idx]) b.assets[idx].value = val;
         compute();
       },
     );
@@ -1293,7 +1287,7 @@ function renderAssetRows(bucket) {
     btn.addEventListener('click', () => {
       undoMgr.push(captureSnapshot());
       const b = state.buckets.find((bk) => bk.id === btn.dataset.bucket);
-      const idx = parseInt(btn.dataset.idx);
+      const idx = parseInt(btn.dataset.idx, 10);
       b.assets.splice(idx, 1);
       renderAssetRows(b);
       compute();
@@ -1305,7 +1299,7 @@ function renderAssetRows(bucket) {
   rowsEl.querySelectorAll('.move-up-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       const b = state.buckets.find((bk) => bk.id === btn.dataset.bucket);
-      const idx = parseInt(btn.dataset.idx);
+      const idx = parseInt(btn.dataset.idx, 10);
       if (idx <= 0) return;
       undoMgr.push(captureSnapshot());
       [b.assets[idx - 1], b.assets[idx]] = [b.assets[idx], b.assets[idx - 1]];
@@ -1319,7 +1313,7 @@ function renderAssetRows(bucket) {
   rowsEl.querySelectorAll('.move-down-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       const b = state.buckets.find((bk) => bk.id === btn.dataset.bucket);
-      const idx = parseInt(btn.dataset.idx);
+      const idx = parseInt(btn.dataset.idx, 10);
       if (idx >= b.assets.length - 1) return;
       undoMgr.push(captureSnapshot());
       [b.assets[idx], b.assets[idx + 1]] = [b.assets[idx + 1], b.assets[idx]];
@@ -1959,7 +1953,7 @@ function compute() {
       const addText = !isExcluded && add > 0.5 ? `+${fmt(add)}<span class="rusd">($${fmtUSD(usdAdd)})</span>` : '—';
 
       const row = document.createElement('div');
-      row.className = 'result-row' + (isExcluded ? ' excluded' : '');
+      row.className = `result-row${isExcluded ? ' excluded' : ''}`;
       if (isExcluded) row.style.opacity = '0.55';
       row.innerHTML = `
         <div class="result-left">
@@ -2195,7 +2189,7 @@ function fetchWithTimeout(url, timeoutMs = 10000, options = {}) {
 async function fetchThaiGoldPrice() {
   try {
     const res = await fetchWithTimeout('https://api.chnwt.dev/thai-gold-api/latest');
-    if (!res.ok) throw new Error('Thai Gold HTTP ' + res.status);
+    if (!res.ok) throw new Error(`Thai Gold HTTP ${res.status}`);
     const data = await res.json();
     const rawPrice = data?.response?.price?.gold_bar?.sell || data?.response?.price?.gold?.sell;
     if (rawPrice) {
@@ -2237,9 +2231,9 @@ function calculateCrossRates(rates) {
 async function fetchFxRates() {
   try {
     const res = await fetchWithTimeout('https://open.er-api.com/v6/latest/USD');
-    if (!res.ok) throw new Error('FX HTTP ' + res.status);
+    if (!res.ok) throw new Error(`FX HTTP ${res.status}`);
     const data = await res.json();
-    if (data && data.rates && typeof data.rates.THB === 'number') {
+    if (data?.rates && typeof data.rates.THB === 'number') {
       return calculateCrossRates(data.rates);
     }
   } catch (err) {
@@ -2501,7 +2495,7 @@ function initAutoRefresh() {
   autoRefreshTimer = setInterval(
     () => {
       if (state.autoRefreshEnabled !== false && document.visibilityState === 'visible') {
-        const hasTickers = state.buckets.some((b) => b.assets.some((a) => a.ticker && a.ticker.trim()));
+        const hasTickers = state.buckets.some((b) => b.assets.some((a) => a.ticker?.trim()));
         if (hasTickers) {
           fetchAllPrices();
         }
@@ -2520,7 +2514,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && state.autoRefreshEnabled !== false) {
     const elapsed = Date.now() - (state.lastPriceFetch || 0);
     if (elapsed >= 10 * 60 * 1000) {
-      const hasTickers = state.buckets.some((b) => b.assets.some((a) => a.ticker && a.ticker.trim()));
+      const hasTickers = state.buckets.some((b) => b.assets.some((a) => a.ticker?.trim()));
       if (hasTickers) {
         fetchAllPrices();
       }
@@ -2599,7 +2593,7 @@ async function testApiKeys() {
         `https://api.twelvedata.com/price?symbol=NVDA&apikey=${encodeURIComponent(twelveDataKey)}`,
       );
       const data = await res.json();
-      if (data && data.price) {
+      if (data?.price) {
         statusEl.style.background = 'rgba(47, 139, 118, 0.15)';
         statusEl.style.color = 'var(--core)';
         statusEl.textContent = t('testSuccess', 'NVDA (Twelve Data)', parseFloat(data.price).toFixed(2));
@@ -2893,7 +2887,7 @@ function addGoldLotToHistory() {
 }
 
 function removeGoldLot(idx) {
-  if (goldState.lots && goldState.lots[idx]) {
+  if (goldState.lots?.[idx]) {
     goldState.lots.splice(idx, 1);
     saveGoldState();
     renderGoldLotsTable();
@@ -3336,7 +3330,7 @@ function calculateGlidepathData() {
 
 function updateGlidepathUI() {
   const calc = calculateGlidepathData();
-  if (!calc || !calc.split) return;
+  if (!calc?.split) return;
 
   const barCore = document.getElementById('glideBarCore');
   const barBallast = document.getElementById('glideBarBallast');
@@ -3411,7 +3405,7 @@ function updateGlidepathUI() {
 
 function applyGlidepathSplitToPortfolio() {
   const calc = calculateGlidepathData();
-  if (!calc || !calc.split) return;
+  if (!calc?.split) return;
 
   undoMgr.push(captureSnapshot());
 

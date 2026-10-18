@@ -319,7 +319,7 @@ function updateSeveranceCalc() {
   const amount = calculateSeveranceAmount(wage, bracket);
   const previewEl = document.getElementById('sev-calc-preview');
   if (previewEl) {
-    previewEl.textContent = fmt(amount) + ` (${days} ` + (LANG === 'en' ? 'days' : 'วัน') + `)`;
+    previewEl.textContent = `${fmt(amount)} (${days} ${LANG === 'en' ? 'days' : 'วัน'})`;
   }
   return amount;
 }
@@ -462,7 +462,7 @@ function calculate() {
   document.getElementById('res-extra').textContent = fmt(severanceExtra);
   const pvdEl = document.getElementById('res-pvd');
   pvdEl.textContent = pvdDisplay;
-  pvdEl.className = 'result-value' + (pvdClass ? ' ' + pvdClass : '');
+  pvdEl.className = `result-value${pvdClass ? ` ${pvdClass}` : ''}`;
   document.getElementById('res-taxable').textContent = fmt(taxable);
   document.getElementById('res-tax').textContent = fmt(tax);
 
@@ -1158,7 +1158,7 @@ const taxLayoutManager =
       })
     : null;
 
-window.resetTaxLayout = function () {
+window.resetTaxLayout = () => {
   if (taxLayoutManager) {
     taxLayoutManager.resetLayout();
   }

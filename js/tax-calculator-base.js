@@ -205,7 +205,7 @@ if (LANG === 'en') {
   if (printPersonalVal) printPersonalVal.textContent = '- 60,000 THB';
   const enMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   for (let i = 1; i <= 12; i++) {
-    const mEl = document.getElementById('lbl-m-' + i);
+    const mEl = document.getElementById(`lbl-m-${i}`);
     if (mEl) mEl.textContent = enMonths[i - 1];
   }
   document.getElementById('personalDeductVal').textContent = '- 60,000 THB';
@@ -323,10 +323,10 @@ function switchIncomeMode(mode) {
 function calcMonthlyBreakdown() {
   let sum = 0;
   for (let i = 1; i <= 12; i++) {
-    const val = parseNum(document.getElementById('m-income-' + i).value);
+    const val = parseNum(document.getElementById(`m-income-${i}`).value);
     sum += val;
   }
-  document.getElementById('months-breakdown-total').textContent = formatMoney(sum) + ' ' + unit;
+  document.getElementById('months-breakdown-total').textContent = `${formatMoney(sum)} ${unit}`;
   if (sum > 0) {
     document.getElementById('yearlyIncome').value = sum;
   }
@@ -370,7 +370,7 @@ function saveState() {
       ? document.getElementById('chkApplyDividendToTax').checked
       : false,
     monthsBreakdown: Array.from({ length: 12 }, (_, i) =>
-      document.getElementById('m-income-' + (i + 1)) ? document.getElementById('m-income-' + (i + 1)).value : '',
+      document.getElementById(`m-income-${i + 1}`) ? document.getElementById(`m-income-${i + 1}`).value : '',
     ),
   };
   try {
@@ -751,10 +751,10 @@ function renderTaxBracketStepDown(netIncome) {
   const valTaxFree = document.getElementById('valMetricToTaxFree');
 
   if (valNeed) {
-    valNeed.textContent = stepDown.isTaxFree ? '0 ' + unit : `${formatMoney(stepDown.amountToStepDown)} ${unit}`;
+    valNeed.textContent = stepDown.isTaxFree ? `0 ${unit}` : `${formatMoney(stepDown.amountToStepDown)} ${unit}`;
   }
   if (valSaved) {
-    valSaved.textContent = stepDown.isTaxFree ? '0 ' + unit : `${formatMoney(stepDown.taxSavedAtStepDown)} ${unit}`;
+    valSaved.textContent = stepDown.isTaxFree ? `0 ${unit}` : `${formatMoney(stepDown.taxSavedAtStepDown)} ${unit}`;
   }
   if (valRoi) {
     valRoi.textContent = stepDown.isTaxFree ? '0%' : `${stepDown.stepDownRoiPct}%`;
@@ -901,7 +901,7 @@ function importWithholdingFromPayslip() {
 }
 
 function toggleDividendTaxCredit() {
-  if (typeof taxBaseLayoutManager !== 'undefined' && taxBaseLayoutManager && taxBaseLayoutManager.toggleCard) {
+  if (taxBaseLayoutManager?.toggleCard) {
     taxBaseLayoutManager.toggleCard('dividendTaxCreditCard');
     return;
   }
@@ -932,7 +932,7 @@ function toggleApplyDividendToTax() {
   const badge = document.getElementById('badge-applied-status');
   const isEn = LANG === 'en';
   if (badge) {
-    if (chk && chk.checked) {
+    if (chk?.checked) {
       badge.textContent = isEn ? 'ACTIVE' : 'เปิดใช้งาน';
       badge.style.color = 'var(--ok)';
     } else {
@@ -966,7 +966,7 @@ function updateDividendTaxCreditUI() {
   const chkApply = document.getElementById('chkApplyDividendToTax');
   const badgeStatus = document.getElementById('badge-applied-status');
   if (badgeStatus) {
-    if (chkApply && chkApply.checked) {
+    if (chkApply?.checked) {
       badgeStatus.textContent = isEn ? 'ACTIVE' : 'เปิดใช้งาน';
       badgeStatus.style.color = 'var(--ok)';
     } else {
@@ -974,7 +974,7 @@ function updateDividendTaxCreditUI() {
       badgeStatus.style.color = 'var(--ink-dim)';
     }
   }
-  if (chkApply && chkApply.checked && dividendAmt > 0) {
+  if (chkApply?.checked && dividendAmt > 0) {
     const factor = citRate > 0 && citRate < 1 ? citRate / (1 - citRate) : 0;
     baseNet = Math.max(0, baseNet - Math.round(dividendAmt * (1 + factor)));
   }
@@ -1030,7 +1030,7 @@ function updateDividendTaxCreditUI() {
     }
   }
 
-  if (chkApply && chkApply.checked) {
+  if (chkApply?.checked) {
     calculateTax();
   }
 }
@@ -1131,8 +1131,7 @@ function calculateTax() {
   const chkApplyDividend = document.getElementById('chkApplyDividendToTax');
   const inpDividend = document.getElementById('inpDividendAmount');
   const selCit = document.getElementById('selCitRate');
-  const isDividendApplied =
-    chkApplyDividend && chkApplyDividend.checked && inpDividend && parseNum(inpDividend.value) > 0;
+  const isDividendApplied = chkApplyDividend?.checked && inpDividend && parseNum(inpDividend.value) > 0;
 
   let dividendGrossedUp = 0;
   let dividendCredit = 0;
@@ -1334,20 +1333,20 @@ function calculateTax() {
   }
 
   // แสดงผลลัพธ์
-  document.getElementById('totalIncome').innerText = formatMoney(totalIncome) + ' ' + unit;
-  document.getElementById('expenseDeduct').innerText = '- ' + formatMoney(expenseDeduction) + ' ' + unit;
-  document.getElementById('pvdDeduct').innerText = '- ' + formatMoney(pvdDeduction) + ' ' + unit;
-  document.getElementById('ssoDeduct').innerText = '- ' + formatMoney(ssoDeduction) + ' ' + unit;
+  document.getElementById('totalIncome').innerText = `${formatMoney(totalIncome)} ${unit}`;
+  document.getElementById('expenseDeduct').innerText = `- ${formatMoney(expenseDeduction)} ${unit}`;
+  document.getElementById('pvdDeduct').innerText = `- ${formatMoney(pvdDeduction)} ${unit}`;
+  document.getElementById('ssoDeduct').innerText = `- ${formatMoney(ssoDeduction)} ${unit}`;
 
   const moreRow = document.getElementById('row-more-deduct');
   if (additionalDeductions > 0) {
     moreRow.style.display = 'flex';
-    document.getElementById('moreDeduct').innerText = '- ' + formatMoney(additionalDeductions) + ' ' + unit;
+    document.getElementById('moreDeduct').innerText = `- ${formatMoney(additionalDeductions)} ${unit}`;
   } else {
     moreRow.style.display = 'none';
   }
 
-  document.getElementById('netIncome').innerText = formatMoney(netIncome) + ' ' + unit;
+  document.getElementById('netIncome').innerText = `${formatMoney(netIncome)} ${unit}`;
   document.getElementById('taxAmount').innerText = formatMoney(tax);
 
   const withheldTaxVal = parseNum(document.getElementById('withheldTax')?.value);
@@ -1856,7 +1855,7 @@ function copyEFilingField(valElementId, btnEl) {
   const el = document.getElementById(valElementId);
   if (!el) return;
   const raw = el.dataset.raw || el.textContent.replace(/[^0-9.-]/g, '');
-  if (navigator.clipboard && navigator.clipboard.writeText) {
+  if (navigator.clipboard?.writeText) {
     navigator.clipboard.writeText(raw).then(() => {
       showCopyFeedback(btnEl);
     });
@@ -1895,7 +1894,7 @@ function copyAllEFilingSummary() {
     `[ผลลัพธ์สุทธิ]: ${netBal}`,
   ].join('\n');
 
-  if (navigator.clipboard && navigator.clipboard.writeText) {
+  if (navigator.clipboard?.writeText) {
     navigator.clipboard.writeText(summary).then(() => {
       showCopyFeedback(btn);
     });
@@ -2409,7 +2408,8 @@ function applyCurrentSimulation() {
   updateUndoUI();
 }
 
-function updateTaxAdvisor(netIncome, totalIncome, pvdDeduction, currentFund, currentThaiEsg, arg6, arg7, arg8) {
+function updateTaxAdvisor(netIncome, totalIncome, pvdDeduction, currentFund, currentThaiEsg, ...extraArgs) {
+  const [arg6, arg7, arg8] = extraArgs;
   const card = document.getElementById('taxAdvisorCard');
   if (!card) return;
 
@@ -2423,7 +2423,7 @@ function updateTaxAdvisor(netIncome, totalIncome, pvdDeduction, currentFund, cur
   let currentEasyReceipt = 0;
   let currentTax = 0;
 
-  if (arguments.length <= 6) {
+  if (extraArgs.length <= 1) {
     currentTax = Number(arg6) || 0;
     currentInsurance = parseNum(document.getElementById('insuranceDeduct')?.value) || 0;
     currentEasyReceipt = parseNum(document.getElementById('easyReceiptDeduct')?.value) || 0;
@@ -2580,7 +2580,7 @@ function revertAdvisorOptimization() {
 }
 
 function toggleTaxScenarioComparator() {
-  if (typeof taxBaseLayoutManager !== 'undefined' && taxBaseLayoutManager && taxBaseLayoutManager.toggleCard) {
+  if (taxBaseLayoutManager?.toggleCard) {
     taxBaseLayoutManager.toggleCard('panelTaxScenario');
     return;
   }
@@ -2695,7 +2695,7 @@ function runTaxScenarioComparison() {
 function copyTaxSummary() {
   const income = document.getElementById('totalIncome').innerText;
   const net = document.getElementById('netIncome').innerText;
-  const tax = document.getElementById('taxAmount').innerText + ' ' + unit;
+  const tax = `${document.getElementById('taxAmount').innerText} ${unit}`;
 
   const text =
     LANG === 'en'
@@ -2753,7 +2753,7 @@ function captureSnapshot() {
     mortgageDeduct: document.getElementById('mortgageDeduct')?.value || '',
     otherDeduct: document.getElementById('otherDeduct')?.value || '',
     withheldTax: document.getElementById('withheldTax')?.value || '',
-    monthsBreakdown: Array.from({ length: 12 }, (_, i) => document.getElementById('m-income-' + (i + 1))?.value || ''),
+    monthsBreakdown: Array.from({ length: 12 }, (_, i) => document.getElementById(`m-income-${i + 1}`)?.value || ''),
   };
 }
 
@@ -2771,14 +2771,14 @@ function restoreSnapshot(data) {
   if (Array.isArray(data.monthsBreakdown)) {
     let sum = 0;
     data.monthsBreakdown.forEach((val, idx) => {
-      const input = document.getElementById('m-income-' + (idx + 1));
+      const input = document.getElementById(`m-income-${idx + 1}`);
       if (input) {
         input.value = val || '';
         sum += parseNum(val);
       }
     });
     if (document.getElementById('months-breakdown-total')) {
-      document.getElementById('months-breakdown-total').textContent = formatMoney(sum) + ' ' + unit;
+      document.getElementById('months-breakdown-total').textContent = `${formatMoney(sum)} ${unit}`;
     }
   }
 
@@ -2853,14 +2853,14 @@ function loadState() {
     if (Array.isArray(data.monthsBreakdown)) {
       let sum = 0;
       data.monthsBreakdown.forEach((val, idx) => {
-        const input = document.getElementById('m-income-' + (idx + 1));
+        const input = document.getElementById(`m-income-${idx + 1}`);
         if (input && val !== undefined) {
           input.value = val;
           sum += parseNum(val);
         }
       });
       if (document.getElementById('months-breakdown-total')) {
-        document.getElementById('months-breakdown-total').textContent = formatMoney(sum) + ' ' + unit;
+        document.getElementById('months-breakdown-total').textContent = `${formatMoney(sum)} ${unit}`;
       }
     }
 
@@ -2920,7 +2920,7 @@ function saveTaxCalendarState(calState) {
 }
 
 function toggleTaxCalendar() {
-  if (typeof taxBaseLayoutManager !== 'undefined' && taxBaseLayoutManager && taxBaseLayoutManager.toggleCard) {
+  if (taxBaseLayoutManager?.toggleCard) {
     taxBaseLayoutManager.toggleCard('panelTaxCalendar');
     return;
   }
@@ -3093,7 +3093,7 @@ const taxBaseLayoutManager =
 
 window.taxBaseLayoutManager = taxBaseLayoutManager;
 
-window.resetTaxBaseLayout = function () {
+window.resetTaxBaseLayout = () => {
   if (taxBaseLayoutManager) {
     taxBaseLayoutManager.resetLayout();
   }

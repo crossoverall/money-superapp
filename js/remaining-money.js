@@ -261,7 +261,7 @@ if (LANG === 'en') {
     if (el && EN[id]) el.textContent = EN[id];
   });
   const selShock = document.getElementById('selShockScenario');
-  if (selShock && selShock.options && selShock.options.length >= 4) {
+  if (selShock?.options && selShock.options.length >= 4) {
     selShock.options[0].text = EN.optShockLayoff;
     selShock.options[1].text = EN.optShockResignation;
     selShock.options[2].text = EN.optShockMedical;
@@ -570,7 +570,7 @@ function fmt(n) {
   return Math.round(n).toLocaleString(LANG === 'en' ? 'en-US' : 'th-TH');
 }
 function fmtCurrency(n) {
-  return fmt(Math.round(n)) + ' ' + (LANG === 'en' ? 'THB' : 'บาท');
+  return `${fmt(Math.round(n))} ${LANG === 'en' ? 'THB' : 'บาท'}`;
 }
 
 // ── Delta input ────────────────────────────────────────────────────────────
@@ -947,7 +947,7 @@ function checkPendingTaxAccrual() {
     if (!raw) return;
     const payload = JSON.parse(raw);
     localStorage.removeItem('moneySuperapp.pendingTaxAccrual');
-    if (!payload || !payload.monthlyAmount || payload.monthlyAmount <= 0) return;
+    if (!payload?.monthlyAmount || payload.monthlyAmount <= 0) return;
 
     undoMgr.push(captureSnapshot());
     const itemName = LANG === 'en' ? payload.nameEn : payload.nameTh;
@@ -965,7 +965,7 @@ function checkPendingTaxAccrual() {
       existing.name = itemName;
     } else {
       state.expenses.push({
-        id: 'tax_accrual_' + Date.now(),
+        id: `tax_accrual_${Date.now()}`,
         name: itemName,
         value: payload.monthlyAmount,
       });
@@ -1004,7 +1004,7 @@ function checkPendingRefinanceSavings() {
     if (!raw) return;
     const payload = JSON.parse(raw);
     localStorage.removeItem('moneySuperapp.pendingRefinanceSavings');
-    if (!payload || !payload.amount || payload.amount <= 0) return;
+    if (!payload?.amount || payload.amount <= 0) return;
 
     undoMgr.push(captureSnapshot());
     const isSavings = payload.type === 'savings';
@@ -1024,7 +1024,7 @@ function checkPendingRefinanceSavings() {
       } else {
         if (!state.savings) state.savings = [];
         state.savings.push({
-          id: 'refinance_savings_' + Date.now(),
+          id: `refinance_savings_${Date.now()}`,
           name: itemName,
           value: amount,
         });
@@ -1043,7 +1043,7 @@ function checkPendingRefinanceSavings() {
       } else {
         if (!state.expenses) state.expenses = [];
         state.expenses.push({
-          id: 'refinance_exp_' + Date.now(),
+          id: `refinance_exp_${Date.now()}`,
           name: itemName,
           value: amount,
         });
@@ -1086,7 +1086,7 @@ function checkPendingBankStatement() {
     if (!raw) return;
     const payload = JSON.parse(raw);
     localStorage.removeItem('moneySuperapp.pendingBankStatement');
-    if (!payload || !payload.csvText) return;
+    if (!payload?.csvText) return;
 
     const fileName = payload.fileName || 'shared_statement.csv';
     const csvText = payload.csvText;
@@ -1110,7 +1110,7 @@ function checkPendingInsurancePremium() {
     if (!raw) return;
     const payload = JSON.parse(raw);
     localStorage.removeItem('moneySuperapp.pendingInsurancePremium');
-    if (!payload || !payload.amount || payload.amount <= 0) return;
+    if (!payload?.amount || payload.amount <= 0) return;
 
     undoMgr.push(captureSnapshot());
     const nameTh = 'เบี้ยประกันชีวิตคุ้มครองความเสี่ยง (Term Life)';
@@ -1130,7 +1130,7 @@ function checkPendingInsurancePremium() {
     } else {
       if (!state.expenses) state.expenses = [];
       state.expenses.push({
-        id: 'ins_premium_' + Date.now(),
+        id: `ins_premium_${Date.now()}`,
         name: itemName,
         value: payload.amount,
       });
@@ -1172,7 +1172,7 @@ function checkPendingDcaBudget() {
     if (!raw) return;
     const payload = JSON.parse(raw);
     localStorage.removeItem('moneySuperapp.pendingDcaBudget');
-    if (!payload || !payload.amount || payload.amount <= 0) return;
+    if (!payload?.amount || payload.amount <= 0) return;
 
     undoMgr.push(captureSnapshot());
     const isEn = LANG === 'en';
@@ -1198,7 +1198,7 @@ function checkPendingDcaBudget() {
     } else {
       if (!state.savings) state.savings = [];
       state.savings.push({
-        id: 'dca_saving_' + Date.now(),
+        id: `dca_saving_${Date.now()}`,
         name: itemName,
         value: payload.amount,
       });
@@ -1372,7 +1372,7 @@ function bindRows(container, type) {
   // Name input (only editable for non-auto rows)
   container.querySelectorAll('input.name-input:not([readonly])').forEach((inp) => {
     inp.addEventListener('input', (e) => {
-      const idx = parseInt(e.target.dataset.idx);
+      const idx = parseInt(e.target.dataset.idx, 10);
       const defaultPlaceholder =
         type === 'income'
           ? LANG === 'en'
@@ -1392,7 +1392,7 @@ function bindRows(container, type) {
 
   // Value input — with delta support (enabled for all rows, including editable auto rows)
   container.querySelectorAll('input.value-input').forEach((inp) => {
-    const idx = parseInt(inp.dataset.idx);
+    const idx = parseInt(inp.dataset.idx, 10);
     enableDeltaInput(
       inp,
       () => (items[idx] ? items[idx].value : 0),
@@ -1497,7 +1497,7 @@ function bindRows(container, type) {
   container.querySelectorAll('.remove-btn:not(.disabled)').forEach((btn) => {
     btn.addEventListener('click', () => {
       undoMgr.push(captureSnapshot());
-      const idx = parseInt(btn.dataset.idx);
+      const idx = parseInt(btn.dataset.idx, 10);
       if (type === 'income') {
         state.incomes.splice(idx, 1);
         // Safeguard: ensure salary row always exists
@@ -1523,7 +1523,7 @@ function bindRows(container, type) {
   // Focus change on salary row triggers auto-expense update
   container.querySelectorAll('input.name-input').forEach((inp) => {
     inp.addEventListener('blur', () => {
-      const idx = parseInt(inp.dataset.idx);
+      const idx = parseInt(inp.dataset.idx, 10);
       const item = items[idx];
       if (item && isSalaryRow(item, idx)) {
         updateAutoExpenses(pvdPercent);
@@ -1674,7 +1674,7 @@ function compute() {
 
   // Remaining box
   remainingValue.textContent = fmtCurrency(Math.round(remaining));
-  remainingValue.className = 'rvalue ' + (remaining > 0.5 ? 'positive' : remaining < -0.5 ? 'negative' : 'zero');
+  remainingValue.className = `rvalue ${remaining > 0.5 ? 'positive' : remaining < -0.5 ? 'negative' : 'zero'}`;
 
   const remLabelEl = document.getElementById('remainingLabel');
   if (remLabelEl) {
@@ -1755,7 +1755,7 @@ function compute() {
     if (totalExpense <= 0) {
       if (monthsEl) monthsEl.textContent = '—';
       if (unitEl)
-        unitEl.innerHTML = (isEN ? 'months' : 'เดือน') + '<br><span style="font-size:11px; opacity:0.7;">—</span>';
+        unitEl.innerHTML = `${isEN ? 'months' : 'เดือน'}<br><span style="font-size:11px; opacity:0.7;">—</span>`;
       if (badgeEl) {
         badgeEl.textContent = isEN ? 'Please enter monthly expenses first' : 'กรุณากรอกค่าใช้จ่ายเพื่อคำนวณเงินสำรอง';
         badgeEl.style.background = 'var(--panel-3, rgba(0,0,0,0.06))';
@@ -1803,7 +1803,7 @@ function compute() {
       }
 
       if (barFill) {
-        barFill.style.width = pct + '%';
+        barFill.style.width = `${pct}%`;
         barFill.style.background = color;
       }
       if (badgeEl) {
@@ -2297,7 +2297,7 @@ function calculateEmergencyRunway({ reserve = 0, monthlyExpenses = 0 } = {}) {
   };
 }
 
-function renderBudgetRule503020(totalIncome, totalExpense, totalSavings, remaining) {
+function renderBudgetRule503020(totalIncome, totalExpense, _totalSavings, remaining) {
   const container = document.getElementById('cashflow503020Container');
   if (!container) return;
 
@@ -2997,11 +2997,11 @@ function csvSafe(val) {
   let str = String(val == null ? '' : val);
   if (/^\s*[\t\r=+\-@]/.test(str)) {
     if (Number.isNaN(Number(str))) {
-      str = "'" + str;
+      str = `'${str}`;
     }
   }
   if (/[",\r\n]/.test(str)) {
-    return '"' + str.replace(/"/g, '""') + '"';
+    return `"${str.replace(/"/g, '""')}"`;
   }
   return str;
 }
@@ -3206,7 +3206,7 @@ function copySummary() {
     }
   };
 
-  if (navigator.clipboard && navigator.clipboard.writeText) {
+  if (navigator.clipboard?.writeText) {
     navigator.clipboard
       .writeText(text)
       .then(doFeedback)
@@ -3386,7 +3386,7 @@ function isSubtotalRow(cat, item) {
 }
 
 function handleImportFile(inputEl) {
-  if (!inputEl || !inputEl.files || !inputEl.files[0]) return;
+  if (!inputEl?.files?.[0]) return;
   const file = inputEl.files[0];
   const fileName = file.name || 'import';
   const reader = new FileReader();
@@ -3576,7 +3576,7 @@ function parseImportCSV(text, fileName = 'data.csv') {
   // Thai Mobile Banking Statement Auto-Parser (KBank, SCB, Krungthai, KKP, etc.)
   if (typeof MoneyApp !== 'undefined' && typeof MoneyApp.detectAndParseThaiBankStatement === 'function') {
     const bankRes = MoneyApp.detectAndParseThaiBankStatement(text, fileName);
-    if (bankRes && bankRes.isBankStatement && bankRes.candidate) {
+    if (bankRes?.isBankStatement && bankRes.candidate) {
       const formatLabel = `${bankRes.bankName} CSV`;
       showImportPreview(bankRes.candidate, fileName, formatLabel);
       return bankRes.candidate;
@@ -3654,7 +3654,7 @@ function parseImportCSV(text, fileName = 'data.csv') {
 
     if (isSubtotalRow(cat, item)) continue;
 
-    const combinedText = item + ' ' + note;
+    const combinedText = `${item} ${note}`;
     const isPvdText = /(?:pvd|provident\s*fund|กองทุนสำรองเลี้ยงชีพ)/i.test(combinedText);
     if (isPvdText) {
       const pvdMatch =
@@ -3767,7 +3767,7 @@ function showImportPreview(candidate, fileName, format) {
   const incCount = (candidate.incomes || []).length;
   const incTotal = (candidate.incomes || []).reduce((s, it) => s + (Number(it.value) || 0), 0);
 
-  const salary = ((candidate.incomes || []).find((it, idx) => isSalaryRow(it, idx)) || {}).value || 0;
+  const salary = (candidate.incomes || []).find((it, idx) => isSalaryRow(it, idx))?.value || 0;
   const candPvdPct =
     candidate.pvdPercent != null && !Number.isNaN(candidate.pvdPercent) ? candidate.pvdPercent : pvdPercent;
 
@@ -4396,7 +4396,7 @@ function initRemainingLayout() {
 }
 
 function resetRemainingLayout() {
-  if (remainingLayoutManager && remainingLayoutManager.reset) {
+  if (remainingLayoutManager?.reset) {
     remainingLayoutManager.reset();
   } else {
     localStorage.removeItem('moneySuperapp.layout.remaining.v1');
