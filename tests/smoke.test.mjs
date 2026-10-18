@@ -1559,5 +1559,45 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       const sharedContent = fs.readFileSync(path.join(ROOT_DIR, 'js/shared.js'), 'utf8');
       assert.ok(sharedContent.includes('MoneyApp?.I18n'), 'shared.js must coordinate with MoneyApp.I18n');
     });
+
+    it('verifies Phase 101 Centralized Domain Dictionaries (js/i18n/th.js & js/i18n/en.js) and Cache Consistency', () => {
+      const thPath = path.join(ROOT_DIR, 'js/i18n/th.js');
+      const enPath = path.join(ROOT_DIR, 'js/i18n/en.js');
+      assert.ok(fs.existsSync(thPath), 'js/i18n/th.js must exist');
+      assert.ok(fs.existsSync(enPath), 'js/i18n/en.js must exist');
+
+      const thContent = fs.readFileSync(thPath, 'utf8');
+      const enContent = fs.readFileSync(enPath, 'utf8');
+
+      assert.ok(thContent.includes('MoneyApp.i18n.th = th'), 'th.js must export MoneyApp.i18n.th');
+      assert.ok(enContent.includes('MoneyApp.i18n.en = en'), 'en.js must export MoneyApp.i18n.en');
+
+      assert.ok(!thContent.includes('eval('), 'th.js must never invoke eval()');
+      assert.ok(!enContent.includes('eval('), 'en.js must never invoke eval()');
+      assert.ok(!thContent.includes('document.write'), 'th.js must never invoke document.write()');
+      assert.ok(!enContent.includes('document.write'), 'en.js must never invoke document.write()');
+
+      // Verify all 8 core HTML files register both dictionaries
+      const htmlFiles = [
+        'dashboard.html',
+        'debt-calculator.html',
+        'index.html',
+        'months-slips.html',
+        'rebalance.html',
+        'remaining-money.html',
+        'tax-calculator-base.html',
+        'tax-calculator.html',
+      ];
+      for (const file of htmlFiles) {
+        const content = fs.readFileSync(path.join(ROOT_DIR, file), 'utf8');
+        assert.ok(content.includes('src="js/i18n/th.js"'), `${file} must include js/i18n/th.js`);
+        assert.ok(content.includes('src="js/i18n/en.js"'), `${file} must include js/i18n/en.js`);
+      }
+
+      // Verify service worker registers both dictionaries
+      const swContent = fs.readFileSync(path.join(ROOT_DIR, 'sw.js'), 'utf8');
+      assert.ok(swContent.includes("'./js/i18n/th.js'"), 'sw.js must cache js/i18n/th.js');
+      assert.ok(swContent.includes("'./js/i18n/en.js'"), 'sw.js must cache js/i18n/en.js');
+    });
   });
 });

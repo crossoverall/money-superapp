@@ -15,6 +15,18 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Centralized Domain Dictionaries & Automated Key Symmetry (v2.5.44)
+- **Date & Context:** 2026-10-18, Phase 101 Centralized Domain Dictionaries (`v2.5.44`).
+- **Problem:**
+  1. Translation strings were fragmented across individual JavaScript files, preventing holistic auditing and making it easy for one language to get out of sync with another during feature development.
+  2. Developers had no single source of truth for standard domain terms (financial indicators, tax terms, loan terminology, budget categories).
+- **Root Cause:** Domain dictionaries grew organically within separate tool scripts without a shared repository.
+- **Solution & Rule:**
+  1. **Dedicated Dictionary Modules (`js/i18n/th.js` & `js/i18n/en.js`):** Extracted comprehensive domain dictionaries spanning common controls, dashboard, debt freedom, tax planning, cash flow budgeting, portfolio rebalancing, and payslip simulation.
+  2. **Automated Registration:** Both modules auto-register with `MoneyApp.I18n` on initialization and export to `MoneyApp.i18n.th` and `MoneyApp.i18n.en`.
+  3. **Strict Parameter Consistency:** Validated that named parameter placeholders (`{param}`) match 100% symmetrically between Thai and English.
+  4. **Quality Gates & Invariants:** Added `tests/i18n-dictionaries.test.mjs` (5 unit tests), updated `tests/smoke.test.mjs` (69 smoke tests), verified full test suite (490 tests passing across 109 suites), zero Biome errors/warnings, and zero CSP violations.
+
 ### 2026-10-18: Centralized Internationalization Core & Declarative data-i18n (v2.5.43)
 - **Date & Context:** 2026-10-18, Phase 100 i18n Architecture Overhaul (`v2.5.43`).
 - **Problem:**
