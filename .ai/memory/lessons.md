@@ -15,6 +15,19 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: CSS Grid Responsive Column Spanning & Implicit Track Synthesis (v2.5.8)
+- **Date & Context:** 2026-10-18, resolving broken layout on the payslip simulator (`months-slips.html`) on both desktop and mobile viewports.
+- **Problem:**
+  1. On desktop ($\ge 768\text{px}$), lower cards (`#panelCashflowStream`, `#pitReconciliationCard`, `#panelJobCompare`) collapsed into narrow $\approx 74\text{px}$ columns sharing a single row instead of spanning 100% full width.
+  2. On mobile ($< 768\text{px}$), cards appeared crushed into narrow slivers with multiple empty ghost columns.
+- **Root Cause:**
+  1. `tailwind-lite.css` was missing `.md:col-span-12` and `.col-span-12` utility definitions. In CSS Grid with `md:grid-cols-12`, cards missing column span defaults to 1 column out of 12.
+  2. If a rule like `.md\:col-span-12, .col-span-12 { grid-column: span 12 / span 12 !important; }` is applied outside `@media (min-width: 768px)`, it forces a 12-column span on 1-column mobile grids (`grid-cols-1`). According to the CSS Grid specification, when an item requests `span 12` inside a container with only 1 explicit column, CSS Grid synthesizes 11 implicit auto tracks, compressing container width into 12 slivers across the mobile screen!
+- **Solution & Rule:**
+  1. **Complete CSS Utilities:** Always ensure `tailwind-lite.css` defines `.col-span-12`, `.md:col-span-12`, `.gap-2`, `.gap-3`, `.flex-wrap`, and corresponding spacing utilities.
+  2. **Strict Breakpoint Scoping:** Never define responsive utility overrides (e.g. `.md:col-span-12`) outside media query wrappers. Responsive column spans MUST live strictly inside `@media (min-width: 768px)`.
+  3. **Visual & Responsive Verification:** Always verify changes under both desktop (1280px) and mobile (390px) viewports with headless Chrome CDP screenshots to guarantee zero layout regression.
+
 ### 2026-10-18: Runtime Calculation Contract Integrity & Defensive UI Initialization (v2.5.7)
 - **Date & Context:** 2026-10-18, debugging and resolving browser render failure in `rebalance.html` where card reordering controls and collapsed state failed to appear.
 - **Problem:** When `rebalance.html` loaded in Chrome, neither card reorder controls (`↑`, `↓`, `▲`) nor default collapsed states were applied to auxiliary cards, leaving cards uncollapsible on initial load.

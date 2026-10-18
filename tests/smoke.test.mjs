@@ -102,6 +102,16 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         }
       }
     });
+
+    it('verifies tailwind-lite.css declares essential grid and responsive column utilities', () => {
+      const tailwindPath = path.join(ROOT_DIR, 'css', 'tailwind-lite.css');
+      assert.ok(fs.existsSync(tailwindPath), 'tailwind-lite.css must exist');
+      const content = fs.readFileSync(tailwindPath, 'utf8');
+      assert.ok(content.includes('.grid-cols-1'), 'missing .grid-cols-1');
+      assert.ok(content.includes('.col-span-12'), 'missing .col-span-12');
+      assert.ok(content.includes('.md\\:col-span-12'), 'missing .md:col-span-12');
+      assert.ok(content.includes('.md\\:grid-cols-12'), 'missing .md:grid-cols-12');
+    });
   });
 
   describe('Service Worker (sw.js) Cache Manifest Consistency', () => {

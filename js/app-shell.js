@@ -331,12 +331,10 @@ function applyLang(lang) {
     document.getElementById('lbl-qr-export-desc').textContent = t.qrExportModalDesc;
   if (document.getElementById('lbl-qr-counter-text'))
     document.getElementById('lbl-qr-counter-text').textContent = lang === 'en' ? 'Slice' : 'ชิ้นส่วน';
-  if (document.getElementById('lbl-qr-btn-prev'))
-    document.getElementById('lbl-qr-btn-prev').textContent = t.qrBtnPrev;
+  if (document.getElementById('lbl-qr-btn-prev')) document.getElementById('lbl-qr-btn-prev').textContent = t.qrBtnPrev;
   if (document.getElementById('lbl-qr-btn-autoplay'))
     document.getElementById('lbl-qr-btn-autoplay').textContent = qrAutoPlayTimer ? t.qrBtnPause : t.qrBtnAutoPlay;
-  if (document.getElementById('lbl-qr-btn-next'))
-    document.getElementById('lbl-qr-btn-next').textContent = t.qrBtnNext;
+  if (document.getElementById('lbl-qr-btn-next')) document.getElementById('lbl-qr-btn-next').textContent = t.qrBtnNext;
   if (document.getElementById('lbl-qr-btn-copy-chunk'))
     document.getElementById('lbl-qr-btn-copy-chunk').textContent = t.qrBtnCopyChunk;
   if (document.getElementById('lbl-qr-import-title'))
@@ -1417,13 +1415,9 @@ function updateQrImportUI() {
       for (let i = 1; i <= total; i++) {
         if (!qrImportedChunks[i]) missing.push(i);
       }
-      notice.textContent = isEn
-        ? `Missing slices: [${missing.join(', ')}]`
-        : `ชิ้นส่วนที่ยังขาด: [${missing.join(', ')}]`;
+      notice.textContent = isEn ? `Missing slices: [${missing.join(', ')}]` : `ชิ้นส่วนที่ยังขาด: [${missing.join(', ')}]`;
     } else {
-      notice.textContent = isEn
-        ? '✓ All slices received! Decrypting...'
-        : '✓ ได้รับชิ้นส่วนครบถ้วน! กำลังเตรียมถอดรหัส...';
+      notice.textContent = isEn ? '✓ All slices received! Decrypting...' : '✓ ได้รับชิ้นส่วนครบถ้วน! กำลังเตรียมถอดรหัส...';
     }
   }
 }
@@ -1672,7 +1666,10 @@ async function toggleBiometricsEnrollment() {
           name: 'user@moneysuperapp.local',
           displayName: 'Money Superapp Owner',
         },
-        pubKeyCredParams: [{ alg: -7, type: 'public-key' }, { alg: -257, type: 'public-key' }],
+        pubKeyCredParams: [
+          { alg: -7, type: 'public-key' },
+          { alg: -257, type: 'public-key' },
+        ],
         authenticatorSelection: { userVerification: 'preferred' },
         timeout: 60000,
       },
@@ -1687,8 +1684,7 @@ async function toggleBiometricsEnrollment() {
   } catch (err) {
     console.warn('WebAuthn enrollment error:', err);
     alert(
-      (isEn ? 'Biometrics setup cancelled or failed: ' : 'การลงทะเบียน Biometrics ล้มเหลวหรือถูกยกเลิก: ') +
-        err.message,
+      (isEn ? 'Biometrics setup cancelled or failed: ' : 'การลงทะเบียน Biometrics ล้มเหลวหรือถูกยกเลิก: ') + err.message,
     );
   }
 }
@@ -1743,8 +1739,7 @@ function enterPinDigit(digit) {
     const waitSec = Math.ceil((appLockLockoutUntil - Date.now()) / 1000);
     const notice = document.getElementById('pinErrorNotice');
     if (notice) {
-      notice.textContent =
-        getLang() === 'en' ? `Locked out. Try again in ${waitSec}s.` : `กรุณารออีก ${waitSec} วินาที`;
+      notice.textContent = getLang() === 'en' ? `Locked out. Try again in ${waitSec}s.` : `กรุณารออีก ${waitSec} วินาที`;
     }
     return;
   }
@@ -1894,7 +1889,6 @@ window.deletePinDigit = deletePinDigit;
 window.triggerBiometricUnlock = triggerBiometricUnlock;
 window.initAppLockGuard = initAppLockGuard;
 window.updateAppLockSettingsUI = updateAppLockSettingsUI;
-
 
 function resetAllData() {
   const msg =

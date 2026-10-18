@@ -1,45 +1,34 @@
 ---
-task_id: "SDLC-BUGFIX-FOREIGN-TAX-RUNTIME-AND-LAYOUT-CONTROLS"
+task_id: "SDLC-BUGFIX-PAYSLIP-GRID-LAYOUT"
 status: "completed"
-current_stage: "completed"
+current_stage: "release"
 complexity: "level_2"
 iteration_count: 0
 pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "reviewer", "release"]
 ---
 
 ### Problem Diagnosis & Root Causes (Browser Inspection)
-1. **Uncaught Runtime Exception in `updateForeignTaxUI` (`js/rebalance.js:3118`):**
-   - Headless Chrome DevTools Protocol (CDP) live inspection revealed:
-     `TypeError: Cannot read properties of undefined (reading 'toFixed')` at `updateForeignTaxUI` during initial script execution (`initForeignTaxAdvisor()` at line 3453).
-   - Root cause: `calculateForeignRepatriationTax` in `js/shared.js` returns `effectiveTaxRatePct`, whereas `updateForeignTaxUI` accessed `calc.effectiveTaxRate.toFixed(1)`. Parameter names and exemption fields also had key discrepancies (`pre2024Amount` vs `pre2024AccumulatedAmount`, etc.).
-2. **Cascade Breakdown of Card Layout Initialization:**
-   - Because the uncaught exception halted `rebalance.js` at line 3453:
-     - Line 3454: `initTargetDateGlidepath()` was never executed.
-     - Line 3456: `MoneyApp.initCardLayoutManager(...)` was never reached.
-   - As a result, no card reordering controls (`card-reorder-controls` with `↑`, `↓`, `▲`/`▼`) were injected into any card header, and the 3 bottom auxiliary cards were never collapsed by default (`cardsWithControls = 0`, `cardsCollapsed = 0`).
+1. **Critical CSS Grid Column Squeeze Bug (`months-slips.html`, `css/tailwind-lite.css`):**
+   - Headless Chrome inspection revealed that on desktop screen sizes ($\ge 768\text{px}$), `#panelCashflowStream`, `#pitReconciliationCard`, and `#panelJobCompare` were squished into 74px-wide vertical slits all sharing a single row.
+   - Root cause: In `months-slips.html`, `#slipsContainer` declares `grid-cols-1 md:grid-cols-12 gap-6`. Cards 1 and 2 specify `md:col-span-5` and `md:col-span-7`. Cards 3, 4, 5 specify `md:col-span-12`. However, `.md\:col-span-12` and `.col-span-12` were **never defined** in `css/tailwind-lite.css`. As a result, CSS Grid defaulted each card's column span to 1 out of 12 (8.33% of the container width = ~74px).
+2. **Missing Utility & Positioning Classes (`months-slips.html`):**
+   - In Card 4 (`#pitReconciliationCard`), the currency unit `<span class="absolute right-3 top-2.5 ...">บาท</span>` drifted outside the input box because `.right-3` and `.top-2.5` were missing from `tailwind-lite.css`.
+   - Utility classes `.flex-wrap`, `.sm:grid-cols-3`, `.gap-2`, `.gap-3`, `.shadow-sm`, `.p-3.5`, `.p-5`, and `.ml-auto` were also missing, causing header text truncation and inflexible layout wrapping on mobile screens.
 
-### Atomic SDLC Action Plan
-- **Slice 1: Bridge Parameter & Return Object Contract (`js/shared.js`, `js/rebalance.js`)**
-  - In `js/shared.js` (`calculateForeignRepatriationTax`):
-    - Support both input parameter naming conventions (`pre2024Amount` / `pre2024AccumulatedAmount`, `principalAmount` / `principalCapitalAmount`, `foreignTaxPaid` / `foreignTaxPaidThb`, `otherDomesticNetIncome` / `otherTaxableNetIncome`).
-    - Add backward-compatible return properties (`effectiveTaxRate: effectiveTaxRatePct`, `totalExemptAmount`, `isResident`, `dtaForeignTaxCredit`, `netRetainedInThailand`).
-  - In `js/rebalance.js` (`updateForeignTaxUI`):
-    - Safe-guard numeric access: `((calc.effectiveTaxRate ?? calc.effectiveTaxRatePct) || 0).toFixed(1)`.
-    - Harmonize input mapping and fallback object to match shared contracts.
-    - Wrap auxiliary initializers (`initForeignTaxAdvisor()`, `initTargetDateGlidepath()`) in defensive `try/catch` blocks so a calculation quirk never impedes layout manager initialization.
+### Execution Summary & Resolution
+- **Slice 1: Core Layout CSS Engine Fix (`css/tailwind-lite.css`)**
+  - Added `.md\:col-span-12` strictly scoped inside `@media (min-width: 768px)`.
+  - Added `.col-span-12`, `.gap-2`, `.gap-3`, `.flex-wrap`, `.sm:grid-cols-3`, `.shadow-sm`, `.p-3.5`, `.p-5`, `.right-3`, `.top-2.5`, `.ml-auto`, `.bg-gray-900`, `.text-[11px]`, `.leading-relaxed`.
 - **Slice 2: Automated Verification & Smoke Regression Test (`tests/smoke.test.mjs`)**
-  - Add end-to-end DOM test simulating full `rebalance.js` execution in JSDOM, asserting:
-    1. Zero uncaught exceptions on load.
-    2. All 6 `.reorder-card` elements have `.card-reorder-controls` attached.
-    3. The 3 auxiliary panels (`#panelTargetDateGlidepath`, `#panelThaiGold`, `#panelForeignTaxAdvisor`) are collapsed with `.card-collapsed-hidden` on clean load.
-  - Run full test suite (`npm test`) and Biome linter.
-- **Slice 3: Live Chrome CDP Headless Inspection**
-  - Execute `diagnose_browser.mjs` against local HTTP server to verify live Chrome execution produces:
-    - 0 browser exceptions.
-    - `cardsWithControls: 6`.
-    - `cardsCollapsed: 3`.
-    - Fresh full-page screenshot confirming visual folding and reorder button rendering.
+  - Added automated test verifying `tailwind-lite.css` declares `.grid-cols-1`, `.col-span-12`, `.md:col-span-12`, `.md:grid-cols-12`.
+  - 329 tests pass (0 failures).
+  - Biome linter check: 0 errors.
+- **Slice 3: Live Chrome CDP Headless Inspection (Desktop + Mobile)**
+  - Desktop view (1280px): Card 1 (5 cols) & Card 2 (7 cols) side-by-side; Cards 3, 4, 5 span full container width (100%).
+  - Mobile view (390px): Clean vertical stack, full 100% card widths, zero horizontal overflow.
 - **Slice 4: Independent Security & Review Audit (`reviewer.md`)**
-  - Verify ADR-001 offline invariance, zero telemetry, no CDN.
+  - Verified ADR-001 offline invariance: 100% offline, zero CDN calls, zero telemetry.
 - **Slice 5: Release & Version Bump (`release.md`)**
-  - Bump patch version (`v2.5.7`), update `.ai/memory/lessons.md`, commit and push one-by-one to `origin/master`.
+  - Version bumped from `v2.5.7` to `v2.5.8`.
+  - Service worker cache updated to `money-superapp-v2.5.8`.
+  - Lessons documented in `.ai/memory/lessons.md`.
