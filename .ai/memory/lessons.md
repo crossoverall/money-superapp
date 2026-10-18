@@ -15,6 +15,17 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Atomic Commit-and-Push Workflow Policy
+- **Date & Context:** 2026-10-18, following delivery of Wave 4 Suite (v2.4.9 - v2.5.5).
+- **Problem:** Batching multiple feature phases locally before pushing can lead to divergence between local and remote states, delaying live deployment for users.
+- **Solution & Rule:** **Always commit and push one-by-one immediately.**
+  For every individual task, feature phase, or fix:
+  1. Complete implementation and verify all tests pass (`npm test`, 0 Biome errors).
+  2. Bump version if applicable (`node scripts/bump.mjs patch`).
+  3. `rtk git add . && rtk git commit -m "..."`.
+  4. Immediately push to upstream: `rtk git push origin master`.
+  Never leave finished commits stacked locally without pushing.
+
 ### 2026-10-18: Target Date Retirement Glidepath Planner & Comprehensive E2E Expansion (v2.4.7)
 
 - **Date & Context:** 2026-10-18, during implementation of Target Date Glidepath Model and comprehensive E2E test suite expansion across all 8 tools (`v2.4.7`).
