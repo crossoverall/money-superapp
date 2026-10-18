@@ -61,6 +61,20 @@ const translations = {
     storageUsageText: 'พื้นที่ที่ใช้งาน:',
     storageDetailsSummary: '📋 ดูรายละเอียดข้อมูลแต่ละส่วน (Key Inventory)',
     btnRepairStorage: '🛠️ ซ่อมแซมข้อมูลที่เสียหาย',
+    qrSyncTitle: '📲 ซิงค์ข้ามเครื่องออฟไลน์ (Offline QR P2P Sync)',
+    qrSyncDesc: 'ส่ง-รับข้อมูลข้ามเครื่องด้วย QR Code แบบเข้ารหัส ไม่ต้องต่อเน็ต',
+    btnOpenQrExport: '📲 ส่งออก QR',
+    btnOpenQrImport: '📷 สแกน QR',
+    qrExportModalTitle: 'ส่งออกข้อมูลผ่าน QR Code (Offline P2P)',
+    qrExportModalDesc: 'ข้อมูลถูกเข้ารหัส AES-GCM แล้วแปลงเป็น Animated QR Code ให้สแกนรับทีละชิ้น',
+    qrBtnPrev: '◀ ก่อนหน้า',
+    qrBtnNext: 'ถัดไป ▶',
+    qrBtnAutoPlay: '▶ เล่นวนอัตโนมัติ',
+    qrBtnPause: '⏸ พักการวน',
+    qrBtnCopyChunk: '📋 คัดลอกชิ้นส่วน',
+    qrImportModalTitle: 'สแกน / นำเข้า QR Code (Offline P2P)',
+    qrImportModalDesc: 'สแกน QR Code จากเครื่องต้นทาง หรือวางโค้ดชิ้นส่วนเพื่อประกอบข้อมูลและถอดรหัส',
+    qrBtnProcessChunk: '📥 บันทึกชิ้นส่วนนี้',
   },
   en: {
     skipLink: 'Skip to main content',
@@ -118,6 +132,20 @@ const translations = {
     storageUsageText: 'Storage used:',
     storageDetailsSummary: '📋 View Data Key Inventory',
     btnRepairStorage: '🛠️ Repair Corrupted Data',
+    qrSyncTitle: '📲 Offline QR P2P Sync',
+    qrSyncDesc: 'Transfer encrypted data between devices via QR codes completely offline.',
+    btnOpenQrExport: '📲 Export QR',
+    btnOpenQrImport: '📷 Scan QR',
+    qrExportModalTitle: 'Export Data via QR Code (Offline P2P)',
+    qrExportModalDesc: 'Data is AES-GCM encrypted and transformed into animated QR code slices.',
+    qrBtnPrev: '◀ Previous',
+    qrBtnNext: 'Next ▶',
+    qrBtnAutoPlay: '▶ Auto Play',
+    qrBtnPause: '⏸ Pause',
+    qrBtnCopyChunk: '📋 Copy Slice',
+    qrImportModalTitle: 'Scan / Import QR Code (Offline P2P)',
+    qrImportModalDesc: 'Scan QR codes from source device or paste slices manually to assemble and decrypt.',
+    qrBtnProcessChunk: '📥 Process Slice',
   },
 };
 
@@ -266,6 +294,41 @@ function applyLang(lang) {
   if (btnCmd) {
     btnCmd.title = lang === 'en' ? 'Command Palette & Omnisearch (Ctrl+K)' : 'ค้นหาด่วน & คำสั่งระบบ (Ctrl+K)';
   }
+
+  if (document.getElementById('lbl-qr-sync-title'))
+    document.getElementById('lbl-qr-sync-title').textContent = t.qrSyncTitle;
+  if (document.getElementById('lbl-qr-sync-desc'))
+    document.getElementById('lbl-qr-sync-desc').textContent = t.qrSyncDesc;
+  if (document.getElementById('lbl-btn-open-qr-export'))
+    document.getElementById('lbl-btn-open-qr-export').textContent = t.btnOpenQrExport;
+  if (document.getElementById('lbl-btn-open-qr-import'))
+    document.getElementById('lbl-btn-open-qr-import').textContent = t.btnOpenQrImport;
+  if (document.getElementById('lbl-qr-export-title'))
+    document.getElementById('lbl-qr-export-title').textContent = t.qrExportModalTitle;
+  if (document.getElementById('lbl-qr-export-desc'))
+    document.getElementById('lbl-qr-export-desc').textContent = t.qrExportModalDesc;
+  if (document.getElementById('lbl-qr-counter-text'))
+    document.getElementById('lbl-qr-counter-text').textContent = lang === 'en' ? 'Slice' : 'ชิ้นส่วน';
+  if (document.getElementById('lbl-qr-btn-prev'))
+    document.getElementById('lbl-qr-btn-prev').textContent = t.qrBtnPrev;
+  if (document.getElementById('lbl-qr-btn-autoplay'))
+    document.getElementById('lbl-qr-btn-autoplay').textContent = qrAutoPlayTimer ? t.qrBtnPause : t.qrBtnAutoPlay;
+  if (document.getElementById('lbl-qr-btn-next'))
+    document.getElementById('lbl-qr-btn-next').textContent = t.qrBtnNext;
+  if (document.getElementById('lbl-qr-btn-copy-chunk'))
+    document.getElementById('lbl-qr-btn-copy-chunk').textContent = t.qrBtnCopyChunk;
+  if (document.getElementById('lbl-qr-import-title'))
+    document.getElementById('lbl-qr-import-title').textContent = t.qrImportModalTitle;
+  if (document.getElementById('lbl-qr-import-desc'))
+    document.getElementById('lbl-qr-import-desc').textContent = t.qrImportModalDesc;
+  if (document.getElementById('lbl-qr-import-status'))
+    document.getElementById('lbl-qr-import-status').textContent =
+      lang === 'en' ? 'Data Reception Progress:' : 'ความคืบหน้าการรับข้อมูล:';
+  if (document.getElementById('lbl-qr-manual-summary'))
+    document.getElementById('lbl-qr-manual-summary').textContent =
+      lang === 'en' ? '⌨️ Paste Slices Manually (Fallback)' : '⌨️ วางโค้ดชิ้นส่วนด้วยตนเอง (Manual Fallback)';
+  if (document.getElementById('lbl-btn-process-qr-chunk'))
+    document.getElementById('lbl-btn-process-qr-chunk').textContent = t.qrBtnProcessChunk;
 
   updateGoogleUI();
 }
@@ -1039,6 +1102,366 @@ function handleImportFile(input) {
   reader.readAsText(file);
   input.value = '';
 }
+
+// --- Phase 69: Offline QR Code P2P Device Sync Subsystem ---
+let qrExportChunks = [];
+let qrExportIndex = 0;
+let qrAutoPlayTimer = null;
+let qrScanStream = null;
+let qrScanInterval = null;
+let qrImportedChunks = {};
+let qrImportExpectedTotal = 0;
+let qrImportSessionId = null;
+
+async function openQrExportModal() {
+  const isEn = getLang() === 'en';
+  const promptMsg = isEn
+    ? 'Enter a secure passphrase to encrypt your QR backup vault:'
+    : 'กรุณากำหนดรหัสผ่านเพื่อเข้ารหัสข้อมูลสำรอง QR Code:';
+  const passphrase = prompt(promptMsg);
+  if (!passphrase || passphrase.trim() === '') {
+    if (passphrase !== null) {
+      alert(isEn ? 'Passphrase cannot be empty.' : 'รหัสผ่านต้องไม่เว้นว่าง');
+    }
+    return;
+  }
+
+  const backup = {
+    version: '1.0.0',
+    appName: 'Money Superapp',
+    exportedAt: new Date().toISOString(),
+    data: {},
+  };
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (
+      key &&
+      (key.startsWith('moneySuperapp.') ||
+        key.startsWith('remainingMoneyCalculator.') ||
+        key.startsWith('rebalanceCalculator.'))
+    ) {
+      backup.data[key] = localStorage.getItem(key);
+    }
+  }
+
+  try {
+    const plainJson = JSON.stringify(backup);
+    const encryptFn = (typeof MoneyApp !== 'undefined' && MoneyApp.encryptVaultData) || window.encryptVaultData;
+    if (!encryptFn) throw new Error('Encryption module not loaded');
+    const encryptedVaultJson = await encryptFn(plainJson, passphrase);
+
+    const chunkFn = (typeof MoneyApp !== 'undefined' && MoneyApp.chunkPayload) || window.chunkPayload;
+    const transferId = 'tx_' + Math.random().toString(36).slice(2, 8);
+    qrExportChunks = chunkFn
+      ? chunkFn(encryptedVaultJson, 180, transferId)
+      : [{ c: 1, t: 1, d: encryptedVaultJson, id: transferId }];
+    qrExportIndex = 0;
+
+    renderQrExportFrame(0);
+
+    const modal = document.getElementById('qrExportModal');
+    if (modal) modal.style.display = 'flex';
+  } catch (err) {
+    alert((isEn ? 'Failed to prepare QR export: ' : 'เตรียมส่งออก QR ไม่สำเร็จ: ') + err.message);
+  }
+}
+
+function closeQrExportModal() {
+  if (qrAutoPlayTimer) {
+    clearInterval(qrAutoPlayTimer);
+    qrAutoPlayTimer = null;
+  }
+  const btnAuto = document.getElementById('btn-qr-autoplay');
+  const t = translations[getLang()] || translations.th;
+  if (btnAuto) {
+    btnAuto.innerHTML = `<span id="lbl-qr-btn-autoplay">${t.qrBtnAutoPlay}</span>`;
+  }
+  const modal = document.getElementById('qrExportModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function renderQrExportFrame(idx) {
+  if (!qrExportChunks || qrExportChunks.length === 0) return;
+  let targetIdx = idx;
+  if (targetIdx < 0) targetIdx = 0;
+  if (targetIdx >= qrExportChunks.length) targetIdx = qrExportChunks.length - 1;
+  qrExportIndex = targetIdx;
+
+  const chunk = qrExportChunks[targetIdx];
+  const chunkJson = JSON.stringify(chunk);
+  const genSvgFn = (typeof MoneyApp !== 'undefined' && MoneyApp.generateQrSvg) || window.generateQrSvg;
+  const container = document.getElementById('qrExportSvgContainer');
+  if (container && genSvgFn) {
+    container.innerHTML = genSvgFn(chunkJson, { size: 240, margin: 2 });
+  }
+
+  const counterEl = document.getElementById('qrExportCounter');
+  if (counterEl) {
+    counterEl.textContent = `${targetIdx + 1} / ${qrExportChunks.length}`;
+  }
+  const fillEl = document.getElementById('qrExportProgressFill');
+  if (fillEl) {
+    fillEl.style.width = `${((targetIdx + 1) / qrExportChunks.length) * 100}%`;
+  }
+}
+
+function nextQrExportFrame() {
+  if (!qrExportChunks.length) return;
+  const nextIdx = (qrExportIndex + 1) % qrExportChunks.length;
+  renderQrExportFrame(nextIdx);
+}
+
+function prevQrExportFrame() {
+  if (!qrExportChunks.length) return;
+  const prevIdx = (qrExportIndex - 1 + qrExportChunks.length) % qrExportChunks.length;
+  renderQrExportFrame(prevIdx);
+}
+
+function toggleQrExportAutoPlay() {
+  const btnAuto = document.getElementById('btn-qr-autoplay');
+  const t = translations[getLang()] || translations.th;
+  if (qrAutoPlayTimer) {
+    clearInterval(qrAutoPlayTimer);
+    qrAutoPlayTimer = null;
+    if (btnAuto) btnAuto.innerHTML = `<span id="lbl-qr-btn-autoplay">${t.qrBtnAutoPlay}</span>`;
+  } else {
+    qrAutoPlayTimer = setInterval(() => {
+      nextQrExportFrame();
+    }, 1600);
+    if (btnAuto) btnAuto.innerHTML = `<span id="lbl-qr-btn-autoplay">${t.qrBtnPause}</span>`;
+  }
+}
+
+function copyQrCurrentChunk() {
+  if (!qrExportChunks || !qrExportChunks[qrExportIndex]) return;
+  const chunkJson = JSON.stringify(qrExportChunks[qrExportIndex]);
+  if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(chunkJson).then(() => {
+      const isEn = getLang() === 'en';
+      alert(isEn ? 'Copied QR slice JSON to clipboard!' : 'คัดลอกโค้ดชิ้นส่วนลง Clipboard แล้ว!');
+    });
+  }
+}
+
+async function openQrImportModal() {
+  qrImportedChunks = {};
+  qrImportExpectedTotal = 0;
+  qrImportSessionId = null;
+  updateQrImportUI();
+
+  const modal = document.getElementById('qrImportModal');
+  if (modal) modal.style.display = 'flex';
+
+  const video = document.getElementById('qrScanVideo');
+  const fallback = document.getElementById('qrCameraFallbackNotice');
+
+  if (
+    typeof navigator !== 'undefined' &&
+    navigator.mediaDevices &&
+    typeof navigator.mediaDevices.getUserMedia === 'function' &&
+    typeof window.BarcodeDetector !== 'undefined'
+  ) {
+    try {
+      if (fallback) fallback.style.display = 'none';
+      if (video) video.style.display = 'block';
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+      });
+      qrScanStream = stream;
+      if (video) {
+        video.srcObject = stream;
+        await video.play();
+      }
+      startBarcodeScannerLoop(video);
+    } catch (_err) {
+      if (fallback) fallback.style.display = 'block';
+      if (video) video.style.display = 'none';
+    }
+  } else {
+    if (fallback) fallback.style.display = 'block';
+    if (video) video.style.display = 'none';
+  }
+}
+
+function closeQrImportModal() {
+  if (qrScanInterval) {
+    clearInterval(qrScanInterval);
+    qrScanInterval = null;
+  }
+  if (qrScanStream) {
+    qrScanStream.getTracks().forEach((track) => {
+      track.stop();
+    });
+    qrScanStream = null;
+  }
+  const modal = document.getElementById('qrImportModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function startBarcodeScannerLoop(video) {
+  if (typeof window.BarcodeDetector === 'undefined') return;
+  const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+  qrScanInterval = setInterval(async () => {
+    if (!video || video.readyState < 2) return;
+    try {
+      const barcodes = await detector.detect(video);
+      if (barcodes && barcodes.length > 0) {
+        for (const code of barcodes) {
+          if (code.rawValue) {
+            handleScannedChunkString(code.rawValue);
+          }
+        }
+      }
+    } catch (_e) {}
+  }, 300);
+}
+
+function handleScannedChunkString(rawStr) {
+  try {
+    const chunk = typeof rawStr === 'string' ? JSON.parse(rawStr) : rawStr;
+    if (!chunk || typeof chunk !== 'object' || !chunk.c || !chunk.t || !chunk.d) {
+      return false;
+    }
+
+    if (chunk.id) {
+      if (qrImportSessionId && qrImportSessionId !== chunk.id) {
+        qrImportedChunks = {};
+      }
+      qrImportSessionId = chunk.id;
+    }
+
+    qrImportExpectedTotal = chunk.t;
+    qrImportedChunks[chunk.c] = chunk;
+    updateQrImportUI();
+
+    const assembleFn = (typeof MoneyApp !== 'undefined' && MoneyApp.assembleChunks) || window.assembleChunks;
+    const chunkList = Object.values(qrImportedChunks);
+    const res = assembleFn
+      ? assembleFn(chunkList)
+      : { complete: chunkList.length === chunk.t, payload: chunkList.map((c) => c.d).join('') };
+
+    if (res.complete && res.payload) {
+      finalizeQrImport(res.payload);
+      return true;
+    }
+    return true;
+  } catch (_e) {
+    return false;
+  }
+}
+
+function updateQrImportUI() {
+  const isEn = getLang() === 'en';
+  const progressText = document.getElementById('qrImportProgressText');
+  const progressBar = document.getElementById('qrImportProgressBar');
+  const notice = document.getElementById('qrImportMissingNotice');
+
+  const receivedCount = Object.keys(qrImportedChunks).length;
+  const total = qrImportExpectedTotal || 0;
+
+  if (progressText) {
+    progressText.textContent = `${receivedCount} / ${total} ${isEn ? 'slices' : 'ชิ้นส่วน'}`;
+  }
+  if (progressBar) {
+    const pct = total > 0 ? (receivedCount / total) * 100 : 0;
+    progressBar.style.width = `${pct}%`;
+  }
+  if (notice) {
+    if (total === 0) {
+      notice.textContent = isEn ? 'Waiting for first QR slice...' : 'รอสแกนชิ้นส่วนแรก...';
+    } else if (receivedCount < total) {
+      const missing = [];
+      for (let i = 1; i <= total; i++) {
+        if (!qrImportedChunks[i]) missing.push(i);
+      }
+      notice.textContent = isEn
+        ? `Missing slices: [${missing.join(', ')}]`
+        : `ชิ้นส่วนที่ยังขาด: [${missing.join(', ')}]`;
+    } else {
+      notice.textContent = isEn
+        ? '✓ All slices received! Decrypting...'
+        : '✓ ได้รับชิ้นส่วนครบถ้วน! กำลังเตรียมถอดรหัส...';
+    }
+  }
+}
+
+function processManualQrChunk() {
+  const input = document.getElementById('qrManualChunkInput');
+  if (!input) return;
+  const str = input.value.trim();
+  const isEn = getLang() === 'en';
+  if (!str) {
+    alert(isEn ? 'Please paste chunk JSON string.' : 'กรุณาวางโค้ด JSON ชิ้นส่วน');
+    return;
+  }
+  const ok = handleScannedChunkString(str);
+  if (ok) {
+    input.value = '';
+    alert(isEn ? '✓ Chunk recorded!' : '✓ บันทึกชิ้นส่วนเรียบร้อย!');
+  } else {
+    alert(isEn ? 'Invalid chunk JSON format.' : 'รูปแบบโค้ด JSON ชิ้นส่วนไม่ถูกต้อง');
+  }
+}
+
+async function finalizeQrImport(payloadCiphertext) {
+  closeQrImportModal();
+  const isEn = getLang() === 'en';
+  const passPrompt = isEn
+    ? 'All slices received! Enter passphrase to decrypt:'
+    : 'ได้รับข้อมูลครบทุกชิ้นแล้ว! กรุณากรอกรหัสผ่านเพื่อถอดรหัส:';
+  const passphrase = prompt(passPrompt);
+  if (!passphrase) {
+    alert(isEn ? 'Import cancelled: Passphrase required.' : 'ยกเลิกการนำเข้า: จำเป็นต้องระบุรหัสผ่าน');
+    return;
+  }
+
+  try {
+    const decryptFn = (typeof MoneyApp !== 'undefined' && MoneyApp.decryptVaultData) || window.decryptVaultData;
+    if (!decryptFn) throw new Error('Decryption module not loaded');
+    const plainJson = await decryptFn(payloadCiphertext, passphrase);
+    const backup = JSON.parse(plainJson);
+
+    if (!backup || typeof backup !== 'object' || !backup.data) {
+      throw new Error('Invalid restored backup structure');
+    }
+
+    const allowedPrefixes = ['moneySuperapp.', 'remainingMoneyCalculator.', 'rebalanceCalculator.'];
+    let restoredKeys = 0;
+    Object.keys(backup.data).forEach((key) => {
+      if (allowedPrefixes.some((p) => key.startsWith(p)) && typeof backup.data[key] === 'string') {
+        localStorage.setItem(key, backup.data[key]);
+        restoredKeys++;
+      }
+    });
+
+    alert(
+      isEn
+        ? `✓ Restored ${restoredKeys} items via Offline QR Sync successfully!`
+        : `✓ กู้คืนข้อมูลสำเร็จ (${restoredKeys} รายการ) ผ่าน Offline QR Sync เรียบร้อยแล้ว!`,
+    );
+    reloadFrame();
+    closeSettingsModal();
+  } catch (err) {
+    alert(
+      isEn
+        ? '❌ Decryption failed: Incorrect passphrase or corrupted QR data (' + err.message + ')'
+        : '❌ ถอดรหัสไม่สำเร็จ: รหัสผ่านไม่ถูกต้อง หรือข้อมูล QR เสียหาย (' + err.message + ')',
+    );
+  }
+}
+
+window.openQrExportModal = openQrExportModal;
+window.closeQrExportModal = closeQrExportModal;
+window.renderQrExportFrame = renderQrExportFrame;
+window.nextQrExportFrame = nextQrExportFrame;
+window.prevQrExportFrame = prevQrExportFrame;
+window.toggleQrExportAutoPlay = toggleQrExportAutoPlay;
+window.copyQrCurrentChunk = copyQrCurrentChunk;
+window.openQrImportModal = openQrImportModal;
+window.closeQrImportModal = closeQrImportModal;
+window.processManualQrChunk = processManualQrChunk;
+window.handleScannedChunkString = handleScannedChunkString;
+
 
 function resetAllData() {
   const msg =

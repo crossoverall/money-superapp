@@ -442,6 +442,23 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'MoneyApp must export detectAndParseThaiBankStatement',
       );
     });
+
+    it('verifies index.html declares Phase 69 Encrypted Offline QR Code P2P Sync modals and controls', () => {
+      const indexContent = fs.readFileSync(path.join(ROOT_DIR, 'index.html'), 'utf8');
+      assert.ok(indexContent.includes('id="btn-open-qr-export"'), 'index.html must define #btn-open-qr-export');
+      assert.ok(indexContent.includes('id="btn-open-qr-import"'), 'index.html must define #btn-open-qr-import');
+      assert.ok(indexContent.includes('id="qrExportModal"'), 'index.html must define #qrExportModal');
+      assert.ok(indexContent.includes('id="qrImportModal"'), 'index.html must define #qrImportModal');
+      assert.ok(indexContent.includes('id="qrExportSvgContainer"'), 'index.html must define #qrExportSvgContainer');
+      assert.ok(indexContent.includes('id="qrScanVideo"'), 'index.html must define #qrScanVideo');
+      assert.ok(indexContent.includes('id="qrManualChunkInput"'), 'index.html must define #qrManualChunkInput');
+      assert.ok(indexContent.includes('id="btn-process-qr-chunk"'), 'index.html must define #btn-process-qr-chunk');
+
+      const sharedContent = fs.readFileSync(path.join(ROOT_DIR, 'js/shared.js'), 'utf8');
+      assert.ok(sharedContent.includes('generateQrSvg: renderQrSvg'), 'MoneyApp must export generateQrSvg');
+      assert.ok(sharedContent.includes('chunkPayload: chunkPayload'), 'MoneyApp must export chunkPayload');
+      assert.ok(sharedContent.includes('assembleChunks: assembleChunks'), 'MoneyApp must export assembleChunks');
+    });
   });
 
   describe('Bilingual Localization Structural Symmetry', () => {

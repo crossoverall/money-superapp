@@ -837,4 +837,75 @@ describe('MoneyApp Shared Core Module', () => {
       assert.equal(res.yearlyProjections.length, 4);
     });
   });
+
+  describe('MoneyApp QR Sync & Chunking Engine (Phase 69 Encrypted Offline QR Sync)', () => {
+    const { MoneyApp } = createEnvironment();
+
+    it('generates valid SVG QR code string with crispEdges and proper viewBox', () => {
+      const svg = MoneyApp.generateQrSvg('https://crossoverall.github.io/money-superapp/', {
+        size: 200,
+        margin: 2,
+      });
+
+      assert.ok(typeof svg === 'string');
+      assert.ok(svg.startsWith('<svg xmlns="http://www.w3.org/2000/svg"'));
+      assert.ok(svg.includes('viewBox="0 0 '));
+      assert.ok(svg.includes('width="200"'));
+      assert.ok(svg.includes('height="200"'));
+      assert.ok(svg.includes('<rect width="100%" height="100%" fill="#ffffff"/>'));
+      assert.ok(svg.includes('<g fill="#000000">'));
+      assert.ok(svg.includes('</svg>'));
+    });
+
+    it('splits large payloads into structured sequential chunks', () => {
+      const payload = 'TEST_VAULT_PAYLOAD_'.repeat(20); // 380 chars
+      const chunks = MoneyApp.chunkPayload(payload, 100, 'test_transfer_123');
+
+      assert.equal(chunks.length, 4);
+      assert.equal(chunks[0].c, 1);
+      assert.equal(chunks[0].t, 4);
+      assert.equal(chunks[0].id, 'test_transfer_123');
+      assert.equal(chunks[3].c, 4);
+    });
+
+    it('reassembles complete chunk set back into original payload', () => {
+      const payload = 'ENCRYPTED_VAULT_CIPHERTEXT_1234567890'.repeat(15);
+      const chunks = MoneyApp.chunkPayload(payload, 150, 'session_abc');
+
+      // Shuffle chunks to simulate random scanning order
+      const shuffled = chunks.slice().reverse();
+      const res = MoneyApp.assembleChunks(shuffled);
+
+      assert.equal(res.complete, true);
+      assert.equal(res.received, chunks.length);
+      assert.equal(res.total, chunks.length);
+      assert.deepEqual(res.missing, []);
+      assert.equal(res.payload, payload);
+    });
+
+    it('detects incomplete chunk sets and reports missing chunk indexes', () => {
+      const chunks = [
+        { c: 1, t: 3, d: 'part1', id: 'session_xyz' },
+        { c: 3, t: 3, d: 'part3', id: 'session_xyz' },
+      ];
+
+      const res = MoneyApp.assembleChunks(chunks);
+      assert.equal(res.complete, false);
+      assert.equal(res.received, 2);
+      assert.equal(res.total, 3);
+      assert.deepEqual(res.missing, [2]);
+      assert.equal(res.payload, null);
+    });
+
+    it('gracefully handles empty or invalid inputs', () => {
+      const emptySvg = MoneyApp.generateQrSvg('');
+      assert.ok(emptySvg.includes('<svg'));
+
+      const emptyChunks = MoneyApp.chunkPayload('', 100);
+      assert.equal(emptyChunks.length, 1);
+
+      const invalidAssemble = MoneyApp.assembleChunks([]);
+      assert.equal(invalidAssemble.complete, false);
+    });
+  });
 });

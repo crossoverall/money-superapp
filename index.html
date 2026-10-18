@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="2.5.3">
+<meta name="version" content="2.5.4">
 <meta name="theme-color" content="#2F8B76">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -311,7 +311,7 @@
       <span>🔍</span>
       <span style="font-size:10px; opacity:0.75; background:#1e293b; padding:1px 4px; border-radius:4px; border:1px solid #475569;">Ctrl+K</span>
     </button>
-    <span class="version-badge">v2.5.3</span>
+    <span class="version-badge">v2.5.4</span>
     <button id="btn-help-modal" onclick="openOnboardingModal()" title="คู่มือการใช้งาน (Quick Tour)" aria-label="Open Quick Tour and Guide">
       <span class="help-icon">❓</span>
     </button>
@@ -343,7 +343,7 @@
 <!-- Privacy Footer Notice -->
 <div class="privacy-bar">
   <span id="lbl-privacy-footer">🔒 100% Client-Side Privacy — ทุกการคำนวณและข้อมูลถูกเก็บไว้ในอุปกรณ์ของคุณเท่านั้น ไม่มีการส่งข้อมูลสู่เซิร์ฟเวอร์</span>
-  <span style="color: #64748b; font-size: 10px;">Money Superapp v2.5.3</span>
+  <span style="color: #64748b; font-size: 10px;">Money Superapp v2.5.4</span>
 </div>
 
 <!-- Mobile Bottom Navigation Bar (Visible on Mobile <= 768px) -->
@@ -485,6 +485,22 @@
           <input type="file" id="backupFileInput" accept=".json,.vault" style="display: none;" onchange="handleImportFile(this)">
           <button onclick="document.getElementById('backupFileInput').click()" id="btn-import-backup" style="background: #2563eb; color: #fff; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
             <span id="lbl-btn-import">📥 นำเข้า</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Phase 69: Offline QR Code P2P Device Sync -->
+      <div style="display: flex; justify-content: space-between; align-items: center; background: #0E1512; padding: 12px 14px; border-radius: 10px; border: 1px solid #24352C;">
+        <div>
+          <div style="font-weight: 600; font-size: 13px;" id="lbl-qr-sync-title">📲 ซิงค์ข้ามเครื่องออฟไลน์ (Offline QR P2P Sync)</div>
+          <div style="font-size: 11px; color: #8FA69C;" id="lbl-qr-sync-desc">ส่ง-รับข้อมูลข้ามเครื่องด้วย QR Code แบบเข้ารหัส ไม่ต้องต่อเน็ต</div>
+        </div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end;">
+          <button onclick="openQrExportModal()" id="btn-open-qr-export" style="background: #0284c7; color: #fff; border: none; padding: 7px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
+            <span id="lbl-btn-open-qr-export">📲 ส่งออก QR</span>
+          </button>
+          <button onclick="openQrImportModal()" id="btn-open-qr-import" style="background: #7c3aed; color: #fff; border: none; padding: 7px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
+            <span id="lbl-btn-open-qr-import">📷 สแกน QR</span>
           </button>
         </div>
       </div>
@@ -665,6 +681,110 @@
       <span>↑↓ to navigate • ↵ to select • ESC to close</span>
       <span style="font-size:10px; color:#64748b;">Money Superapp Omnisearch</span>
     </div>
+  </div>
+</div>
+
+<!-- Phase 69: QR Code Export Modal (Animated P2P Slices) -->
+<div id="qrExportModal" role="dialog" aria-modal="true" aria-labelledby="lbl-qr-export-title" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); z-index: 10000; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(3px);" onclick="if(event.target===this)closeQrExportModal()">
+  <div style="background: #131E19; color: #EAF2EE; border: 1px solid #24352C; border-radius: 16px; max-width: 440px; width: 100%; padding: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); text-align: center;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #24352C; padding-bottom: 10px;">
+      <h3 style="margin: 0; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 6px; text-align: left;">
+        <span>📲</span>
+        <span id="lbl-qr-export-title">ส่งออกข้อมูลผ่าน QR Code (Offline P2P)</span>
+      </h3>
+      <button onclick="closeQrExportModal()" style="background: none; border: none; color: #8FA69C; font-size: 20px; cursor: pointer; padding: 0 4px;" aria-label="Close">&times;</button>
+    </div>
+
+    <p style="font-size: 11.5px; color: #8FA69C; margin: 0 0 12px; line-height: 1.4; text-align: left;" id="lbl-qr-export-desc">
+      ข้อมูลถูกเข้ารหัส AES-GCM แล้วแปลงเป็น Animated QR Code ให้สแกนรับทีละชิ้น
+    </p>
+
+    <!-- QR Code SVG Container -->
+    <div style="background: #ffffff; padding: 14px; border-radius: 12px; display: inline-flex; justify-content: center; align-items: center; margin: 0 auto 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);">
+      <div id="qrExportSvgContainer" style="width: 240px; height: 240px; display: flex; align-items: center; justify-content: center;">
+        <!-- Injected dynamically -->
+      </div>
+    </div>
+
+    <!-- Progress & Counter -->
+    <div style="margin-bottom: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 600; color: #4FA894; margin-bottom: 4px;">
+        <span id="lbl-qr-counter-text">ชิ้นส่วน</span>
+        <span id="qrExportCounter" style="font-family: monospace;">1 / 1</span>
+      </div>
+      <div style="width: 100%; height: 6px; background: #0E1512; border-radius: 3px; overflow: hidden; border: 1px solid #24352C;">
+        <div id="qrExportProgressFill" style="width: 100%; height: 100%; background: #0284c7; transition: width 0.2s ease;"></div>
+      </div>
+    </div>
+
+    <!-- Frame Controls -->
+    <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
+      <button onclick="prevQrExportFrame()" id="btn-qr-prev" style="background: #1e293b; color: #e2e8f0; border: 1px solid #334155; padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
+        <span id="lbl-qr-btn-prev">◀ ก่อนหน้า</span>
+      </button>
+      <button onclick="toggleQrExportAutoPlay()" id="btn-qr-autoplay" style="background: #0284c7; color: #ffffff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
+        <span id="lbl-qr-btn-autoplay">▶ เล่นวนอัตโนมัติ</span>
+      </button>
+      <button onclick="nextQrExportFrame()" id="btn-qr-next" style="background: #1e293b; color: #e2e8f0; border: 1px solid #334155; padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
+        <span id="lbl-qr-btn-next">ถัดไป ▶</span>
+      </button>
+      <button onclick="copyQrCurrentChunk()" id="btn-qr-copy-chunk" style="background: rgba(255,255,255,0.06); color: #8FA69C; border: 1px solid #24352C; padding: 6px 10px; border-radius: 6px; font-size: 11px; cursor: pointer;">
+        <span id="lbl-qr-btn-copy-chunk">📋 คัดลอกชิ้นส่วน</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Phase 69: QR Code Import Modal (Camera Scanner & Manual Chunk Input) -->
+<div id="qrImportModal" role="dialog" aria-modal="true" aria-labelledby="lbl-qr-import-title" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); z-index: 10000; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(3px);" onclick="if(event.target===this)closeQrImportModal()">
+  <div style="background: #131E19; color: #EAF2EE; border: 1px solid #24352C; border-radius: 16px; max-width: 480px; width: 100%; padding: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #24352C; padding-bottom: 10px;">
+      <h3 style="margin: 0; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+        <span>📷</span>
+        <span id="lbl-qr-import-title">สแกน / นำเข้า QR Code (Offline P2P)</span>
+      </h3>
+      <button onclick="closeQrImportModal()" style="background: none; border: none; color: #8FA69C; font-size: 20px; cursor: pointer; padding: 0 4px;" aria-label="Close">&times;</button>
+    </div>
+
+    <p style="font-size: 11.5px; color: #8FA69C; margin: 0 0 12px; line-height: 1.4;" id="lbl-qr-import-desc">
+      สแกน QR Code จากเครื่องต้นทาง หรือวางโค้ดชิ้นส่วนเพื่อประกอบข้อมูลและถอดรหัส
+    </p>
+
+    <!-- Camera Video Viewport (if supported) -->
+    <div id="qrCameraContainer" style="position: relative; width: 100%; height: 210px; background: #000000; border-radius: 10px; overflow: hidden; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid #24352C;">
+      <video id="qrScanVideo" playsinline autoplay muted style="width: 100%; height: 100%; object-fit: cover;"></video>
+      <div id="qrCameraOverlay" style="position: absolute; border: 2px dashed #4FA894; width: 150px; height: 150px; border-radius: 12px; pointer-events: none; box-shadow: 0 0 0 9999px rgba(0,0,0,0.35);"></div>
+      <div id="qrCameraFallbackNotice" style="display: none; padding: 14px; text-align: center; color: #94a3b8; font-size: 11.5px;">
+        📷 กล้องไม่พร้อมใช้งาน หรือเบราว์เซอร์ไม่รองรับ BarcodeDetector คุณสามารถวางโค้ด JSON ชิ้นส่วนด้านล่างเพื่อนำเข้าได้
+      </div>
+    </div>
+
+    <!-- Chunk Ingestion Progress Tracker -->
+    <div style="background: #0E1512; border: 1px solid #24352C; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; margin-bottom: 4px;">
+        <span style="font-weight: 600; color: #EAF2EE;" id="lbl-qr-import-status">ความคืบหน้าการรับข้อมูล:</span>
+        <span id="qrImportProgressText" style="font-weight: 700; color: #4FA894; font-family: monospace;">0 / 0 ชิ้นส่วน</span>
+      </div>
+      <div style="width: 100%; height: 6px; background: #131E19; border-radius: 3px; overflow: hidden; border: 1px solid #24352C;">
+        <div id="qrImportProgressBar" style="width: 0%; height: 100%; background: #7c3aed; transition: width 0.2s ease;"></div>
+      </div>
+      <div id="qrImportMissingNotice" style="font-size: 10.5px; color: #8FA69C; margin-top: 4px;">
+        รอสแกนชิ้นส่วนแรก...
+      </div>
+    </div>
+
+    <!-- Manual Chunk Paste Area -->
+    <details style="font-size: 11.5px; color: #8FA69C;">
+      <summary style="cursor: pointer; user-select: none; color: #4FA894; font-weight: 600;" id="lbl-qr-manual-summary">⌨️ วางโค้ดชิ้นส่วนด้วยตนเอง (Manual Fallback)</summary>
+      <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 8px;">
+        <textarea id="qrManualChunkInput" rows="3" placeholder="วางข้อมูลชิ้นส่วน JSON ที่นี่ (เช่น {&quot;c&quot;:1,&quot;t&quot;:3,&quot;d&quot;:&quot;...&quot;})" style="width: 100%; background: #0E1512; border: 1px solid #24352C; color: #EAF2EE; border-radius: 6px; padding: 8px; font-family: monospace; font-size: 11px; resize: vertical; box-sizing: border-box;"></textarea>
+        <div style="display: flex; justify-content: flex-end; gap: 6px;">
+          <button onclick="processManualQrChunk()" id="btn-process-qr-chunk" style="background: #7c3aed; color: #ffffff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
+            <span id="lbl-btn-process-qr-chunk">📥 บันทึกชิ้นส่วนนี้</span>
+          </button>
+        </div>
+      </div>
+    </details>
   </div>
 </div>
 
