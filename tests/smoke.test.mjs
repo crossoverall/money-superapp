@@ -1043,6 +1043,12 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         );
       }
     });
+
+    it('verifies js/shared.js exports Phase 94 safeHTML and rawHTML tagged template utilities', () => {
+      const sharedContent = fs.readFileSync(path.join(ROOT_DIR, 'js/shared.js'), 'utf8');
+      assert.ok(sharedContent.includes('safeHTML: safeHTML'), 'shared.js must export safeHTML');
+      assert.ok(sharedContent.includes('rawHTML: rawHTML'), 'shared.js must export rawHTML');
+    });
   });
 
   describe('Bilingual Localization Structural Symmetry', () => {

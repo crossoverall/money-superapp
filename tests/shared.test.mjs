@@ -1665,4 +1665,27 @@ describe('MoneyApp Shared Core Module', () => {
       assert.equal(resNull.coverageGap, 0);
     });
   });
+
+  describe('MoneyApp.safeHTML & MoneyApp.rawHTML (Phase 94)', () => {
+    const { MoneyApp } = createEnvironment();
+
+    it('exports safeHTML and rawHTML on MoneyApp', () => {
+      assert.equal(typeof MoneyApp.safeHTML, 'function');
+      assert.equal(typeof MoneyApp.rawHTML, 'function');
+      assert.equal(typeof MoneyApp.safeHTML.raw, 'function');
+    });
+
+    it('sanitizes unsafe strings while keeping template structure intact', () => {
+      const malicious = '<script>evil()</script>';
+      const output = MoneyApp.safeHTML`<div class="banner">${malicious}</div>`;
+      assert.equal(output, '<div class="banner">&lt;script&gt;evil()&lt;/script&gt;</div>');
+    });
+
+    it('supports rawHTML bypass for trusted markup', () => {
+      const icon = MoneyApp.rawHTML('<svg viewBox="0 0 10 10"></svg>');
+      const label = '<b>Important</b>';
+      const output = MoneyApp.safeHTML`<button>${icon} ${label}</button>`;
+      assert.equal(output, '<button><svg viewBox="0 0 10 10"></svg> &lt;b&gt;Important&lt;/b&gt;</button>');
+    });
+  });
 });

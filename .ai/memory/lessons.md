@@ -15,6 +15,17 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: safeHTML Tagged Template Sanitizer & Attribute Hardening (v2.5.37)
+- **Date & Context:** 2026-10-18, Phase 94 safeHTML & XSS Hardening (`v2.5.37`).
+- **Problem:**
+  1. Relying on manual calls to `escapeHtml()` when generating dynamic `.innerHTML` templates is error-prone; missing a single interpolation can introduce an XSS vulnerability.
+  2. `escapeAttr()` previously only escaped double-quotes (`"`), leaving attributes vulnerable if single-quoted or unquoted.
+- **Root Cause:** Absence of a declarative tagged template sanitizer that automatically sanitizes dynamic string variables while leaving static template markup intact.
+- **Solution & Rule:**
+  1. **Native safeHTML Tagged Template Literal (`js/shared.js`):** Implemented `MoneyApp.safeHTML(strings, ...values)` which automatically sanitizes string interpolations with `escapeHtml()`, preserves numbers/booleans without conversion corruption, flattens arrays, and only permits bypass when values are explicitly wrapped in `MoneyApp.rawHTML(markup)`.
+  2. **Comprehensive Attribute Sanitization (`escapeAttr`):** Hardened `escapeAttr()` to sanitize `&`, `"`, `'`, `<`, and `>` across all attribute contexts.
+  3. **Verified Quality Gates:** 100% test pass (443 tests across 109 suites) and 0 Biome warnings.
+
 ### 2026-10-18: Content Security Policy (CSP) & Automated Security Regression Suite (v2.5.36)
 - **Date & Context:** 2026-10-18, Phase 93 Security Hardening & CSP (`v2.5.36`).
 - **Problem:**

@@ -1,5 +1,5 @@
 ---
-task_id: "SDLC-PHASE-93-SECURITY-HARDENING-CSP"
+task_id: "SDLC-PHASE-94-SAFE-HTML-SANITIZATION"
 status: "completed"
 current_stage: "release"
 complexity: "level_2"
@@ -7,10 +7,11 @@ iteration_count: 0
 pipeline: ["orchestrator", "planner", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Completed SDLC Task (Phase 93 - Security Hardening & CSP Enforcement)
+### Completed SDLC Task (Phase 94 - safeHTML Tagged Template Sanitizer & Attribute Hardening)
 - **Delivered**:
-  - Declarative Content Security Policy (`<meta http-equiv="Content-Security-Policy">`) across all 8 core HTML files.
-  - Dedicated automated continuous security regression test suite `tests/security.test.mjs` (15 tests passing, 0 fail).
-  - Regression smoke assertion in `tests/smoke.test.mjs`.
-  - Architecture documentation in `.ai/context/architecture.md` (Section 5).
-  - Released and bumped to `v2.5.36`.
+  - Implemented `MoneyApp.safeHTML(strings, ...values)` tagged template literal in `js/shared.js`.
+  - Added `MoneyApp.rawHTML(markup)` explicit safe wrapper for trusted sub-templates and SVG icons.
+  - Hardened `MoneyApp.escapeAttr` to sanitize all 5 attribute injection characters (`&`, `"`, `'`, `<`, `>`).
+  - Added unit test suites in `tests/security.test.mjs` (20 tests) and `tests/shared.test.mjs` (100 tests).
+  - Added regression smoke invariant in `tests/smoke.test.mjs` (62 tests).
+  - Released and bumped to `v2.5.37`.

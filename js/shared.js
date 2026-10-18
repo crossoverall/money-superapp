@@ -107,8 +107,49 @@
 
   function escapeAttr(str) {
     if (str == null) return '';
-    return String(str).replace(/"/g, '&quot;');
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
   }
+
+  function rawHTML(str) {
+    return { __isSafeHTML: true, value: String(str == null ? '' : str) };
+  }
+
+  function safeHTML(strings, ...values) {
+    let result = '';
+    const len = strings.length;
+    for (let i = 0; i < len; i++) {
+      result += strings[i];
+      if (i < values.length) {
+        const val = values[i];
+        if (val === null || val === undefined) {
+          continue;
+        }
+        if (typeof val === 'number' || typeof val === 'boolean') {
+          result += String(val);
+        } else if (val && val.__isSafeHTML === true) {
+          result += val.value;
+        } else if (Array.isArray(val)) {
+          result += val
+            .map((item) => {
+              if (item === null || item === undefined) return '';
+              if (typeof item === 'number' || typeof item === 'boolean') return String(item);
+              if (item && item.__isSafeHTML === true) return item.value;
+              return escapeHtml(String(item));
+            })
+            .join('');
+        } else {
+          result += escapeHtml(String(val));
+        }
+      }
+    }
+    return result;
+  }
+  safeHTML.raw = rawHTML;
 
   function initShortcutForwarding() {
     if (typeof window !== 'undefined' && window.addEventListener) {
@@ -1698,6 +1739,8 @@
     parseNum: parseNum,
     escapeHtml: escapeHtml,
     escapeAttr: escapeAttr,
+    safeHTML: safeHTML,
+    rawHTML: rawHTML,
     formatBytes: formatBytes,
     initTheme: initTheme,
     initShortcutForwarding: initShortcutForwarding,
@@ -1759,6 +1802,8 @@
     if (typeof global.parseNum === 'undefined') global.parseNum = parseNum;
     if (typeof global.escapeHtml === 'undefined') global.escapeHtml = escapeHtml;
     if (typeof global.escapeAttr === 'undefined') global.escapeAttr = escapeAttr;
+    if (typeof global.safeHTML === 'undefined') global.safeHTML = safeHTML;
+    if (typeof global.rawHTML === 'undefined') global.rawHTML = rawHTML;
     if (typeof global.safeJsonParse === 'undefined') global.safeJsonParse = safeJsonParse;
     if (typeof global.createUndoManager === 'undefined') global.createUndoManager = createUndoManager;
     if (typeof global.detectSwipeGesture === 'undefined') global.detectSwipeGesture = detectSwipeGesture;

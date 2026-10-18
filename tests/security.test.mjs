@@ -185,5 +185,44 @@ describe('Automated Security Smoke & Content Security Policy (CSP) Suite (Phase 
       assert.equal(MoneyApp.escapeHtml(12345), '12345');
       assert.equal(MoneyApp.escapeHtml(0), '0');
     });
+
+    it('verifies escapeAttr sanitizes all attribute injection characters', () => {
+      assert.equal(MoneyApp.escapeAttr(null), '');
+      assert.equal(MoneyApp.escapeAttr(undefined), '');
+      assert.equal(
+        MoneyApp.escapeAttr('test" onfocus="alert(1)" <script>'),
+        'test&quot; onfocus=&quot;alert(1)&quot; &lt;script&gt;',
+      );
+    });
+
+    it('verifies safeHTML tagged template literal auto-escapes string interpolations', () => {
+      const dangerous = '<img src=x onerror=alert(1)>';
+      const result = MoneyApp.safeHTML`<div class="card">${dangerous}</div>`;
+      assert.equal(result, '<div class="card">&lt;img src=x onerror=alert(1)&gt;</div>');
+    });
+
+    it('verifies safeHTML preserves numbers, booleans, and static template markup', () => {
+      const amount = 45000.5;
+      const isActive = true;
+      const count = 0;
+      const result = MoneyApp.safeHTML`<span data-active="${isActive}">Total: ${amount} (items: ${count})</span>`;
+      assert.equal(result, '<span data-active="true">Total: 45000.5 (items: 0)</span>');
+    });
+
+    it('verifies safeHTML allows explicit trusted markup via rawHTML', () => {
+      const dangerous = '<script>bad()</script>';
+      const trustedIcon = MoneyApp.rawHTML('<svg class="icon"><path d="M0 0"/></svg>');
+      const result = MoneyApp.safeHTML`<button>${trustedIcon} ${dangerous}</button>`;
+      assert.equal(
+        result,
+        '<button><svg class="icon"><path d="M0 0"/></svg> &lt;script&gt;bad()&lt;/script&gt;</button>',
+      );
+    });
+
+    it('verifies safeHTML maps arrays of items with appropriate escaping', () => {
+      const items = ['<b>apple</b>', 123, null, MoneyApp.rawHTML('<i>banana</i>')];
+      const result = MoneyApp.safeHTML`<ul>${items}</ul>`;
+      assert.equal(result, '<ul>&lt;b&gt;apple&lt;/b&gt;123<i>banana</i></ul>');
+    });
   });
 });
