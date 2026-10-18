@@ -1191,4 +1191,57 @@ describe('MoneyApp Shared Core Module', () => {
       assert.equal(ws.retirementPool.isExceeded, false);
     });
   });
+
+  describe('MoneyApp Debt Payoff & Visual Velocity Engine (Phase 75 Snowball vs Avalanche)', () => {
+    it('exports simulateDebtPayoff and accurately models minimum payments and rollover', () => {
+      const { MoneyApp } = createEnvironment('th');
+      assert.equal(typeof MoneyApp.simulateDebtPayoff, 'function');
+
+      const debts = [
+        { id: 'cc', name: 'Credit Card', balance: 50000, rate: 16, minPayment: 2500 },
+        { id: 'loan', name: 'Personal Loan', balance: 100000, rate: 12, minPayment: 3000 },
+      ];
+
+      const simAv = MoneyApp.simulateDebtPayoff(debts, 5000, 'avalanche');
+      assert.ok(simAv.months > 0, 'Months must be greater than zero');
+      assert.ok(simAv.totalInterest > 0, 'Total interest must be calculated');
+      assert.equal(simAv.payoffOrder.length, 2, 'Both debts must be paid off');
+      // Credit card has higher rate (16%), so Avalanche pays Credit Card first
+      assert.equal(simAv.payoffOrder[0].id, 'cc');
+      assert.equal(simAv.firstDebtCleared.name, 'Credit Card');
+    });
+
+    it('exports compareDebtVelocity and models head-to-head metrics and recommendations', () => {
+      const { MoneyApp } = createEnvironment('th');
+      assert.equal(typeof MoneyApp.compareDebtVelocity, 'function');
+
+      const debts = [
+        { id: 'd1', name: 'Micro Loan', balance: 10000, rate: 8, minPayment: 200 },
+        { id: 'd2', name: 'High APR Card', balance: 15000, rate: 28, minPayment: 300 },
+      ];
+
+      const cmp = MoneyApp.compareDebtVelocity({
+        debts,
+        extraPayment: 3000,
+      });
+
+      assert.ok(cmp.baseline.months > cmp.avalanche.months, 'Extra payment must accelerate payoff vs baseline');
+      assert.ok(cmp.avalanche.totalInterest <= cmp.snowball.totalInterest, 'Avalanche interest must be <= Snowball');
+      // In Snowball, Micro Loan (10k) clears earlier than High APR Card
+      assert.equal(cmp.snowball.payoffOrder[0].id, 'd1');
+      assert.equal(cmp.avalanche.payoffOrder[0].id, 'd2');
+      assert.ok(cmp.firstWinMonthDelta > 0, 'Snowball should achieve the first win earlier than Avalanche');
+      assert.ok(['avalanche', 'snowball', 'equal'].includes(cmp.recommended));
+      assert.ok(cmp.reasonTh.length > 0);
+      assert.ok(cmp.reasonEn.length > 0);
+    });
+
+    it('gracefully handles empty debts and zero balances', () => {
+      const { MoneyApp } = createEnvironment('th');
+      const empty = MoneyApp.compareDebtVelocity({ debts: [], extraPayment: 5000 });
+      assert.equal(empty.avalanche.months, 0);
+      assert.equal(empty.snowball.months, 0);
+      assert.equal(empty.recommended, 'equal');
+    });
+  });
 });

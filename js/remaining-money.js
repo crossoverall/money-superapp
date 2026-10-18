@@ -35,6 +35,7 @@ const EN = {
   pvdLabel: 'PVD',
   pvdPlaceholder: 'e.g. 5',
   lblBridgeBtn: 'Send investable money to Rebalance',
+  lblBridgeDebtBtn: 'Use surplus to accelerate Debt Payoff',
   bridgeAlertDefault: '✓ Data imported successfully',
   runwayTitle: '🛡️ Calculate Emergency Runway',
   lblCurrentReserve: 'Current Accumulated Emergency Reserve (THB)',
@@ -270,8 +271,10 @@ if (LANG === 'en') {
   document.getElementById('expenseAddBtn').textContent = EN.addExpense;
   const savAddBtn = document.getElementById('savingAddBtn');
   if (savAddBtn) savAddBtn.textContent = EN.addSaving;
-  document.getElementById('resetBtn').textContent = EN.resetBtn;
-  document.getElementById('remainingNote').textContent = EN.remainingNote;
+  const resetBtnEl = document.getElementById('resetBtn');
+  if (resetBtnEl) resetBtnEl.textContent = EN.resetBtn;
+  const remNoteEl = document.getElementById('remainingNote');
+  if (remNoteEl) remNoteEl.textContent = EN.remainingNote;
   document.getElementById('scIncomeValue').textContent = EN.scIncomeValue;
   document.getElementById('scExpenseValue').textContent = EN.scExpenseValue;
   const scSavVal = document.getElementById('scSavingValue');
@@ -279,6 +282,8 @@ if (LANG === 'en') {
   document.getElementById('remainingValue').textContent = EN.scIncomeValue;
   const bridgeLbl = document.getElementById('lblBridgeBtn');
   if (bridgeLbl) bridgeLbl.textContent = EN.lblBridgeBtn;
+  const bridgeDebtLbl = document.getElementById('lblBridgeDebtBtn');
+  if (bridgeDebtLbl) bridgeDebtLbl.textContent = EN.lblBridgeDebtBtn;
   const bridgeAlertEl = document.getElementById('bridgeAlertText');
   if (bridgeAlertEl) bridgeAlertEl.textContent = EN.bridgeAlertDefault;
   const flbl = document.getElementById('lblImportFile');
@@ -1368,27 +1373,29 @@ function compute() {
           : 'เงินคงเหลือ';
   }
 
-  if (remaining > 0.5) {
-    remainingNote.textContent =
-      totalSavings > 0
-        ? LANG === 'en'
-          ? `Income (${fmt(totalIncome)}) − Expenses (${fmt(totalExpense)}) − Savings (${fmt(totalSavings)}) = ${fmt(remaining)} THB for investment`
-          : `รายได้ (${fmt(totalIncome)}) − ค่าใช้จ่าย (${fmt(totalExpense)}) − เงินออม (${fmt(totalSavings)}) = เหลือลงทุน ${fmt(remaining)} บาท`
-        : LANG === 'en'
-          ? 'Money left over this month'
-          : 'เหลือเงินในเดือนนี้';
-  } else if (remaining < -0.5) {
-    remainingNote.textContent =
-      totalSavings > 0
-        ? LANG === 'en'
-          ? `Expenses and savings exceed income by ${fmt(Math.abs(remaining))} THB`
-          : `รายจ่ายและเงินออมเกินรายได้ ${fmt(Math.abs(remaining))} บาท`
-        : LANG === 'en'
-          ? 'Expenses exceed income — review spending or boost income'
-          : 'ใช้จ่ายเกินรายได้ — ลดค่าใช้จ่ายหรือเพิ่มรายได้';
-  } else {
-    remainingNote.textContent =
-      LANG === 'en' ? 'Income, expenses, and savings are balanced' : 'รายได้ ค่าใช้จ่าย และเงินออมเท่ากันพอดี';
+  if (remainingNote) {
+    if (remaining > 0.5) {
+      remainingNote.textContent =
+        totalSavings > 0
+          ? LANG === 'en'
+            ? `Income (${fmt(totalIncome)}) − Expenses (${fmt(totalExpense)}) − Savings (${fmt(totalSavings)}) = ${fmt(remaining)} THB for investment`
+            : `รายได้ (${fmt(totalIncome)}) − ค่าใช้จ่าย (${fmt(totalExpense)}) − เงินออม (${fmt(totalSavings)}) = เหลือลงทุน ${fmt(remaining)} บาท`
+          : LANG === 'en'
+            ? 'Money left over this month'
+            : 'เหลือเงินในเดือนนี้';
+    } else if (remaining < -0.5) {
+      remainingNote.textContent =
+        totalSavings > 0
+          ? LANG === 'en'
+            ? `Expenses and savings exceed income by ${fmt(Math.abs(remaining))} THB`
+            : `รายจ่ายและเงินออมเกินรายได้ ${fmt(Math.abs(remaining))} บาท`
+          : LANG === 'en'
+            ? 'Expenses exceed income — review spending or boost income'
+            : 'ใช้จ่ายเกินรายได้ — ลดค่าใช้จ่ายหรือเพิ่มรายได้';
+    } else {
+      remainingNote.textContent =
+        LANG === 'en' ? 'Income, expenses, and savings are balanced' : 'รายได้ ค่าใช้จ่าย และเงินออมเท่ากันพอดี';
+    }
   }
 
   const bridgeBtn = document.getElementById('bridgeToRebalanceBtn');
@@ -1400,6 +1407,18 @@ function compute() {
         LANG === 'en'
           ? `Send investable money (${fmt(remaining)} THB) to Rebalance`
           : `นำเงินเหลือลงทุน (${fmt(remaining)} บาท) ไป Rebalance`;
+    }
+  }
+
+  const debtBridgeBtn = document.getElementById('bridgeToDebtBtn');
+  if (debtBridgeBtn) {
+    debtBridgeBtn.style.display = remaining > 0.5 ? 'inline-flex' : 'none';
+    const debtBridgeLbl = document.getElementById('lblBridgeDebtBtn');
+    if (debtBridgeLbl) {
+      debtBridgeLbl.textContent =
+        LANG === 'en'
+          ? `Use surplus (${fmt(remaining)} THB) to accelerate Debt Payoff 💳`
+          : `นำเงินคงเหลือ (${fmt(remaining)} บาท) ไปเร่งโปะหนี้ (Debt Payoff) 💳`;
     }
   }
 
@@ -2637,6 +2656,26 @@ function sendToRebalance() {
     }
   }
 }
+
+function sendToDebtPayoff() {
+  const totalIncome = state.incomes.reduce((s, item) => s + (item.value || 0), 0);
+  const totalExpense = state.expenses.reduce((s, item) => s + (item.value || 0), 0);
+  const totalSavings = (state.savings || []).reduce((s, item) => s + (item.value || 0), 0);
+  const remaining = Math.round(totalIncome - totalExpense - totalSavings);
+  if (remaining > 0) {
+    try {
+      localStorage.setItem('moneySuperapp.pendingDebtExtra', String(remaining));
+    } catch (_e) {}
+    if (window.parent && typeof window.parent.switchToTab === 'function') {
+      window.parent.switchToTab('debt');
+    } else {
+      const targetOrigin = window.location.origin && window.location.origin !== 'null' ? window.location.origin : '*';
+      window.parent.postMessage({ action: 'switchToTab', target: 'debt' }, targetOrigin);
+    }
+  }
+}
+window.sendToDebtPayoff = sendToDebtPayoff;
+window.sendToRebalance = sendToRebalance;
 
 // ── Export Features (CSV, JSON, Clipboard Summary) ────────────────────────
 function csvSafe(val) {

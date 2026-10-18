@@ -640,6 +640,31 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(swContent.includes('SKIP_WAITING'), 'sw.js must handle SKIP_WAITING message');
       assert.ok(swContent.includes('self.skipWaiting()'), 'sw.js must call self.skipWaiting()');
     });
+
+    it('verifies debt-calculator.html and remaining-money.html declare Phase 75 Velocity Comparator and Bridges', () => {
+      const debtHtml = fs.readFileSync(path.join(ROOT_DIR, 'debt-calculator.html'), 'utf8');
+      assert.ok(debtHtml.includes('id="boxVelocityComparator"'), 'debt-calculator must define #boxVelocityComparator');
+      assert.ok(debtHtml.includes('id="badgeVelocityAdvisor"'), 'debt-calculator must define #badgeVelocityAdvisor');
+      assert.ok(debtHtml.includes('id="barVelBaseline"'), 'debt-calculator must define #barVelBaseline');
+      assert.ok(debtHtml.includes('id="barVelSnowball"'), 'debt-calculator must define #barVelSnowball');
+      assert.ok(debtHtml.includes('id="barVelAvalanche"'), 'debt-calculator must define #barVelAvalanche');
+      assert.ok(debtHtml.includes('id="calloutVelocityAdvice"'), 'debt-calculator must define #calloutVelocityAdvice');
+      assert.ok(debtHtml.includes('id="cmp-av-firstwin"'), 'debt-calculator must define #cmp-av-firstwin');
+      assert.ok(debtHtml.includes('id="cmp-sn-firstwin"'), 'debt-calculator must define #cmp-sn-firstwin');
+
+      const remainingHtml = fs.readFileSync(path.join(ROOT_DIR, 'remaining-money.html'), 'utf8');
+      assert.ok(remainingHtml.includes('id="bridgeToDebtBtn"'), 'remaining-money.html must define #bridgeToDebtBtn');
+      assert.ok(remainingHtml.includes('id="lblBridgeDebtBtn"'), 'remaining-money.html must define #lblBridgeDebtBtn');
+      assert.ok(remainingHtml.includes('class="debt-bridge-btn"'), 'remaining-money.html must define .debt-bridge-btn');
+
+      const debtJs = fs.readFileSync(path.join(ROOT_DIR, 'js/debt-calculator.js'), 'utf8');
+      assert.ok(debtJs.includes('checkInboundBridge'), 'debt-calculator.js must define checkInboundBridge');
+      assert.ok(debtJs.includes('pendingDebtExtra'), 'debt-calculator.js must check pendingDebtExtra');
+
+      const remainingJs = fs.readFileSync(path.join(ROOT_DIR, 'js/remaining-money.js'), 'utf8');
+      assert.ok(remainingJs.includes('sendToDebtPayoff'), 'remaining-money.js must define sendToDebtPayoff');
+      assert.ok(remainingJs.includes('pendingDebtExtra'), 'remaining-money.js must set pendingDebtExtra');
+    });
   });
 
   describe('Bilingual Localization Structural Symmetry', () => {

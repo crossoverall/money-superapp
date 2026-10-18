@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.5.17">
+  <meta name="version" content="2.5.18">
   <script>
     try {
       var t = localStorage.getItem('moneySuperapp.theme');
@@ -333,6 +333,55 @@
   <div class="panel reorder-card" id="panelCompare">
     <div class="panel-title" id="lbl-compare-title">เปรียบเทียบผลลัพธ์ (Compare)</div>
     <div id="panelCompareBody">
+      <!-- Phase 75: Visual Velocity Comparator & Timeline Bars -->
+      <div id="boxVelocityComparator" style="margin-bottom:16px; background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:6px;">
+          <span style="font-size:12px; font-weight:700; color:var(--ink);" id="lbl-vel-title">⏱️ ความเร็วในการปลดหนี้ (Payoff Velocity)</span>
+          <span id="badgeVelocityAdvisor" style="font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--ok-dim); color:var(--ok); border:1px solid var(--ok);">⚡ แนะนำ Avalanche</span>
+        </div>
+
+        <!-- Velocity Bars -->
+        <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:12px;">
+          <!-- 1. Minimum Only (Baseline) -->
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
+              <span style="color:var(--ink-dim);" id="lbl-vel-baseline">จ่ายขั้นต่ำเท่านั้น (Minimum Only)</span>
+              <span id="valVelBaselineMonths" class="font-mono font-bold" style="color:var(--danger);">-</span>
+            </div>
+            <div style="height:10px; background:var(--bg); border:1px solid var(--line); border-radius:6px; overflow:hidden;">
+              <div id="barVelBaseline" style="height:100%; width:100%; background:var(--danger); border-radius:6px; transition:width 0.4s;"></div>
+            </div>
+          </div>
+
+          <!-- 2. Snowball -->
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
+              <span style="color:var(--ink-dim);"><span id="lbl-vel-snowball">Snowball (ยอดน้อยสุดก่อน)</span> <span id="tagVelSnowballFirst" style="font-size:10px; color:var(--blue); font-weight:600;"></span></span>
+              <span id="valVelSnowballMonths" class="font-mono font-bold" style="color:var(--blue);">-</span>
+            </div>
+            <div style="height:10px; background:var(--bg); border:1px solid var(--line); border-radius:6px; overflow:hidden;">
+              <div id="barVelSnowball" style="height:100%; width:0%; background:var(--blue); border-radius:6px; transition:width 0.4s;"></div>
+            </div>
+          </div>
+
+          <!-- 3. Avalanche -->
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
+              <span style="color:var(--ink-dim);"><span id="lbl-vel-avalanche">Avalanche (ดอกสูงสุดก่อน)</span> <span id="tagVelAvalancheSaved" style="font-size:10px; color:var(--ok); font-weight:600;"></span></span>
+              <span id="valVelAvalancheMonths" class="font-mono font-bold" style="color:var(--ok);">-</span>
+            </div>
+            <div style="height:10px; background:var(--bg); border:1px solid var(--line); border-radius:6px; overflow:hidden;">
+              <div id="barVelAvalanche" style="height:100%; width:0%; background:var(--ok); border-radius:6px; transition:width 0.4s;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Strategy Decision Advisor Callout -->
+        <div id="calloutVelocityAdvice" style="font-size:11px; color:var(--ink-dim); line-height:1.5; padding:8px 10px; background:var(--panel); border:1px dashed var(--line); border-radius:8px;">
+          <!-- Dynamic strategy text -->
+        </div>
+      </div>
+
       <div style="margin-bottom:16px; border:1px solid var(--line); border-radius:12px; padding:12px; background:var(--panel-2);" id="card-compare-avalanche">
         <div style="font-weight:700; font-size:14px; margin-bottom:8px; display:flex; justify-content:space-between;">
           <span>⚡ Avalanche</span>
@@ -341,6 +390,7 @@
         <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-av-months" style="font-weight:400;">ระยะเวลา:</span> <span class="val" id="cmp-av-months">-</span></div>
         <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-av-interest" style="font-weight:400;">ดอกเบี้ยรวม:</span> <span class="val warn" id="cmp-av-interest">-</span></div>
         <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-av-saved" style="font-weight:400;">ประหยัด vs ขั้นต่ำ:</span> <span class="val ok" id="cmp-av-saved">-</span></div>
+        <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-av-firstwin" style="font-weight:400;">ปิดหนี้ก้อนแรก:</span> <span class="val" id="cmp-av-firstwin">-</span></div>
       </div>
 
       <div style="border:1px solid var(--line); border-radius:12px; padding:12px; background:var(--panel-2);" id="card-compare-snowball">
@@ -351,6 +401,7 @@
         <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-sn-months" style="font-weight:400;">ระยะเวลา:</span> <span class="val" id="cmp-sn-months">-</span></div>
         <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-sn-interest" style="font-weight:400;">ดอกเบี้ยรวม:</span> <span class="val warn" id="cmp-sn-interest">-</span></div>
         <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-sn-saved" style="font-weight:400;">ประหยัด vs ขั้นต่ำ:</span> <span class="val ok" id="cmp-sn-saved">-</span></div>
+        <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-sn-firstwin" style="font-weight:400;">ปิดหนี้ก้อนแรก:</span> <span class="val ok" id="cmp-sn-firstwin">-</span></div>
       </div>
     </div>
   </div>
@@ -612,7 +663,7 @@
     <button class="reset-btn" id="btnResetDebtLayout" onclick="resetDebtLayout()">🔄 <span id="lblResetDebtLayout">จัดลำดับเดิม</span></button>
     <button class="reset-btn" id="btn-reset-debts" onclick="resetDefaults()">รีเซ็ตค่าเริ่มต้น</button>
   </div>
-  <p class="version-tag">v2.5.17</p>
+  <p class="version-tag">v2.5.18</p>
 
 <script src="js/shared.js"></script>
 <script src="js/debt-calculator.js"></script>

@@ -23,9 +23,15 @@ const translations = {
     cmpAvMonths: 'ระยะเวลา:',
     cmpAvInterest: 'ดอกเบี้ยรวม:',
     cmpAvSaved: 'ประหยัดดอกเบี้ย vs ขั้นต่ำ:',
+    cmpAvFirstWin: 'ปิดหนี้ก้อนแรก:',
     cmpSnMonths: 'ระยะเวลา:',
     cmpSnInterest: 'ดอกเบี้ยรวม:',
     cmpSnSaved: 'ประหยัดดอกเบี้ย vs ขั้นต่ำ:',
+    cmpSnFirstWin: 'ปิดหนี้ก้อนแรก:',
+    velTitle: '⏱️ ความเร็วในการปลดหนี้ (Payoff Velocity)',
+    velBaseline: 'จ่ายขั้นต่ำเท่านั้น (Minimum Only)',
+    velSnowball: 'Snowball (ยอดน้อยสุดก่อน)',
+    velAvalanche: 'Avalanche (ดอกสูงสุดก่อน)',
     scheduleTitle: '📅 ดูตารางกำหนดการปลดหนี้ (Timeline & Schedule)',
     schedulePanelTitle: '📅 ตารางกำหนดการปลดหนี้ (Payoff Schedule)',
     resetLayout: 'จัดลำดับเดิม',
@@ -112,9 +118,15 @@ const translations = {
     cmpAvMonths: 'Timeline:',
     cmpAvInterest: 'Total Interest:',
     cmpAvSaved: 'Saved vs Minimum:',
+    cmpAvFirstWin: 'First Debt Knockout:',
     cmpSnMonths: 'Timeline:',
     cmpSnInterest: 'Total Interest:',
     cmpSnSaved: 'Saved vs Minimum:',
+    cmpSnFirstWin: 'First Debt Knockout:',
+    velTitle: '⏱️ Payoff Velocity & Timeline Comparison',
+    velBaseline: 'Minimum Payment Only',
+    velSnowball: 'Snowball (Lowest Balance First)',
+    velAvalanche: 'Avalanche (Highest APR First)',
     scheduleTitle: '📅 View Payoff Timeline & Schedule',
     thSchMonth: 'Month',
     thSchPayment: 'Total Paid',
@@ -208,12 +220,18 @@ if (LANG === 'en') {
     'lbl-btn-add-debt': t.btnAddDebt,
     'td-total-label': t.tdTotalLabel,
     'lbl-compare-title': t.compareTitle,
+    'lbl-vel-title': t.velTitle,
+    'lbl-vel-baseline': t.velBaseline,
+    'lbl-vel-snowball': t.velSnowball,
+    'lbl-vel-avalanche': t.velAvalanche,
     'lbl-cmp-av-months': t.cmpAvMonths,
     'lbl-cmp-av-interest': t.cmpAvInterest,
     'lbl-cmp-av-saved': t.cmpAvSaved,
+    'lbl-cmp-av-firstwin': t.cmpAvFirstWin,
     'lbl-cmp-sn-months': t.cmpSnMonths,
     'lbl-cmp-sn-interest': t.cmpSnInterest,
     'lbl-cmp-sn-saved': t.cmpSnSaved,
+    'lbl-cmp-sn-firstwin': t.cmpSnFirstWin,
     'lbl-schedule-title': t.scheduleTitle,
     'th-sch-month': t.thSchMonth,
     'th-sch-payment': t.thSchPayment,
@@ -806,23 +824,129 @@ function computePayoff() {
     document.getElementById('kpi-months-saved').textContent =
       (LANG === 'en' ? 'Faster by ' : 'เร็วขึ้น ') + monthsSaved + (LANG === 'en' ? ' mos' : ' เดือน');
 
-  // Comparison cards
+  // Comparison cards & First Win milestones
+  const isEn = LANG === 'en';
+  const avFirst = simAvalanche.payoffOrder[0];
+  const snFirst = simSnowball.payoffOrder[0];
+
   if (document.getElementById('cmp-av-months'))
-    document.getElementById('cmp-av-months').textContent =
-      `${simAvalanche.months} ${LANG === 'en' ? 'months' : 'เดือน'}`;
+    document.getElementById('cmp-av-months').textContent = `${simAvalanche.months} ${isEn ? 'months' : 'เดือน'}`;
   if (document.getElementById('cmp-av-interest'))
     document.getElementById('cmp-av-interest').textContent = `${formatMoney(simAvalanche.totalInterest)} ${unit}`;
   if (document.getElementById('cmp-av-saved'))
     document.getElementById('cmp-av-saved').textContent =
       `+${formatMoney(Math.max(0, simMinOnly.totalInterest - simAvalanche.totalInterest))} ${unit}`;
+  if (document.getElementById('cmp-av-firstwin'))
+    document.getElementById('cmp-av-firstwin').textContent = avFirst
+      ? `${avFirst.name} (${isEn ? 'Month ' : 'เดือนที่ '}${avFirst.month})`
+      : '-';
 
   if (document.getElementById('cmp-sn-months'))
-    document.getElementById('cmp-sn-months').textContent = `${simSnowball.months} ${LANG === 'en' ? 'months' : 'เดือน'}`;
+    document.getElementById('cmp-sn-months').textContent = `${simSnowball.months} ${isEn ? 'months' : 'เดือน'}`;
   if (document.getElementById('cmp-sn-interest'))
     document.getElementById('cmp-sn-interest').textContent = `${formatMoney(simSnowball.totalInterest)} ${unit}`;
   if (document.getElementById('cmp-sn-saved'))
     document.getElementById('cmp-sn-saved').textContent =
       `+${formatMoney(Math.max(0, simMinOnly.totalInterest - simSnowball.totalInterest))} ${unit}`;
+  if (document.getElementById('cmp-sn-firstwin'))
+    document.getElementById('cmp-sn-firstwin').textContent = snFirst
+      ? `${snFirst.name} (${isEn ? 'Month ' : 'เดือนที่ '}${snFirst.month})`
+      : '-';
+
+  // Phase 75: Visual Velocity Comparator & Timeline Bars
+  const velCmp =
+    typeof MoneyApp !== 'undefined' && MoneyApp.compareDebtVelocity
+      ? MoneyApp.compareDebtVelocity({
+          debts,
+          extraPayment: state.extraPayment,
+          windfall,
+        })
+      : null;
+
+  const maxTimelineMonths = Math.max(simMinOnly.months, simSnowball.months, simAvalanche.months, 1);
+
+  const elVelBaseMonths = document.getElementById('valVelBaselineMonths');
+  if (elVelBaseMonths) {
+    elVelBaseMonths.textContent =
+      totalDebt <= 0
+        ? '0'
+        : `${simMinOnly.months} ${isEn ? 'months' : 'เดือน'} (${formatMoney(simMinOnly.totalInterest)} ${unit})`;
+  }
+  const barVelBase = document.getElementById('barVelBaseline');
+  if (barVelBase) barVelBase.style.width = totalDebt <= 0 ? '0%' : '100%';
+
+  const elVelSnMonths = document.getElementById('valVelSnowballMonths');
+  if (elVelSnMonths) {
+    elVelSnMonths.textContent =
+      totalDebt <= 0
+        ? '0'
+        : `${simSnowball.months} ${isEn ? 'months' : 'เดือน'} (${formatMoney(simSnowball.totalInterest)} ${unit})`;
+  }
+  const barVelSn = document.getElementById('barVelSnowball');
+  if (barVelSn) {
+    barVelSn.style.width =
+      totalDebt <= 0 ? '0%' : `${Math.max(6, Math.min(100, (simSnowball.months / maxTimelineMonths) * 100))}%`;
+  }
+  const tagVelSnFirst = document.getElementById('tagVelSnowballFirst');
+  if (tagVelSnFirst) {
+    if (velCmp && velCmp.firstWinMonthDelta > 0 && snFirst) {
+      tagVelSnFirst.textContent = isEn
+        ? `🎉 1st Knockout: ${snFirst.name} (Mo ${snFirst.month}, ${velCmp.firstWinMonthDelta}m sooner)`
+        : `🎉 ปิดก้อนแรก: ${snFirst.name} (ด.${snFirst.month}, เร็วกว่า ${velCmp.firstWinMonthDelta} ด.)`;
+    } else if (snFirst) {
+      tagVelSnFirst.textContent = `(1st: ${snFirst.name} ${isEn ? 'Mo' : 'ด.'} ${snFirst.month})`;
+    } else {
+      tagVelSnFirst.textContent = '';
+    }
+  }
+
+  const elVelAvMonths = document.getElementById('valVelAvalancheMonths');
+  if (elVelAvMonths) {
+    elVelAvMonths.textContent =
+      totalDebt <= 0
+        ? '0'
+        : `${simAvalanche.months} ${isEn ? 'months' : 'เดือน'} (${formatMoney(simAvalanche.totalInterest)} ${unit})`;
+  }
+  const barVelAv = document.getElementById('barVelAvalanche');
+  if (barVelAv) {
+    barVelAv.style.width =
+      totalDebt <= 0 ? '0%' : `${Math.max(6, Math.min(100, (simAvalanche.months / maxTimelineMonths) * 100))}%`;
+  }
+  const tagVelAvSaved = document.getElementById('tagVelAvalancheSaved');
+  if (tagVelAvSaved) {
+    if (velCmp && velCmp.interestDelta > 0) {
+      tagVelAvSaved.textContent = isEn
+        ? `⚡ Saves +${formatMoney(velCmp.interestDelta)} ${unit} vs Snowball`
+        : `⚡ ประหยัดกว่า Snowball +${formatMoney(velCmp.interestDelta)} ${unit}`;
+    } else {
+      tagVelAvSaved.textContent = '';
+    }
+  }
+
+  const badgeVelAdv = document.getElementById('badgeVelocityAdvisor');
+  if (badgeVelAdv && velCmp) {
+    if (velCmp.recommended === 'avalanche') {
+      badgeVelAdv.textContent = isEn ? '⚡ Avalanche Recommended' : '⚡ แนะนำ Avalanche';
+      badgeVelAdv.style.background = 'var(--ok-dim)';
+      badgeVelAdv.style.color = 'var(--ok)';
+      badgeVelAdv.style.borderColor = 'var(--ok)';
+    } else if (velCmp.recommended === 'snowball') {
+      badgeVelAdv.textContent = isEn ? '⛄ Snowball Recommended' : '⛄ แนะนำ Snowball';
+      badgeVelAdv.style.background = 'var(--blue-dim)';
+      badgeVelAdv.style.color = 'var(--blue)';
+      badgeVelAdv.style.borderColor = 'var(--blue)';
+    } else {
+      badgeVelAdv.textContent = isEn ? '⚖️ Equal Efficiency' : '⚖️ ให้ผลลัพธ์เท่ากัน';
+      badgeVelAdv.style.background = 'var(--panel-2)';
+      badgeVelAdv.style.color = 'var(--ink-dim)';
+      badgeVelAdv.style.borderColor = 'var(--line)';
+    }
+  }
+
+  const calloutVelAdvice = document.getElementById('calloutVelocityAdvice');
+  if (calloutVelAdvice && velCmp) {
+    calloutVelAdvice.innerHTML = `💡 <strong>${isEn ? 'Velocity Insight:' : 'ข้อแนะนำกลยุทธ์:'}</strong> ${isEn ? velCmp.reasonEn : velCmp.reasonTh}`;
+  }
 
   // Milestones
   const milestonesEl = document.getElementById('payoffMilestones');
@@ -1795,8 +1919,50 @@ window.onCarLoanChange = onCarLoanChange;
 window.calculateCarLoanFlatVsEffective = calculateCarLoanFlatVsEffective;
 window.computeCarLoan = computeCarLoan;
 
+function checkInboundBridge() {
+  try {
+    let importedAmt = 0;
+    // 1. Check URL search param
+    const params = new URLSearchParams(window.location.search);
+    const queryExtra = params.get('extra');
+    if (queryExtra) {
+      importedAmt = parseNum(queryExtra);
+    }
+    // 2. Check pending bridge storage
+    if (importedAmt <= 0) {
+      const storedPending = localStorage.getItem('moneySuperapp.pendingDebtExtra');
+      if (storedPending) {
+        importedAmt = parseNum(storedPending);
+        localStorage.removeItem('moneySuperapp.pendingDebtExtra');
+      }
+    }
+
+    if (importedAmt > 0) {
+      state.extraPayment = importedAmt;
+      saveState();
+      setTimeout(() => {
+        const banner = document.getElementById('bridgeAlertBanner');
+        const bannerText = document.getElementById('bridgeAlertText');
+        if (bannerText) {
+          bannerText.textContent =
+            LANG === 'en'
+              ? `✓ Imported ${formatMoney(importedAmt)} THB monthly disposable savings from Remaining Money into Debt Payoff!`
+              : `✓ ดึงเงินคงเหลือจำนวน ${formatMoney(importedAmt)} บาท/เดือน มาตั้งเป็นเงินโปะหนี้เรียบร้อยแล้ว!`;
+        }
+        if (banner) {
+          banner.style.display = 'flex';
+          setTimeout(() => {
+            banner.style.display = 'none';
+          }, 4500);
+        }
+      }, 100);
+    }
+  } catch (_e) {}
+}
+
 // Initialize
 loadState();
+checkInboundBridge();
 document.getElementById('txtExtraPayment').value = state.extraPayment;
 syncWindfallInputs();
 syncRefinanceInputs();

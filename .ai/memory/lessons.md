@@ -15,6 +15,22 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Debt Payoff Visual Velocity Comparator, Multi-Strategy Knockout & Cross-Tool Surplus Bridge (v2.5.18)
+- **Date & Context:** 2026-10-18, implementing Phase 75 Debt Payoff Snowball vs. Avalanche Visual Velocity Comparator & Remaining Money 1-Click Payoff Bridge (`v2.5.18`).
+- **Problem:**
+  1. Users comparing Snowball vs. Avalanche strategies in `debt-calculator.html` only saw raw final payoff months and total interest figures. They had no intuitive visual sense of the timeline reduction velocity compared to paying only minimum payments, nor did they see psychological milestone differences (such as when the first debt is completely knocked out).
+  2. Users with calculated monthly surplus in `remaining-money.html` had a one-click button to send investable money to `rebalance.html`, but had no direct bridge to direct that surplus towards accelerating debt elimination in `debt-calculator.html`.
+  3. In `remaining-money.html`, `compute()` previously threw `TypeError: Cannot set properties of null (setting 'textContent')` if `#remainingNote` was missing or unrendered, halting downstream bridge updates.
+- **Root Cause:**
+  1. The simulation math lacked a standardized comparator method that computes minimum payment baseline, head-to-head interest delta, first-debt knockout month difference, and automated psychological vs mathematical recommendation heuristics.
+  2. The remaining money controller lacked a companion bridge button (`#bridgeToDebtBtn`) and inter-tool state hand-off (`moneySuperapp.pendingDebtExtra`).
+  3. Direct DOM property assignments in `compute()` lacked defensive `if (element)` null guards.
+- **Solution & Rule:**
+  1. **Core Velocity Comparator Engine:** Export `MoneyApp.simulateDebtPayoff()` and `MoneyApp.compareDebtVelocity()` in `js/shared.js`. Normalize all 3 scenarios (Baseline, Snowball, Avalanche) against total portfolio balance and max payoff duration.
+  2. **Multi-Track Velocity Timeline UI:** Render 3 horizontal progress bars (`#barVelBaseline`, `#barVelSnowball`, `#barVelAvalanche`) with dynamic percentage widths, contextual tags (`#tagVelSnowballFirst`, `#tagVelAvalancheSaved`), and strategic advisor badge (`#badgeVelocityAdvisor`).
+  3. **Bi-Directional Cross-Tool Surplus Bridge:** In `remaining-money.html`, provide `#bridgeToDebtBtn` next to `#bridgeToRebalanceBtn`. When clicked, store `moneySuperapp.pendingDebtExtra` and dispatch tab switch. In `debt-calculator.html`, read `pendingDebtExtra` or `?extra=...` query param, update extra monthly payment, and display inbound bridge confirmation banner.
+  4. **Strict DOM Null Safety:** Always guard all DOM element property mutations with `if (el)` inside rendering loops and calculation controllers.
+
 ### 2026-10-18: Non-Intrusive PWA Update Toast & Controlled Background Cache Refresh (v2.5.16)
 - **Date & Context:** 2026-10-18, implementing Phase 73 PWA cache update banner & refresh toast in `index.html`, `js/app-shell.js`, and `sw.js` (`v2.5.16`).
 - **Problem:** When service worker assets were updated, `sw.js` was previously invoking `self.skipWaiting()` automatically inside the `install` event. This caused background cache replacement while user tabs remained open, risking code-version mismatches and unnotified stale state, particularly for mobile PWA users who rarely close the browser window.

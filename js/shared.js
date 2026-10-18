@@ -2805,6 +2805,197 @@
   }
 
   /**
+   * Phase 75: Client-side Debt Payoff Simulation Engine.
+   * Simulates month-by-month debt schedule under Avalanche or Snowball strategies,
+   * accounting for minimum payments, interest accrual, rolled-over payments, and optional lump-sum windfalls.
+   */
+  function simulateDebtPayoff(debtsList, extraMonthly, strategy, windfall) {
+    var rawDebts = Array.isArray(debtsList) ? debtsList : [];
+    var extra = Math.max(0, Number(extraMonthly) || 0);
+    var strat = strategy === 'snowball' ? 'snowball' : 'avalanche';
+    var wf =
+      windfall && windfall.amount > 0
+        ? {
+            amount: Math.max(0, Number(windfall.amount) || 0),
+            month: Math.max(1, Math.round(Number(windfall.month) || 1)),
+          }
+        : null;
+
+    var debts = rawDebts.map((d, idx) => ({
+      id: d.id || `debt_${idx}`,
+      name: d.name || `Debt ${idx + 1}`,
+      balance: Math.max(0, Number(d.balance) || 0),
+      rate: Math.max(0, Number(d.rate) || 0),
+      minPayment: Math.max(0, Number(d.minPayment) || 0),
+      paidOffMonth: null,
+    }));
+
+    var totalInitialDebt = debts.reduce((sum, d) => sum + d.balance, 0);
+    if (totalInitialDebt <= 0) {
+      return {
+        months: 0,
+        totalInterest: 0,
+        totalPaid: 0,
+        payoffOrder: [],
+        firstDebtCleared: null,
+        trajectory: [],
+      };
+    }
+
+    var months = 0;
+    var totalInterest = 0;
+    var totalPaid = 0;
+    var payoffOrder = [];
+    var trajectory = [{ month: 0, balance: totalInitialDebt }];
+    var MAX_MONTHS = 600; // 50-year circuit breaker
+
+    while (months < MAX_MONTHS) {
+      const remainingDebts = debts.filter((d) => d.balance > 0.001);
+      if (remainingDebts.length === 0) break;
+
+      months++;
+      let monthPayment = 0;
+      let totalAvailableBudget = extra;
+
+      // 1. Lump-sum windfall injection in specified month
+      if (wf && wf.month === months) {
+        totalAvailableBudget += wf.amount;
+      }
+
+      // 2. Accrue interest & pay minimum payment
+      for (let i = 0; i < debts.length; i++) {
+        const d = debts[i];
+        if (d.balance > 0.001) {
+          const monthInterest = d.balance * (d.rate / 100 / 12);
+          totalInterest += monthInterest;
+          d.balance += monthInterest;
+
+          const minPay = Math.min(d.balance, d.minPayment);
+          d.balance -= minPay;
+          monthPayment += minPay;
+
+          if (d.balance <= 0.001 && d.paidOffMonth === null) {
+            d.paidOffMonth = months;
+            payoffOrder.push({ name: d.name, month: months, id: d.id });
+          }
+        } else {
+          // Rollover minimum payment from paid-off debt
+          totalAvailableBudget += d.minPayment;
+        }
+      }
+
+      // 3. Allocate extra budget according to chosen strategy
+      const activeDebts = debts.filter((d) => d.balance > 0.001);
+      activeDebts.sort((a, b) => {
+        if (strat === 'snowball') {
+          return a.balance - b.balance || b.rate - a.rate;
+        }
+        return b.rate - a.rate || a.balance - b.balance;
+      });
+
+      for (let j = 0; j < activeDebts.length; j++) {
+        if (totalAvailableBudget <= 0.001) break;
+        const target = activeDebts[j];
+        const extraPay = Math.min(target.balance, totalAvailableBudget);
+        target.balance -= extraPay;
+        monthPayment += extraPay;
+        totalAvailableBudget -= extraPay;
+
+        if (target.balance <= 0.001 && target.paidOffMonth === null) {
+          target.paidOffMonth = months;
+          payoffOrder.push({ name: target.name, month: months, id: target.id });
+        }
+      }
+
+      totalPaid += monthPayment;
+      const curTotal = debts.reduce((sum, d) => sum + Math.max(0, d.balance), 0);
+      trajectory.push({ month: months, balance: Math.max(0, curTotal) });
+    }
+
+    var firstDebtCleared = payoffOrder.length > 0 ? payoffOrder[0] : null;
+
+    return {
+      months: months,
+      totalInterest: Math.round(totalInterest),
+      totalPaid: Math.round(totalPaid),
+      payoffOrder: payoffOrder,
+      firstDebtCleared: firstDebtCleared,
+      trajectory: trajectory,
+    };
+  }
+
+  /**
+   * Phase 75: Snowball vs. Avalanche Visual Velocity Comparator Engine.
+   */
+  function compareDebtVelocity(params) {
+    var p = params || {};
+    var debts = Array.isArray(p.debts) ? p.debts : [];
+    var extra = Math.max(0, Number(p.extraPayment) || 0);
+    var windfall = p.windfall || null;
+
+    var baseline = simulateDebtPayoff(debts, 0, 'avalanche', null);
+    var avalanche = simulateDebtPayoff(debts, extra, 'avalanche', windfall);
+    var snowball = simulateDebtPayoff(debts, extra, 'snowball', windfall);
+
+    var interestDelta = Math.max(0, snowball.totalInterest - avalanche.totalInterest);
+    var monthDelta = snowball.months - avalanche.months;
+
+    var avFirstMonth = avalanche.firstDebtCleared ? avalanche.firstDebtCleared.month : 0;
+    var snFirstMonth = snowball.firstDebtCleared ? snowball.firstDebtCleared.month : 0;
+    var firstWinMonthDelta = avFirstMonth - snFirstMonth; // positive = snowball clears first debt faster
+
+    var avMonthsSaved = Math.max(0, baseline.months - avalanche.months);
+    var snMonthsSaved = Math.max(0, baseline.months - snowball.months);
+    var avInterestSaved = Math.max(0, baseline.totalInterest - avalanche.totalInterest);
+    var snInterestSaved = Math.max(0, baseline.totalInterest - snowball.totalInterest);
+
+    // Recommendation logic
+    var recommended = 'avalanche';
+    var reasonTh = '';
+    var reasonEn = '';
+
+    if (debts.length <= 1) {
+      recommended = 'equal';
+      reasonTh = 'หนี้มีเพียงรายการเดียว ทั้ง Avalanche และ Snowball ให้ผลลัพธ์เท่ากันทุกประการ';
+      reasonEn = 'Single debt item: Avalanche and Snowball strategies produce identical results.';
+    } else if (interestDelta >= 2000) {
+      recommended = 'avalanche';
+      reasonTh = `แนะนำ Avalanche: ช่วยประหยัดดอกเบี้ยได้มากกว่า Snowball ถึง ${formatMoney(interestDelta)} บาท`;
+      reasonEn = `Avalanche Recommended: Saves ${formatMoney(interestDelta)} THB more in interest than Snowball.`;
+    } else if (firstWinMonthDelta >= 2) {
+      recommended = 'snowball';
+      reasonTh = `แนะนำ Snowball: ช่วยปิดหนี้ก้อนแรกได้เร็วกว่า ${firstWinMonthDelta} เดือน สร้างกำลังใจในการปลดหนี้ (ดอกเบี้ยต่างกันเพียง ${formatMoney(interestDelta)} บาท)`;
+      reasonEn = `Snowball Recommended: Eliminates first debt ${firstWinMonthDelta} months earlier for quick momentum (interest difference is only ${formatMoney(interestDelta)} THB).`;
+    } else {
+      recommended = interestDelta > 0 ? 'avalanche' : 'equal';
+      reasonTh =
+        interestDelta > 0
+          ? `Avalanche ประหยัดดอกเบี้ยกว่าเล็กน้อย (${formatMoney(interestDelta)} บาท)`
+          : 'ทั้งสองวิธีให้ระยะเวลาและดอกเบี้ยใกล้เคียงกัน';
+      reasonEn =
+        interestDelta > 0
+          ? `Avalanche saves slightly more interest (${formatMoney(interestDelta)} THB).`
+          : 'Both strategies yield nearly identical duration and interest.';
+    }
+
+    return {
+      baseline: baseline,
+      avalanche: avalanche,
+      snowball: snowball,
+      interestDelta: interestDelta,
+      monthDelta: monthDelta,
+      firstWinMonthDelta: firstWinMonthDelta,
+      avMonthsSaved: avMonthsSaved,
+      snMonthsSaved: snMonthsSaved,
+      avInterestSaved: avInterestSaved,
+      snInterestSaved: snInterestSaved,
+      recommended: recommended,
+      reasonTh: reasonTh,
+      reasonEn: reasonEn,
+    };
+  }
+
+  /**
    * Phase 67: Emergency Fund & Income Shock Stress-Tester.
    * Simulates sudden loss of income (layoff, resignation, illness, or total shock),
    * compares Barebones survival vs Standard lifestyle drain, and models Section 33
@@ -3807,6 +3998,8 @@
     formatAppLockTimeout: formatAppLockTimeout,
     calculateRetirementCeilingPool: calculateRetirementCeilingPool,
     evaluateEFilingPreFlightChecklist: evaluateEFilingPreFlightChecklist,
+    simulateDebtPayoff: simulateDebtPayoff,
+    compareDebtVelocity: compareDebtVelocity,
   };
 
   // Expose on global window object
@@ -3870,5 +4063,7 @@
       global.calculateRetirementCeilingPool = calculateRetirementCeilingPool;
     if (typeof global.evaluateEFilingPreFlightChecklist === 'undefined')
       global.evaluateEFilingPreFlightChecklist = evaluateEFilingPreFlightChecklist;
+    if (typeof global.simulateDebtPayoff === 'undefined') global.simulateDebtPayoff = simulateDebtPayoff;
+    if (typeof global.compareDebtVelocity === 'undefined') global.compareDebtVelocity = compareDebtVelocity;
   }
 })(typeof window !== 'undefined' ? window : this);

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.5.17">
+  <meta name="version" content="2.5.18">
   <script>
     try {
       var t = localStorage.getItem('moneySuperapp.theme');
@@ -229,7 +229,7 @@
     @media print {
       :root { --ink: #000 !important; --ink-dim: #333 !important; --ink-faint: #666 !important; --panel: #fff !important; --panel-2: #fafafa !important; --line: #ccc !important; }
       body { background: #fff !important; color: #000 !important; }
-      .save-status, .add-btn, .remove-btn, .undo-btn, .version-tag, .rebalance-bridge-btn, #bridgeAlertBanner, #importModal, #importFileInput { display: none !important; }
+      .save-status, .add-btn, .remove-btn, .undo-btn, .version-tag, .rebalance-bridge-btn, .debt-bridge-btn, #bridgeAlertBanner, #importModal, #importFileInput { display: none !important; }
     }
 
     .version-tag{ font-size: 10px; color: var(--ink-faint); text-align: center; margin-top: 14px; }
@@ -362,6 +362,28 @@
     }
     .rebalance-bridge-btn:hover {
       opacity: 0.92;
+      transform: translateY(-1px);
+    }
+    .debt-bridge-btn {
+      margin-top: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 18px;
+      border-radius: 999px;
+      background: var(--panel-2);
+      color: var(--blue, #2563eb);
+      border: 1px solid var(--blue, #2563eb);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(37,99,235,0.12);
+      transition: opacity 0.15s, transform 0.15s, background 0.15s;
+      font-family: inherit;
+    }
+    .debt-bridge-btn:hover {
+      background: var(--blue-dim, rgba(37,99,235,0.12));
       transform: translateY(-1px);
     }
 
@@ -675,10 +697,15 @@
       <div class="remaining-box" id="remainingBox">
         <div class="rlabel" id="remainingLabel">เงินคงเหลือสำหรับลงทุน</div>
         <div class="rvalue zero" id="remainingValue">0 บาท</div>
-        <div class="rnote" id="remainingNote">&nbsp;</div>
-        <button class="rebalance-bridge-btn" id="bridgeToRebalanceBtn" style="display:none;" onclick="sendToRebalance()">
-          📊 <span id="lblBridgeBtn">นำเงินเหลือลงทุนไปคำนวณ Rebalance</span>
-        </button>
+        <div class="rnote" id="remainingNote">รายได้ ค่าใช้จ่าย และเงินออมเท่ากันพอดี</div>
+        <div style="display:flex; flex-direction:column; gap:6px; margin-top:12px; align-items:center;">
+          <button class="rebalance-bridge-btn" id="bridgeToRebalanceBtn" style="display:none;" onclick="sendToRebalance()">
+            📊 <span id="lblBridgeBtn">นำเงินเหลือลงทุนไปคำนวณ Rebalance</span>
+          </button>
+          <button class="debt-bridge-btn" id="bridgeToDebtBtn" style="display:none;" onclick="sendToDebtPayoff()">
+            💳 <span id="lblBridgeDebtBtn">นำเงินคงเหลือไปเร่งโปะหนี้ (Debt Payoff)</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -842,7 +869,7 @@
       <button class="reset-btn" id="resetBtn" style="color:var(--ink-faint);">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v2.5.17</p>
+  <p class="version-tag">v2.5.18</p>
 
   <!-- Import Preview Modal -->
   <div id="importModal" role="dialog" aria-modal="true" aria-labelledby="importModalTitle" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; display:none; align-items:center; justify-content:center; backdrop-filter:blur(2px);" onclick="if(event.target===this)closeImportModal()">
