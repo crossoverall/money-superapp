@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="2.5.45">
+<meta name="version" content="2.5.46">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self';">
 <script>
   try {
@@ -299,19 +299,19 @@
 </head>
 <body>
 
-  <div class="eyebrow" id="eyebrow">เครื่องมือ DCA</div>
+  <div class="eyebrow" id="eyebrow" data-i18n="eyebrow">เครื่องมือ DCA</div>
   <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-    <h1 id="pageTitle" style="margin:0;">คำนวณการเติมเงินรายเดือน</h1>
-    <button type="button" class="undo-btn no-print" id="btnUndoTop" onclick="undoRebalanceChange()" style="display:none;" title="เลิกทำ / Undo (Ctrl+Z)" aria-label="Undo last change">↩ <span id="lblUndo">เลิกทำ (Undo)</span></button>
+    <h1 id="pageTitle" style="margin:0;" data-i18n="pageTitle">คำนวณการเติมเงินรายเดือน</h1>
+    <button type="button" class="undo-btn no-print" id="btnUndoTop" onclick="undoRebalanceChange()" style="display:none;" title="เลิกทำ / Undo (Ctrl+Z)" aria-label="Undo last change">↩ <span id="lblUndo" data-i18n="lblUndo">เลิกทำ (Undo)</span></button>
   </div>
-  <div class="sub" id="subtitle">แบ่งงบเดือนนี้ตาม Core / Ballast / Satellite แล้วคำนวณว่าแต่ละสินทรัพย์ในแต่ละกลุ่มควรเติมเท่าไหร่ ให้สัดส่วนเข้าใกล้เป้าหมายที่สุด โดยไม่ต้องขายอะไรเลย</div>
+  <div class="sub" id="subtitle" data-i18n="subtitle">แบ่งงบเดือนนี้ตาม Core / Ballast / Satellite แล้วคำนวณว่าแต่ละสินทรัพย์ในแต่ละกลุ่มควรเติมเท่าไหร่ ให้สัดส่วนเข้าใกล้เป้าหมายที่สุด โดยไม่ต้องขายอะไรเลย</div>
 
   <!-- Live Price Control Bar -->
   <div class="price-bar-panel" id="priceBarPanel" role="region" aria-label="Live Market Price Bar">
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
       <button id="btnRefreshPrices" onclick="fetchAllPrices()" class="refresh-price-btn" title="ดึงราคาล่าสุดสำหรับทุกสินทรัพย์ที่มี Ticker" aria-label="ดึงราคาล่าสุด / Refresh live prices">
         <span class="refresh-icon">🔄</span>
-        <span id="lblRefreshPrices">ดึงราคาล่าสุด</span>
+        <span id="lblRefreshPrices" data-i18n="lblRefreshPrices">ดึงราคาล่าสุด</span>
       </button>
       <div style="display:flex; flex-direction:column; gap:2px;">
         <span id="priceFetchTimestamp" role="status" aria-live="polite" style="font-size:11px; font-weight:600; color:var(--ink-dim);">ยังไม่ได้ดึงราคาล่าสุด</span>
@@ -321,10 +321,10 @@
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
       <label style="display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--ink-dim); cursor:pointer;">
         <input type="checkbox" id="chkAutoRefresh" onchange="toggleAutoRefresh(this.checked)" checked style="accent-color:var(--core);" aria-label="Auto-refresh prices every 10 minutes">
-        <span id="lblAutoRefresh">อัปเดตทุก 10 นาที</span>
+        <span id="lblAutoRefresh" data-i18n="lblAutoRefresh">อัปเดตทุก 10 นาที</span>
       </label>
       <button onclick="openApiSettingsModal()" class="settings-btn" title="ตั้งค่า API ราคาหุ้น" id="btnSettingsOpen" aria-label="ตั้งค่า API / Configure stock price API">
-        ⚙️ <span id="lblSettingsBtn">ตั้งค่า API</span>
+        ⚙️ <span id="lblSettingsBtn" data-i18n="lblSettingsBtn">ตั้งค่า API</span>
       </button>
     </div>
   </div>
@@ -337,14 +337,14 @@
       <button onclick="dismissPendingBudget()" style="background:none;border:none;cursor:pointer;font-size:16px;color:inherit;padding:0 4px;" aria-label="Dismiss budget alert">&times;</button>
     </div>
     <div class="panel-title" id="budgetPanelTitle" style="display:flex; justify-content:space-between; align-items:center;">
-      <span id="lblBudgetHeading">งบที่จะลงทุนเดือนนี้</span>
+      <span id="lblBudgetHeading" data-i18n="lblBudgetHeading">งบที่จะลงทุนเดือนนี้</span>
     </div>
     <div id="panelBudgetBody">
       <div class="budget-row" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-        <label id="budgetUnit">บาท</label>
+        <label id="budgetUnit" data-i18n="budgetUnit">บาท</label>
         <input type="text" inputmode="decimal" id="totalBudget" value="200000" aria-labelledby="budgetPanelTitle" aria-describedby="budgetUnit" style="flex:1; min-width:120px;">
         <button type="button" id="btnBridgeDcaToBudget" onclick="bridgeDcaToBudget('rebalance_budget')" class="action-btn" style="white-space:nowrap; padding:6px 12px; font-size:11.5px; font-weight:600; background:var(--ok-dim); border:1px solid var(--ok); color:var(--ok); border-radius:8px; cursor:pointer;" title="ส่งยอดลงทุน DCA รายเดือนนี้ไปบันทึกในงบประมาณ / Bridge to Monthly Budget">
-          📤 <span id="lblBridgeDcaToBudget">ส่งงบ DCA ไปหน้างบประมาณ</span>
+          📤 <span id="lblBridgeDcaToBudget" data-i18n="lblBridgeDcaToBudget">ส่งงบ DCA ไปหน้างบประมาณ</span>
         </button>
       </div>
     <div id="minBudgetBanner" class="min-budget-banner" role="status" aria-live="polite" style="display:none;"></div>
@@ -362,7 +362,7 @@
           <circle id="donutSatellite" cx="50" cy="50" r="38" fill="none" stroke="var(--satellite)" stroke-width="14" stroke-dasharray="0 238.76" stroke-dashoffset="0" />
         </svg>
         <div>
-          <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-faint); font-weight:700;" id="lblDonutTitle">มูลค่าพอร์ตปัจจุบัน</div>
+          <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-faint); font-weight:700;" id="lblDonutTitle" data-i18n="lblDonutTitle">มูลค่าพอร์ตปัจจุบัน</div>
           <div style="font-size:17px; font-weight:700; color:var(--ink);" id="donutTotalVal">0 บาท</div>
           <div style="font-size:11px; color:var(--ink-dim); margin-top:2px;" id="donutAfterVal">หลังเติมเงิน: 0 บาท</div>
         </div>
@@ -386,9 +386,9 @@
     <!-- Min Trade Cutoff (Task 4.1) -->
     <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-top:12px; padding-top:10px; border-top:1px dashed var(--line); font-size:12px;">
       <div style="display:flex; align-items:center; gap:8px;">
-        <label for="minTradeThreshold" style="color:var(--ink-dim); font-weight:600;" id="lblMinTrade">ยอดซื้อขั้นต่ำ (Min Trade):</label>
+        <label for="minTradeThreshold" style="color:var(--ink-dim); font-weight:600;" id="lblMinTrade" data-i18n="lblMinTrade">ยอดซื้อขั้นต่ำ (Min Trade):</label>
         <input type="number" id="minTradeThreshold" value="0" min="0" step="100" style="width:100px; padding:4px 8px; border:1px solid var(--line); border-radius:6px; background:var(--panel-2); color:var(--ink); font-size:12px; font-family:inherit;" oninput="compute()" placeholder="0">
-        <span style="color:var(--ink-faint); font-size:11px;" id="lblMinTradeDesc">บาท (เตือนหากคำนวณได้ต่ำกว่านี้)</span>
+        <span style="color:var(--ink-faint); font-size:11px;" id="lblMinTradeDesc" data-i18n="lblMinTradeDesc">บาท (เตือนหากคำนวณได้ต่ำกว่านี้)</span>
       </div>
     </div>
 
@@ -396,7 +396,7 @@
     <div id="portfolioDriftContainer" role="region" aria-labelledby="lblDriftTitle" style="display:none; margin-top:12px; padding-top:12px; border-top:1px dashed var(--line);">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
         <div style="display:flex; align-items:center; gap:6px;">
-          <span style="font-size:12px; font-weight:700; color:var(--ink);" id="lblDriftTitle">ความเบี่ยงเบนพอร์ต (Portfolio Drift)</span>
+          <span style="font-size:12px; font-weight:700; color:var(--ink);" id="lblDriftTitle" data-i18n="lblDriftTitle">ความเบี่ยงเบนพอร์ต (Portfolio Drift)</span>
           <span id="badgePortfolioHealth" role="status" aria-live="polite" style="background:var(--ok-dim); color:var(--ok); border-radius:9999px; padding:2px 8px; font-size:10px; font-weight:700;">✓ สมดุลดี</span>
         </div>
         <div style="font-size:11px; color:var(--ink-dim);" id="txtDriftReduction">การเติมเงินช่วยลดความเบี่ยงเบนลง 0%</div>
@@ -406,7 +406,7 @@
       <div style="display:flex; flex-direction:column; gap:6px; font-size:11px;">
         <div>
           <div style="display:flex; justify-content:space-between; color:var(--ink-dim); margin-bottom:2px;">
-            <span id="lblPreDrift">ก่อนเติมเงิน (Pre-DCA Tracking Error)</span>
+            <span id="lblPreDrift" data-i18n="lblPreDrift">ก่อนเติมเงิน (Pre-DCA Tracking Error)</span>
             <strong id="valPreDrift" style="color:var(--ink);">0.0%</strong>
           </div>
           <div style="width:100%; height:6px; background:var(--panel-2); border-radius:3px; overflow:hidden;" role="progressbar" aria-label="Pre-DCA Tracking Error">
@@ -416,7 +416,7 @@
 
         <div>
           <div style="display:flex; justify-content:space-between; color:var(--ink-dim); margin-bottom:2px;">
-            <span id="lblPostDrift">หลังเติมเงินเดือนนี้ (Post-DCA Tracking Error)</span>
+            <span id="lblPostDrift" data-i18n="lblPostDrift">หลังเติมเงินเดือนนี้ (Post-DCA Tracking Error)</span>
             <strong id="valPostDrift" style="color:var(--ok);">0.0%</strong>
           </div>
           <div style="width:100%; height:6px; background:var(--panel-2); border-radius:3px; overflow:hidden;" role="progressbar" aria-label="Post-DCA Tracking Error">
@@ -433,7 +433,7 @@
         <!-- Currency Exposure Bar -->
         <div style="margin-bottom:12px;">
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; font-size:11px;">
-            <span style="font-weight:700; color:var(--ink);" id="lblCurrencyExposureTitle">การกระจายความเสี่ยงสกุลเงิน (Currency Exposure)</span>
+            <span style="font-weight:700; color:var(--ink);" id="lblCurrencyExposureTitle" data-i18n="lblCurrencyExposureTitle">การกระจายความเสี่ยงสกุลเงิน (Currency Exposure)</span>
             <span id="txtPrimaryCurrencyShare" style="color:var(--ink-dim); font-size:10px; font-weight:600;">THB 100%</span>
           </div>
           <div id="barCurrencyExposure" role="progressbar" aria-label="Currency Exposure Bar" style="display:flex; width:100%; height:8px; background:var(--panel-2); border-radius:4px; overflow:hidden;"></div>
@@ -443,11 +443,11 @@
         <!-- Allocation Intensity Heatmap -->
         <div>
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; font-size:11px; flex-wrap:wrap; gap:4px;">
-            <span style="font-weight:700; color:var(--ink);" id="lblHeatmapTitle">แผนที่ความหนาแน่นสัดส่วน (Allocation Intensity Heatmap)</span>
+            <span style="font-weight:700; color:var(--ink);" id="lblHeatmapTitle" data-i18n="lblHeatmapTitle">แผนที่ความหนาแน่นสัดส่วน (Allocation Intensity Heatmap)</span>
             <div style="display:flex; align-items:center; gap:8px; font-size:10px; color:var(--ink-dim);">
-              <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:8px; height:8px; border-radius:2px; background:#3b82f6;"></span> <span id="lblLegendUnder">ตามหลังเป้า (ซื้อเพิ่ม)</span></span>
-              <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:8px; height:8px; border-radius:2px; background:#10b981;"></span> <span id="lblLegendAligned">สมดุล (±1%)</span></span>
-              <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:8px; height:8px; border-radius:2px; background:#f59e0b;"></span> <span id="lblLegendOver">เกินเป้า (ชะลอ)</span></span>
+              <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:8px; height:8px; border-radius:2px; background:#3b82f6;"></span> <span id="lblLegendUnder" data-i18n="lblLegendUnder">ตามหลังเป้า (ซื้อเพิ่ม)</span></span>
+              <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:8px; height:8px; border-radius:2px; background:#10b981;"></span> <span id="lblLegendAligned" data-i18n="lblLegendAligned">สมดุล (±1%)</span></span>
+              <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:8px; height:8px; border-radius:2px; background:#f59e0b;"></span> <span id="lblLegendOver" data-i18n="lblLegendOver">เกินเป้า (ชะลอ)</span></span>
             </div>
           </div>
           <div id="heatmapGridContainer" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(135px, 1fr)); gap:6px;"></div>
@@ -456,7 +456,7 @@
         <!-- Cross-Portfolio Asset Class Correlation Matrix & Diversification Visualizer -->
         <div id="diversificationContainer" role="region" aria-labelledby="lblDivTitle" style="margin-top:12px; padding-top:10px; border-top:1px dashed var(--line); display:none;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
-            <div style="font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink);" id="lblDivTitle">
+            <div style="font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink);" id="lblDivTitle" data-i18n="lblDivTitle">
               🌐 การกระจายความเสี่ยง & ความสัมพันธ์ของสินทรัพย์ (Risk Diversification)
             </div>
             <span id="badgeDiversificationScore" role="status" aria-live="polite" style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px;"></span>
@@ -473,10 +473,10 @@
   <div class="card reorder-card" id="panelBuckets" role="region" aria-label="Investment Buckets and Assets" style="margin-bottom:16px;">
     <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
       <div>
-        <div style="font-size:14px; font-weight:700; color:var(--ink);" id="lblBucketsTitle">
+        <div style="font-size:14px; font-weight:700; color:var(--ink);" id="lblBucketsTitle" data-i18n="lblBucketsTitle">
           💼 กลุ่มสินทรัพย์และการจัดพอร์ต (Investment Buckets &amp; Portfolio Assets)
         </div>
-        <div style="font-size:11px; color:var(--ink-dim);" id="lblBucketsSubtitle">
+        <div style="font-size:11px; color:var(--ink-dim);" id="lblBucketsSubtitle" data-i18n="lblBucketsSubtitle">
           Core (หลัก) / Ballast (พยุง) / Satellite (ดาวเทียม) พร้อมสัดส่วนและการเติมเงิน
         </div>
       </div>
@@ -488,7 +488,7 @@
 
   <div class="howto reorder-card" id="howto">
     <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-      <div style="font-weight:700; color:var(--ink);" id="lblHowtoTitle">📖 วิธีทำงานและคำแนะนำ (Guide &amp; Tips)</div>
+      <div style="font-weight:700; color:var(--ink);" id="lblHowtoTitle" data-i18n="lblHowtoTitle">📖 วิธีทำงานและคำแนะนำ (Guide &amp; Tips)</div>
     </div>
     <div id="howtoBody">
       <b>วิธีทำงาน</b> — งบรวมถูกแบ่งตามสัดส่วน Core/Ballast/Satellite ก่อน จากนั้นในแต่ละกลุ่ม ระบบจะเติมเงินให้สินทรัพย์ที่ "ตามหลัง" สัดส่วนเป้าหมายมากที่สุดก่อน ถ้าตัวไหนมูลค่าเกินเป้าหมายอยู่แล้วจะไม่เติมเดือนนี้ (ค่า = 0) แล้วนำงบไปให้ตัวที่ตามหลังแทน — ไม่มีการขายสินทรัพย์ใดๆ ทั้งสิ้น<br><br>
@@ -501,10 +501,10 @@
   <div class="panel card reorder-card" id="panelTargetDateGlidepath" role="region" aria-label="Target Date Retirement Glidepath Calculator" style="margin-bottom:16px;">
     <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;" id="btnToggleGlidepath">
       <div>
-        <div style="font-size:14px; font-weight:700; color:var(--ink);" id="lblGlidepathTitle">
+        <div style="font-size:14px; font-weight:700; color:var(--ink);" id="lblGlidepathTitle" data-i18n="lblGlidepathTitle">
           🎯 วางแผนสัดส่วนพอร์ตตามเป้าหมายอายุเกษียณ (Target Date Glidepath)
         </div>
-        <div style="font-size:11px; color:var(--ink-dim);" id="lblGlidepathSubtitle">
+        <div style="font-size:11px; color:var(--ink-dim);" id="lblGlidepathSubtitle" data-i18n="lblGlidepathSubtitle">
           คำนวณสัดส่วน Core / Ballast / Satellite อัตโนมัติตามอายุและเป้าหมายเกษียณ (โมเดล กบข. / Vanguard Glide Path)
         </div>
       </div>
@@ -514,34 +514,34 @@
       <!-- Input Controls Grid -->
       <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:10px; margin-bottom:12px;">
         <div>
-          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpGlideCurrentAge">
+          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpGlideCurrentAge" data-i18n="lblInpGlideCurrentAge">
             อายุปัจจุบัน (ปี)
           </label>
           <input type="number" id="inpGlideCurrentAge" value="30" min="18" max="90" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateGlidepathUI()">
         </div>
 
         <div>
-          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpGlideRetireAge">
+          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpGlideRetireAge" data-i18n="lblInpGlideRetireAge">
             อายุเป้าหมายเกษียณ (ปี)
           </label>
           <input type="number" id="inpGlideRetireAge" value="60" min="40" max="90" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateGlidepathUI()">
         </div>
 
         <div>
-          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpGlideRisk">
+          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpGlideRisk" data-i18n="lblInpGlideRisk">
             ระดับความเสี่ยงที่ยอมรับได้
           </label>
           <select id="selGlideRisk" onchange="updateGlidepathUI()" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:12px; font-weight:600; color:var(--ink); outline:none;">
-            <option value="moderate" id="optRiskModerate">ปานกลาง (สมดุลตามอายุ - แนะนำ)</option>
-            <option value="aggressive" id="optRiskAggressive">เชิงรุก (เน้นการเติบโตสูง)</option>
-            <option value="conservative" id="optRiskConservative">อนุรักษนิยม (เน้นความมั่นคง)</option>
+            <option value="moderate" id="optRiskModerate" data-i18n="optRiskModerate">ปานกลาง (สมดุลตามอายุ - แนะนำ)</option>
+            <option value="aggressive" id="optRiskAggressive" data-i18n="optRiskAggressive">เชิงรุก (เน้นการเติบโตสูง)</option>
+            <option value="conservative" id="optRiskConservative" data-i18n="optRiskConservative">อนุรักษนิยม (เน้นความมั่นคง)</option>
           </select>
         </div>
       </div>
 
       <!-- Cohort Year Preset Buttons -->
       <div style="display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:12px;">
-        <span style="font-size:11px; color:var(--ink-faint); font-weight:600;" id="lblCohortPresets">🎯 เลือกรุ่นปีเกษียณ (Target Year Cohorts):</span>
+        <span style="font-size:11px; color:var(--ink-faint); font-weight:600;" id="lblCohortPresets" data-i18n="lblCohortPresets">🎯 เลือกรุ่นปีเกษียณ (Target Year Cohorts):</span>
         <button type="button" class="tab" onclick="setGlidepathCohortPreset(2035)" style="font-size:10.5px; padding:3px 8px; width:auto;">2035 (พ.ศ. 2578)</button>
         <button type="button" class="tab" onclick="setGlidepathCohortPreset(2040)" style="font-size:10.5px; padding:3px 8px; width:auto;">2040 (พ.ศ. 2583)</button>
         <button type="button" class="tab" onclick="setGlidepathCohortPreset(2045)" style="font-size:10.5px; padding:3px 8px; width:auto;">2045 (พ.ศ. 2588)</button>
@@ -553,7 +553,7 @@
       <!-- Dynamic Visual Glidepath Allocation Bar -->
       <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:12px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:11px;">
-          <span style="font-weight:700; color:var(--ink);" id="lblGlidepathBarTitle">📊 สัดส่วนแนะนำตามเส้นทาง Glidepath:</span>
+          <span style="font-weight:700; color:var(--ink);" id="lblGlidepathBarTitle" data-i18n="lblGlidepathBarTitle">📊 สัดส่วนแนะนำตามเส้นทาง Glidepath:</span>
           <span id="badgeGlidePhase" style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--core-dim); color:var(--core); border:1px solid var(--core);"></span>
         </div>
         <div style="height:14px; border-radius:7px; overflow:hidden; display:flex; margin-bottom:8px;" id="glidepathBar">
@@ -571,24 +571,24 @@
       <!-- Key Metrics Display Grid -->
       <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; margin-bottom:12px;">
         <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
-          <span style="font-size:10px; color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGlideHorizon">ระยะเวลาลงทุน</span>
+          <span style="font-size:10px; color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGlideHorizon" data-i18n="lblCardGlideHorizon">ระยะเวลาลงทุน</span>
           <span id="valGlideHorizonYears" style="font-size:13.5px; font-weight:800; color:var(--ink);">30 ปี</span>
           <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="subGlideTargetYear">ปีเกษียณ ค.ศ. 2056</div>
         </div>
         <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
-          <span style="font-size:10px; color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGlideCore">สัดส่วน Core แนะนำ</span>
+          <span style="font-size:10px; color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGlideCore" data-i18n="lblCardGlideCore">สัดส่วน Core แนะนำ</span>
           <span id="valGlideCore" style="font-size:13.5px; font-weight:800; color:var(--core);">80%</span>
-          <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="subGlideCoreDesc">หุ้นโลก / SET / อสังหาฯ</div>
+          <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="subGlideCoreDesc" data-i18n="subGlideCoreDesc">หุ้นโลก / SET / อสังหาฯ</div>
         </div>
         <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
-          <span style="font-size:10px; color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGlideBallast">สัดส่วน Ballast แนะนำ</span>
+          <span style="font-size:10px; color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGlideBallast" data-i18n="lblCardGlideBallast">สัดส่วน Ballast แนะนำ</span>
           <span id="valGlideBallast" style="font-size:13.5px; font-weight:800; color:var(--ballast);">15%</span>
-          <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="subGlideBallastDesc">พันธบัตร / กองทุนตราสารหนี้</div>
+          <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="subGlideBallastDesc" data-i18n="subGlideBallastDesc">พันธบัตร / กองทุนตราสารหนี้</div>
         </div>
         <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
-          <span style="font-size:10px; color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGlideSat">สัดส่วน Satellite แนะนำ</span>
+          <span style="font-size:10px; color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGlideSat" data-i18n="lblCardGlideSat">สัดส่วน Satellite แนะนำ</span>
           <span id="valGlideSat" style="font-size:13.5px; font-weight:800; color:var(--satellite);">5%</span>
-          <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="subGlideSatDesc">ทองคำ / คริปโต / ธีมเฉพาะ</div>
+          <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="subGlideSatDesc" data-i18n="subGlideSatDesc">ทองคำ / คริปโต / ธีมเฉพาะ</div>
         </div>
       </div>
 
@@ -599,13 +599,13 @@
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
           <button type="button" class="min-budget-apply-btn" onclick="applyGlidepathSplitToPortfolio()" style="padding:7px 14px; font-size:11.5px; font-weight:700;">
-            📥 <span id="lblApplyGlidepath">นำสัดส่วนนี้ไปใช้กับพอร์ต (Apply to Portfolio)</span>
+            📥 <span id="lblApplyGlidepath" data-i18n="lblApplyGlidepath">นำสัดส่วนนี้ไปใช้กับพอร์ต (Apply to Portfolio)</span>
           </button>
           <button type="button" id="btnBridgeGlidepathToBudget" onclick="bridgeDcaToBudget('glidepath')" class="action-btn" style="padding:7px 14px; font-size:11.5px; font-weight:700; background:var(--ok-dim); border:1px solid var(--ok); color:var(--ok); border-radius:8px; cursor:pointer;" title="ส่งแผนเงินออมเกษียณไปหน้างบประมาณ / Bridge to Monthly Budget">
-            📤 <span id="lblBridgeGlidepathToBudget">ส่งงบ DCA เกษียณไปงบประมาณ</span>
+            📤 <span id="lblBridgeGlidepathToBudget" data-i18n="lblBridgeGlidepathToBudget">ส่งงบ DCA เกษียณไปงบประมาณ</span>
           </button>
         </div>
-        <span style="font-size:10.5px; color:var(--ink-dim);" id="txtGlidepathSyncNote">
+        <span style="font-size:10.5px; color:var(--ink-dim);" id="txtGlidepathSyncNote" data-i18n="txtGlidepathSyncNote">
           💡 สัดส่วนที่เลือกจะอัปเดตช่องเป้าหมาย Core / Ballast / Satellite ด้านบนอัตโนมัติ
         </span>
       </div>
@@ -617,14 +617,14 @@
     <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;" id="btnToggleThaiGold">
       <div>
         <div style="font-size:14px; font-weight:700; color:var(--ink);" id="lbl-gold-panel-title">
-          🟡 <span id="lblGoldTitle">คำนวณกำไร/ขาดทุนทองคำ &amp; แปลงหน่วยน้ำหนักบาท (Thai Gold DCA)</span>
+          🟡 <span id="lblGoldTitle" data-i18n="lblGoldTitle">คำนวณกำไร/ขาดทุนทองคำ &amp; แปลงหน่วยน้ำหนักบาท (Thai Gold DCA)</span>
         </div>
-        <div style="font-size:11px; color:var(--ink-dim);" id="lblGoldSubtitle">
+        <div style="font-size:11px; color:var(--ink-dim);" id="lblGoldSubtitle" data-i18n="lblGoldSubtitle">
           คำนวณต้นทุนเฉลี่ย, จุดคุ้มทุนค่าบล็อก, ราคารับซื้อคืนสมาคมค้าทองคำ, และส่งมูลค่าทองไปยังพอร์ต Rebalance
         </div>
       </div>
       <div style="display:flex; align-items:center; gap:8px;">
-        <span id="badgeGoldStatus" style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--ballast-dim); color:var(--ballast); border:1px solid var(--ballast);">96.5% ทองไทย</span>
+        <span id="badgeGoldStatus" data-i18n="badgeGoldStatus" style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--ballast-dim); color:var(--ballast); border:1px solid var(--ballast);">96.5% ทองไทย</span>
       </div>
     </div>
 
@@ -634,7 +634,7 @@
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; font-size:11px;">
           <!-- Gold Product Type -->
           <div>
-            <label for="selGoldType" style="display:block; font-weight:600; color:var(--ink); margin-bottom:4px;" id="lblGoldType">
+            <label for="selGoldType" style="display:block; font-weight:600; color:var(--ink); margin-bottom:4px;" id="lblGoldType" data-i18n="lblGoldType">
               ประเภททองคำ (Product Type):
             </label>
             <select id="selGoldType" onchange="updateGoldCalculator()" style="width:100%; padding:7px 9px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--ink); font-size:12px; font-weight:600; outline:none;">
@@ -646,7 +646,7 @@
           <!-- Weight Quantity & Unit -->
           <div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-              <label for="inpGoldWeight" style="font-weight:600; color:var(--ink);" id="lblGoldWeight">น้ำหนัก (Weight):</label>
+              <label for="inpGoldWeight" style="font-weight:600; color:var(--ink);" id="lblGoldWeight" data-i18n="lblGoldWeight">น้ำหนัก (Weight):</label>
               <div style="display:flex; gap:4px;">
                 <select id="selGoldUnit" onchange="updateGoldCalculator()" style="padding:2px 6px; border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--ink); font-size:10px; font-weight:600; outline:none;">
                   <option value="baht">บาททองคำ (Baht)</option>
@@ -669,8 +669,8 @@
           <!-- Purchase Cost per Baht -->
           <div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-              <label for="inpGoldCost" style="font-weight:600; color:var(--ink);" id="lblGoldCost">ราคาต้นทุนที่ซื้อ (Cost/Baht):</label>
-              <span style="font-size:9.5px; color:var(--ink-faint);" id="lblGoldCostSub">บาทละ</span>
+              <label for="inpGoldCost" style="font-weight:600; color:var(--ink);" id="lblGoldCost" data-i18n="lblGoldCost">ราคาต้นทุนที่ซื้อ (Cost/Baht):</label>
+              <span style="font-size:9.5px; color:var(--ink-faint);" id="lblGoldCostSub" data-i18n="lblGoldCostSub">บาทละ</span>
             </div>
             <input type="number" id="inpGoldCost" min="0" step="100" placeholder="40000" inputmode="decimal" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateGoldCalculator()">
           </div>
@@ -678,8 +678,8 @@
           <!-- Block Fee / Craft Fee -->
           <div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-              <label for="inpGoldFee" style="font-weight:600; color:var(--ink);" id="lblGoldFee">ค่าบล็อก / ค่ากำเหน็จ (Fee):</label>
-              <span style="font-size:9.5px; color:var(--ink-faint);" id="lblGoldFeeSub">ต่อชิ้น/รวม</span>
+              <label for="inpGoldFee" style="font-weight:600; color:var(--ink);" id="lblGoldFee" data-i18n="lblGoldFee">ค่าบล็อก / ค่ากำเหน็จ (Fee):</label>
+              <span style="font-size:9.5px; color:var(--ink-faint);" id="lblGoldFeeSub" data-i18n="lblGoldFeeSub">ต่อชิ้น/รวม</span>
             </div>
             <input type="number" id="inpGoldFee" min="0" step="50" placeholder="150" inputmode="decimal" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateGoldCalculator()">
           </div>
@@ -687,9 +687,9 @@
           <!-- Current Market Selling Price -->
           <div style="grid-column: 1 / -1;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-              <label for="inpGoldMarketPrice" style="font-weight:600; color:var(--ink);" id="lblGoldMarketPrice">ราคาขายออกสมาคมค้าทองคำปัจจุบัน (Market Sell):</label>
+              <label for="inpGoldMarketPrice" style="font-weight:600; color:var(--ink);" id="lblGoldMarketPrice" data-i18n="lblGoldMarketPrice">ราคาขายออกสมาคมค้าทองคำปัจจุบัน (Market Sell):</label>
               <button type="button" class="min-budget-apply-btn" onclick="syncGoldMarketPrice()" id="btnSyncGoldPrice" style="padding:2px 8px; font-size:10px;">
-                🔄 <span id="lblSyncGoldPrice">ดึงราคาสดสมาคม</span>
+                🔄 <span id="lblSyncGoldPrice" data-i18n="lblSyncGoldPrice">ดึงราคาสดสมาคม</span>
               </button>
             </div>
             <input type="number" id="inpGoldMarketPrice" min="0" step="50" placeholder="42000" inputmode="decimal" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateGoldCalculator()">
@@ -699,29 +699,29 @@
 
       <!-- Weight Conversions Breakdown Bar -->
       <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:8px 12px; margin-bottom:12px; font-size:11px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-        <span style="color:var(--ink-dim); font-weight:600;" id="lblEquivalentWeight">⚖️ เทียบเท่าน้ำหนักมาตรฐาน:</span>
+        <span style="color:var(--ink-dim); font-weight:600;" id="lblEquivalentWeight" data-i18n="lblEquivalentWeight">⚖️ เทียบเท่าน้ำหนักมาตรฐาน:</span>
         <span id="txtGoldWeightEquiv" style="font-weight:700; color:var(--ballast);">1 บาท = 15.24 กรัม = 4 สลึง = 0.490 ออนซ์</span>
       </div>
 
       <!-- Key Metrics Cards Grid -->
       <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(115px, 1fr)); gap:8px; margin-bottom:12px; font-size:11px;">
         <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
-          <span style="color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGoldCost">ต้นทุนรวม</span>
+          <span style="color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGoldCost" data-i18n="lblCardGoldCost">ต้นทุนรวม</span>
           <span id="valGoldTotalCost" style="font-size:13.5px; font-weight:800; color:var(--ink);">0 บาท</span>
           <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="subGoldAvgCost">เฉลี่ย 0 บาท/บาท</div>
         </div>
         <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
-          <span style="color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGoldVal">มูลค่าตลาดขายออก</span>
+          <span style="color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGoldVal" data-i18n="lblCardGoldVal">มูลค่าตลาดขายออก</span>
           <span id="valGoldMarketVal" style="font-size:13.5px; font-weight:800; color:var(--ballast);">0 บาท</span>
           <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="subGoldBreakEven">คุ้มทุน 0 บาท/บาท</div>
         </div>
         <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
-          <span style="color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGoldPL">กำไร/ขาดทุน (P/L)</span>
+          <span style="color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGoldPL" data-i18n="lblCardGoldPL">กำไร/ขาดทุน (P/L)</span>
           <span id="valGoldPL" style="font-size:13.5px; font-weight:800; color:var(--ok);">+0 บาท</span>
           <div style="font-size:9.5px; color:var(--ok); font-weight:700; margin-top:2px;" id="subGoldPLPct">+0.0%</div>
         </div>
         <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
-          <span style="color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGoldLiq">ราคารับซื้อคืนสุทธิ</span>
+          <span style="color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGoldLiq" data-i18n="lblCardGoldLiq">ราคารับซื้อคืนสุทธิ</span>
           <span id="valGoldLiquidation" style="font-size:13.5px; font-weight:800; color:var(--ink);">0 บาท</span>
           <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="subGoldLiqPL">ขายคืนวันนี้: 0 บาท</div>
         </div>
@@ -730,30 +730,30 @@
       <!-- Actions & Inter-Tool Bridges -->
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
         <button type="button" class="min-budget-apply-btn" onclick="addGoldLotToHistory()" style="padding:6px 12px; font-size:11px; font-weight:700;">
-          + <span id="lblAddGoldLot">บันทึกเข้างวดสะสม (Add DCA Lot)</span>
+          + <span id="lblAddGoldLot" data-i18n="lblAddGoldLot">บันทึกเข้างวดสะสม (Add DCA Lot)</span>
         </button>
         <button type="button" class="min-budget-apply-btn" onclick="exportGoldToPortfolio()" style="background:var(--core-dim); color:var(--core); border-color:var(--core); padding:6px 12px; font-size:11px; font-weight:700;">
-          📥 <span id="lblExportGoldToPortfolio">ส่งมูลค่าทองไปยังพอร์ต Rebalance</span>
+          📥 <span id="lblExportGoldToPortfolio" data-i18n="lblExportGoldToPortfolio">ส่งมูลค่าทองไปยังพอร์ต Rebalance</span>
         </button>
       </div>
 
       <!-- Multi-Tranche DCA Log Table Container -->
       <div id="goldLotsContainer" style="display:none; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px; margin-bottom:12px; overflow-x:auto;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:11px;">
-          <span style="font-weight:700; color:var(--ink);" id="lblGoldLotsTitle">📜 ประวัติการสะสมทองคำ (DCA Lot History)</span>
+          <span style="font-weight:700; color:var(--ink);" id="lblGoldLotsTitle" data-i18n="lblGoldLotsTitle">📜 ประวัติการสะสมทองคำ (DCA Lot History)</span>
           <button type="button" onclick="clearGoldLots()" style="background:none; border:none; color:var(--warn); font-size:10.5px; cursor:pointer; text-decoration:underline;">
-            <span id="lblClearGoldLots">ล้างประวัติ</span>
+            <span id="lblClearGoldLots" data-i18n="lblClearGoldLots">ล้างประวัติ</span>
           </button>
         </div>
         <table style="width:100%; border-collapse:collapse; font-size:10.5px; text-align:left;">
           <thead>
             <tr style="border-bottom:1px solid var(--line); color:var(--ink-faint);">
-              <th style="padding:4px 6px;" id="thGoldDate">วันที่</th>
-              <th style="padding:4px 6px;" id="thGoldType">ประเภท</th>
-              <th style="padding:4px 6px; text-align:right;" id="thGoldWeight">น้ำหนัก</th>
-              <th style="padding:4px 6px; text-align:right;" id="thGoldCost">ต้นทุน</th>
-              <th style="padding:4px 6px; text-align:right;" id="thGoldFee">ค่าบล็อก</th>
-              <th style="padding:4px 6px; text-align:right;" id="thGoldAction">จัดการ</th>
+              <th style="padding:4px 6px;" id="thGoldDate" data-i18n="thGoldDate">วันที่</th>
+              <th style="padding:4px 6px;" id="thGoldType" data-i18n="thGoldType">ประเภท</th>
+              <th style="padding:4px 6px; text-align:right;" id="thGoldWeight" data-i18n="thGoldWeight">น้ำหนัก</th>
+              <th style="padding:4px 6px; text-align:right;" id="thGoldCost" data-i18n="thGoldCost">ต้นทุน</th>
+              <th style="padding:4px 6px; text-align:right;" id="thGoldFee" data-i18n="thGoldFee">ค่าบล็อก</th>
+              <th style="padding:4px 6px; text-align:right;" id="thGoldAction" data-i18n="thGoldAction">จัดการ</th>
             </tr>
           </thead>
           <tbody id="goldLotsTableBody"></tbody>
@@ -762,8 +762,8 @@
 
       <!-- Revenue Code Section 42(9) Exemption Guidance Banner -->
       <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:8px 12px; font-size:10.5px; color:var(--ink-dim); line-height:1.45;" id="boxGoldTaxExemption">
-        ⚖️ <strong id="lblGoldTaxTitle">กฎหมายภาษีทองคำไทย:</strong>
-        <span id="txtGoldTaxDesc">กำไรส่วนต่างราคา (Capital Gains) จากการซื้อขายทองคำแท่งและทองคำรูปพรรณของบุคคลธรรมดา ได้รับการยกเว้นภาษีเงินได้บุคคลธรรมดา ตามมาตรา 42(9) แห่งประมวลรัษฎากร (สังหาริมทรัพย์ที่ได้มาโดยมิได้มุ่งในทางการค้าหรือหากำไร)</span>
+        ⚖️ <strong id="lblGoldTaxTitle" data-i18n="lblGoldTaxTitle">กฎหมายภาษีทองคำไทย:</strong>
+        <span id="txtGoldTaxDesc" data-i18n="txtGoldTaxDesc">กำไรส่วนต่างราคา (Capital Gains) จากการซื้อขายทองคำแท่งและทองคำรูปพรรณของบุคคลธรรมดา ได้รับการยกเว้นภาษีเงินได้บุคคลธรรมดา ตามมาตรา 42(9) แห่งประมวลรัษฎากร (สังหาริมทรัพย์ที่ได้มาโดยมิได้มุ่งในทางการค้าหรือหากำไร)</span>
       </div>
     </div>
   </div>
@@ -772,10 +772,10 @@
   <div class="panel card reorder-card" id="panelForeignTaxAdvisor" role="region" aria-label="Foreign Investment &amp; Crypto Repatriation Tax Advisor" style="margin-bottom:16px;">
     <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;" id="btnToggleForeignTax">
       <div>
-        <div style="font-size:14px; font-weight:700; color:var(--ink);" id="lblForeignTaxTitle">
+        <div style="font-size:14px; font-weight:700; color:var(--ink);" id="lblForeignTaxTitle" data-i18n="lblForeignTaxTitle">
           🌐 วางแผนภาษีนำเงินลงทุนต่างประเทศ/คริปโตกลับไทย (ป.161/ป.162)
         </div>
-        <div style="font-size:11px; color:var(--ink-dim);" id="lblForeignTaxSubtitle">
+        <div style="font-size:11px; color:var(--ink-dim);" id="lblForeignTaxSubtitle" data-i18n="lblForeignTaxSubtitle">
           คำสั่งกรมสรรพากรที่ ป.161/2566 &amp; ป.162/2566 (ประเมินสิทธิยกเว้นก่อน-หลังปี 2024, เกณฑ์ 180 วัน, และเครดิตภาษีซ้อน DTA)
         </div>
       </div>
@@ -785,42 +785,42 @@
       <!-- Input Controls Grid -->
       <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; margin-bottom:12px;">
         <div>
-          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpRemitAmt">
+          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpRemitAmt" data-i18n="lblInpRemitAmt">
             ยอดเงินที่นำกลับเข้าไทยในปีภาษี (บาท)
           </label>
           <input type="number" id="inpRemittanceAmount" value="500000" min="0" step="10000" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateForeignTaxUI()">
         </div>
 
         <div>
-          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpPre2024Amt">
+          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpPre2024Amt" data-i18n="lblInpPre2024Amt">
             ส่วนที่เป็นเงินได้ก่อนปี 2567 (ป.162 ยกเว้น 100%)
           </label>
           <input type="number" id="inpPre2024Amount" value="0" min="0" step="10000" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateForeignTaxUI()">
         </div>
 
         <div>
-          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpPrincipalAmt">
+          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpPrincipalAmt" data-i18n="lblInpPrincipalAmt">
             ส่วนที่เป็นเงินต้นลงทุนเดิม (ไม่ใช่กำไร - ไม่เสียภาษี)
           </label>
           <input type="number" id="inpPrincipalAmount" value="0" min="0" step="10000" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateForeignTaxUI()">
         </div>
 
         <div>
-          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpDaysInThai">
+          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpDaysInThai" data-i18n="lblInpDaysInThai">
             จำนวนวันพักอาศัยในไทยในปีภาษี (วัน)
           </label>
           <input type="number" id="inpDaysInThailand" value="200" min="0" max="366" step="1" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateForeignTaxUI()">
         </div>
 
         <div>
-          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpForeignTaxPaid">
+          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpForeignTaxPaid" data-i18n="lblInpForeignTaxPaid">
             ภาษีที่ถูกหักไว้ ณ ต่างประเทศ (บาท) - เครดิต DTA
           </label>
           <input type="number" id="inpForeignTaxPaid" value="0" min="0" step="1000" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateForeignTaxUI()">
         </div>
 
         <div>
-          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpOtherDomesticNet">
+          <label style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px;" id="lblInpOtherDomesticNet" data-i18n="lblInpOtherDomesticNet">
             เงินได้สุทธิในไทยก่อนรวมเงินนอก (บาท)
           </label>
           <input type="number" id="inpOtherDomesticNet" value="500000" min="0" step="10000" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-weight:600; color:var(--ink); outline:none;" oninput="updateForeignTaxUI()">
@@ -833,7 +833,7 @@
         <button type="button" class="tab" onclick="setRemittancePreset(500000)" style="font-size:10.5px; padding:3px 8px; width:auto;">500k</button>
         <button type="button" class="tab" onclick="setRemittancePreset(1000000)" style="font-size:10.5px; padding:3px 8px; width:auto;">1M</button>
         <button type="button" class="tab" onclick="setRemittancePreset(3000000)" style="font-size:10.5px; padding:3px 8px; width:auto;">3M</button>
-        <button type="button" class="tab" onclick="setRemittancePre2024Full()" style="font-size:10.5px; padding:3px 8px; width:auto; border-color:var(--ok); color:var(--ok);" id="btnPre2024Preset">
+        <button type="button" class="tab" onclick="setRemittancePre2024Full()" style="font-size:10.5px; padding:3px 8px; width:auto; border-color:var(--ok); color:var(--ok);" id="btnPre2024Preset" data-i18n="btnPre2024Preset">
           🛡️ ยกเว้นเงินได้ก่อนปี 2567 ทั้งหมด
         </button>
       </div>
@@ -841,22 +841,22 @@
       <!-- Key Metrics Display Grid -->
       <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; margin-bottom:12px;">
         <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
-          <span style="font-size:10px; color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardForeignTaxable">ยอดเงินที่เข้าเกณฑ์เสียภาษี</span>
+          <span style="font-size:10px; color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardForeignTaxable" data-i18n="lblCardForeignTaxable">ยอดเงินที่เข้าเกณฑ์เสียภาษี</span>
           <span id="valForeignTaxableRemit" style="font-size:13.5px; font-weight:800; color:var(--ink);">0 บาท</span>
           <div style="font-size:9.5px; color:var(--ok); margin-top:2px;" id="subForeignExemptTotal">ได้รับยกเว้น: 0 บาท</div>
         </div>
         <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
-          <span style="font-size:10px; color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGrossThaiTax">ภาษีไทยก่อนหักเครดิต</span>
+          <span style="font-size:10px; color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardGrossThaiTax" data-i18n="lblCardGrossThaiTax">ภาษีไทยก่อนหักเครดิต</span>
           <span id="valForeignGrossTax" style="font-size:13.5px; font-weight:800; color:var(--ink);">0 บาท</span>
           <div style="font-size:9.5px; color:var(--ink-dim); margin-top:2px;" id="subForeignEffectiveRate">อัตราภาษีเฉลี่ย: 0.0%</div>
         </div>
         <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
-          <span style="font-size:10px; color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardDtaCredit">เครดิตภาษีซ้อน (DTA)</span>
+          <span style="font-size:10px; color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardDtaCredit" data-i18n="lblCardDtaCredit">เครดิตภาษีซ้อน (DTA)</span>
           <span id="valForeignDtaCredit" style="font-size:13.5px; font-weight:800; color:var(--ok);">0 บาท</span>
           <div style="font-size:9.5px; color:var(--ok); margin-top:2px;" id="subForeignDtaStatus">ป้องกันการเสียภาษีซ้ำซ้อน</div>
         </div>
         <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px;">
-          <span style="font-size:10px; color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardNetThaiTax">ภาษีไทยสุทธิที่ต้องชำระ</span>
+          <span style="font-size:10px; color:var(--ink-faint); display:block; margin-bottom:2px;" id="lblCardNetThaiTax" data-i18n="lblCardNetThaiTax">ภาษีไทยสุทธิที่ต้องชำระ</span>
           <span id="valForeignNetTax" style="font-size:13.5px; font-weight:800; color:var(--core);">0 บาท</span>
           <div style="font-size:9.5px; color:var(--core); margin-top:2px;" id="subForeignNetRetained">เงินเหลือเข้าไทยสุทธิ: 0 บาท</div>
         </div>
@@ -867,8 +867,8 @@
 
       <!-- Statutory Reference Note -->
       <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:8px 12px; font-size:10.5px; color:var(--ink-dim); line-height:1.45;" id="boxForeignLawRef">
-        ⚖️ <strong id="lblForeignLawTitle">กฎหมายอ้างอิง:</strong>
-        <span id="txtForeignLawDesc">ประมวลรัษฎากร มาตรา 41 วรรคสอง, คำสั่งกรมสรรพากรที่ ป.161/2566 (บังคับใช้ 1 ม.ค. 2567) และ ป.162/2566 (คุ้มครองเงินได้ก่อนปี 2567), และพระราชกฤษฎีกา ฉบับที่ 300 ว่าด้วยการยกเว้นภาษีตามอนุสัญญาภาษีซ้อน (DTA)</span>
+        ⚖️ <strong id="lblForeignLawTitle" data-i18n="lblForeignLawTitle">กฎหมายอ้างอิง:</strong>
+        <span id="txtForeignLawDesc" data-i18n="txtForeignLawDesc">ประมวลรัษฎากร มาตรา 41 วรรคสอง, คำสั่งกรมสรรพากรที่ ป.161/2566 (บังคับใช้ 1 ม.ค. 2567) และ ป.162/2566 (คุ้มครองเงินได้ก่อนปี 2567), และพระราชกฤษฎีกา ฉบับที่ 300 ว่าด้วยการยกเว้นภาษีตามอนุสัญญาภาษีซ้อน (DTA)</span>
       </div>
     </div>
   </div>
@@ -876,22 +876,22 @@
   <div class="save-status">
     <span id="saveStatus" role="status" aria-live="polite">&nbsp;</span>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="reset-btn" id="copyPortfolioBtn" onclick="copyPortfolioSummary()">📋 <span id="lblCopyPortfolio">คัดลอกสรุป</span></button>
-      <button class="reset-btn" id="copyTradeBtn" onclick="copyTradeOrders()">📋 <span id="lblCopyTrade">คัดลอกรายการสั่งซื้อ</span></button>
-      <button class="reset-btn" id="exportCsvBtn" onclick="exportCSV()">📥 <span id="lblExportCsv">ดาวน์โหลด CSV</span></button>
-      <button class="reset-btn" id="printRebalanceBtn" onclick="window.print()">🖨️ <span id="lblPrintRebalance">พิมพ์ / บันทึก PDF</span></button>
-      <button class="reset-btn" id="btnUndoBottom" onclick="undoRebalanceChange()" style="display:none; color:var(--core); font-weight:700;">↩ <span id="lblUndoBottom">เลิกทำ (Undo)</span></button>
-      <button class="reset-btn" id="btnResetLayout" onclick="resetRebalanceLayout()" title="รีเซ็ตลำดับการแสดงผล / Reset Card Order">↺ <span id="lblResetLayout">รีเซ็ตลำดับ</span></button>
-      <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
+      <button class="reset-btn" id="copyPortfolioBtn" onclick="copyPortfolioSummary()">📋 <span id="lblCopyPortfolio" data-i18n="lblCopyPortfolio">คัดลอกสรุป</span></button>
+      <button class="reset-btn" id="copyTradeBtn" onclick="copyTradeOrders()">📋 <span id="lblCopyTrade" data-i18n="lblCopyTrade">คัดลอกรายการสั่งซื้อ</span></button>
+      <button class="reset-btn" id="exportCsvBtn" onclick="exportCSV()">📥 <span id="lblExportCsv" data-i18n="lblExportCsv">ดาวน์โหลด CSV</span></button>
+      <button class="reset-btn" id="printRebalanceBtn" onclick="window.print()">🖨️ <span id="lblPrintRebalance" data-i18n="lblPrintRebalance">พิมพ์ / บันทึก PDF</span></button>
+      <button class="reset-btn" id="btnUndoBottom" onclick="undoRebalanceChange()" style="display:none; color:var(--core); font-weight:700;">↩ <span id="lblUndoBottom" data-i18n="lblUndo">เลิกทำ (Undo)</span></button>
+      <button class="reset-btn" id="btnResetLayout" onclick="resetRebalanceLayout()" title="รีเซ็ตลำดับการแสดงผล / Reset Card Order">↺ <span id="lblResetLayout" data-i18n="lblResetLayout">รีเซ็ตลำดับ</span></button>
+      <button class="reset-btn" id="resetBtn" data-i18n="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v2.5.45</p>
+  <p class="version-tag">v2.5.46</p>
 
   <!-- API Settings Modal -->
   <div id="apiSettingsModal" role="dialog" aria-modal="true" aria-labelledby="lblModalTitle" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; align-items:center; justify-content:center; backdrop-filter:blur(2px);">
     <div style="background:var(--panel); border:1px solid var(--line); border-radius:16px; width:92%; max-width:480px; padding:20px; box-shadow:0 12px 30px rgba(0,0,0,0.3); color:var(--ink); font-family:inherit;">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
-        <h3 style="margin:0; font-size:16px; font-weight:700;" id="lblModalTitle">ตั้งค่า API ดึงราคาหุ้น / ETF</h3>
+        <h3 style="margin:0; font-size:16px; font-weight:700;" id="lblModalTitle" data-i18n="lblModalTitle">ตั้งค่า API ดึงราคาหุ้น / ETF</h3>
         <button onclick="closeApiSettingsModal()" style="background:none; border:none; color:var(--ink-dim); font-size:20px; cursor:pointer; padding:0 4px;" aria-label="Close">&times;</button>
       </div>
       
@@ -906,16 +906,16 @@
       <div style="display:flex; flex-direction:column; gap:12px; font-size:12px;">
         <div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <label style="font-weight:600;" id="lblFinnhubKey">Finnhub API Key (แนะนำ):</label>
-            <a href="https://finnhub.io/register" target="_blank" rel="noopener noreferrer" style="color:var(--core); font-size:11px; text-decoration:underline;" id="linkFinnhubFree">รับคีย์ฟรี (Finnhub.io)</a>
+            <label style="font-weight:600;" id="lblFinnhubKey" data-i18n="lblFinnhubKey">Finnhub API Key (แนะนำ):</label>
+            <a href="https://finnhub.io/register" target="_blank" rel="noopener noreferrer" style="color:var(--core); font-size:11px; text-decoration:underline;" id="linkFinnhubFree" data-i18n="linkFinnhubFree">รับคีย์ฟรี (Finnhub.io)</a>
           </div>
           <input type="password" id="inputFinnhubKey" placeholder="เช่น c1234abcd5678" style="width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--panel-2); color:var(--ink); font-size:12px; box-sizing:border-box;">
         </div>
 
         <div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <label style="font-weight:600;" id="lblTwelveDataKey">Twelve Data API Key (ทางเลือก):</label>
-            <a href="https://twelvedata.com/pricing" target="_blank" rel="noopener noreferrer" style="color:var(--core); font-size:11px; text-decoration:underline;" id="linkTwelveDataFree">รับคีย์ฟรี (TwelveData)</a>
+            <label style="font-weight:600;" id="lblTwelveDataKey" data-i18n="lblTwelveDataKey">Twelve Data API Key (ทางเลือก):</label>
+            <a href="https://twelvedata.com/pricing" target="_blank" rel="noopener noreferrer" style="color:var(--core); font-size:11px; text-decoration:underline;" id="linkTwelveDataFree" data-i18n="linkTwelveDataFree">รับคีย์ฟรี (TwelveData)</a>
           </div>
           <input type="password" id="inputTwelveDataKey" placeholder="เช่น 1234567890abcdef" style="width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--panel-2); color:var(--ink); font-size:12px; box-sizing:border-box;">
         </div>
@@ -923,14 +923,14 @@
         <div id="apiTestStatus" style="display:none; padding:8px 10px; border-radius:8px; font-size:11px; font-weight:600;"></div>
 
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
-          <button onclick="testApiKeys()" style="background:var(--panel-2); border:1px solid var(--line); color:var(--ink); padding:6px 12px; border-radius:8px; font-size:12px; cursor:pointer; font-weight:600;" id="btnTestApi">
+          <button onclick="testApiKeys()" style="background:var(--panel-2); border:1px solid var(--line); color:var(--ink); padding:6px 12px; border-radius:8px; font-size:12px; cursor:pointer; font-weight:600;" id="btnTestApi" data-i18n="btnTestApi">
             🧪 ทดสอบการเชื่อมต่อ
           </button>
           <div style="display:flex; gap:8px;">
-            <button onclick="closeApiSettingsModal()" style="background:none; border:1px solid var(--line); color:var(--ink-dim); padding:6px 12px; border-radius:8px; font-size:12px; cursor:pointer;" id="btnCancelModal">
+            <button onclick="closeApiSettingsModal()" style="background:none; border:1px solid var(--line); color:var(--ink-dim); padding:6px 12px; border-radius:8px; font-size:12px; cursor:pointer;" id="btnCancelModal" data-i18n="btnCancelModal">
               ยกเลิก
             </button>
-            <button onclick="saveApiSettings()" style="background:var(--core); border:none; color:#fff; padding:6px 14px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer;" id="btnSaveModal">
+            <button onclick="saveApiSettings()" style="background:var(--core); border:none; color:#fff; padding:6px 14px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer;" id="btnSaveModal" data-i18n="btnSaveModal">
               บันทึก
             </button>
           </div>

@@ -32,7 +32,13 @@ const THAI_UNICODE_REGEX = /[\u0E01-\u0E3A\u0E40-\u0E4E\u0E50-\u0E59]/;
 
 describe('Bilingual Parity & Localization Regression Suite', () => {
   describe('Static Translation Symmetry & DOM Target Invariants', () => {
-    const LOCALIZED_MODULES = ['js/app-shell.js', 'js/dashboard.js', 'js/debt-calculator.js'];
+    const LOCALIZED_MODULES = [
+      'js/app-shell.js',
+      'js/dashboard.js',
+      'js/debt-calculator.js',
+      'js/remaining-money.js',
+      'js/rebalance.js',
+    ];
 
     for (const file of LOCALIZED_MODULES) {
       it(`proves 100% key symmetry between Thai and English in ${file}`, () => {

@@ -15,6 +15,19 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Declarative data-i18n Localization Migration for Remaining Money & Rebalance Tools (v2.5.46)
+- **Date & Context:** 2026-10-18, Phase 103 Declarative data-i18n Migration (`v2.5.46`).
+- **Problem:**
+  1. `remaining-money.html` and `rebalance.html` previously relied solely on hardcoded `const EN = {...}` objects and manual `document.getElementById(...)` lookups in `applyLang()`.
+  2. The translation structure was unidirectional (only English keys were defined, relying on the static HTML for Thai text), which prevented automated bidirectional symmetry verification and required repetitive imperative DOM mutations.
+- **Root Cause:** Legacy architecture built before the centralized `MoneyApp.I18n` engine (`Phase 100`) was available.
+- **Solution & Rule:**
+  1. **Declarative DOM Localization (`data-i18n`):** Decorated all static UI elements (eyebrows, titles, subtitles, summary cards, cashflow toggle buttons, 50/30/20 labels, stress tester controls, modal dialogues, glidepath planners, physical gold calculators, and foreign tax advisor panels) with declarative `data-i18n` attributes.
+  2. **Bidirectional Translation Symmetry:** Converted one-way `const EN` in `js/remaining-money.js` and `js/rebalance.js` into bidirectional `const translations = { th: {...}, en: {...} }` with 100% symmetrical keys, registering both with `MoneyApp.I18n.register()` and applying via `MoneyApp.I18n.applyLocalization()`.
+  3. **Backward Compatibility:** Retained `const EN = translations.en` for any legacy dynamic string references, ensuring zero runtime breakage.
+  4. **Quality Gates & Test Integration:** Added both modules to `LOCALIZED_MODULES` in `tests/bilingual-parity.test.mjs`, added Phase 103 smoke invariants in `tests/smoke.test.mjs`, and verified 494/494 passing tests (0 failures), 0 Biome warnings, and 0 headless Chrome live DOM bilingual discrepancies.
+
+
 ### 2026-10-18: Declarative data-i18n Localization Migration for Dashboard & Debt Tools (v2.5.45)
 - **Date & Context:** 2026-10-18, Phase 102 Declarative data-i18n Migration (`v2.5.45`).
 - **Problem:**

@@ -1636,5 +1636,50 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'debt-calculator.js must call MoneyApp.I18n.applyLocalization',
       );
     });
+
+    it('verifies Phase 103 Declarative data-i18n Localization Migration for Remaining Money and Rebalance Tools', () => {
+      const remHtml = fs.readFileSync(path.join(ROOT_DIR, 'remaining-money.html'), 'utf8');
+      const rebHtml = fs.readFileSync(path.join(ROOT_DIR, 'rebalance.html'), 'utf8');
+      const remJs = fs.readFileSync(path.join(ROOT_DIR, 'js/remaining-money.js'), 'utf8');
+      const rebJs = fs.readFileSync(path.join(ROOT_DIR, 'js/rebalance.js'), 'utf8');
+
+      assert.ok(remHtml.includes('data-i18n="eyebrow"'), 'remaining-money.html must contain data-i18n="eyebrow"');
+      assert.ok(remHtml.includes('data-i18n="pageTitle"'), 'remaining-money.html must contain data-i18n="pageTitle"');
+      assert.ok(
+        remHtml.includes('data-i18n="scIncomeLabel"'),
+        'remaining-money.html must contain data-i18n="scIncomeLabel"',
+      );
+      assert.ok(
+        remHtml.includes('data-i18n="shockTesterTitle"'),
+        'remaining-money.html must contain data-i18n="shockTesterTitle"',
+      );
+
+      assert.ok(rebHtml.includes('data-i18n="eyebrow"'), 'rebalance.html must contain data-i18n="eyebrow"');
+      assert.ok(rebHtml.includes('data-i18n="pageTitle"'), 'rebalance.html must contain data-i18n="pageTitle"');
+      assert.ok(
+        rebHtml.includes('data-i18n="lblBudgetHeading"'),
+        'rebalance.html must contain data-i18n="lblBudgetHeading"',
+      );
+      assert.ok(
+        rebHtml.includes('data-i18n="lblGlidepathTitle"'),
+        'rebalance.html must contain data-i18n="lblGlidepathTitle"',
+      );
+      assert.ok(rebHtml.includes('data-i18n="lblGoldTitle"'), 'rebalance.html must contain data-i18n="lblGoldTitle"');
+      assert.ok(
+        rebHtml.includes('data-i18n="lblForeignTaxTitle"'),
+        'rebalance.html must contain data-i18n="lblForeignTaxTitle"',
+      );
+
+      assert.ok(remJs.includes('window.MoneyApp.I18n.register'), 'remaining-money.js must register with MoneyApp.I18n');
+      assert.ok(
+        remJs.includes('window.MoneyApp.I18n.applyLocalization'),
+        'remaining-money.js must call MoneyApp.I18n.applyLocalization',
+      );
+      assert.ok(rebJs.includes('window.MoneyApp.I18n.register'), 'rebalance.js must register with MoneyApp.I18n');
+      assert.ok(
+        rebJs.includes('window.MoneyApp.I18n.applyLocalization'),
+        'rebalance.js must call MoneyApp.I18n.applyLocalization',
+      );
+    });
   });
 });
