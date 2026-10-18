@@ -1,25 +1,21 @@
 ---
-task_id: "SDLC-PHASE-88-ENGINE-MODULARIZATION-BATCH-1"
+task_id: "SDLC-PHASE-89-ENGINE-MODULARIZATION-BATCH-2"
 status: "completed"
 current_stage: "release"
 complexity: "level_3"
-iteration_count: 1
+iteration_count: 0
 pipeline: ["orchestrator", "planner", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Problem Diagnosis & Scope (Phase 88 - Engine Modularization Batch 1)
-1. **Diagnosis**:
-   - `js/shared.js` was 4,654 lines combining app shell helpers, layout managers, DOM utilities, and 15+ complex calculation engines.
-   - Modularized 5 core domain engines into `js/engines/`:
-     - `js/engines/thai-pit.js`
-     - `js/engines/thai-tax-calendar.js`
-     - `js/engines/insurance.js`
-     - `js/engines/gold.js`
-     - `js/engines/foreign-tax.js`
-2. **Results**:
-   - `js/shared.js` reduced by ~850 lines to 3,812 lines.
-   - Order-independent global merging via `Object.assign(global.MoneyApp || {}, { ... })`.
-   - All 410 unit/integration/smoke tests pass with 0 failures.
-   - All 11 Headless Chrome CDP live bilingual parity tests pass.
-   - Biome check passes with 0 errors and 0 warnings across all 30 codebase files.
-   - Version bumped to `v2.5.31`.
+### Phase 89 Completion Summary (v2.5.32)
+1. Extracted 7 modular calculation engines into `js/engines/`:
+   - `js/engines/inheritance-tax.js` (`calculateThaiInheritanceAndGiftTax`)
+   - `js/engines/retirement-buckets.js` (`calculateRetirementThreeBuckets`)
+   - `js/engines/property-tax.js` (`calculateThaiLandAndBuildingTax`)
+   - `js/engines/bank-parser.js` (`detectAndParseThaiBankStatement`)
+   - `js/engines/glidepath.js` (`calculateTargetDateGlidepath`)
+   - `js/engines/refinance.js` (`simulateDebtPayoff`, `compareDebtVelocity`, `calculateTaxAccrualAndRefundPlan`, `calculateDebtConsolidation`)
+   - `js/engines/stress-test.js` (`calculateIncomeShockStressTest`, `calculateChildEducationFund`)
+2. De-duplicated `js/shared.js` from 3,810 lines down to 2,480 lines (35% reduction, 1,330 lines trimmed) with re-entrancy protected delegation stubs.
+3. Registered in `sw.js` cache manifest, `tests/smoke.test.mjs`, all 7 HTML sub-pages, and test harnesses.
+4. Verified 100% test pass (410 tests) and 0 Biome lint errors/warnings.

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const sharedCode = readFileSync(resolve(__dirname, '../js/shared.js'), 'utf8');
+const engineCode = readFileSync(resolve(__dirname, '../js/engines/inheritance-tax.js'), 'utf8');
 
 function createEnvironment() {
   const mockWindow = {
@@ -19,7 +20,12 @@ function createEnvironment() {
     },
   };
 
-  const fn = new Function('window', 'document', 'localStorage', `${sharedCode}; return window.MoneyApp;`);
+  const fn = new Function(
+    'window',
+    'document',
+    'localStorage',
+    `${engineCode}; ${sharedCode}; return window.MoneyApp;`,
+  );
   const MoneyApp = fn(mockWindow, mockWindow.document, mockWindow.localStorage);
   return { MoneyApp };
 }

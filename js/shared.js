@@ -731,181 +731,33 @@
   /**
    * Calculates Thai Inheritance Tax (พ.ร.บ. ภาษีการรับมรดก พ.ศ. 2558)
    * and Annual Gift Tax (ประมวลรัษฎากร มาตรา 42(26)-(28) & 48(6)).
-   *
-   * @param {Object} params
-   * @param {number} [params.estateValue=0] - Total legacy asset value (THB)
-   * @param {'spouse'|'ascendant_descendant'|'other'} [params.heirRelationship='ascendant_descendant'] - Heir relationship to testator
-   * @param {number} [params.numberOfHeirs=1] - Number of equal heirs sharing the estate
-   * @param {number} [params.annualGiftValue=0] - Annual gift amount during lifetime (THB)
-   * @param {'parent_to_child_realestate'|'family_movable'|'other_customary'} [params.giftType='family_movable'] - Gift classification
-   * @param {number} [params.giftingYears=3] - Planned years for phased lifetime gifting
-   * @returns {Object} Comprehensive inheritance tax, gift tax, and phased gifting strategy optimization
    */
-  function calculateThaiInheritanceAndGiftTax(params) {
-    params = params || {};
-    var estateValue = Math.max(0, parseNum(params.estateValue));
-    var heirRelationship = params.heirRelationship || 'ascendant_descendant';
-    var numberOfHeirs = Math.max(1, Math.floor(parseNum(params.numberOfHeirs) || 1));
-    var annualGiftValue = Math.max(0, parseNum(params.annualGiftValue));
-    var giftType = params.giftType || 'family_movable';
-    var giftingYears = Math.max(1, Math.floor(parseNum(params.giftingYears) || 3));
-
-    // 1. Inheritance Tax Computation (พ.ร.บ. ภาษีการรับมรดก พ.ศ. 2558)
-    var portionPerHeir = estateValue / numberOfHeirs;
-    var statutoryExemptionPerHeir = 100000000; // 100 Million THB per heir per testator
-    var taxRate = 0;
-    var exemptionPerHeir = 0;
-    var taxablePerHeir = 0;
-    var taxPerHeir = 0;
-    var totalInheritanceTax = 0;
-    var netLegacyReceived = 0;
-
-    if (heirRelationship === 'spouse') {
-      exemptionPerHeir = portionPerHeir;
-      taxablePerHeir = 0;
-      taxRate = 0;
-      taxPerHeir = 0;
-      totalInheritanceTax = 0;
-    } else if (heirRelationship === 'ascendant_descendant') {
-      exemptionPerHeir = Math.min(portionPerHeir, statutoryExemptionPerHeir);
-      taxablePerHeir = Math.max(0, portionPerHeir - statutoryExemptionPerHeir);
-      taxRate = 0.05;
-      taxPerHeir = taxablePerHeir * taxRate;
-      totalInheritanceTax = taxPerHeir * numberOfHeirs;
-    } else {
-      exemptionPerHeir = Math.min(portionPerHeir, statutoryExemptionPerHeir);
-      taxablePerHeir = Math.max(0, portionPerHeir - statutoryExemptionPerHeir);
-      taxRate = 0.1;
-      taxPerHeir = taxablePerHeir * taxRate;
-      totalInheritanceTax = taxPerHeir * numberOfHeirs;
-    }
-
-    netLegacyReceived = estateValue - totalInheritanceTax;
-
-    // 2. Annual Gift Tax Computation (ประมวลรัษฎากร ม.42(26)-(28))
-    var annualGiftExemption = 20000000;
-    if (giftType === 'other_customary') {
-      annualGiftExemption = 10000000;
-    } else {
-      annualGiftExemption = 20000000;
-    }
-
-    var taxableAnnualGift = Math.max(0, annualGiftValue - annualGiftExemption);
-    var annualGiftTaxRate = 0.05; // 5% Final Tax option under Section 48(6)
-    var annualGiftTax = taxableAnnualGift * annualGiftTaxRate;
-    var netAnnualGift = annualGiftValue - annualGiftTax;
-
-    // 3. Phased Wealth Transfer Strategy Optimization
-    var phasedAnnualExemptionPerHeir = heirRelationship === 'other' ? 10000000 : 20000000;
-    var maxTaxFreeGiftingPerYear = phasedAnnualExemptionPerHeir * numberOfHeirs;
-    var plannedLifetimeGifts = Math.min(estateValue, maxTaxFreeGiftingPerYear * giftingYears);
-    var residualEstateForInheritance = Math.max(0, estateValue - plannedLifetimeGifts);
-    var residualPortionPerHeir = residualEstateForInheritance / numberOfHeirs;
-    var residualTaxablePerHeir = Math.max(0, residualPortionPerHeir - statutoryExemptionPerHeir);
-    var strategyTaxOnResidual = heirRelationship === 'spouse' ? 0 : residualTaxablePerHeir * taxRate * numberOfHeirs;
-    var strategyTaxSavings = Math.max(0, totalInheritanceTax - strategyTaxOnResidual);
-    var strategyTaxSavingsPct = totalInheritanceTax > 0 ? (strategyTaxSavings / totalInheritanceTax) * 100 : 0;
-
-    return {
-      estateValue: estateValue,
-      heirRelationship: heirRelationship,
-      numberOfHeirs: numberOfHeirs,
-      portionPerHeir: Math.round(portionPerHeir),
-      statutoryExemptionPerHeir: statutoryExemptionPerHeir,
-      exemptionPerHeir: Math.round(exemptionPerHeir),
-      taxablePerHeir: Math.round(taxablePerHeir),
-      taxRate: taxRate,
-      taxPerHeir: Math.round(taxPerHeir),
-      totalInheritanceTax: Math.round(totalInheritanceTax),
-      netLegacyReceived: Math.round(netLegacyReceived),
-      annualGiftValue: annualGiftValue,
-      giftType: giftType,
-      annualGiftExemption: annualGiftExemption,
-      taxableAnnualGift: Math.round(taxableAnnualGift),
-      annualGiftTaxRate: annualGiftTaxRate,
-      annualGiftTax: Math.round(annualGiftTax),
-      netAnnualGift: Math.round(netAnnualGift),
-      giftingYears: giftingYears,
-      plannedLifetimeGifts: Math.round(plannedLifetimeGifts),
-      residualEstateForInheritance: Math.round(residualEstateForInheritance),
-      strategyTaxOnResidual: Math.round(strategyTaxOnResidual),
-      strategyTaxSavings: Math.round(strategyTaxSavings),
-      strategyTaxSavingsPct: Math.round(strategyTaxSavingsPct * 10) / 10,
-    };
-  }
+  var calculateThaiInheritanceAndGiftTax =
+    _ext.calculateThaiInheritanceAndGiftTax ||
+    ((params) => {
+      if (
+        global.MoneyApp &&
+        typeof global.MoneyApp.calculateThaiInheritanceAndGiftTax === 'function' &&
+        global.MoneyApp.calculateThaiInheritanceAndGiftTax !== calculateThaiInheritanceAndGiftTax
+      ) {
+        return global.MoneyApp.calculateThaiInheritanceAndGiftTax(params);
+      }
+    });
 
   /**
    * Calculates Retirement 3-Bucket Cash Flow Allocation and Drawdown Schedule
-   *
-   * @param {Object} params
-   * @param {number} [params.annualLivingExpense=360000] - Annual retirement living expense (THB)
-   * @param {number} [params.monthlySsoPension=4125] - Monthly Social Security (ประกันสังคม) or guaranteed pension (THB)
-   * @param {number} [params.monthlyElderlyAllowance=600] - Monthly government elderly allowance (เบี้ยผู้สูงอายุ) (THB)
-   * @param {number} [params.totalRetirementAssets=6000000] - Total accumulated retirement net worth (THB)
-   * @param {number} [params.bucket1Years=2] - Cash bucket coverage horizon (years, typically 1-2)
-   * @param {number} [params.bucket2Years=5] - Income/Bonds bucket coverage horizon (years, typically 3-7)
-   * @param {number} [params.bucket1YieldPct=1.5] - Annual return on cash/money market (%)
-   * @param {number} [params.bucket2YieldPct=3.5] - Annual return on fixed income/bonds (%)
-   * @param {number} [params.bucket3YieldPct=7.0] - Annual return on global equities/growth (%)
-   * @returns {Object} 3-Bucket targets, net drawdowns, runway, and cash cushion resilience metrics
    */
-  function calculateRetirementThreeBuckets(params) {
-    params = params || {};
-    var annualLivingExpense = Math.max(0, parseNum(params.annualLivingExpense));
-    var monthlySsoPension = Math.max(0, parseNum(params.monthlySsoPension));
-    var monthlyElderlyAllowance = Math.max(0, parseNum(params.monthlyElderlyAllowance));
-    var totalRetirementAssets = Math.max(0, parseNum(params.totalRetirementAssets));
-    var bucket1Years = Math.max(0.5, parseNum(params.bucket1Years) || 2);
-    var bucket2Years = Math.max(1, parseNum(params.bucket2Years) || 5);
-    var bucket1YieldPct = parseNum(params.bucket1YieldPct) || 1.5;
-    var bucket2YieldPct = parseNum(params.bucket2YieldPct) || 3.5;
-    var bucket3YieldPct = parseNum(params.bucket3YieldPct) || 7.0;
-
-    var annualGuaranteedIncome = (monthlySsoPension + monthlyElderlyAllowance) * 12;
-    var netAnnualDrawdown = Math.max(0, annualLivingExpense - annualGuaranteedIncome);
-    var guaranteedIncomeCoveragePct =
-      annualLivingExpense > 0 ? (annualGuaranteedIncome / annualLivingExpense) * 100 : 0;
-
-    var bucket1Target = Math.round(netAnnualDrawdown * bucket1Years);
-    var bucket2Target = Math.round(netAnnualDrawdown * bucket2Years);
-    var defensiveNeeds = bucket1Target + bucket2Target;
-
-    var bucket3Target = Math.max(0, totalRetirementAssets - defensiveNeeds);
-    var isUnderfunded = totalRetirementAssets < defensiveNeeds;
-    var shortfallAmount = isUnderfunded ? defensiveNeeds - totalRetirementAssets : 0;
-
-    var bearMarketRunwayYears =
-      netAnnualDrawdown > 0 ? Math.round(((bucket1Target + bucket2Target) / netAnnualDrawdown) * 10) / 10 : 99;
-
-    var b1CashFlow = bucket1Target * (bucket1YieldPct / 100);
-    var b2CashFlow = bucket2Target * (bucket2YieldPct / 100);
-    var b3CashFlow = bucket3Target * (bucket3YieldPct / 100);
-    var annualYieldCashFlow = Math.round(b1CashFlow + b2CashFlow + b3CashFlow);
-
-    var blendedYieldPct =
-      totalRetirementAssets > 0 ? Math.round((annualYieldCashFlow / totalRetirementAssets) * 10000) / 100 : 0;
-    var isYieldSelfSustaining = annualYieldCashFlow >= netAnnualDrawdown && netAnnualDrawdown > 0;
-
-    return {
-      annualLivingExpense: Math.round(annualLivingExpense),
-      annualGuaranteedIncome: Math.round(annualGuaranteedIncome),
-      netAnnualDrawdown: Math.round(netAnnualDrawdown),
-      guaranteedIncomeCoveragePct: Math.round(guaranteedIncomeCoveragePct * 10) / 10,
-      bucket1Years: bucket1Years,
-      bucket2Years: bucket2Years,
-      bucket1Target: bucket1Target,
-      bucket2Target: bucket2Target,
-      bucket3Target: bucket3Target,
-      totalRetirementAssets: Math.round(totalRetirementAssets),
-      defensiveNeeds: defensiveNeeds,
-      isUnderfunded: isUnderfunded,
-      shortfallAmount: Math.round(shortfallAmount),
-      bearMarketRunwayYears: bearMarketRunwayYears,
-      annualYieldCashFlow: annualYieldCashFlow,
-      blendedYieldPct: blendedYieldPct,
-      isYieldSelfSustaining: isYieldSelfSustaining,
-    };
-  }
+  var calculateRetirementThreeBuckets =
+    _ext.calculateRetirementThreeBuckets ||
+    ((params) => {
+      if (
+        global.MoneyApp &&
+        typeof global.MoneyApp.calculateRetirementThreeBuckets === 'function' &&
+        global.MoneyApp.calculateRetirementThreeBuckets !== calculateRetirementThreeBuckets
+      ) {
+        return global.MoneyApp.calculateRetirementThreeBuckets(params);
+      }
+    });
 
   var THAI_PIT_TAX_BRACKETS = _ext.THAI_PIT_TAX_BRACKETS || [
     { limit: 150000, rate: 0 },
@@ -980,460 +832,34 @@
 
   /**
    * Calculates Thai Land and Building Tax (ภาษีที่ดินและสิ่งปลูกสร้าง พ.ร.บ. 2562)
-   *
-   * @param {Object} params
-   * @param {string} [params.landCategory='residential_primary'] - Land classification
-   * @param {number} [params.appraisalValue=0] - Official government appraisal value (THB)
-   * @param {number} [params.vacantConsecutiveYears=0] - Consecutive years left unutilized (for vacant land penalty)
-   * @returns {Object} Tax liability, brackets breakdown, effective rate, and installment options
    */
-  function calculateThaiLandAndBuildingTax(params) {
-    params = params || {};
-    var landCategory = params.landCategory || 'residential_primary';
-    var appraisalValue = Math.max(0, parseNum(params.appraisalValue));
-    var vacantConsecutiveYears = Math.max(0, parseNum(params.vacantConsecutiveYears));
-
-    var exemptionAmount = 0;
-    var rawTiers = [];
-    var vacantSurcharge = 0;
-    var periods = 0;
-
-    if (landCategory === 'agricultural') {
-      exemptionAmount = 50000000;
-      rawTiers = [
-        { limit: 75000000, rate: 0.0001, labelTh: '0 - 75 ล้านบาท (0.01%)', labelEn: '0 - 75M THB (0.01%)' },
-        { limit: 25000000, rate: 0.0003, labelTh: '75 - 100 ล้านบาท (0.03%)', labelEn: '75 - 100M THB (0.03%)' },
-        { limit: 400000000, rate: 0.0005, labelTh: '100 - 500 ล้านบาท (0.05%)', labelEn: '100 - 500M THB (0.05%)' },
-        { limit: 500000000, rate: 0.0007, labelTh: '500 - 1,000 ล้านบาท (0.07%)', labelEn: '500 - 1,000M THB (0.07%)' },
-        { limit: Infinity, rate: 0.001, labelTh: 'เกิน 1,000 ล้านบาท (0.10%)', labelEn: 'Over 1,000M THB (0.10%)' },
-      ];
-    } else if (landCategory === 'residential_primary') {
-      exemptionAmount = 50000000;
-      rawTiers = [
-        { limit: 25000000, rate: 0.0003, labelTh: '50 - 75 ล้านบาท (0.03%)', labelEn: '50 - 75M THB (0.03%)' },
-        { limit: 25000000, rate: 0.0005, labelTh: '75 - 100 ล้านบาท (0.05%)', labelEn: '75 - 100M THB (0.05%)' },
-        { limit: Infinity, rate: 0.001, labelTh: 'เกิน 100 ล้านบาท (0.10%)', labelEn: 'Over 100M THB (0.10%)' },
-      ];
-    } else if (landCategory === 'residential_building_only') {
-      exemptionAmount = 10000000;
-      rawTiers = [
-        { limit: 40000000, rate: 0.0002, labelTh: '10 - 50 ล้านบาท (0.02%)', labelEn: '10 - 50M THB (0.02%)' },
-        { limit: 25000000, rate: 0.0003, labelTh: '50 - 75 ล้านบาท (0.03%)', labelEn: '50 - 75M THB (0.03%)' },
-        { limit: 25000000, rate: 0.0005, labelTh: '75 - 100 ล้านบาท (0.05%)', labelEn: '75 - 100M THB (0.05%)' },
-        { limit: Infinity, rate: 0.001, labelTh: 'เกิน 100 ล้านบาท (0.10%)', labelEn: 'Over 100M THB (0.10%)' },
-      ];
-    } else if (landCategory === 'residential_secondary') {
-      exemptionAmount = 0;
-      rawTiers = [
-        { limit: 50000000, rate: 0.0002, labelTh: '0 - 50 ล้านบาท (0.02%)', labelEn: '0 - 50M THB (0.02%)' },
-        { limit: 25000000, rate: 0.0003, labelTh: '50 - 75 ล้านบาท (0.03%)', labelEn: '50 - 75M THB (0.03%)' },
-        { limit: 25000000, rate: 0.0005, labelTh: '75 - 100 ล้านบาท (0.05%)', labelEn: '75 - 100M THB (0.05%)' },
-        { limit: Infinity, rate: 0.001, labelTh: 'เกิน 100 ล้านบาท (0.10%)', labelEn: 'Over 100M THB (0.10%)' },
-      ];
-    } else {
-      // commercial or vacant
-      exemptionAmount = 0;
-      if (landCategory === 'vacant' && vacantConsecutiveYears >= 3) {
-        periods = Math.floor(vacantConsecutiveYears / 3);
-        vacantSurcharge = periods * 0.003; // +0.3% every 3 years
+  var calculateThaiLandAndBuildingTax =
+    _ext.calculateThaiLandAndBuildingTax ||
+    ((params) => {
+      if (
+        global.MoneyApp &&
+        typeof global.MoneyApp.calculateThaiLandAndBuildingTax === 'function' &&
+        global.MoneyApp.calculateThaiLandAndBuildingTax !== calculateThaiLandAndBuildingTax
+      ) {
+        return global.MoneyApp.calculateThaiLandAndBuildingTax(params);
       }
-      rawTiers = [
-        {
-          limit: 50000000,
-          rate: Math.min(0.03, 0.003 + vacantSurcharge),
-          labelTh: '0 - 50 ล้านบาท',
-          labelEn: '0 - 50M THB',
-        },
-        {
-          limit: 150000000,
-          rate: Math.min(0.03, 0.004 + vacantSurcharge),
-          labelTh: '50 - 200 ล้านบาท',
-          labelEn: '50 - 200M THB',
-        },
-        {
-          limit: 800000000,
-          rate: Math.min(0.03, 0.005 + vacantSurcharge),
-          labelTh: '200 - 1,000 ล้านบาท',
-          labelEn: '200 - 1,000M THB',
-        },
-        {
-          limit: 4000000000,
-          rate: Math.min(0.03, 0.006 + vacantSurcharge),
-          labelTh: '1,000 - 5,000 ล้านบาท',
-          labelEn: '1,000 - 5,000M THB',
-        },
-        {
-          limit: Infinity,
-          rate: Math.min(0.03, 0.007 + vacantSurcharge),
-          labelTh: 'เกิน 5,000 ล้านบาท',
-          labelEn: 'Over 5,000M THB',
-        },
-      ];
-    }
-
-    var taxableBase = Math.max(0, appraisalValue - exemptionAmount);
-    var remaining = taxableBase;
-    var totalTax = 0;
-    var tiers = [];
-    var marginalRatePct = 0;
-    var i;
-    var t;
-    var taxableInTier;
-    var taxInTier;
-
-    for (i = 0; i < rawTiers.length; i++) {
-      if (remaining <= 0 && tiers.length > 0) break;
-      t = rawTiers[i];
-      taxableInTier = Math.min(remaining, t.limit);
-      taxInTier = Math.round(taxableInTier * t.rate);
-      totalTax += taxInTier;
-      remaining -= taxableInTier;
-      marginalRatePct = Math.round(t.rate * 10000) / 100;
-
-      tiers.push({
-        labelTh: t.labelTh,
-        labelEn: t.labelEn,
-        ratePct: Math.round(t.rate * 10000) / 100,
-        taxableInTier: taxableInTier,
-        taxInTier: taxInTier,
-      });
-    }
-
-    var effectiveRatePct = appraisalValue > 0 ? Math.round((totalTax / appraisalValue) * 10000) / 100 : 0;
-    var canInstallment = totalTax >= 3000;
-    var installmentMonthly = canInstallment ? Math.round((totalTax / 3) * 100) / 100 : 0;
-
-    return {
-      landCategory: landCategory,
-      appraisalValue: appraisalValue,
-      exemptionAmount: exemptionAmount,
-      taxableBase: taxableBase,
-      totalTax: totalTax,
-      effectiveRatePct: effectiveRatePct,
-      marginalRatePct: marginalRatePct,
-      tiers: tiers,
-      canInstallment: canInstallment,
-      installmentMonthly: installmentMonthly,
-      statutoryDeadline: '30 เมษายน (April 30)',
-    };
-  }
+    });
 
   /**
    * Auto-detects and parses Thai Mobile Banking CSV Statements (KBank, SCB, Krungthai, KKP, etc.)
-   *
-   * @param {string} csvText - Raw CSV text
-   * @param {string} [fileName=''] - File name for bank brand heuristics
-   * @returns {Object} Structured bank statement data or { isBankStatement: false }
    */
-  function detectAndParseThaiBankStatement(csvText, fileName) {
-    if (typeof csvText !== 'string' || !csvText.trim()) {
-      return { isBankStatement: false };
-    }
-    fileName = (fileName || '').toLowerCase();
-
-    // Strip BOM
-    if (csvText.charCodeAt(0) === 0xfeff) {
-      csvText = csvText.slice(1);
-    }
-
-    var rows = [];
-    var currentRow = [];
-    var currentVal = '';
-    var inQuotes = false;
-    var i = 0;
-    var len = csvText.length;
-    var char;
-
-    while (i < len) {
-      char = csvText[i];
-      if (inQuotes) {
-        if (char === '"') {
-          if (i + 1 < len && csvText[i + 1] === '"') {
-            currentVal += '"';
-            i += 2;
-          } else {
-            inQuotes = false;
-            i++;
-          }
-        } else {
-          currentVal += char;
-          i++;
-        }
-      } else {
-        if (char === '"') {
-          inQuotes = true;
-          i++;
-        } else if (char === ',') {
-          currentRow.push(currentVal.trim());
-          currentVal = '';
-          i++;
-        } else if (char === '\r') {
-          if (i + 1 < len && csvText[i + 1] === '\n') {
-            i++;
-          }
-          currentRow.push(currentVal.trim());
-          rows.push(currentRow);
-          currentRow = [];
-          currentVal = '';
-          i++;
-        } else if (char === '\n') {
-          currentRow.push(currentVal.trim());
-          rows.push(currentRow);
-          currentRow = [];
-          currentVal = '';
-          i++;
-        } else {
-          currentVal += char;
-          i++;
-        }
-      }
-    }
-    if (currentVal.length > 0 || currentRow.length > 0) {
-      currentRow.push(currentVal.trim());
-      rows.push(currentRow);
-    }
-
-    if (rows.length < 2) {
-      return { isBankStatement: false };
-    }
-
-    var headerIdx = -1;
-    var headerRow = null;
-    var r;
-    var rStr;
-    var isDate;
-    var isDesc;
-    var isCashFlow;
-
-    for (r = 0; r < Math.min(10, rows.length); r++) {
-      rStr = rows[r].join(' ').toLowerCase();
-      isDate = rStr.includes('date') || rStr.includes('วัน');
-      isDesc =
-        rStr.includes('description') ||
-        rStr.includes('detail') ||
-        rStr.includes('รายการ') ||
-        rStr.includes('รายละเอียด') ||
-        rStr.includes('transaction');
-      isCashFlow =
-        rStr.includes('withdrawal') ||
-        rStr.includes('deposit') ||
-        rStr.includes('debit') ||
-        rStr.includes('credit') ||
-        rStr.includes('ถอน') ||
-        rStr.includes('ฝาก') ||
-        rStr.includes('amount') ||
-        rStr.includes('จำนวนเงิน');
-
+  var detectAndParseThaiBankStatement =
+    _ext.detectAndParseThaiBankStatement ||
+    ((csvText, fileName) => {
       if (
-        isDate &&
-        (isDesc || isCashFlow) &&
-        (rStr.includes('withdraw') ||
-          rStr.includes('deposit') ||
-          rStr.includes('debit') ||
-          rStr.includes('credit') ||
-          rStr.includes('ถอน') ||
-          rStr.includes('ฝาก') ||
-          rStr.includes('balance') ||
-          rStr.includes('คงเหลือ') ||
-          rStr.includes('amount') ||
-          rStr.includes('จำนวนเงิน'))
+        global.MoneyApp &&
+        typeof global.MoneyApp.detectAndParseThaiBankStatement === 'function' &&
+        global.MoneyApp.detectAndParseThaiBankStatement !== detectAndParseThaiBankStatement
       ) {
-        headerIdx = r;
-        headerRow = rows[r];
-        break;
+        return global.MoneyApp.detectAndParseThaiBankStatement(csvText, fileName);
       }
-    }
+    });
 
-    if (headerIdx === -1 || !headerRow) {
-      return { isBankStatement: false };
-    }
-
-    // Determine bank brand
-    var fullHeaderStr = `${headerRow.join(' ')} ${fileName}`.toLowerCase();
-    var bankCode = 'generic_bank';
-    var bankName = 'Bank Statement';
-
-    if (
-      fullHeaderStr.includes('kbank') ||
-      fullHeaderStr.includes('k plus') ||
-      fullHeaderStr.includes('kasikorn') ||
-      (fullHeaderStr.includes('channel') && fullHeaderStr.includes('outstanding balance'))
-    ) {
-      bankCode = 'kbank';
-      bankName = 'Kasikornbank (KBank)';
-    } else if (
-      fullHeaderStr.includes('scb') ||
-      fullHeaderStr.includes('siam commercial') ||
-      fullHeaderStr.includes('easy net') ||
-      fullHeaderStr.includes('จำนวนเงินที่ถอน')
-    ) {
-      bankCode = 'scb';
-      bankName = 'Siam Commercial Bank (SCB)';
-    } else if (
-      fullHeaderStr.includes('krungthai') ||
-      fullHeaderStr.includes('ktb') ||
-      fullHeaderStr.includes('next') ||
-      (fullHeaderStr.includes('debit') && fullHeaderStr.includes('credit') && fullHeaderStr.includes('balance'))
-    ) {
-      bankCode = 'krungthai';
-      bankName = 'Krungthai Bank (KTB)';
-    } else if (fullHeaderStr.includes('kkp') || fullHeaderStr.includes('dime') || fullHeaderStr.includes('kiatnakin')) {
-      bankCode = 'kkp';
-      bankName = 'KKP Mobile / Dime';
-    }
-
-    // Map columns
-    var dateCol = -1;
-    var descCol = -1;
-    var withdrawCol = -1;
-    var depositCol = -1;
-    var amountCol = -1;
-    var c;
-    var colLower;
-
-    for (c = 0; c < headerRow.length; c++) {
-      colLower = headerRow[c].toLowerCase();
-      if (dateCol === -1 && (colLower.includes('date') || colLower.includes('วัน'))) {
-        dateCol = c;
-      } else if (
-        colLower.includes('description') ||
-        colLower.includes('รายละเอียด') ||
-        colLower.includes('particulars') ||
-        colLower.includes('narrative') ||
-        (descCol === -1 &&
-          (colLower.includes('detail') || colLower.includes('รายการ') || colLower.includes('transaction')) &&
-          !colLower.includes('type') &&
-          !colLower.includes('ประเภท'))
-      ) {
-        descCol = c;
-      } else if (
-        withdrawCol === -1 &&
-        (colLower.includes('withdrawal') ||
-          colLower.includes('debit') ||
-          colLower.includes('ถอน') ||
-          colLower.includes('จ่าย'))
-      ) {
-        withdrawCol = c;
-      } else if (
-        depositCol === -1 &&
-        (colLower.includes('deposit') ||
-          colLower.includes('credit') ||
-          colLower.includes('ฝาก') ||
-          colLower.includes('รับ'))
-      ) {
-        depositCol = c;
-      } else if (
-        amountCol === -1 &&
-        (colLower.includes('amount') || colLower.includes('จำนวนเงิน') || colLower.includes('ยอดเงิน'))
-      ) {
-        amountCol = c;
-      }
-    }
-
-    // If description wasn't found, find first non-amount non-date column
-    if (descCol === -1) {
-      for (c = 0; c < headerRow.length; c++) {
-        if (c !== dateCol && c !== withdrawCol && c !== depositCol && c !== amountCol) {
-          descCol = c;
-          break;
-        }
-      }
-    }
-
-    var transactions = [];
-    var incomes = [];
-    var expenses = [];
-    var totalInflow = 0;
-    var totalOutflow = 0;
-    var row;
-    var dateVal;
-    var descVal;
-    var withdrawVal;
-    var depositVal;
-    var amountVal;
-    var txAmt;
-
-    for (r = headerIdx + 1; r < rows.length; r++) {
-      row = rows[r];
-      if (!row || row.length === 0 || (row.length === 1 && !row[0])) continue;
-
-      dateVal = dateCol >= 0 && row[dateCol] ? row[dateCol].trim() : '';
-      descVal = descCol >= 0 && row[descCol] ? row[descCol].trim() : '';
-      withdrawVal = withdrawCol >= 0 && row[withdrawCol] ? parseNum(row[withdrawCol]) : 0;
-      depositVal = depositCol >= 0 && row[depositCol] ? parseNum(row[depositCol]) : 0;
-      amountVal = amountCol >= 0 && row[amountCol] ? parseNum(row[amountCol]) : 0;
-
-      if (!descVal && withdrawVal === 0 && depositVal === 0 && amountVal === 0) continue;
-
-      if (withdrawCol >= 0 && depositCol >= 0) {
-        if (withdrawVal > 0) {
-          expenses.push({
-            name: descVal || 'Expense',
-            value: Math.round(withdrawVal * 100) / 100,
-            date: dateVal,
-          });
-          totalOutflow += withdrawVal;
-          transactions.push({ type: 'debit', amount: withdrawVal, description: descVal, date: dateVal });
-        }
-        if (depositVal > 0) {
-          incomes.push({
-            name: descVal || 'Income',
-            value: Math.round(depositVal * 100) / 100,
-            date: dateVal,
-          });
-          totalInflow += depositVal;
-          transactions.push({ type: 'credit', amount: depositVal, description: descVal, date: dateVal });
-        }
-      } else if (amountCol >= 0) {
-        if (amountVal < 0) {
-          txAmt = Math.abs(amountVal);
-          expenses.push({
-            name: descVal || 'Expense',
-            value: Math.round(txAmt * 100) / 100,
-            date: dateVal,
-          });
-          totalOutflow += txAmt;
-          transactions.push({ type: 'debit', amount: txAmt, description: descVal, date: dateVal });
-        } else if (amountVal > 0) {
-          incomes.push({
-            name: descVal || 'Income',
-            value: Math.round(amountVal * 100) / 100,
-            date: dateVal,
-          });
-          totalInflow += amountVal;
-          transactions.push({ type: 'credit', amount: amountVal, description: descVal, date: dateVal });
-        }
-      }
-    }
-
-    if (transactions.length === 0) {
-      return { isBankStatement: false };
-    }
-
-    return {
-      isBankStatement: true,
-      bankCode: bankCode,
-      bankName: bankName,
-      summary: {
-        totalInflow: Math.round(totalInflow * 100) / 100,
-        totalOutflow: Math.round(totalOutflow * 100) / 100,
-        transactionCount: transactions.length,
-      },
-      candidate: {
-        incomes: incomes,
-        expenses: expenses,
-        savings: [],
-        manualOverrides: { tax: false, sso: false, pvd: false },
-        showEmergencyRunway: false,
-        currentEmergencyReserve: 0,
-      },
-      transactions: transactions,
-    };
-  }
-
-  /**
-   * Calculates Thai Foreign Investment & Crypto Repatriation Tax (คำสั่งกรมสรรพากร ป.161/2566 & ป.162/2566)
-   */
   var calculateForeignRepatriationTax =
     _ext.calculateForeignRepatriationTax ||
     ((params) => {
@@ -1448,151 +874,18 @@
 
   /**
    * Target Date Fund (TDF) Glidepath Allocation Engine (Roadmap Phase 64)
-   *
-   * Dynamically shifts Core (Equities/Growth) vs Ballast (Fixed Income/Cash) vs Satellite
-   * based on years to target retirement and risk profile, modeling after GPF (กบข. แผนสมดุลตามอายุ)
-   * and international Target Date Fund standards.
-   *
-   * @param {Object} params
-   * @param {number} [params.currentAge=30]
-   * @param {number} [params.targetRetirementAge=60]
-   * @param {number} [params.targetYear]
-   * @param {number} [params.currentYear]
-   * @param {string} [params.riskTolerance='moderate'] 'conservative' | 'moderate' | 'aggressive'
-   * @returns {Object}
    */
-  function calculateTargetDateGlidepath(params) {
-    if (!params) params = {};
-
-    var currentAge = parseInt(params.currentAge, 10);
-    var targetRetirementAge = parseInt(params.targetRetirementAge, 10);
-    var targetYear = parseInt(params.targetYear, 10);
-    var currentYear = parseInt(params.currentYear, 10);
-    var riskTolerance = params.riskTolerance || 'moderate';
-
-    var nowYear = !Number.isNaN(currentYear) && currentYear > 1900 ? currentYear : new Date().getFullYear();
-
-    if (Number.isNaN(currentAge) || currentAge < 15) currentAge = 30;
-    if (Number.isNaN(targetRetirementAge) || targetRetirementAge < 40) targetRetirementAge = 60;
-
-    var yearsToRetire;
-    if (!Number.isNaN(targetYear) && targetYear > nowYear) {
-      yearsToRetire = targetYear - nowYear;
-      targetRetirementAge = currentAge + yearsToRetire;
-    } else {
-      yearsToRetire = targetRetirementAge - currentAge;
-      targetYear = nowYear + yearsToRetire;
-    }
-
-    var youngCore;
-    var youngBallast;
-    var youngSat;
-    var matureCore;
-    var matureBallast;
-    var matureSat;
-
-    if (riskTolerance === 'aggressive') {
-      youngCore = 85;
-      youngBallast = 5;
-      youngSat = 10;
-      matureCore = 35;
-      matureBallast = 60;
-      matureSat = 5;
-    } else if (riskTolerance === 'conservative') {
-      youngCore = 70;
-      youngBallast = 25;
-      youngSat = 5;
-      matureCore = 20;
-      matureBallast = 75;
-      matureSat = 5;
-    } else {
-      youngCore = 80;
-      youngBallast = 15;
-      youngSat = 5;
-      matureCore = 25;
-      matureBallast = 70;
-      matureSat = 5;
-    }
-
-    var t;
-    if (yearsToRetire >= 25) {
-      t = 1.0;
-    } else if (yearsToRetire <= 0) {
-      t = 0.0;
-    } else {
-      t = yearsToRetire / 25.0;
-    }
-
-    var corePct = Math.round(matureCore + t * (youngCore - matureCore));
-    var satPct = Math.round(matureSat + t * (youngSat - matureSat));
-    var ballastPct = 100 - corePct - satPct;
-
-    var phaseKey;
-    var phaseNameTh;
-    var phaseNameEn;
-    var adviceTh;
-    var adviceEn;
-
-    if (yearsToRetire > 20) {
-      phaseKey = 'early_accumulation';
-      phaseNameTh = 'ระยะสะสมความมั่งคั่งเชิงรุก (Early Accumulation)';
-      phaseNameEn = 'Early Wealth Accumulation';
-      adviceTh =
-        'ระยะเวลาลงทุนมากกว่า 20 ปี ควรเน้นสินทรัพย์เติบโตสูง (หุ้นไทย/หุ้นโลก) เป็นหลักเพื่อพลังผลตอบแทนทบต้น ความผันผวนระยะสั้นมีเวลาฟื้นตัวได้เต็มที่';
-      adviceEn =
-        'With 20+ years until retirement, maximize exposure to growth assets (Global/Thai equities) for compounding growth. Short-term market dips have ample time to recover.';
-    } else if (yearsToRetire > 10) {
-      phaseKey = 'mid_transition';
-      phaseNameTh = 'ระยะเติบโตสมดุล (Mid-Career Transition)';
-      phaseNameEn = 'Mid-Career Balanced Growth';
-      adviceTh =
-        'เหลือเวลา 10-20 ปี ควรเริ่มสร้างกันชนพอร์ต (Ballast) ด้วยตราสารหนี้คุณภาพดีและพันธบัตรรัฐบาล ควบคู่กับหุ้นแกนหลัก เพื่อลดความเสี่ยงก่อนถึงช่วงเปลี่ยนผ่าน';
-      adviceEn =
-        'With 10-20 years remaining, introduce fixed-income stabilizers (Ballast) alongside core equities to smooth portfolio volatility as retirement nears.';
-    } else if (yearsToRetire > 0) {
-      phaseKey = 'pre_retirement';
-      phaseNameTh = 'ระยะเตรียมพร้อมเกษียณ (Pre-Retirement Capital Preservation)';
-      phaseNameEn = 'Pre-Retirement Capital Preservation';
-      adviceTh =
-        'เหลือเวลาไม่ถึง 10 ปี ต้องเน้นรักษาเงินต้น (Capital Preservation) เพิ่มสัดส่วนตราสารหนี้และสภาพคล่องเป็นหลัก เพื่อป้องกันความเสี่ยง Sequence of Returns Risk';
-      adviceEn =
-        'Within 10 years of retirement, prioritize capital preservation. Increase high-quality fixed income to protect against Sequence of Returns Risk.';
-    } else {
-      phaseKey = 'distribution';
-      phaseNameTh = 'ระยะเกษียณอายุ/สร้างกระแสเงินสด (Retirement Distribution)';
-      phaseNameEn = 'Retirement Distribution & Income';
-      adviceTh =
-        'เข้าสู่วัยเกษียณแล้ว พอร์ตเน้นสร้างกระแสเงินสดสม่ำเสมอ (พันธบัตร/เงินฝากดอกเบี้ยสูง) 65-75% และคงหุ้นปันผลคุณภาพดี 20-25% เพื่อสู้กับเงินเฟ้อ';
-      adviceEn =
-        'In retirement: focus on steady income and capital protection (65-75% fixed income) while retaining 20-25% dividend growth equities to hedge inflation.';
-    }
-
-    return {
-      currentAge: currentAge,
-      targetRetirementAge: targetRetirementAge,
-      yearsToRetire: yearsToRetire,
-      targetYear: targetYear,
-      riskTolerance: riskTolerance,
-      split: {
-        core: corePct,
-        ballast: ballastPct,
-        satellite: satPct,
-      },
-      phaseKey: phaseKey,
-      phaseNameTh: phaseNameTh,
-      phaseNameEn: phaseNameEn,
-      adviceTh: adviceTh,
-      adviceEn: adviceEn,
-      assetBreakdown: {
-        coreDescriptionTh: 'หุ้นโลก (Global Equities), หุ้นไทย (SET50/100), กองทุนอสังหาฯ/REITs',
-        coreDescriptionEn: 'Global Equities, Thai Equities, REITs & Infrastructure',
-        ballastDescriptionTh: 'พันธบัตรรัฐบาล, กองทุนตราสารหนี้ระยะกลาง, เงินฝากประจำ/สภาพคล่อง',
-        ballastDescriptionEn: 'Govt Bonds, High-Quality Corporate Bonds, Liquid Cash',
-        satelliteDescriptionTh: 'ทองคำแท่ง (96.5%), สินทรัพย์ดิจิทัล, ธีมการลงทุนเฉพาะตัว',
-        satelliteDescriptionEn: 'Physical Gold, Digital Assets, Thematic Opportunities',
-      },
-    };
-  }
+  var calculateTargetDateGlidepath =
+    _ext.calculateTargetDateGlidepath ||
+    ((params) => {
+      if (
+        global.MoneyApp &&
+        typeof global.MoneyApp.calculateTargetDateGlidepath === 'function' &&
+        global.MoneyApp.calculateTargetDateGlidepath !== calculateTargetDateGlidepath
+      ) {
+        return global.MoneyApp.calculateTargetDateGlidepath(params);
+      }
+    });
 
   function calculateReorderLayout(orderList, idToMove, direction) {
     if (!Array.isArray(orderList)) return [];
@@ -2377,617 +1670,84 @@
 
   /**
    * Phase 75: Client-side Debt Payoff Simulation Engine.
-   * Simulates month-by-month debt schedule under Avalanche or Snowball strategies,
-   * accounting for minimum payments, interest accrual, rolled-over payments, and optional lump-sum windfalls.
    */
-  function simulateDebtPayoff(debtsList, extraMonthly, strategy, windfall) {
-    var rawDebts = Array.isArray(debtsList) ? debtsList : [];
-    var extra = Math.max(0, Number(extraMonthly) || 0);
-    var strat = strategy === 'snowball' ? 'snowball' : 'avalanche';
-    var wf =
-      windfall && windfall.amount > 0
-        ? {
-            amount: Math.max(0, Number(windfall.amount) || 0),
-            month: Math.max(1, Math.round(Number(windfall.month) || 1)),
-          }
-        : null;
-
-    var debts = rawDebts.map((d, idx) => ({
-      id: d.id || `debt_${idx}`,
-      name: d.name || `Debt ${idx + 1}`,
-      balance: Math.max(0, Number(d.balance) || 0),
-      rate: Math.max(0, Number(d.rate) || 0),
-      minPayment: Math.max(0, Number(d.minPayment) || 0),
-      paidOffMonth: null,
-    }));
-
-    var totalInitialDebt = debts.reduce((sum, d) => sum + d.balance, 0);
-    if (totalInitialDebt <= 0) {
-      return {
-        months: 0,
-        totalInterest: 0,
-        totalPaid: 0,
-        payoffOrder: [],
-        firstDebtCleared: null,
-        trajectory: [],
-      };
-    }
-
-    var months = 0;
-    var totalInterest = 0;
-    var totalPaid = 0;
-    var payoffOrder = [];
-    var trajectory = [{ month: 0, balance: totalInitialDebt }];
-    var MAX_MONTHS = 600; // 50-year circuit breaker
-
-    while (months < MAX_MONTHS) {
-      const remainingDebts = debts.filter((d) => d.balance > 0.001);
-      if (remainingDebts.length === 0) break;
-
-      months++;
-      let monthPayment = 0;
-      let totalAvailableBudget = extra;
-
-      // 1. Lump-sum windfall injection in specified month
-      if (wf && wf.month === months) {
-        totalAvailableBudget += wf.amount;
+  var simulateDebtPayoff =
+    _ext.simulateDebtPayoff ||
+    ((debtsList, extraMonthly, strategy, windfall) => {
+      if (
+        global.MoneyApp &&
+        typeof global.MoneyApp.simulateDebtPayoff === 'function' &&
+        global.MoneyApp.simulateDebtPayoff !== simulateDebtPayoff
+      ) {
+        return global.MoneyApp.simulateDebtPayoff(debtsList, extraMonthly, strategy, windfall);
       }
+    });
 
-      // 2. Accrue interest & pay minimum payment
-      for (let i = 0; i < debts.length; i++) {
-        const d = debts[i];
-        if (d.balance > 0.001) {
-          const monthInterest = d.balance * (d.rate / 100 / 12);
-          totalInterest += monthInterest;
-          d.balance += monthInterest;
-
-          const minPay = Math.min(d.balance, d.minPayment);
-          d.balance -= minPay;
-          monthPayment += minPay;
-
-          if (d.balance <= 0.001 && d.paidOffMonth === null) {
-            d.paidOffMonth = months;
-            payoffOrder.push({ name: d.name, month: months, id: d.id });
-          }
-        } else {
-          // Rollover minimum payment from paid-off debt
-          totalAvailableBudget += d.minPayment;
-        }
+  var compareDebtVelocity =
+    _ext.compareDebtVelocity ||
+    ((params) => {
+      if (
+        global.MoneyApp &&
+        typeof global.MoneyApp.compareDebtVelocity === 'function' &&
+        global.MoneyApp.compareDebtVelocity !== compareDebtVelocity
+      ) {
+        return global.MoneyApp.compareDebtVelocity(params);
       }
+    });
 
-      // 3. Allocate extra budget according to chosen strategy
-      const activeDebts = debts.filter((d) => d.balance > 0.001);
-      activeDebts.sort((a, b) => {
-        if (strat === 'snowball') {
-          return a.balance - b.balance || b.rate - a.rate;
-        }
-        return b.rate - a.rate || a.balance - b.balance;
-      });
-
-      for (let j = 0; j < activeDebts.length; j++) {
-        if (totalAvailableBudget <= 0.001) break;
-        const target = activeDebts[j];
-        const extraPay = Math.min(target.balance, totalAvailableBudget);
-        target.balance -= extraPay;
-        monthPayment += extraPay;
-        totalAvailableBudget -= extraPay;
-
-        if (target.balance <= 0.001 && target.paidOffMonth === null) {
-          target.paidOffMonth = months;
-          payoffOrder.push({ name: target.name, month: months, id: target.id });
-        }
+  var calculateTaxAccrualAndRefundPlan =
+    _ext.calculateTaxAccrualAndRefundPlan ||
+    ((params) => {
+      if (
+        global.MoneyApp &&
+        typeof global.MoneyApp.calculateTaxAccrualAndRefundPlan === 'function' &&
+        global.MoneyApp.calculateTaxAccrualAndRefundPlan !== calculateTaxAccrualAndRefundPlan
+      ) {
+        return global.MoneyApp.calculateTaxAccrualAndRefundPlan(params);
       }
+    });
 
-      totalPaid += monthPayment;
-      const curTotal = debts.reduce((sum, d) => sum + Math.max(0, d.balance), 0);
-      trajectory.push({ month: months, balance: Math.max(0, curTotal) });
-    }
-
-    var firstDebtCleared = payoffOrder.length > 0 ? payoffOrder[0] : null;
-
-    return {
-      months: months,
-      totalInterest: Math.round(totalInterest),
-      totalPaid: Math.round(totalPaid),
-      payoffOrder: payoffOrder,
-      firstDebtCleared: firstDebtCleared,
-      trajectory: trajectory,
-    };
-  }
-
-  /**
-   * Phase 75: Snowball vs. Avalanche Visual Velocity Comparator Engine.
-   */
-  function compareDebtVelocity(params) {
-    var p = params || {};
-    var debts = Array.isArray(p.debts) ? p.debts : [];
-    var extra = Math.max(0, Number(p.extraPayment) || 0);
-    var windfall = p.windfall || null;
-
-    var baseline = simulateDebtPayoff(debts, 0, 'avalanche', null);
-    var avalanche = simulateDebtPayoff(debts, extra, 'avalanche', windfall);
-    var snowball = simulateDebtPayoff(debts, extra, 'snowball', windfall);
-
-    var interestDelta = Math.max(0, snowball.totalInterest - avalanche.totalInterest);
-    var monthDelta = snowball.months - avalanche.months;
-
-    var avFirstMonth = avalanche.firstDebtCleared ? avalanche.firstDebtCleared.month : 0;
-    var snFirstMonth = snowball.firstDebtCleared ? snowball.firstDebtCleared.month : 0;
-    var firstWinMonthDelta = avFirstMonth - snFirstMonth; // positive = snowball clears first debt faster
-
-    var avMonthsSaved = Math.max(0, baseline.months - avalanche.months);
-    var snMonthsSaved = Math.max(0, baseline.months - snowball.months);
-    var avInterestSaved = Math.max(0, baseline.totalInterest - avalanche.totalInterest);
-    var snInterestSaved = Math.max(0, baseline.totalInterest - snowball.totalInterest);
-
-    // Recommendation logic
-    var recommended = 'avalanche';
-    var reasonTh = '';
-    var reasonEn = '';
-
-    if (debts.length <= 1) {
-      recommended = 'equal';
-      reasonTh = 'หนี้มีเพียงรายการเดียว ทั้ง Avalanche และ Snowball ให้ผลลัพธ์เท่ากันทุกประการ';
-      reasonEn = 'Single debt item: Avalanche and Snowball strategies produce identical results.';
-    } else if (interestDelta >= 2000) {
-      recommended = 'avalanche';
-      reasonTh = `แนะนำ Avalanche: ช่วยประหยัดดอกเบี้ยได้มากกว่า Snowball ถึง ${formatMoney(interestDelta)} บาท`;
-      reasonEn = `Avalanche Recommended: Saves ${formatMoney(interestDelta)} THB more in interest than Snowball.`;
-    } else if (firstWinMonthDelta >= 2) {
-      recommended = 'snowball';
-      reasonTh = `แนะนำ Snowball: ช่วยปิดหนี้ก้อนแรกได้เร็วกว่า ${firstWinMonthDelta} เดือน สร้างกำลังใจในการปลดหนี้ (ดอกเบี้ยต่างกันเพียง ${formatMoney(interestDelta)} บาท)`;
-      reasonEn = `Snowball Recommended: Eliminates first debt ${firstWinMonthDelta} months earlier for quick momentum (interest difference is only ${formatMoney(interestDelta)} THB).`;
-    } else {
-      recommended = interestDelta > 0 ? 'avalanche' : 'equal';
-      reasonTh =
-        interestDelta > 0
-          ? `Avalanche ประหยัดดอกเบี้ยกว่าเล็กน้อย (${formatMoney(interestDelta)} บาท)`
-          : 'ทั้งสองวิธีให้ระยะเวลาและดอกเบี้ยใกล้เคียงกัน';
-      reasonEn =
-        interestDelta > 0
-          ? `Avalanche saves slightly more interest (${formatMoney(interestDelta)} THB).`
-          : 'Both strategies yield nearly identical duration and interest.';
-    }
-
-    return {
-      baseline: baseline,
-      avalanche: avalanche,
-      snowball: snowball,
-      interestDelta: interestDelta,
-      monthDelta: monthDelta,
-      firstWinMonthDelta: firstWinMonthDelta,
-      avMonthsSaved: avMonthsSaved,
-      snMonthsSaved: snMonthsSaved,
-      avInterestSaved: avInterestSaved,
-      snInterestSaved: snInterestSaved,
-      recommended: recommended,
-      reasonTh: reasonTh,
-      reasonEn: reasonEn,
-    };
-  }
-
-  /**
-   * Phase 76: Calculates Annual Tax Due Accrual & Tax Refund Windfall Planning Metrics.
-   * Amortizes tax due into monthly reserves (12-month provision or 3-installment 0% plan),
-   * or calculates refund windfall deployment amount for debt payoff or rebalancing.
-   *
-   * @param {Object} params
-   * @param {number} [params.calculatedTax=0] - Total annual PIT liability calculated
-   * @param {number} [params.withheldTax=0] - Total tax withheld at source (50 Tawi)
-   * @returns {Object} Tax outcome status, amounts, monthly provisions, and windfall recommendation
-   */
-  function calculateTaxAccrualAndRefundPlan(params) {
-    var p = params || {};
-    var calc = Math.max(0, Number(p.calculatedTax) || 0);
-    var wht = Math.max(0, Number(p.withheldTax) || 0);
-    var net = calc - wht;
-    var monthlyAccrual;
-    var canInstallment;
-    var installmentAmount;
-    var refund;
-
-    if (net > 0) {
-      monthlyAccrual = Math.round(net / 12);
-      canInstallment = net >= 3000;
-      installmentAmount = canInstallment ? Math.round(net / 3) : net;
-      return {
-        status: 'payable',
-        amount: net,
-        monthlyAccrual: monthlyAccrual,
-        canInstallment: canInstallment,
-        installmentAmount: installmentAmount,
-        recommendedWindfall: 0,
-      };
-    } else if (net < 0) {
-      refund = Math.abs(net);
-      return {
-        status: 'refund',
-        amount: refund,
-        monthlyAccrual: 0,
-        canInstallment: false,
-        installmentAmount: 0,
-        recommendedWindfall: refund,
-      };
-    } else {
-      return {
-        status: 'balanced',
-        amount: 0,
-        monthlyAccrual: 0,
-        canInstallment: false,
-        installmentAmount: 0,
-        recommendedWindfall: 0,
-      };
-    }
-  }
-
-  /**
-   * Phase 77: Debt Consolidation & Refinance Calculation Engine.
-   * Calculates new monthly payment, total interest, interest savings, and monthly cash flow differential (relief or extra payment).
-   *
-   * @param {Object} options
-   * @param {Array<{balance: number, rate: number, minPayment: number}>} [options.debts=[]]
-   * @param {number} [options.currentTotalInterest=0]
-   * @param {number} [options.currentTotalMinPayment=0]
-   * @param {number} [options.refinanceRate=9.9]
-   * @param {number} [options.refinanceTermMonths=36]
-   * @returns {Object} Consolidation metrics including newMonthlyPayment, interestSaved, monthlyPaymentDiff, and verdict
-   */
-  function calculateDebtConsolidation(options) {
-    var opts = options || {};
-    var debts = opts.debts || [];
-    var currentTotalInterest = Math.max(0, Number(opts.currentTotalInterest) || 0);
-    var currentTotalMinPayment = Math.max(0, Number(opts.currentTotalMinPayment) || 0);
-    var refinanceRate = opts.refinanceRate !== undefined ? Math.max(0, Number(opts.refinanceRate) || 0) : 9.9;
-    var refinanceTermMonths =
-      opts.refinanceTermMonths !== undefined ? Math.max(1, Math.floor(Number(opts.refinanceTermMonths) || 36)) : 36;
-
-    var validDebts = [];
-    var totalBalance = 0;
-    var weightedSum = 0;
-    var calculatedMin = 0;
-    var i;
-    var d;
-    var bal;
-    var rate;
-    var min;
-
-    for (i = 0; i < debts.length; i++) {
-      d = debts[i];
-      bal = Math.max(0, Number(d?.balance) || 0);
-      rate = Math.max(0, Number(d?.rate) || 0);
-      min = Math.max(0, Number(d?.minPayment) || 0);
-      if (bal > 0) {
-        validDebts.push({ balance: bal, rate: rate, minPayment: min });
-        totalBalance += bal;
-        weightedSum += bal * rate;
-        calculatedMin += min;
+  var calculateDebtConsolidation =
+    _ext.calculateDebtConsolidation ||
+    ((options) => {
+      if (
+        global.MoneyApp &&
+        typeof global.MoneyApp.calculateDebtConsolidation === 'function' &&
+        global.MoneyApp.calculateDebtConsolidation !== calculateDebtConsolidation
+      ) {
+        return global.MoneyApp.calculateDebtConsolidation(options);
       }
-    }
-
-    var totalMin = currentTotalMinPayment > 0 ? currentTotalMinPayment : calculatedMin;
-
-    if (totalBalance <= 0) {
-      return {
-        totalBalance: 0,
-        weightedRate: 0,
-        refinanceRate: refinanceRate,
-        refinanceTermMonths: refinanceTermMonths,
-        newMonthlyPayment: 0,
-        totalRefinanceInterest: 0,
-        totalRefinancePaid: 0,
-        interestSaved: 0,
-        monthlyPaymentDiff: 0,
-        verdict: 'no_debt',
-      };
-    }
-
-    var weightedRate = weightedSum / totalBalance;
-    var n = refinanceTermMonths;
-    var monthlyR = refinanceRate / 100 / 12;
-
-    var pmt = 0;
-    if (monthlyR > 0) {
-      pmt = (totalBalance * monthlyR) / (1 - (1 + monthlyR) ** -n);
-    } else {
-      pmt = totalBalance / n;
-    }
-
-    var totalRefinancePaid = pmt * n;
-    var totalRefinanceInterest = Math.max(0, totalRefinancePaid - totalBalance);
-    var interestSaved = Math.round(currentTotalInterest - totalRefinanceInterest);
-    var monthlyPaymentDiff = Math.round(totalMin - pmt);
-
-    var verdict = 'optimal';
-    if (interestSaved <= 0) {
-      verdict = 'higher_interest';
-    } else if (monthlyPaymentDiff < 0) {
-      verdict = 'faster_payoff';
-    }
-
-    return {
-      totalBalance: Math.round(totalBalance),
-      weightedRate: parseFloat(weightedRate.toFixed(2)),
-      refinanceRate: refinanceRate,
-      refinanceTermMonths: n,
-      newMonthlyPayment: Math.round(pmt),
-      totalRefinanceInterest: Math.round(totalRefinanceInterest),
-      totalRefinancePaid: Math.round(totalRefinancePaid),
-      interestSaved: interestSaved,
-      monthlyPaymentDiff: monthlyPaymentDiff,
-      verdict: verdict,
-    };
-  }
+    });
 
   /**
    * Phase 67: Emergency Fund & Income Shock Stress-Tester.
-   * Simulates sudden loss of income (layoff, resignation, illness, or total shock),
-   * compares Barebones survival vs Standard lifestyle drain, and models Section 33
-   * Social Security unemployment benefit offsets and severance buffers.
    */
-  function calculateIncomeShockStressTest(params) {
-    var p = params || {};
-    var liquidReserve = Math.max(0, Number(p.liquidReserve) || 0);
-    var severanceBuffer = Math.max(0, Number(p.severanceBuffer) || 0);
-    var totalLiquidity = liquidReserve + severanceBuffer;
-
-    var monthlyNeeds = Math.max(0, Number(p.monthlyNeeds) || 0);
-    var monthlyWants = Math.max(0, Number(p.monthlyWants) || 0);
-    var monthlyDebt = Math.max(0, Number(p.monthlyDebtService) || 0);
-
-    var barebonesMonthly = monthlyNeeds + monthlyDebt;
-    var standardMonthly = monthlyNeeds + monthlyWants + monthlyDebt;
-
-    var shockType = p.shockType || 'layoff';
-    var ssoMonthly = 0;
-    var ssoDurationMonths = 0;
-
-    if (shockType === 'layoff') {
-      ssoMonthly = typeof p.customSsoMonthly === 'number' ? p.customSsoMonthly : 7500;
-      ssoDurationMonths = 6;
-    } else if (shockType === 'resignation') {
-      ssoMonthly = typeof p.customSsoMonthly === 'number' ? p.customSsoMonthly : 4500;
-      ssoDurationMonths = 3;
-    } else if (shockType === 'medical') {
-      ssoMonthly = typeof p.customSsoMonthly === 'number' ? p.customSsoMonthly : 7500;
-      ssoDurationMonths = 3;
-    } else {
-      // total_shock
-      ssoMonthly = 0;
-      ssoDurationMonths = 0;
-    }
-
-    // Calculate Barebones Runway without SSO
-    var barebonesRunway = barebonesMonthly > 0 ? totalLiquidity / barebonesMonthly : totalLiquidity > 0 ? 999 : 0;
-
-    // Calculate Standard Runway without SSO
-    var standardRunway = standardMonthly > 0 ? totalLiquidity / standardMonthly : totalLiquidity > 0 ? 999 : 0;
-
-    // Calculate Runway with SSO offset (month-by-month simulation)
-    var rem = totalLiquidity;
-    var ssoRunway = 0;
-    var m;
-    var maxMonths = 360; // 30 years cap
-    var benefit = 0;
-    var netDrain = 0;
-    if (barebonesMonthly <= 0) {
-      ssoRunway = totalLiquidity > 0 ? 999 : 0;
-    } else {
-      for (m = 1; m <= maxMonths; m++) {
-        benefit = m <= ssoDurationMonths ? ssoMonthly : 0;
-        netDrain = Math.max(0, barebonesMonthly - benefit);
-        if (netDrain === 0) {
-          ssoRunway += 1;
-          continue;
-        }
-        if (rem >= netDrain) {
-          rem -= netDrain;
-          ssoRunway += 1;
-        } else {
-          ssoRunway += rem / netDrain;
-          rem = 0;
-          break;
-        }
+  var calculateIncomeShockStressTest =
+    _ext.calculateIncomeShockStressTest ||
+    ((params) => {
+      if (
+        global.MoneyApp &&
+        typeof global.MoneyApp.calculateIncomeShockStressTest === 'function' &&
+        global.MoneyApp.calculateIncomeShockStressTest !== calculateIncomeShockStressTest
+      ) {
+        return global.MoneyApp.calculateIncomeShockStressTest(params);
       }
-    }
-
-    var extendedMonths = Math.max(0, ssoRunway - barebonesRunway);
-
-    // Risk Level Verdict
-    var riskLevel = 'critical';
-    if (ssoRunway >= 12) {
-      riskLevel = 'safe';
-    } else if (ssoRunway >= 6) {
-      riskLevel = 'moderate';
-    } else if (ssoRunway >= 3) {
-      riskLevel = 'high_risk';
-    } else {
-      riskLevel = 'critical';
-    }
-
-    var ladder = [
-      {
-        step: 1,
-        titleTh: 'เงินสดและเงินฝากออมทรัพย์ฉุกเฉิน (Cash First)',
-        titleEn: 'Emergency Cash & Liquid Savings (Cash First)',
-        amount: liquidReserve,
-        noteTh: 'ใช้สภาพคล่องส่วนนี้ก่อนเป็นลำดับแรกเพื่อหลีกเลี่ยงการขายสินทรัพย์ขาดทุน',
-        noteEn: 'Draw down pure liquid cash first to prevent forced asset fire-sales.',
-      },
-      {
-        step: 2,
-        titleTh: 'สิทธิประโยชน์ว่างงาน ปกส. ม.33 และเงินชดเชยเลิกจ้าง',
-        titleEn: 'Section 33 SSO Unemployment & Severance Buffer',
-        amount: severanceBuffer + ssoMonthly * ssoDurationMonths,
-        noteTh:
-          ssoMonthly > 0
-            ? 'ยื่นเงินชดเชยว่างงาน ปกส. ม.33 ภายใน 30 วัน ได้รับ ' +
-              formatMoney(ssoMonthly) +
-              ' บ./ด. นาน ' +
-              ssoDurationMonths +
-              ' เดือน'
-            : 'ไม่ได้รับเงินชดเชยว่างงานในสถานการณ์นี้',
-        noteEn:
-          ssoMonthly > 0
-            ? 'Claim SSO benefit within 30 days: ' +
-              formatMoney(ssoMonthly) +
-              ' THB/mo for ' +
-              ssoDurationMonths +
-              ' months.'
-            : 'No unemployment offset available under this scenario.',
-      },
-      {
-        step: 3,
-        titleTh: 'กองทุนรวมตลาดเงิน (MMF) และทองคำแท่งสภาพคล่องสูง',
-        titleEn: 'Money Market Funds (MMF) & High-Liquidity Gold',
-        noteTh: 'แปลงสินทรัพย์ความเสี่ยงต่ำเป็นเงินสดเมื่อเงินสำรองหลักเหลือน้อยกว่า 2 เดือน',
-        noteEn: 'Liquidate low-risk defensive holdings when cash buffer drops below 2 months.',
-      },
-      {
-        step: 4,
-        titleTh: 'มาตรการพักชำระหนี้หรือเจรจาปรับโครงสร้างหนี้ฉุกเฉิน',
-        titleEn: 'Debt Moratorium & Emergency Restructuring',
-        noteTh: 'ติดต่อสถาบันการเงินทันทีก่อนเกิดการค้างชำระเพื่อขอลดค่างวดหรือพักเงินต้น',
-        noteEn: 'Proactively contact lenders for loan restructuring or interest pause before default.',
-      },
-    ];
-
-    return {
-      totalAvailableLiquidity: totalLiquidity,
-      liquidReserve: liquidReserve,
-      severanceBuffer: severanceBuffer,
-      barebonesMonthlyExpense: barebonesMonthly,
-      standardMonthlyExpense: standardMonthly,
-      shockType: shockType,
-      ssoMonthlyBenefit: ssoMonthly,
-      ssoBenefitMonths: ssoDurationMonths,
-      scenarios: {
-        barebones: {
-          monthlyDrain: barebonesMonthly,
-          runwayMonths: Math.round(barebonesRunway * 10) / 10,
-          survivalDays: Math.round(barebonesRunway * 30),
-        },
-        standard: {
-          monthlyDrain: standardMonthly,
-          runwayMonths: Math.round(standardRunway * 10) / 10,
-          survivalDays: Math.round(standardRunway * 30),
-        },
-        withSsoOffset: {
-          runwayMonths: Math.round(ssoRunway * 10) / 10,
-          survivalDays: Math.round(ssoRunway * 30),
-          extendedMonths: Math.round(extendedMonths * 10) / 10,
-        },
-      },
-      riskLevel: riskLevel,
-      liquidityLadder: ladder,
-    };
-  }
+    });
 
   /**
    * Phase 68: Child Education & Higher Learning Sinking Fund Planner.
-   * Models education tuition inflation (typically 4-7% p.a., exceeding headline CPI),
-   * evaluates future values across major Thai education pathways (Government, Bilingual,
-   * Private, Inter-Thai, and Overseas Degrees), factors existing dedicated savings,
-   * and computes required monthly investment DCA to bridge the education gap.
    */
-  function calculateChildEducationFund(params) {
-    var p = params || {};
-    var currentAge = Math.max(0, Math.min(25, Number(p.currentAge) || 0));
-    var targetAge = Math.max(currentAge, Math.min(30, Number(p.targetAge) || 18));
-    var yearsToCollege = Math.max(0, targetAge - currentAge);
-    var degreeDuration = Math.max(1, Math.min(10, Number(p.degreeDurationYears) || 4));
-
-    // Preset base annual tuition estimates (present value THB)
-    var trackTuitionDefaults = {
-      thai_public: 60000, // Thai Government University ~60,000 THB/yr
-      bilingual: 200000, // Thai English Program / Bilingual ~200,000 THB/yr
-      private: 120000, // Private Thai University ~120,000 THB/yr
-      inter_thai: 650000, // International University in Thailand ~650,000 THB/yr
-      inter_overseas: 1800000, // Overseas University (Tuition + Living) ~1,800,000 THB/yr
-    };
-
-    var track = p.educationTrack || 'thai_public';
-    var baseTuition =
-      typeof p.customAnnualTuition === 'number' && p.customAnnualTuition > 0
-        ? p.customAnnualTuition
-        : trackTuitionDefaults[track] || trackTuitionDefaults.thai_public;
-
-    var inflationRate =
-      typeof p.tuitionInflationRate === 'number' && p.tuitionInflationRate >= 0 ? p.tuitionInflationRate / 100 : 0.05; // default 5.0% annual tuition inflation
-
-    var returnRate =
-      typeof p.expectedInvestmentReturn === 'number' && p.expectedInvestmentReturn >= 0
-        ? p.expectedInvestmentReturn / 100
-        : 0.06; // default 6.0% expected annual portfolio growth
-
-    var existingSavings = Math.max(0, Number(p.existingEducationSavings) || 0);
-
-    // Sum inflated tuition over degree duration
-    var totalFutureTuitionNeeded = 0;
-    var y;
-    var elapsed = 0;
-    var tuitionInYear = 0;
-    var yearlyProjections = [];
-
-    for (y = 0; y < degreeDuration; y++) {
-      elapsed = yearsToCollege + y;
-      tuitionInYear = Math.round(baseTuition * (1 + inflationRate) ** elapsed);
-      totalFutureTuitionNeeded += tuitionInYear;
-      yearlyProjections.push({
-        degreeYear: y + 1,
-        childAge: targetAge + y,
-        tuitionCost: tuitionInYear,
-      });
-    }
-
-    // Future value of existing dedicated savings at the start of college (compounded over yearsToCollege)
-    var fvExistingSavings = Math.round(existingSavings * (1 + returnRate) ** yearsToCollege);
-
-    // Net education shortfall needed in future
-    var netFundShortfall = Math.max(0, totalFutureTuitionNeeded - fvExistingSavings);
-
-    // Monthly DCA investment needed:
-    var monthlyDcaNeeded = 0;
-    var totalMonths = yearsToCollege * 12;
-    var monthlyRate = 0;
-    var compoundFactor = 0;
-
-    if (netFundShortfall > 0 && totalMonths > 0) {
-      if (returnRate > 0) {
-        monthlyRate = returnRate / 12;
-        // Sinking Fund Annuity Formula: PMT = FV * (r / ((1 + r)^n - 1))
-        compoundFactor = (1 + monthlyRate) ** totalMonths;
-        monthlyDcaNeeded = Math.round(netFundShortfall * (monthlyRate / (compoundFactor - 1)));
-      } else {
-        monthlyDcaNeeded = Math.round(netFundShortfall / totalMonths);
+  var calculateChildEducationFund =
+    _ext.calculateChildEducationFund ||
+    ((params) => {
+      if (
+        global.MoneyApp &&
+        typeof global.MoneyApp.calculateChildEducationFund === 'function' &&
+        global.MoneyApp.calculateChildEducationFund !== calculateChildEducationFund
+      ) {
+        return global.MoneyApp.calculateChildEducationFund(params);
       }
-    } else if (netFundShortfall > 0 && totalMonths === 0) {
-      monthlyDcaNeeded = netFundShortfall;
-    }
-
-    // Progress percentage
-    var fundedRatio =
-      totalFutureTuitionNeeded > 0
-        ? Math.min(100, Math.round((fvExistingSavings / totalFutureTuitionNeeded) * 1000) / 10)
-        : 100;
-
-    return {
-      currentAge: currentAge,
-      targetAge: targetAge,
-      yearsToCollege: yearsToCollege,
-      degreeDurationYears: degreeDuration,
-      educationTrack: track,
-      baseAnnualTuition: baseTuition,
-      tuitionInflationRate: Math.round(inflationRate * 1000) / 10,
-      expectedInvestmentReturn: Math.round(returnRate * 1000) / 10,
-      existingSavings: existingSavings,
-      fvExistingSavings: fvExistingSavings,
-      totalFutureTuitionNeeded: totalFutureTuitionNeeded,
-      netFundShortfall: netFundShortfall,
-      monthlyDcaNeeded: monthlyDcaNeeded,
-      fundedRatioPct: fundedRatio,
-      yearlyProjections: yearlyProjections,
-    };
-  }
+    });
 
   /**
    * Phase 69: Encrypted Offline QR Code P2P Device Sync Engine.

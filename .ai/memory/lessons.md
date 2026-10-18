@@ -15,7 +15,19 @@ When adding a lesson, include:
 
 ## Log
 
-### 2026-10-18: Zero-Dependency Live Reload Dev Server & Native Git Quality Gates (v2.5.30)
+### 2026-10-18: Core Engine Modularization Batch 2 & Monolith Shrinkage (v2.5.32)
+- **Date & Context:** 2026-10-18, Phase 89 Core Engine Modularization Batch 2 (`v2.5.32`).
+- **Problem:**
+  1. `js/shared.js` remained overly large (~3,810 lines) harboring 7 distinct calculation domains: Inheritance Tax, 3-Bucket Retirement, Land & Building Tax, Bank Statement CSV Parser, Target-Date Glidepath, Refinance & Debt Payoff, and Income Shock / Child Education Stress Tests.
+  2. Test harnesses and sub-pages needed to support both modular engine inclusion and backwards-compatible monolithic namespaces without order-dependence or recursive forwarder loops.
+- **Root Cause:** Historical accretion of specialized tools in a monolithic `js/shared.js` file before modular engine directories were established.
+- **Solution & Rule:**
+  1. **Clean Modular Extraction (`js/engines/`):** Extracted all 7 engines (`inheritance-tax.js`, `retirement-buckets.js`, `property-tax.js`, `bank-parser.js`, `glidepath.js`, `refinance.js`, `stress-test.js`) into zero-build self-registering IIFEs attaching cleanly to `global.MoneyApp`.
+  2. **Safe Forwarder Delegation:** Replaced monolithic bodies in `js/shared.js` with re-entrancy protected delegation stubs (`global.MoneyApp.fn !== fn`), cutting `js/shared.js` from 3,810 lines down to 2,480 lines (35% reduction).
+  3. **Universal Asset Registration:** Added all 7 modular engines to `sw.js` cache manifest, `tests/smoke.test.mjs`, all 7 HTML sub-pages, and test harnesses (`shared.test.mjs`, `integration-bridges.test.mjs`, etc.).
+  4. Verified 100% test pass (410 tests) and 0 Biome lint errors/warnings.
+
+
 - **Date & Context:** 2026-10-18, implementing Phase 87 Developer Tooling & Git Hooks (`v2.5.30`).
 - **Problem:**
   1. Developers and agents lacked a zero-friction live-reload server, relying on manual browser reloads via static HTTP servers.

@@ -12,6 +12,13 @@ const enginesCode = [
   readFileSync(resolve(__dirname, '../js/engines/insurance.js'), 'utf8'),
   readFileSync(resolve(__dirname, '../js/engines/gold.js'), 'utf8'),
   readFileSync(resolve(__dirname, '../js/engines/foreign-tax.js'), 'utf8'),
+  readFileSync(resolve(__dirname, '../js/engines/inheritance-tax.js'), 'utf8'),
+  readFileSync(resolve(__dirname, '../js/engines/retirement-buckets.js'), 'utf8'),
+  readFileSync(resolve(__dirname, '../js/engines/property-tax.js'), 'utf8'),
+  readFileSync(resolve(__dirname, '../js/engines/bank-parser.js'), 'utf8'),
+  readFileSync(resolve(__dirname, '../js/engines/glidepath.js'), 'utf8'),
+  readFileSync(resolve(__dirname, '../js/engines/refinance.js'), 'utf8'),
+  readFileSync(resolve(__dirname, '../js/engines/stress-test.js'), 'utf8'),
 ].join(';\n');
 
 function createMockEnvironment(initialStorage = {}) {
