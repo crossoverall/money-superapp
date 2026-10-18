@@ -1,5 +1,5 @@
 ---
-task_id: "SDLC-PHASE-101-CENTRALIZED-I18N-DICTIONARIES"
+task_id: "SDLC-PHASE-102-DECLARATIVE-I18N-DASHBOARD-DEBT"
 status: "completed"
 current_stage: "release"
 complexity: "level_2"
@@ -7,16 +7,15 @@ iteration_count: 0
 pipeline: ["orchestrator", "planner", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Problem Diagnosis & Scope (Phase 101 - Centralized Domain Dictionaries js/i18n/{th,en}.js & Automated Symmetry Suite)
+### Problem Diagnosis & Scope (Phase 102 - Declarative data-i18n Localization Migration for Dashboard & Debt Tools)
 1. **Diagnosis**:
-   - While Phase 100 introduced `MoneyApp.I18n` engine, translation dictionaries across all 7 tools remain fragmented across disparate files.
-   - Translation keys need a centralized, structured domain organization (`common`, `dashboard`, `debt`, `tax`, `remaining`, `rebalance`, `slips`).
-   - Must guarantee 100% key symmetry between Thai and English files to prevent translation drift.
+   - `dashboard.html` and `debt-calculator.html` used manual ID-based DOM text manipulation for localization.
+   - Migrating to declarative `data-i18n` attributes simplifies views and leverages `MoneyApp.I18n.applyLocalization(document, LANG)`.
+   - Must preserve 100% backward compatibility with existing tests and headless Chrome DOM parity.
 2. **Strategy & Slices**:
-   - Slice 1: Create `js/i18n/th.js` with structured domain dictionaries.
-   - Slice 2: Create `js/i18n/en.js` mirroring `js/i18n/th.js` with 100% key symmetry.
-   - Slice 3: Register `js/i18n/th.js` and `js/i18n/en.js` in `sw.js` and all 8 core HTML files.
-   - Slice 4: Create `tests/i18n-dictionaries.test.mjs` verifying 100% dictionary symmetry, zero orphan keys, and proper namespace registration with `MoneyApp.I18n`.
-   - Slice 5: Add Phase 101 smoke invariant in `tests/smoke.test.mjs`.
-   - Slice 6: Full QA verification (`rtk npm run lint` 0 errors, `npm test` 100% pass).
-   - Slice 7: Security review & release bump to `v2.5.44`, commit and push to `origin/master`.
+   - Slice 1: Decorate `dashboard.html` with `data-i18n` attributes on headers, KPIs, and executive dossier cards.
+   - Slice 2: Decorate `debt-calculator.html` with `data-i18n` attributes on headers, strategy toggles, debts list, comparison cards, and simulators.
+   - Slice 3: Connect `js/dashboard.js` and `js/debt-calculator.js` to `MoneyApp.I18n.register()` and `applyLocalization()`.
+   - Slice 4: Add Phase 102 smoke invariant in `tests/smoke.test.mjs`.
+   - Slice 5: Full QA verification (`rtk npm run lint` 0 errors, `npm test` 491/491 tests passing).
+   - Slice 6: Bump version to `v2.5.45`, update lessons, commit and push to `origin/master`.

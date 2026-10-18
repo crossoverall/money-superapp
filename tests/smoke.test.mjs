@@ -1599,5 +1599,42 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(swContent.includes("'./js/i18n/th.js'"), 'sw.js must cache js/i18n/th.js');
       assert.ok(swContent.includes("'./js/i18n/en.js'"), 'sw.js must cache js/i18n/en.js');
     });
+
+    it('verifies Phase 102 Declarative data-i18n Localization Migration for Dashboard and Debt Tools', () => {
+      const dashHtml = fs.readFileSync(path.join(ROOT_DIR, 'dashboard.html'), 'utf8');
+      const debtHtml = fs.readFileSync(path.join(ROOT_DIR, 'debt-calculator.html'), 'utf8');
+      const dashJs = fs.readFileSync(path.join(ROOT_DIR, 'js/dashboard.js'), 'utf8');
+      const debtJs = fs.readFileSync(path.join(ROOT_DIR, 'js/debt-calculator.js'), 'utf8');
+
+      assert.ok(dashHtml.includes('data-i18n="eyebrow"'), 'dashboard.html must contain data-i18n="eyebrow"');
+      assert.ok(dashHtml.includes('data-i18n="title"'), 'dashboard.html must contain data-i18n="title"');
+      assert.ok(dashHtml.includes('data-i18n="subtitle"'), 'dashboard.html must contain data-i18n="subtitle"');
+      assert.ok(dashHtml.includes('data-i18n="kpiNetworth"'), 'dashboard.html must contain data-i18n="kpiNetworth"');
+
+      assert.ok(debtHtml.includes('data-i18n="title"'), 'debt-calculator.html must contain data-i18n="title"');
+      assert.ok(debtHtml.includes('data-i18n="subtitle"'), 'debt-calculator.html must contain data-i18n="subtitle"');
+      assert.ok(
+        debtHtml.includes('data-i18n="kpiTotalDebt"'),
+        'debt-calculator.html must contain data-i18n="kpiTotalDebt"',
+      );
+      assert.ok(
+        debtHtml.includes('data-i18n="strategyTitle"'),
+        'debt-calculator.html must contain data-i18n="strategyTitle"',
+      );
+
+      assert.ok(dashJs.includes('window.MoneyApp.I18n.register'), 'dashboard.js must register with MoneyApp.I18n');
+      assert.ok(
+        dashJs.includes('window.MoneyApp.I18n.applyLocalization'),
+        'dashboard.js must call MoneyApp.I18n.applyLocalization',
+      );
+      assert.ok(
+        debtJs.includes('window.MoneyApp.I18n.register'),
+        'debt-calculator.js must register with MoneyApp.I18n',
+      );
+      assert.ok(
+        debtJs.includes('window.MoneyApp.I18n.applyLocalization'),
+        'debt-calculator.js must call MoneyApp.I18n.applyLocalization',
+      );
+    });
   });
 });

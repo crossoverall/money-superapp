@@ -15,6 +15,17 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Declarative data-i18n Localization Migration for Dashboard & Debt Tools (v2.5.45)
+- **Date & Context:** 2026-10-18, Phase 102 Declarative data-i18n Migration (`v2.5.45`).
+- **Problem:**
+  1. `dashboard.html` and `debt-calculator.html` used heavy manual ID-based text replacement in `applyLocalization()`, mapping dozens of individual DOM element IDs (`lbl-kpi-networth`, `lbl-strategy-title`, etc.) imperatively.
+  2. Any newly added card or label required manual wiring in two places: the HTML element ID and the JS dictionary mapping, which historically resulted in missed translations and live DOM bilingual parity failures.
+- **Root Cause:** Transition from legacy imperative localization to the new declarative `MoneyApp.I18n` engine needed to be rolled out per module.
+- **Solution & Rule:**
+  1. **Declarative DOM Attributes (`data-i18n`):** Decorated headers, subheaders, KPI labels, velocity comparisons, refinance/mortgage simulators, and schedule headings across `dashboard.html` and `debt-calculator.html` with declarative `data-i18n` attributes.
+  2. **Coordinated Dual-Engine Localization:** Both `js/dashboard.js` and `js/debt-calculator.js` register their locale dictionaries with `MoneyApp.I18n.register()` and invoke `MoneyApp.I18n.applyLocalization(document, LANG)`, while retaining the legacy `translations` object for 100% backward compatibility with structural parity tests.
+  3. **Quality Gates & Invariants:** Added Phase 102 regression smoke assertions in `tests/smoke.test.mjs`, verified 491 tests passing (109 test suites), 0 Biome lint errors/warnings, and 0 headless Chrome live DOM bilingual parity discrepancies.
+
 ### 2026-10-18: Centralized Domain Dictionaries & Automated Key Symmetry (v2.5.44)
 - **Date & Context:** 2026-10-18, Phase 101 Centralized Domain Dictionaries (`v2.5.44`).
 - **Problem:**

@@ -201,6 +201,13 @@ const translations = {
   },
 };
 
+if (typeof window !== 'undefined' && window.MoneyApp?.I18n) {
+  window.MoneyApp.I18n.register('th', translations.th);
+  window.MoneyApp.I18n.register('en', translations.en);
+  window.MoneyApp.I18n.setLanguage(LANG);
+  window.MoneyApp.I18n.applyLocalization(document, LANG);
+}
+
 if (LANG === 'en') {
   const t = translations.en;
   document.title = 'Debt Payoff Calculator — Money Superapp';

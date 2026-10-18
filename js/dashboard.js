@@ -415,6 +415,11 @@ const translations = {
   },
 };
 
+if (typeof window !== 'undefined' && window.MoneyApp?.I18n) {
+  window.MoneyApp.I18n.register('th', translations.th);
+  window.MoneyApp.I18n.register('en', translations.en);
+}
+
 let deflatorState = {
   inflationRate: 2.5,
   horizonYears: 10,
@@ -422,8 +427,12 @@ let deflatorState = {
 };
 
 function applyLocalization() {
-  const t = translations[LANG] || translations.th;
   document.title = LANG === 'en' ? 'Financial Dashboard — Money Superapp' : 'ภาพรวมการเงิน — Money Superapp';
+  if (typeof window !== 'undefined' && window.MoneyApp?.I18n) {
+    window.MoneyApp.I18n.setLanguage(LANG);
+    window.MoneyApp.I18n.applyLocalization(document, LANG);
+  }
+  const t = translations[LANG] || translations.th;
 
   const textMapping = {
     'lbl-eyebrow': t.eyebrow,
