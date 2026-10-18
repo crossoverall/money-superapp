@@ -1522,5 +1522,42 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'tax-calculator-base.js must expose window.updateDividendTaxCreditUI',
       );
     });
+
+    it('verifies Phase 100 Centralized Internationalization Core Engine & Declarative data-i18n', () => {
+      const i18nPath = path.join(ROOT_DIR, 'js/engines/i18n-core.js');
+      assert.ok(fs.existsSync(i18nPath), 'js/engines/i18n-core.js must exist');
+      const i18nContent = fs.readFileSync(i18nPath, 'utf8');
+      assert.ok(i18nContent.includes('MoneyApp.I18n = I18n'), 'i18n-core.js must export MoneyApp.I18n');
+      assert.ok(!i18nContent.includes('eval('), 'i18n-core.js must never invoke eval()');
+      assert.ok(!i18nContent.includes('document.write'), 'i18n-core.js must never invoke document.write()');
+
+      // Verify all 8 core HTML files register i18n-core.js
+      const htmlFiles = [
+        'dashboard.html',
+        'debt-calculator.html',
+        'index.html',
+        'months-slips.html',
+        'rebalance.html',
+        'remaining-money.html',
+        'tax-calculator-base.html',
+        'tax-calculator.html',
+      ];
+      for (const file of htmlFiles) {
+        const content = fs.readFileSync(path.join(ROOT_DIR, file), 'utf8');
+        assert.ok(content.includes('src="js/engines/i18n-core.js"'), `${file} must include js/engines/i18n-core.js`);
+      }
+
+      // Verify service worker registers i18n-core.js
+      const swContent = fs.readFileSync(path.join(ROOT_DIR, 'sw.js'), 'utf8');
+      assert.ok(swContent.includes("'./js/engines/i18n-core.js'"), 'sw.js must cache js/engines/i18n-core.js');
+
+      // Verify js/app-shell.js and js/shared.js integrate I18n
+      const shellContent = fs.readFileSync(path.join(ROOT_DIR, 'js/app-shell.js'), 'utf8');
+      assert.ok(shellContent.includes('MoneyApp.I18n.register'), 'app-shell.js must register with MoneyApp.I18n');
+      assert.ok(shellContent.includes('applyLocalization'), 'app-shell.js must invoke applyLocalization');
+
+      const sharedContent = fs.readFileSync(path.join(ROOT_DIR, 'js/shared.js'), 'utf8');
+      assert.ok(sharedContent.includes('MoneyApp?.I18n'), 'shared.js must coordinate with MoneyApp.I18n');
+    });
   });
 });

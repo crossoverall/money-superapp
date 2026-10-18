@@ -195,6 +195,11 @@ const translations = {
   },
 };
 
+if (typeof window !== 'undefined' && window.MoneyApp?.I18n) {
+  window.MoneyApp.I18n.register('th', translations.th);
+  window.MoneyApp.I18n.register('en', translations.en);
+}
+
 function getLang() {
   try {
     return localStorage.getItem('moneySuperapp.lang') || 'th';
@@ -239,6 +244,10 @@ function applyLang(lang) {
     document.title = `Money Superapp — ${titleText}`;
   }
   const t = translations[lang] || translations.th;
+  if (typeof window !== 'undefined' && window.MoneyApp?.I18n) {
+    window.MoneyApp.I18n.setLanguage(lang);
+    window.MoneyApp.I18n.applyLocalization(document, lang);
+  }
   if (document.getElementById('skipLink') && t.skipLink) document.getElementById('skipLink').textContent = t.skipLink;
   if (document.getElementById('btn-settings-modal')) {
     document.getElementById('btn-settings-modal').title =

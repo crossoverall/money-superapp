@@ -15,6 +15,19 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Centralized Internationalization Core & Declarative data-i18n (v2.5.43)
+- **Date & Context:** 2026-10-18, Phase 100 i18n Architecture Overhaul (`v2.5.43`).
+- **Problem:**
+  1. Translations were scattered across ad-hoc per-file objects and imperative `if (LANG === 'en')` blocks across multiple tools, making translation key drift the single most recurring defect pattern in the repository (5 separate incidents in the lessons log).
+  2. Dynamic localization required repetitive imperative DOM mutations (`document.getElementById(...).textContent = ...`) prone to missed element IDs.
+- **Root Cause:** Absence of a centralized translation registry and declarative DOM binding engine.
+- **Solution & Rule:**
+  1. **Centralized I18n Core (`js/engines/i18n-core.js`):** Implemented `MoneyApp.I18n` with `register(lang, dict)`, `getDictionary(lang)`, `setLanguage(lang)`, `getLanguage()`, `t(key, fallback, params, lang)`, and `applyLocalization(root, lang)`.
+  2. **Declarative DOM Localization:** Supported `[data-i18n]`, `[data-i18n-placeholder]`, `[data-i18n-title]`, and `[data-i18n-aria-label]` attributes, automatically localizing subtrees without manual ID wiring.
+  3. **Parameter Interpolation:** Built-in template variable interpolation (`{name}`, `{amount}`, `{count}`) with safe stringification.
+  4. **Strict Symmetry:** Enforced 100% key symmetry between Thai and English base dictionaries with zero drift.
+  5. **Quality Gates & Invariants:** Added `tests/i18n-core.test.mjs` (5 unit tests), updated `tests/smoke.test.mjs` (68 smoke tests), full test suite (484 tests passing across 109 suites), zero Biome errors/warnings, and zero CSP violations.
+
 ### 2026-10-18: Decompose tax-calculator-base.js: E-Filing Worksheet & Tax Dossier Engine (v2.5.42)
 - **Date & Context:** 2026-10-18, Phase 99 Engine Modularization (`v2.5.42`).
 - **Problem:**

@@ -32,6 +32,10 @@
       } catch (_e) {}
       document.documentElement.lang = LANG;
       document.documentElement.dataset.theme = THEME;
+      if (global.MoneyApp?.I18n) {
+        global.MoneyApp.I18n.setLanguage(LANG);
+        global.MoneyApp.I18n.applyLocalization(document, LANG);
+      }
     }
   }
 
@@ -55,6 +59,10 @@
         if (document.documentElement) {
           document.documentElement.lang = LANG;
         }
+        if (global.MoneyApp?.I18n) {
+          global.MoneyApp.I18n.setLanguage(LANG);
+          global.MoneyApp.I18n.applyLocalization(document, LANG);
+        }
       }
     });
 
@@ -70,6 +78,10 @@
         unit = LANG === 'en' ? 'THB' : 'บาท';
         if (document.documentElement) {
           document.documentElement.lang = LANG;
+        }
+        if (global.MoneyApp?.I18n) {
+          global.MoneyApp.I18n.setLanguage(LANG);
+          global.MoneyApp.I18n.applyLocalization(document, LANG);
         }
       }
     });
