@@ -1,13 +1,15 @@
 {
   "name": "money-superapp",
-  "version": "2.5.29",
+  "version": "2.5.30",
   "description": "Zero-build, offline-first personal finance toolkit for Thailand",
   "type": "module",
   "scripts": {
     "test": "node --test tests/**/*.test.mjs",
+    "dev": "node scripts/dev.mjs",
     "lint": "biome check js/ scripts/ tests/",
     "format": "biome format --write js/ scripts/ tests/",
-    "bump": "node scripts/bump.mjs"
+    "bump": "node scripts/bump.mjs",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "keywords": [
     "finance",

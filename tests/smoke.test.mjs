@@ -978,6 +978,23 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'remaining-money.js must listen for pendingDcaBudget',
       );
     });
+
+    it('verifies scripts/dev.mjs, .githooks/pre-commit, and package.json declare Phase 87 Dev Server and Hooks', () => {
+      const pkgJson = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8'));
+      assert.equal(pkgJson.scripts.dev, 'node scripts/dev.mjs', 'package.json must declare dev script');
+      assert.ok(pkgJson.scripts.prepare.includes('core.hooksPath'), 'package.json must declare prepare hook script');
+
+      const devScriptPath = path.join(ROOT_DIR, 'scripts/dev.mjs');
+      assert.ok(fs.existsSync(devScriptPath), 'scripts/dev.mjs must exist');
+      const devContent = fs.readFileSync(devScriptPath, 'utf8');
+      assert.ok(devContent.includes('/__live_reload_stream'), 'scripts/dev.mjs must implement SSE live reload stream');
+
+      const hookPath = path.join(ROOT_DIR, '.githooks/pre-commit');
+      assert.ok(fs.existsSync(hookPath), '.githooks/pre-commit must exist');
+      const hookContent = fs.readFileSync(hookPath, 'utf8');
+      assert.ok(hookContent.includes('npm run lint'), 'pre-commit hook must run npm run lint');
+      assert.ok(hookContent.includes('npm test'), 'pre-commit hook must run npm test');
+    });
   });
 
   describe('Bilingual Localization Structural Symmetry', () => {

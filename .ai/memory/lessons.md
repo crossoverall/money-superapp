@@ -15,6 +15,18 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Zero-Dependency Live Reload Dev Server & Native Git Quality Gates (v2.5.30)
+- **Date & Context:** 2026-10-18, implementing Phase 87 Developer Tooling & Git Hooks (`v2.5.30`).
+- **Problem:**
+  1. Developers and agents lacked a zero-friction live-reload server, relying on manual browser reloads via static HTTP servers.
+  2. Committing broken code was possible without automated local pre-commit enforcement.
+- **Root Cause:**
+  1. Traditional tooling solutions (e.g. `browser-sync`, `husky`, `lefthook`) introduce heavy external npm packages, violating the zero-runtime/minimal-toolchain invariant of ADR-001.
+- **Solution & Rule:**
+  1. **Zero-Dependency Dev Server (`scripts/dev.mjs`):** Built natively with `node:http`, `node:fs`, and Server-Sent Events (SSE) live-reload on `/__live_reload_stream`. Auto-injects a lightweight listener on loopback hostnames with debounce.
+  2. **Native Git Hooks (`.githooks/pre-commit`):** Configured via `git config core.hooksPath .githooks`, executing `npm run lint` and `npm test` deterministically before any commit.
+  3. Preserved 0 external runtime dependencies while scaling test suite to 410 passing checks.
+
 ### 2026-10-18: Headless Chrome CDP Bilingual Parity Regression Gate (v2.5.29)
 - **Date & Context:** 2026-10-18, implementing Phase 86 Bilingual Parity CI Test (`v2.5.29`).
 - **Problem:**

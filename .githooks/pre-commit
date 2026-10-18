@@ -1,0 +1,26 @@
+#!/bin/sh
+# Money Superapp - Native Pre-Commit Quality Gate
+# Enforces clean Biome linting and passing automated tests before commit.
+
+echo "🔍 [Pre-Commit] Running Biome linter..."
+npm run lint
+LINT_EXIT=$?
+
+if [ $LINT_EXIT -ne 0 ]; then
+  echo ""
+  echo "❌ [Pre-Commit] Biome lint failed! Please resolve lint errors or run 'npm run format' before committing."
+  exit 1
+fi
+
+echo "🧪 [Pre-Commit] Running test suite..."
+npm test
+TEST_EXIT=$?
+
+if [ $TEST_EXIT -ne 0 ]; then
+  echo ""
+  echo "❌ [Pre-Commit] Test suite failed! Please fix failing tests before committing."
+  exit 1
+fi
+
+echo "✅ [Pre-Commit] All quality checks passed cleanly!"
+exit 0
