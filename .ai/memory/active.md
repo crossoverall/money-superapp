@@ -1,5 +1,5 @@
 ---
-task_id: "SDLC-BUGFIX-REBALANCE-BOTTOM-CARDS-CONTAINER"
+task_id: "SDLC-PHASE-71-NEXT-BEST-MOVE-ADVISOR"
 status: "completed"
 current_stage: "release"
 complexity: "level_2"
@@ -8,14 +8,17 @@ pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "rev
 ---
 
 ### Problem Diagnosis & Root Causes Resolved
-1. **Unstyled `.card` on Bottom 3 Auxiliary Sub-Tools (`rebalance.html`):**
-   - Added `.panel, .card:not(#panelBuckets)` box container rule (`background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 16px;`).
-   - Added `margin-bottom: 16px;` and `border-radius: 16px; padding: 16px;` to `.howto`.
-   - Declared `class="panel card reorder-card"` on `#panelTargetDateGlidepath`, `#panelThaiGold`, and `#panelForeignTaxAdvisor`.
-   - Added `cursor: pointer; user-select: none;` on `.reorder-card .card-header`.
+1. **Actionable Financial Advice Deficit (`dashboard.html`):**
+   - Implemented `generateNextBestMoves(profile, health, lang)` in `js/dashboard.js`, mapping multi-tool telemetry to prioritized, actionable intervention objects.
+   - Priority 1: Emergency runway shortage (< 3 mo) -> `remaining-money`, debt burden drag -> `debt-calculator`.
+   - Priority 2: Savings rate under 20% -> `remaining-money`, top marginal tax bracket >= 15% with unutilized deductions -> `tax-calculator-base`.
+   - Priority 3: Monthly DCA surplus deployment -> `rebalance`, 3-bucket retirement resilience check.
+   - Inserted `#healthNextBestMovesSection` and `#healthActionCardsContainer` inside `#panelFinancialHealthScoreBody` with full responsive CSS grid layout.
+   - Rendered 1-click action buttons with robust cross-context bridge `jumpToTab(tabId)`.
+   - Added complete bilingual dictionary entries in `translations.th` and `translations.en` with 100% key symmetry.
 
 ### Verification
-- 333 / 333 unit & integration smoke tests passing (`npm test`).
+- 341 / 341 unit & integration smoke tests passing (`npm test`).
 - 0 Biome linter errors (`npx @biomejs/biome check`).
-- Headless Chrome CDP visual inspection: Both collapsed and expanded views verified. All 3 auxiliary sub-tools now match `#panelBudget` and `#howto` with identical background `#FFFFFF` / `#131E19`, 1px line border, 16px border radius, and 16px padding.
-- Version bumped to `v2.5.13`.
+- Headless Chrome CDP visual inspection: Light, Dark, and Mobile (390x844) modes verified with 0 layout overflows.
+- Bumped version to `v2.5.14`.

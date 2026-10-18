@@ -475,6 +475,27 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(dashContent.includes('id="dossier-networth-val"'), 'dashboard.html must define #dossier-networth-val');
     });
 
+    it('verifies dashboard.html declares Phase 71 Next Best Move Advisor action cards & region', () => {
+      const dashContent = fs.readFileSync(path.join(ROOT_DIR, 'dashboard.html'), 'utf8');
+      assert.ok(
+        dashContent.includes('id="healthNextBestMovesSection"'),
+        'dashboard.html must define #healthNextBestMovesSection',
+      );
+      assert.ok(
+        dashContent.includes('id="healthActionCardsContainer"'),
+        'dashboard.html must define #healthActionCardsContainer',
+      );
+      assert.ok(
+        dashContent.includes('role="region" aria-label="Next Best Action Recommendations"'),
+        'dashboard.html must define semantic aria-label on action cards container',
+      );
+      assert.ok(dashContent.includes('id="lbl-next-moves-title"'), 'dashboard.html must define #lbl-next-moves-title');
+      assert.ok(
+        dashContent.includes('id="lbl-next-moves-subtitle"'),
+        'dashboard.html must define #lbl-next-moves-subtitle',
+      );
+    });
+
     it('verifies remaining-money.html declares Income Shock & Emergency Stress-Tester card with controls', () => {
       const remainingContent = fs.readFileSync(path.join(ROOT_DIR, 'remaining-money.html'), 'utf8');
       assert.ok(

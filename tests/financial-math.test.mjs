@@ -4971,6 +4971,339 @@ describe('Financial Math Verification', () => {
     });
   });
 
+  describe('Next Best Move Advisor Engine (Phase 71 Action Cards & 1-Click Bridges)', () => {
+    function calculateFinancialHealthScore({
+      runwayMonths = 0,
+      savingsRatePct = 0,
+      debt = 0,
+      assets = 0,
+      netWorth = 0,
+      fireTarget = 0,
+      targetNetWorth = 0,
+      annualExpenses = 0,
+      taxDeductionsUtilizedPct = null,
+    } = {}) {
+      const safeRunway = Math.max(0, runwayMonths || 0);
+      const runwayScore = Math.min(100, Math.round((safeRunway / 6.0) * 100));
+
+      const safeSavingsRate = Math.max(0, savingsRatePct || 0);
+      const savingsScore = Math.min(100, Math.round((safeSavingsRate / 50.0) * 100));
+
+      const safeDebt = Math.max(0, debt || 0);
+      const safeAssets = Math.max(0, assets || 0);
+      let debtScore = 100;
+      if (safeDebt > 0) {
+        if (safeAssets <= 0) {
+          debtScore = 0;
+        } else {
+          const daRatio = safeDebt / safeAssets;
+          debtScore = Math.max(0, Math.min(100, Math.round((1 - Math.min(1, daRatio)) * 100)));
+        }
+      }
+
+      const safeNetWorth = Math.max(0, netWorth || 0);
+      let wealthScore = 50;
+      if (fireTarget > 0) {
+        wealthScore = Math.min(100, Math.round((safeNetWorth / fireTarget) * 100));
+      } else if (targetNetWorth > 0) {
+        wealthScore = Math.min(100, Math.round((safeNetWorth / targetNetWorth) * 100));
+      } else if (annualExpenses > 0) {
+        wealthScore = Math.min(100, Math.round((safeNetWorth / (annualExpenses * 25)) * 100));
+      } else if (safeAssets > 0) {
+        wealthScore = Math.min(100, Math.max(10, Math.round((safeAssets / 5000000) * 100)));
+      }
+
+      let taxScore = 75;
+      if (typeof taxDeductionsUtilizedPct === 'number' && !Number.isNaN(taxDeductionsUtilizedPct)) {
+        taxScore = Math.max(0, Math.min(100, Math.round(taxDeductionsUtilizedPct)));
+      }
+
+      const pillars = {
+        runway: runwayScore,
+        savings: savingsScore,
+        debt: debtScore,
+        wealth: wealthScore,
+        tax: taxScore,
+      };
+
+      const compositeScore = Math.round(
+        (pillars.runway + pillars.savings + pillars.debt + pillars.wealth + pillars.tax) / 5,
+      );
+
+      let tier = 'moderate';
+      if (compositeScore >= 80) tier = 'excellent';
+      else if (compositeScore >= 65) tier = 'solid';
+      else if (compositeScore < 50) tier = 'critical';
+
+      return { compositeScore, tier, pillars };
+    }
+
+    function generateNextBestMoves(profile = {}, health = null, lang = 'th') {
+      const isEn = lang === 'en';
+      const p = profile || {};
+      const h =
+        health ||
+        calculateFinancialHealthScore({
+          runwayMonths: p.runwayMonths,
+          savingsRatePct: p.savingsRate,
+          debt: p.totalDebt,
+          assets: (p.emergencyReserve || 0) + (p.portfolioVal || 0),
+          netWorth: p.netWorth,
+          fireTarget: 0,
+          targetNetWorth: 0,
+          annualExpenses: (p.monthlyExpense || 0) * 12,
+          taxDeductionsUtilizedPct: p.topMarginalRate === 0 && p.estimatedTax === 0 ? 100 : 75,
+        });
+
+      const runwayMonths = typeof p.runwayMonths === 'number' ? p.runwayMonths : 0;
+      const totalDebt = typeof p.totalDebt === 'number' ? p.totalDebt : 0;
+      const savingsRate = typeof p.savingsRate === 'number' ? p.savingsRate : 0;
+      const topMarginalRate = typeof p.topMarginalRate === 'number' ? p.topMarginalRate : 0;
+      const monthlyInvest = typeof p.monthlyInvest === 'number' ? p.monthlyInvest : 0;
+      const debtPillar = h.pillars ? h.pillars.debt : 100;
+      const runwayPillar = h.pillars ? h.pillars.runway : 0;
+      const taxPillar = h.pillars ? h.pillars.tax : 75;
+
+      const candidates = [];
+
+      if (runwayMonths < 3.0 || runwayPillar < 50) {
+        candidates.push({
+          id: 'runway-shortfall',
+          priority: 1,
+          badge: isEn ? 'Priority 1 (Defense)' : 'เร่งด่วนระดับ 1 (สภาพคล่อง)',
+          title: isEn ? 'Build Emergency Liquid Reserve' : 'เติมสภาพคล่องเงินสำรองฉุกเฉิน',
+          description: isEn
+            ? `Runway is currently ${runwayMonths.toFixed(1)} months. Aim for at least 3-6 months to protect against unexpected disruption.`
+            : `เงินสำรองฉุกเฉินครอบคลุมค่าใช้จ่ายเพียง ${runwayMonths.toFixed(1)} เดือน ควรสะสมอย่างน้อย 3-6 เดือนเพื่อเป็นกันชนความเสี่ยง`,
+          impact: isEn ? 'Shields against financial shocks' : 'เป้าหมายความปลอดภัย: 3-6 เดือน',
+          actionLabel: isEn ? 'Allocate Cash Flow ➔' : 'จัดสรรงบเงินสด ➔',
+          targetTab: 'remaining-money',
+        });
+      }
+
+      if (totalDebt > 0 && debtPillar < 70) {
+        candidates.push({
+          id: 'debt-drag',
+          priority: 1,
+          badge: isEn ? 'Priority 1 (Debt)' : 'เร่งด่วนระดับ 1 (ภาระหนี้)',
+          title: isEn ? 'Accelerate Debt Payoff' : 'เร่งปลดภาระหนี้สินคงค้าง',
+          description: isEn
+            ? `Outstanding debt is ${totalDebt}. Prioritize high-interest balances with Avalanche or Snowball to reduce interest drag.`
+            : `มียอดหนี้คงค้าง ${totalDebt} บาท ควรวางแผนทยอยปิดหนี้ดอกเบี้ยสูงเพื่อหยุดการไหลออกของกระแสเงินสด`,
+          impact: isEn ? 'Frees up net cash flow' : 'ลดภาระดอกเบี้ยจ่ายสะสม',
+          actionLabel: isEn ? 'Plan Debt Payoff ➔' : 'วางแผนปลดหนี้ ➔',
+          targetTab: 'debt-calculator',
+        });
+      }
+
+      if (savingsRate < 20) {
+        candidates.push({
+          id: 'savings-boost',
+          priority: 2,
+          badge: isEn ? 'Priority 2 (Savings)' : 'สำคัญระดับ 2 (การออม)',
+          title: isEn ? 'Boost Net Savings Rate to 20%+' : 'เร่งเพิ่มอัตราการออมสุทธิแตะ 20%+',
+          description: isEn
+            ? `Your current savings rate is ${savingsRate.toFixed(1)}%. Reviewing variable expenses can push your monthly wealth accumulation past 20%.`
+            : `อัตราการออมปัจจุบันอยู่ที่ ${savingsRate.toFixed(1)}% การทบทวนและลดรายจ่ายผันแปรจะช่วยผลักดันให้แตะเกณฑ์ 20% เพื่อความมั่นคง`,
+          impact: isEn ? 'Target savings rate: 20-30%' : 'เกณฑ์แนะนำขั้นต่ำ: 20%',
+          actionLabel: isEn ? 'Review Daily Expenses ➔' : 'ทบทวนรายจ่ายประจำเดือน ➔',
+          targetTab: 'remaining-money',
+        });
+      }
+
+      if (topMarginalRate >= 15 && taxPillar < 85) {
+        candidates.push({
+          id: 'tax-bracket',
+          priority: 2,
+          badge: isEn ? 'Priority 2 (Tax)' : 'สำคัญระดับ 2 (วางแผนภาษี)',
+          title: isEn ? 'Optimize Tax Allowances (ThaiESG / RMF)' : 'ใช้สิทธิลดหย่อนภาษี (ThaiESG / RMF)',
+          description: isEn
+            ? `Your top tax bracket is ${topMarginalRate}%. Deductible contributions directly yield an instant ${topMarginalRate}% tax return.`
+            : `คุณอยู่ในฐานภาษี ${topMarginalRate}% การลงทุนใน ThaiESG, RMF หรือประกันชีวิตจะได้รับผลตอบแทนทันทีในรูปของเงินภาษีที่ประหยัดได้`,
+          impact: isEn ? `Instant ${topMarginalRate}% tax relief` : `ประหยัดภาษีตามฐาน ${topMarginalRate}%`,
+          actionLabel: isEn ? 'Plan Tax Deductions ➔' : 'วางแผนลดหย่อนภาษี ➔',
+          targetTab: 'tax-calculator-base',
+        });
+      }
+
+      if (runwayMonths >= 3.0 && monthlyInvest > 0) {
+        candidates.push({
+          id: 'deploy-dca',
+          priority: 3,
+          badge: isEn ? 'Priority 3 (Growth)' : 'เสริมแกร่งระดับ 3 (ลงทุน DCA)',
+          title: isEn ? 'Execute Monthly DCA & Rebalancing' : 'จัดสรรเงินลงทุน DCA ตามเป้าหมาย',
+          description: isEn
+            ? `You have ${monthlyInvest} monthly investable surplus with a protected cash reserve. Rebalance to keep your asset allocation on target.`
+            : `คุณมีเงินเหลือลงทุน ${monthlyInvest} บาท/เดือน พร้อมเงินสำรองปลอดภัย จัดสรรเข้าพอร์ตเป้าหมายตามหลัก DCA`,
+          impact: isEn ? 'Compounds long-term wealth' : 'สร้างผลตอบแทนทบต้นระยะยาว',
+          actionLabel: isEn ? 'Rebalance Portfolio ➔' : 'ปรับสัดส่วนพอร์ต ➔',
+          targetTab: 'rebalance',
+        });
+      }
+
+      if (candidates.length < 3 || h.compositeScore >= 80) {
+        candidates.push({
+          id: 'wealth-resilience',
+          priority: 3,
+          badge: isEn ? 'Priority 3 (Freedom)' : 'เสริมแกร่งระดับ 3 (อิสรภาพการเงิน)',
+          title: isEn ? 'Review Retirement 3-Bucket & Asset Protection' : 'ตรวจสอบแผนเกษียณ 3-Bucket & สินทรัพย์ทางเลือก',
+          description: isEn
+            ? 'Your overall financial foundations are resilient. Simulate retirement cash flow and stress-test your wealth safety.'
+            : 'สุขภาพทางการเงินโดยรวมแข็งแกร่งมาก ทดสอบจำลองกระแสเงินสดหลังเกษียณ หรือตรวจสอบการกระจายความเสี่ยงในสินทรัพย์ทางเลือก',
+          impact: isEn ? 'Sustainable retirement peace of mind' : 'ความยั่งยืนทางการเงินระยะยาว',
+          actionLabel: isEn ? 'View Retirement Tools ➔' : 'ดูเครื่องมือเกษียณ ➔',
+          targetTab: 'rebalance',
+        });
+      }
+
+      const seen = new Set();
+      const sorted = candidates
+        .filter((c) => {
+          if (seen.has(c.id)) return false;
+          seen.add(c.id);
+          return true;
+        })
+        .sort((a, b) => a.priority - b.priority)
+        .slice(0, 3);
+
+      return sorted;
+    }
+
+    it('recommends Emergency Liquid Reserve as Priority 1 when runway is under 3 months', () => {
+      const profile = {
+        runwayMonths: 1.2,
+        savingsRate: 15,
+        totalDebt: 0,
+        monthlyIncome: 50000,
+        monthlyExpense: 40000,
+        monthlySavings: 5000,
+        monthlyInvest: 0,
+        emergencyReserve: 48000,
+        topMarginalRate: 10,
+      };
+      const moves = generateNextBestMoves(profile, null, 'en');
+      assert.ok(moves.length >= 1 && moves.length <= 3);
+      const runwayMove = moves.find((m) => m.id === 'runway-shortfall');
+      assert.ok(runwayMove, 'Should recommend runway shortfall');
+      assert.equal(runwayMove.priority, 1);
+      assert.equal(runwayMove.targetTab, 'remaining-money');
+      assert.ok(runwayMove.description.includes('1.2 months'));
+    });
+
+    it('recommends Debt Acceleration as Priority 1 when burdened by debt', () => {
+      const profile = {
+        runwayMonths: 6.0,
+        savingsRate: 15,
+        totalDebt: 300000,
+        monthlyIncome: 60000,
+        monthlyExpense: 35000,
+        monthlySavings: 5000,
+        monthlyInvest: 0,
+        portfolioVal: 100000,
+        emergencyReserve: 210000,
+        topMarginalRate: 10,
+      };
+      const moves = generateNextBestMoves(profile, null, 'th');
+      const debtMove = moves.find((m) => m.id === 'debt-drag');
+      assert.ok(debtMove, 'Should recommend debt drag action');
+      assert.equal(debtMove.priority, 1);
+      assert.equal(debtMove.targetTab, 'debt-calculator');
+      assert.ok(debtMove.actionLabel.includes('วางแผนปลดหนี้'));
+    });
+
+    it('recommends Tax Allowance Optimization as Priority 2 for high marginal tax brackets', () => {
+      const profile = {
+        runwayMonths: 6.0,
+        savingsRate: 25,
+        totalDebt: 0,
+        monthlyIncome: 120000,
+        monthlyExpense: 50000,
+        monthlySavings: 15000,
+        monthlyInvest: 15000,
+        portfolioVal: 800000,
+        emergencyReserve: 300000,
+        topMarginalRate: 20,
+        estimatedTax: 85000,
+      };
+      const moves = generateNextBestMoves(profile, null, 'en');
+      const taxMove = moves.find((m) => m.id === 'tax-bracket');
+      assert.ok(taxMove, 'Should recommend tax allowance optimization');
+      assert.equal(taxMove.priority, 2);
+      assert.equal(taxMove.targetTab, 'tax-calculator-base');
+      assert.ok(taxMove.impact.includes('20%'));
+    });
+
+    it('recommends Monthly DCA Surplus deployment when runway is protected', () => {
+      const profile = {
+        runwayMonths: 8.0,
+        savingsRate: 35,
+        totalDebt: 0,
+        monthlyIncome: 80000,
+        monthlyExpense: 30000,
+        monthlySavings: 10000,
+        monthlyInvest: 18000,
+        portfolioVal: 500000,
+        emergencyReserve: 240000,
+        topMarginalRate: 5,
+        estimatedTax: 2500,
+      };
+      const moves = generateNextBestMoves(profile, null, 'th');
+      const dcaMove = moves.find((m) => m.id === 'deploy-dca');
+      assert.ok(dcaMove, 'Should recommend DCA deployment');
+      assert.equal(dcaMove.priority, 3);
+      assert.equal(dcaMove.targetTab, 'rebalance');
+    });
+
+    it('recommends Wealth Resilience & 3-Bucket for high-resilience composite profiles', () => {
+      const profile = {
+        runwayMonths: 12.0,
+        savingsRate: 45,
+        totalDebt: 0,
+        monthlyIncome: 150000,
+        monthlyExpense: 40000,
+        monthlySavings: 20000,
+        monthlyInvest: 50000,
+        portfolioVal: 5000000,
+        emergencyReserve: 500000,
+        netWorth: 5500000,
+        topMarginalRate: 0,
+        estimatedTax: 0,
+      };
+      const moves = generateNextBestMoves(profile, null, 'en');
+      const wealthMove = moves.find((m) => m.id === 'wealth-resilience');
+      assert.ok(wealthMove, 'Should recommend wealth resilience & 3-bucket');
+      assert.equal(wealthMove.priority, 3);
+      assert.equal(wealthMove.targetTab, 'rebalance');
+    });
+
+    it('safely handles empty or null profile without throwing and caps cards at 3', () => {
+      const emptyMoves = generateNextBestMoves({}, null, 'th');
+      assert.ok(Array.isArray(emptyMoves));
+      assert.ok(emptyMoves.length <= 3);
+      assert.ok(emptyMoves.length >= 1);
+
+      const nullMoves = generateNextBestMoves(null, null, 'en');
+      assert.ok(Array.isArray(nullMoves));
+      assert.ok(nullMoves.length <= 3);
+      assert.ok(nullMoves.length >= 1);
+    });
+
+    it('guarantees priority order sorting (P1 -> P2 -> P3)', () => {
+      const profile = {
+        runwayMonths: 1.0, // P1
+        totalDebt: 100000, // P1
+        savingsRate: 10, // P2
+        topMarginalRate: 20, // P2
+        monthlyInvest: 5000, // P3
+      };
+      const moves = generateNextBestMoves(profile, null, 'th');
+      assert.equal(moves.length, 3);
+      for (let i = 0; i < moves.length - 1; i++) {
+        assert.ok(moves[i].priority <= moves[i + 1].priority, 'Must be sorted in ascending priority order');
+      }
+    });
+  });
+
   describe('Section 48(5) PVD Lump-Sum vs Transfer-to-RMF Tax Optimization Engine', () => {
     function progressiveTax48_5(income) {
       if (income <= 0) return 0;

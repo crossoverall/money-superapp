@@ -102,6 +102,8 @@ const translations = {
     subPillarWealth: 'ความก้าวหน้าสู่เป้าหมายเกษียณ',
     pillarTax: '🧾 ประสิทธิภาพการลดหย่อนภาษี (Tax Efficiency)',
     subPillarTax: 'การใช้สิทธิประโยชน์ทางภาษี',
+    nextMovesTitle: '⚡ แผนปฏิบัติการแนะนำถัดไป (Next Best Moves)',
+    nextMovesSubtitle: 'อิงจากคะแนนสุขภาพ 5 เสาหลัก',
     insPanelTitle: '🛡️ ความคุ้มครองและการประกันชีวิต (Life Insurance Adequacy)',
     insProfileTitle: '📋 สมมติฐานความต้องการความคุ้มครอง (Capital Needs Assumptions)',
     insSyncBtn: 'ดึงข้อมูลอัตโนมัติ',
@@ -284,6 +286,8 @@ const translations = {
     subPillarWealth: 'Progress toward retirement target',
     pillarTax: '🧾 Tax Deduction Efficiency',
     subPillarTax: 'Utilization of tax optimization allowances',
+    nextMovesTitle: '⚡ Priority Next Best Moves (1-Click Action)',
+    nextMovesSubtitle: 'Tailored to your 5-pillar health score',
     insPanelTitle: '🛡️ Life Insurance Adequacy & Protection Gap',
     insProfileTitle: '📋 Capital Needs Analysis Assumptions',
     insSyncBtn: 'Auto Sync Data',
@@ -449,6 +453,8 @@ function applyLocalization() {
     'sub-pillar-wealth': t.subPillarWealth,
     'lbl-pillar-tax': t.pillarTax,
     'sub-pillar-tax': t.subPillarTax,
+    'lbl-next-moves-title': t.nextMovesTitle,
+    'lbl-next-moves-subtitle': t.nextMovesSubtitle,
     'lbl-mc-title': t.lblMcTitle,
     'lbl-mc-p10-title': t.lblMcP10Title,
     'lbl-mc-p50-title': t.lblMcP50Title,
@@ -968,7 +974,203 @@ function renderFinancialHealthScorecard(p, _t) {
   }
 
   renderRadarChartSVG(health.pillars);
+  renderNextBestMoveCards(p, health);
 }
+
+function generateNextBestMoves(profile = {}, health = null, lang = 'th') {
+  const isEn = lang === 'en';
+  const p = profile || {};
+  const h =
+    health ||
+    calculateFinancialHealthScore({
+      runwayMonths: p.runwayMonths,
+      savingsRatePct: p.savingsRate,
+      debt: p.totalDebt,
+      assets: (p.emergencyReserve || 0) + (p.portfolioVal || 0),
+      netWorth: p.netWorth,
+      fireTarget: 0,
+      targetNetWorth: 0,
+      annualExpenses: (p.monthlyExpense || 0) * 12,
+      taxDeductionsUtilizedPct: p.topMarginalRate === 0 && p.estimatedTax === 0 ? 100 : 75,
+    });
+
+  const runwayMonths = typeof p.runwayMonths === 'number' ? p.runwayMonths : 0;
+  const totalDebt = typeof p.totalDebt === 'number' ? p.totalDebt : 0;
+  const savingsRate = typeof p.savingsRate === 'number' ? p.savingsRate : 0;
+  const topMarginalRate = typeof p.topMarginalRate === 'number' ? p.topMarginalRate : 0;
+  const monthlyInvest = typeof p.monthlyInvest === 'number' ? p.monthlyInvest : 0;
+  const debtPillar = h.pillars ? h.pillars.debt : 100;
+  const runwayPillar = h.pillars ? h.pillars.runway : 0;
+  const taxPillar = h.pillars ? h.pillars.tax : 75;
+
+  const candidates = [];
+
+  // Priority 1: Emergency Runway Shortfall
+  if (runwayMonths < 3.0 || runwayPillar < 50) {
+    candidates.push({
+      id: 'runway-shortfall',
+      priority: 1,
+      badge: isEn ? 'Priority 1 (Defense)' : 'เร่งด่วนระดับ 1 (สภาพคล่อง)',
+      title: isEn ? 'Build Emergency Liquid Reserve' : 'เติมสภาพคล่องเงินสำรองฉุกเฉิน',
+      description: isEn
+        ? `Runway is currently ${runwayMonths.toFixed(1)} months. Aim for at least 3-6 months to protect against unexpected disruption.`
+        : `เงินสำรองฉุกเฉินครอบคลุมค่าใช้จ่ายเพียง ${runwayMonths.toFixed(1)} เดือน ควรสะสมอย่างน้อย 3-6 เดือนเพื่อเป็นกันชนความเสี่ยง`,
+      impact: isEn ? 'Shields against financial shocks' : 'เป้าหมายความปลอดภัย: 3-6 เดือน',
+      actionLabel: isEn ? 'Allocate Cash Flow ➔' : 'จัดสรรงบเงินสด ➔',
+      targetTab: 'remaining-money',
+    });
+  }
+
+  // Priority 1: High Debt Burden Drag
+  if (totalDebt > 0 && debtPillar < 70) {
+    const formattedDebt = typeof formatMoney === 'function' ? formatMoney(totalDebt) : totalDebt.toLocaleString();
+    candidates.push({
+      id: 'debt-drag',
+      priority: 1,
+      badge: isEn ? 'Priority 1 (Debt)' : 'เร่งด่วนระดับ 1 (ภาระหนี้)',
+      title: isEn ? 'Accelerate Debt Payoff' : 'เร่งปลดภาระหนี้สินคงค้าง',
+      description: isEn
+        ? `Outstanding debt is ${formattedDebt}. Prioritize high-interest balances with Avalanche or Snowball to reduce interest drag.`
+        : `มียอดหนี้คงค้าง ${formattedDebt} บาท ควรวางแผนทยอยปิดหนี้ดอกเบี้ยสูงเพื่อหยุดการไหลออกของกระแสเงินสด`,
+      impact: isEn ? 'Frees up net cash flow' : 'ลดภาระดอกเบี้ยจ่ายสะสม',
+      actionLabel: isEn ? 'Plan Debt Payoff ➔' : 'วางแผนปลดหนี้ ➔',
+      targetTab: 'debt-calculator',
+    });
+  }
+
+  // Priority 2: Savings Rate Under 20%
+  if (savingsRate < 20) {
+    candidates.push({
+      id: 'savings-boost',
+      priority: 2,
+      badge: isEn ? 'Priority 2 (Savings)' : 'สำคัญระดับ 2 (การออม)',
+      title: isEn ? 'Boost Net Savings Rate to 20%+' : 'เร่งเพิ่มอัตราการออมสุทธิแตะ 20%+',
+      description: isEn
+        ? `Your current savings rate is ${savingsRate.toFixed(1)}%. Reviewing variable expenses can push your monthly wealth accumulation past 20%.`
+        : `อัตราการออมปัจจุบันอยู่ที่ ${savingsRate.toFixed(1)}% การทบทวนและลดรายจ่ายผันแปรจะช่วยผลักดันให้แตะเกณฑ์ 20% เพื่อความมั่นคง`,
+      impact: isEn ? 'Target savings rate: 20-30%' : 'เกณฑ์แนะนำขั้นต่ำ: 20%',
+      actionLabel: isEn ? 'Review Daily Expenses ➔' : 'ทบทวนรายจ่ายประจำเดือน ➔',
+      targetTab: 'remaining-money',
+    });
+  }
+
+  // Priority 2: Tax Bracket Optimization (Marginal Rate >= 15% with unutilized tax score)
+  if (topMarginalRate >= 15 && taxPillar < 85) {
+    candidates.push({
+      id: 'tax-bracket',
+      priority: 2,
+      badge: isEn ? 'Priority 2 (Tax)' : 'สำคัญระดับ 2 (วางแผนภาษี)',
+      title: isEn ? 'Optimize Tax Allowances (ThaiESG / RMF)' : 'ใช้สิทธิลดหย่อนภาษี (ThaiESG / RMF)',
+      description: isEn
+        ? `Your top tax bracket is ${topMarginalRate}%. Deductible contributions directly yield an instant ${topMarginalRate}% tax return.`
+        : `คุณอยู่ในฐานภาษี ${topMarginalRate}% การลงทุนใน ThaiESG, RMF หรือประกันชีวิตจะได้รับผลตอบแทนทันทีในรูปของเงินภาษีที่ประหยัดได้`,
+      impact: isEn ? `Instant ${topMarginalRate}% tax relief` : `ประหยัดภาษีตามฐาน ${topMarginalRate}%`,
+      actionLabel: isEn ? 'Plan Tax Deductions ➔' : 'วางแผนลดหย่อนภาษี ➔',
+      targetTab: 'tax-calculator-base',
+    });
+  }
+
+  // Priority 3: Deploy Monthly DCA Surplus
+  if (runwayMonths >= 3.0 && monthlyInvest > 0) {
+    const formattedInvest =
+      typeof formatMoney === 'function' ? formatMoney(monthlyInvest) : monthlyInvest.toLocaleString();
+    candidates.push({
+      id: 'deploy-dca',
+      priority: 3,
+      badge: isEn ? 'Priority 3 (Growth)' : 'เสริมแกร่งระดับ 3 (ลงทุน DCA)',
+      title: isEn ? 'Execute Monthly DCA & Rebalancing' : 'จัดสรรเงินลงทุน DCA ตามเป้าหมาย',
+      description: isEn
+        ? `You have ${formattedInvest} monthly investable surplus with a protected cash reserve. Rebalance to keep your asset allocation on target.`
+        : `คุณมีเงินเหลือลงทุน ${formattedInvest} บาท/เดือน พร้อมเงินสำรองปลอดภัย จัดสรรเข้าพอร์ตเป้าหมายตามหลัก DCA`,
+      impact: isEn ? 'Compounds long-term wealth' : 'สร้างผลตอบแทนทบต้นระยะยาว',
+      actionLabel: isEn ? 'Rebalance Portfolio ➔' : 'ปรับสัดส่วนพอร์ต ➔',
+      targetTab: 'rebalance',
+    });
+  }
+
+  // Priority 3: Wealth Resilience & Retirement Readiness
+  if (candidates.length < 3 || h.compositeScore >= 80) {
+    candidates.push({
+      id: 'wealth-resilience',
+      priority: 3,
+      badge: isEn ? 'Priority 3 (Freedom)' : 'เสริมแกร่งระดับ 3 (อิสรภาพการเงิน)',
+      title: isEn ? 'Review Retirement 3-Bucket & Asset Protection' : 'ตรวจสอบแผนเกษียณ 3-Bucket & สินทรัพย์ทางเลือก',
+      description: isEn
+        ? 'Your overall financial foundations are resilient. Simulate retirement cash flow and stress-test your wealth safety.'
+        : 'สุขภาพทางการเงินโดยรวมแข็งแกร่งมาก ทดสอบจำลองกระแสเงินสดหลังเกษียณ หรือตรวจสอบการกระจายความเสี่ยงในสินทรัพย์ทางเลือก',
+      impact: isEn ? 'Sustainable retirement peace of mind' : 'ความยั่งยืนทางการเงินระยะยาว',
+      actionLabel: isEn ? 'View Retirement Tools ➔' : 'ดูเครื่องมือเกษียณ ➔',
+      targetTab: 'rebalance',
+    });
+  }
+
+  // Deduplicate and return top 3 sorted by priority
+  const seen = new Set();
+  const sorted = candidates
+    .filter((c) => {
+      if (seen.has(c.id)) return false;
+      seen.add(c.id);
+      return true;
+    })
+    .sort((a, b) => a.priority - b.priority)
+    .slice(0, 3);
+
+  return sorted;
+}
+
+function renderNextBestMoveCards(profile, health) {
+  const container = document.getElementById('healthActionCardsContainer');
+  if (!container) return;
+
+  const moves = generateNextBestMoves(profile, health, LANG);
+  if (!moves || moves.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = moves
+    .map((m) => {
+      let badgeBg = 'var(--panel)';
+      let badgeColor = 'var(--ink)';
+      let badgeBorder = 'var(--line)';
+
+      if (m.priority === 1) {
+        badgeBg = 'var(--danger-dim)';
+        badgeColor = 'var(--danger)';
+        badgeBorder = 'var(--danger)';
+      } else if (m.priority === 2) {
+        badgeBg = 'rgba(2, 132, 199, 0.12)';
+        badgeColor = '#0284c7';
+        badgeBorder = '#0284c7';
+      } else {
+        badgeBg = 'rgba(5, 150, 105, 0.12)';
+        badgeColor = 'var(--core)';
+        badgeBorder = 'var(--core)';
+      }
+
+      return `
+        <div class="health-move-card" data-move-id="${m.id}" style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; justify-content:space-between; gap:10px;">
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:4px;">
+              <span style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:${badgeBg}; color:${badgeColor}; border:1px solid ${badgeBorder};">${m.badge}</span>
+              <span style="font-size:10px; font-weight:600; color:var(--ink-faint);">${m.impact}</span>
+            </div>
+            <div style="font-size:12px; font-weight:700; color:var(--ink); margin-bottom:4px;">${m.title}</div>
+            <div style="font-size:11px; color:var(--ink-dim); line-height:1.45;">${m.description}</div>
+          </div>
+          <div style="margin-top:2px;">
+            <button type="button" class="action-btn next-move-btn" onclick="jumpToTab('${m.targetTab}')" style="width:100%; display:flex; justify-content:center; align-items:center; padding:7px 12px; font-size:11.5px; font-weight:700; background:var(--panel); border:1px solid ${badgeBorder}; color:${badgeColor}; border-radius:8px; cursor:pointer;" aria-label="${m.actionLabel}">
+              ${m.actionLabel}
+            </button>
+          </div>
+        </div>
+      `;
+    })
+    .join('');
+}
+
+window.generateNextBestMoves = generateNextBestMoves;
+window.renderNextBestMoveCards = renderNextBestMoveCards;
 
 function renderRadarChartSVG(pillars) {
   const gridGroup = document.getElementById('radarGridGroup');
@@ -2649,9 +2851,20 @@ function saveGoalsFromModal() {
 
 function jumpToTab(tabId) {
   try {
-    window.parent.postMessage({ action: 'switchToTab', target: tabId }, '*');
-  } catch (_e) {}
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ action: 'switchToTab', target: tabId }, '*');
+    } else if (typeof window.switchToTab === 'function') {
+      window.switchToTab(tabId);
+    } else {
+      window.location.href = `${tabId}.html`;
+    }
+  } catch (_e) {
+    try {
+      window.parent.postMessage({ action: 'switchToTab', target: tabId }, '*');
+    } catch (_err) {}
+  }
 }
+window.jumpToTab = jumpToTab;
 
 // --- Historical Snapshots & SVG Charting (Task 1) ---
 

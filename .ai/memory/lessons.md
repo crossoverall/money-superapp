@@ -15,6 +15,19 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Next Best Move Action Engine & Cross-Tool 1-Click Navigation Bridges (v2.5.14)
+- **Date & Context:** 2026-10-18, implementing Phase 71 Visual Financial Health "Next Best Move" Advisor Cards & 1-Click Action Bridges in `dashboard.html` (`v2.5.14`).
+- **Problem:** `dashboard.html` provided a 5-pillar radar health score (Runway, Savings, Debt, Wealth, Tax), but actionable guidance was limited to a single static text verdict callout. Users discovering weak pillars or opportunities lacked personalized, prioritized actions and had to manually locate relevant sub-tools.
+- **Root Cause:** Dashboard lacked an evaluation engine to map the gathered multi-tool financial profile (`runwayMonths`, `savingsRate`, `totalDebt`, `topMarginalRate`, `monthlyInvest`) into prioritized, actionable intervention objects with interactive bridges.
+- **Solution & Rule:**
+  1. **Heuristic Priority Engine (`generateNextBestMoves`):** Classify recommendations into 3 explicit urgency tiers:
+     - *Priority 1 (Defense / Red)*: Emergency runway $< 3$ mo (`remaining-money`), or high-interest debt burden (`debt-calculator`).
+     - *Priority 2 (Velocity & Tax / Blue)*: Savings rate $< 20\%$ (`remaining-money`), or top marginal tax bracket $\ge 15\%$ with unutilized deductions (`tax-calculator-base`).
+     - *Priority 3 (Growth & Freedom / Green)*: Monthly DCA investable surplus deployment (`rebalance`), or retirement 3-bucket resilience check.
+  2. **Top-3 Capped & Deduplicated Grid:** Auto-sort by priority ascending, guarantee at least 1 and at most 3 cards, rendered in an auto-fitting responsive grid (`grid-template-columns: repeat(auto-fit, minmax(260px, 1fr))`).
+  3. **Multi-Context Navigation Bridge (`jumpToTab`):** Implement defensive fallback logic: check for iframe parent `window.parent.postMessage({ action: 'switchToTab', target: tabId }, '*')`, then `window.switchToTab(tabId)`, and finally `window.location.href = tabId + '.html'`.
+  4. **Strict Localization Symmetry:** Always add matching keys in both `translations.th` and `translations.en` and verify against automated key symmetry tests.
+
 ### 2026-10-18: Sub-Tool Box Container Harmonization & Card Selector Alignment (v2.5.13)
 - **Date & Context:** 2026-10-18, harmonizing auxiliary sub-tool cards (`#panelTargetDateGlidepath`, `#panelThaiGold`, `#panelForeignTaxAdvisor`) in `rebalance.html` (`v2.5.13`).
 - **Problem:** In `rebalance.html`, the bottom 3 collapsible auxiliary tools appeared without any box container, floating naked on the page background unlike `#panelBudget` and `#howto`.
