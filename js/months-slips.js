@@ -853,6 +853,7 @@ const slipsLayoutManager =
     ? MoneyApp.initCardLayoutManager({
         container: document.getElementById('slipsContainer'),
         cardSelector: '.reorder-card',
+        toolbarContainer: '#cardLayoutToolbar',
         storageKey: 'moneySuperapp.layout.slips.v1',
         defaultCollapsed: ['panelJobCompare'],
         defaultOrder: [

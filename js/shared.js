@@ -2340,7 +2340,140 @@
         });
       });
 
+      updateToolbarButtonStates();
       return order;
+    }
+
+    function areAllCollapsed() {
+      const currentCards = getCards();
+      if (currentCards.length === 0) return false;
+      const data = getStorageData();
+      return currentCards.every((c) => Boolean(data.collapsed[getCardId(c)]));
+    }
+
+    function areAllExpanded() {
+      const currentCards = getCards();
+      if (currentCards.length === 0) return false;
+      const data = getStorageData();
+      return currentCards.every((c) => !data.collapsed[getCardId(c)]);
+    }
+
+    function collapseAll() {
+      const currentCards = getCards();
+      const data = getStorageData();
+      currentCards.forEach((c) => {
+        data.collapsed[getCardId(c)] = true;
+      });
+      saveStorageData(data);
+      updateControlStates();
+      if (onToggle) {
+        currentCards.forEach((c) => {
+          onToggle(getCardId(c), true);
+        });
+      }
+    }
+
+    function expandAll() {
+      const currentCards = getCards();
+      const data = getStorageData();
+      currentCards.forEach((c) => {
+        data.collapsed[getCardId(c)] = false;
+      });
+      saveStorageData(data);
+      updateControlStates();
+      if (onToggle) {
+        currentCards.forEach((c) => {
+          onToggle(getCardId(c), false);
+        });
+      }
+    }
+
+    function toggleAll() {
+      if (areAllCollapsed()) {
+        expandAll();
+      } else {
+        collapseAll();
+      }
+    }
+
+    function resetLayout() {
+      try {
+        localStorage.removeItem(storageKey);
+      } catch (_e) {}
+      if (typeof window !== 'undefined') window.location.reload();
+    }
+
+    function getToolbarElement() {
+      if (options.toolbarContainer) {
+        return typeof options.toolbarContainer === 'string'
+          ? document.querySelector(options.toolbarContainer)
+          : options.toolbarContainer;
+      }
+      return (
+        container.querySelector('#cardLayoutToolbar, .card-layout-toolbar') ||
+        document.getElementById('cardLayoutToolbar') ||
+        document.querySelector('.card-layout-toolbar')
+      );
+    }
+
+    function updateToolbarButtonStates(tbEl) {
+      const tb = tbEl || getToolbarElement();
+      if (!tb) return;
+      const foldBtn = tb.querySelector('.btn-fold-all');
+      const expandBtn = tb.querySelector('.btn-expand-all');
+      if (foldBtn) foldBtn.disabled = areAllCollapsed();
+      if (expandBtn) expandBtn.disabled = areAllExpanded();
+    }
+
+    function renderToolbar() {
+      const tb = getToolbarElement();
+      if (!tb) return;
+
+      tb.classList.add('card-layout-toolbar');
+      tb.innerHTML = '';
+
+      const isEn = typeof LANG !== 'undefined' && LANG === 'en';
+
+      const foldBtn = document.createElement('button');
+      foldBtn.type = 'button';
+      foldBtn.className = 'btn-card-toolbar btn-fold-all';
+      foldBtn.id = 'btnFoldAllCards';
+      foldBtn.title = isEn ? 'Fold all cards' : 'พับการ์ดทั้งหมด';
+      foldBtn.setAttribute('aria-label', foldBtn.title);
+      foldBtn.innerHTML = `▼ <span>${isEn ? 'Fold All' : 'พับทั้งหมด'}</span>`;
+      foldBtn.onclick = (e) => {
+        e.preventDefault();
+        collapseAll();
+      };
+
+      const expandBtn = document.createElement('button');
+      expandBtn.type = 'button';
+      expandBtn.className = 'btn-card-toolbar btn-expand-all';
+      expandBtn.id = 'btnExpandAllCards';
+      expandBtn.title = isEn ? 'Expand all cards' : 'ขยายการ์ดทั้งหมด';
+      expandBtn.setAttribute('aria-label', expandBtn.title);
+      expandBtn.innerHTML = `▲ <span>${isEn ? 'Expand All' : 'ขยายทั้งหมด'}</span>`;
+      expandBtn.onclick = (e) => {
+        e.preventDefault();
+        expandAll();
+      };
+
+      const resetBtn = document.createElement('button');
+      resetBtn.type = 'button';
+      resetBtn.className = 'btn-card-toolbar btn-reset-layout';
+      resetBtn.id = 'btnResetCardsLayout';
+      resetBtn.title = isEn ? 'Reset card order and state' : 'รีเซ็ตลำดับการ์ดและสถานะ';
+      resetBtn.setAttribute('aria-label', resetBtn.title);
+      resetBtn.innerHTML = `↺ <span>${isEn ? 'Reset' : 'รีเซ็ตลำดับ'}</span>`;
+      resetBtn.onclick = (e) => {
+        e.preventDefault();
+        resetLayout();
+      };
+
+      tb.appendChild(foldBtn);
+      tb.appendChild(expandBtn);
+      tb.appendChild(resetBtn);
+      updateToolbarButtonStates(tb);
     }
 
     function moveCard(cardEl, direction) {
@@ -2496,6 +2629,7 @@
     });
 
     updateControlStates();
+    renderToolbar();
 
     return {
       getOrder: () => getCards().map(getCardId),
@@ -2507,12 +2641,14 @@
         const card = getCards().find((c) => getCardId(c) === id);
         if (card) toggleCard(card);
       },
-      resetLayout: () => {
-        try {
-          localStorage.removeItem(storageKey);
-        } catch (_e) {}
-        if (typeof window !== 'undefined') window.location.reload();
-      },
+      collapseAll: collapseAll,
+      expandAll: expandAll,
+      toggleAll: toggleAll,
+      areAllCollapsed: areAllCollapsed,
+      areAllExpanded: areAllExpanded,
+      resetLayout: resetLayout,
+      reset: resetLayout,
+      updateToolbar: renderToolbar,
     };
   }
 

@@ -916,6 +916,38 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'shared.js must export calculateTermLifePremiumEstimate',
       );
     });
+
+    it('verifies all 7 core tool pages and theme.css declare Phase 82 Universal Card Toolbar and Controls', () => {
+      const TOOL_PAGES = [
+        'dashboard.html',
+        'rebalance.html',
+        'tax-calculator-base.html',
+        'months-slips.html',
+        'remaining-money.html',
+        'debt-calculator.html',
+        'tax-calculator.html',
+      ];
+
+      for (const page of TOOL_PAGES) {
+        const content = fs.readFileSync(path.join(ROOT_DIR, page), 'utf8');
+        assert.ok(
+          content.includes('id="cardLayoutToolbar"') || content.includes('class="card-layout-toolbar'),
+          `${page} must define #cardLayoutToolbar container`,
+        );
+      }
+
+      const themeCss = fs.readFileSync(path.join(ROOT_DIR, 'css/theme.css'), 'utf8');
+      assert.ok(themeCss.includes('.card-layout-toolbar'), 'theme.css must define .card-layout-toolbar');
+      assert.ok(themeCss.includes('.btn-card-toolbar'), 'theme.css must define .btn-card-toolbar');
+
+      const twCss = fs.readFileSync(path.join(ROOT_DIR, 'css/tailwind-lite.css'), 'utf8');
+      assert.ok(twCss.includes('.sm\\:grid-cols-2'), 'tailwind-lite.css must define .sm:grid-cols-2');
+
+      const sharedJs = fs.readFileSync(path.join(ROOT_DIR, 'js/shared.js'), 'utf8');
+      assert.ok(sharedJs.includes('collapseAll: collapseAll'), 'shared.js must export collapseAll');
+      assert.ok(sharedJs.includes('expandAll: expandAll'), 'shared.js must export expandAll');
+      assert.ok(sharedJs.includes('toggleAll: toggleAll'), 'shared.js must export toggleAll');
+    });
   });
 
   describe('Bilingual Localization Structural Symmetry', () => {

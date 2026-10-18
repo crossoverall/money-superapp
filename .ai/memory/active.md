@@ -1,5 +1,5 @@
 ---
-task_id: "SDLC-PHASE-81-INSURANCE-COVERAGE-GAP-BUDGET-BRIDGE"
+task_id: "SDLC-PHASE-82-UNIVERSAL-CARD-TOOLBAR-AND-RESPONSIVE-GRID"
 status: "completed"
 current_stage: "release"
 complexity: "level_2"
@@ -7,18 +7,16 @@ iteration_count: 0
 pipeline: ["orchestrator", "planner", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Problem Diagnosis & Scope (Phase 81 - v2.5.24)
-1. **Protection Gap to Budget Bridge (`dashboard.html` & `js/dashboard.js`):**
-   - When `calc.protectionGap > 0`, calculate realistic Term Life Insurance premium estimate using `MoneyApp.calculateTermLifePremiumEstimate(coverageGap)`.
-   - Add `#box-ins-premium-bridge` inside `#panelInsuranceAdequacy` with estimated monthly/annual premiums, tax savings, and `#btnBridgeInsuranceToBudget`.
-   - Dispatch `moneySuperapp.pendingInsurancePremium` and route to `remaining-money.html`.
-2. **Inbound Expense Bridge in Remaining Money (`remaining-money.html` & `js/remaining-money.js`):**
-   - Add `#insurancePremiumBridgeAlert` banner in `remaining-money.html`.
-   - Implement `checkPendingInsurancePremium()` in `js/remaining-money.js` to insert/update the term life insurance premium into `state.expenses`.
-   - Recompute cash flow, trigger undo snapshot, and show notification toast.
-3. **Shared Math Engine & Localized Symmetry (`js/shared.js`):**
-   - Build `MoneyApp.calculateTermLifePremiumEstimate(coverageGap, options)`.
-   - Unit tests in `tests/shared.test.mjs` and smoke tests in `tests/smoke.test.mjs`.
+### Problem Diagnosis & Scope (Phase 82 - v2.5.25)
+1. **Universal Card Toolbar API (`js/shared.js`):**
+   - Add `collapseAll()`, `expandAll()`, `toggleAll()` to `initCardLayoutManager`.
+   - Support `options.toolbarContainer` or auto-detection of `#cardLayoutToolbar` across pages.
+   - Render compact accessible buttons: `▼ พับทั้งหมด (Fold All)`, `▲ ขยายทั้งหมด (Expand All)`, `↺ รีเซ็ตลำดับ (Reset Order)`.
+2. **Page Integration:**
+   - Add `#cardLayoutToolbar` container and wire `initCardLayoutManager` in `dashboard.html`, `rebalance.html`, `tax-calculator-base.html`, `months-slips.html`, `remaining-money.html`, `debt-calculator.html`.
+3. **Responsive Grid Utilities (`css/tailwind-lite.css`):**
+   - Support `.sm:grid-cols-2`, `.md:grid-cols-2` for tablets and foldable devices (640px - 1024px).
 4. **Verification & Delivery:**
-   - Headless CDP script capturing screenshots (gap active, adequate protected, budget bridge alert, dark/mobile).
-   - Biome check & bump to `v2.5.24`.
+   - Unit tests in `tests/shared.test.mjs` and smoke assertions in `tests/smoke.test.mjs`.
+   - Headless Chrome CDP script capturing Fold All, Expand All, Dark, and Tablet/Mobile.
+   - Biome audit & bump to `v2.5.25`.

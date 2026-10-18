@@ -15,6 +15,22 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Universal Card Layout Toolbar & Tablet Responsive Grid Scaling (v2.5.25)
+- **Date & Context:** 2026-10-18, implementing Phase 82 Universal Card Toolbar and Tablet Grid Optimization (`v2.5.25`).
+- **Problem:**
+  1. As tool pages expanded to support comprehensive financial domains (5–12 cards per page), navigating or scanning long vertical pages required repetitive scrolling or manually clicking individual card toggle chevrons (`▲` / `▼`) one by one.
+  2. `initCardLayoutManager` in `js/shared.js` lacked global batch state modifiers (`collapseAll()`, `expandAll()`, `toggleAll()`) and automatic toolbar generation.
+  3. Medium viewports (tablets, foldables 640px–1024px) were missing `.sm:grid-cols-2` utility classes in `css/tailwind-lite.css`.
+- **Root Cause:**
+  1. Layout manager was designed around per-card DOM manipulations without container-level state tracking (`areAllCollapsed`, `areAllExpanded`).
+  2. Toolbar containers were absent from top tool headers.
+- **Solution & Rule:**
+  1. **Universal Toolbar Methods:** Add `collapseAll()`, `expandAll()`, `toggleAll()`, `areAllCollapsed()`, and `areAllExpanded()` to `initCardLayoutManager`.
+  2. **Automated Accessible Toolbar:** Automatically detect `#cardLayoutToolbar` or `options.toolbarContainer` and render accessible `[▼ Fold All | ▲ Expand All | ↺ Reset]` buttons with dynamic disabled states and bilingual symmetry.
+  3. **Multi-Page Harmony:** Standardize `#cardLayoutToolbar` across all 7 core pages (`dashboard.html`, `rebalance.html`, `tax-calculator-base.html`, `months-slips.html`, `remaining-money.html`, `debt-calculator.html`, `tax-calculator.html`).
+  4. **Tablet Grid Scaling:** Include `.sm:grid-cols-2` inside `@media (min-width: 640px)` in `tailwind-lite.css`.
+  5. **Verification:** Validate via 397 automated passing tests, clean Biome audit, and headless Chrome CDP captures across expanded, collapsed, tablet, and dark states.
+
 ### 2026-10-18: Life Insurance Adequacy Coverage Gap to Budget Bridge (v2.5.24)
 - **Date & Context:** 2026-10-18, implementing Phase 81 Life Insurance Adequacy Coverage Gap to Budget Bridge (`v2.5.24`).
 - **Problem:**

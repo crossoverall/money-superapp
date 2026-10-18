@@ -688,6 +688,26 @@ describe('MoneyApp Shared Core Module', () => {
       mgr.toggleCard('card1');
       assert.ok(!bodyChild1.classList.contains('card-collapsed-hidden'), 'child 1 of card1 must be expanded');
       assert.ok(!bodyChild2.classList.contains('card-collapsed-hidden'), 'child 2 of card1 must also be expanded');
+
+      // Test collapseAll
+      mgr.collapseAll();
+      assert.ok(mgr.areAllCollapsed(), 'all cards must be reported collapsed');
+      assert.ok(bodyChild1.classList.contains('card-collapsed-hidden'));
+      assert.ok(bodyChild2.classList.contains('card-collapsed-hidden'));
+      assert.ok(bodyChild3.classList.contains('card-collapsed-hidden'));
+
+      // Test expandAll
+      mgr.expandAll();
+      assert.ok(mgr.areAllExpanded(), 'all cards must be reported expanded');
+      assert.ok(!bodyChild1.classList.contains('card-collapsed-hidden'));
+      assert.ok(!bodyChild2.classList.contains('card-collapsed-hidden'));
+      assert.ok(!bodyChild3.classList.contains('card-collapsed-hidden'));
+
+      // Test toggleAll
+      mgr.toggleAll(); // since all are expanded, should collapse all
+      assert.ok(mgr.areAllCollapsed(), 'toggleAll from expanded must collapse all');
+      mgr.toggleAll(); // since all are collapsed, should expand all
+      assert.ok(mgr.areAllExpanded(), 'toggleAll from collapsed must expand all');
     });
   });
 
