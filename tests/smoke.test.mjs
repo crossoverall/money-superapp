@@ -329,7 +329,10 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(dashContent.includes('id="inpEduChildAge"'), 'dashboard.html must define #inpEduChildAge');
       assert.ok(dashContent.includes('id="inpEduTargetAge"'), 'dashboard.html must define #inpEduTargetAge');
       assert.ok(dashContent.includes('id="selEduTrack"'), 'dashboard.html must define #selEduTrack');
-      assert.ok(dashContent.includes('id="inpEduExistingSavings"'), 'dashboard.html must define #inpEduExistingSavings');
+      assert.ok(
+        dashContent.includes('id="inpEduExistingSavings"'),
+        'dashboard.html must define #inpEduExistingSavings',
+      );
       assert.ok(dashContent.includes('id="val-edu-future-total"'), 'dashboard.html must define #val-edu-future-total');
       assert.ok(dashContent.includes('id="val-edu-shortfall"'), 'dashboard.html must define #val-edu-shortfall');
       assert.ok(dashContent.includes('id="val-edu-monthly-dca"'), 'dashboard.html must define #val-edu-monthly-dca');
@@ -652,6 +655,28 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'js/rebalance.js must define applyGlidepathSplitToPortfolio',
       );
       assert.ok(rebalJs.includes('lblGlidepathTitle'), 'js/rebalance.js EN must define lblGlidepathTitle');
+    });
+
+    it('verifies rebalance.html places auxiliary sub-tools below #howto and defaults them to collapsed', () => {
+      const rebalHtml = fs.readFileSync(path.join(ROOT_DIR, 'rebalance.html'), 'utf8');
+      const idxBuckets = rebalHtml.indexOf('id="panelBuckets"');
+      const idxHowto = rebalHtml.indexOf('id="howto"');
+      const idxGlidepath = rebalHtml.indexOf('id="panelTargetDateGlidepath"');
+      const idxGold = rebalHtml.indexOf('id="panelThaiGold"');
+      const idxForeignTax = rebalHtml.indexOf('id="panelForeignTaxAdvisor"');
+
+      assert.ok(idxBuckets !== -1 && idxHowto !== -1, 'Buckets and howto must exist');
+      assert.ok(idxGlidepath !== -1 && idxGold !== -1 && idxForeignTax !== -1, 'All 3 auxiliary sub-tools must exist');
+      assert.ok(idxBuckets < idxHowto, '#panelBuckets must appear before #howto');
+      assert.ok(idxHowto < idxGlidepath, '#howto must appear before #panelTargetDateGlidepath');
+      assert.ok(idxGlidepath < idxGold, '#panelTargetDateGlidepath must appear before #panelThaiGold');
+      assert.ok(idxGold < idxForeignTax, '#panelThaiGold must appear before #panelForeignTaxAdvisor');
+
+      const rebalJs = fs.readFileSync(path.join(ROOT_DIR, 'js/rebalance.js'), 'utf8');
+      assert.ok(
+        rebalJs.includes("defaultCollapsed: ['panelTargetDateGlidepath', 'panelThaiGold', 'panelForeignTaxAdvisor']"),
+        'rebalance.js must configure all 3 auxiliary sub-tools as defaultCollapsed',
+      );
     });
   });
 });

@@ -3102,23 +3102,35 @@ function updateForeignTaxUI() {
   const subRetained = document.getElementById('subForeignNetRetained');
   const boxAdvice = document.getElementById('boxForeignTaxAdvice');
 
+  const effRate =
+    Number(
+      calc.effectiveTaxRate != null
+        ? calc.effectiveTaxRate
+        : calc.effectiveTaxRatePct != null
+          ? calc.effectiveTaxRatePct
+          : 0,
+    ) || 0;
+
   if (valTaxable) valTaxable.textContent = `${formatMoney(calc.taxableRemittance)} ${currencyUnit}`;
   if (subExempt) {
+    const totalExempt =
+      calc.totalExemptAmount != null
+        ? calc.totalExemptAmount
+        : (calc.pre2024ExemptAmount || 0) + (calc.capitalPrincipalExemptAmount || 0);
     subExempt.textContent =
       LANG === 'en'
-        ? `Total Exempt: ${formatMoney(calc.totalExemptAmount)} ${currencyUnit}`
-        : `ได้รับยกเว้น: ${formatMoney(calc.totalExemptAmount)} ${currencyUnit}`;
+        ? `Total Exempt: ${formatMoney(totalExempt)} ${currencyUnit}`
+        : `ได้รับยกเว้น: ${formatMoney(totalExempt)} ${currencyUnit}`;
   }
 
   if (valGross) valGross.textContent = `${formatMoney(calc.grossThaiTaxOnRemittance)} ${currencyUnit}`;
   if (subEff) {
     subEff.textContent =
-      LANG === 'en'
-        ? `Effective Rate: ${calc.effectiveTaxRate.toFixed(1)}%`
-        : `อัตราภาษีเฉลี่ย: ${calc.effectiveTaxRate.toFixed(1)}%`;
+      LANG === 'en' ? `Effective Rate: ${effRate.toFixed(1)}%` : `อัตราภาษีเฉลี่ย: ${effRate.toFixed(1)}%`;
   }
 
-  if (valDta) valDta.textContent = `${formatMoney(calc.dtaForeignTaxCredit)} ${currencyUnit}`;
+  const dtaCredit = calc.dtaForeignTaxCredit != null ? calc.dtaForeignTaxCredit : calc.allowableDtaCredit || 0;
+  if (valDta) valDta.textContent = `${formatMoney(dtaCredit)} ${currencyUnit}`;
   if (subDta) {
     if (foreignTaxPaid > 0) {
       subDta.textContent = LANG === 'en' ? 'DTA relief applied' : 'หักลดหย่อนภาษีซ้ำซ้อนแล้ว';
@@ -3132,15 +3144,18 @@ function updateForeignTaxUI() {
     valNet.style.color = calc.netThaiTaxPayable > 0 ? 'var(--warn)' : 'var(--ok)';
   }
   if (subRetained) {
+    const netRetained =
+      calc.netRetainedInThailand != null ? calc.netRetainedInThailand : calc.totalNetCashRetained || 0;
     subRetained.textContent =
       LANG === 'en'
-        ? `Net Retained: ${formatMoney(calc.netRetainedInThailand)} ${currencyUnit}`
-        : `เงินเหลือเข้าไทยสุทธิ: ${formatMoney(calc.netRetainedInThailand)} ${currencyUnit}`;
+        ? `Net Retained: ${formatMoney(netRetained)} ${currencyUnit}`
+        : `เงินเหลือเข้าไทยสุทธิ: ${formatMoney(netRetained)} ${currencyUnit}`;
   }
 
   if (boxAdvice) {
     let adviceHtml = '';
-    if (!calc.isResident) {
+    const isResident = calc.isResident !== undefined ? calc.isResident : calc.isTaxResident;
+    if (!isResident) {
       adviceHtml =
         LANG === 'en'
           ? `🟢 <strong>Non-Resident Exemption (Section 41 Paragraph 3):</strong> Since your stay in Thailand is under 180 days (${daysInThailand} days), you are a tax non-resident. Remittances of foreign capital or gains into Thailand are <strong>100% exempt from Thai Personal Income Tax</strong> regardless of when earned.`
@@ -3151,15 +3166,15 @@ function updateForeignTaxUI() {
           ? '🛡️ <strong>Fully Tax-Exempt Remittance:</strong> 100% of the remitted amount is shielded from Thai PIT via Pre-2024 grandfathering (Order P.162/2566) or original principal return. <em>Tip: Ensure you retain broker transfer slips and holding statements as statutory audit proof.</em>'
           : '🛡️ <strong>ได้รับการยกเว้นภาษีทั้งจำนวน:</strong> เงินที่นำเข้าไทยทั้ง 100% ได้รับยกเว้นภาษีเงินได้บุคคลธรรมดา จากสิทธิประโยชน์เงินได้ก่อนปี 2567 (คำสั่ง ป.162/2566) หรือการถอนเงินต้นลงทุนเดิม <em>คำแนะนำ: ควรเก็บหลักฐานใบโอนเงิน บัญชีโบรกเกอร์ต่างประเทศ และ Bank Statement ไว้เป็นหลักฐานตรวจสอบ</em>';
     } else {
-      const topBracketRate = calc.effectiveTaxRate > 20 ? '30-35%' : calc.effectiveTaxRate > 10 ? '15-20%' : '5-10%';
+      const topBracketRate = effRate > 20 ? '30-35%' : effRate > 10 ? '15-20%' : '5-10%';
       adviceHtml =
         LANG === 'en'
           ? `💡 <strong>Strategic Repatriation Advice (Orders P.161 & P.162):</strong><br>
-           • Remitted taxable assessable income is <strong>${formatMoney(calc.taxableRemittance)} THB</strong>, incurring net Thai tax of <strong>${formatMoney(calc.netThaiTaxPayable)} THB</strong> (effective ~${calc.effectiveTaxRate.toFixed(1)}%).<br>
+           • Remitted taxable assessable income is <strong>${formatMoney(calc.taxableRemittance)} THB</strong>, incurring net Thai tax of <strong>${formatMoney(calc.netThaiTaxPayable)} THB</strong> (effective ~${effRate.toFixed(1)}%).<br>
            • <strong>Bracket Management:</strong> If feasible, consider spreading remittances across multiple calendar years to stay within lower PIT brackets (5% - 15%).<br>
            • <strong>DTA Foreign Tax Credit:</strong> If foreign withholding taxes (e.g. US 15% dividend WHT under Thai-US DTA) were deducted, retain IRS Form 1042-S / broker proof to claim full credit under Royal Decree No. 300.`
           : `💡 <strong>กลยุทธ์การบริหารภาษีนำเงินกลับไทย (คำสั่ง ป.161 & ป.162):</strong><br>
-           • ยอดเงินได้ที่ต้องเสียภาษีสุทธิคือ <strong>${formatMoney(calc.taxableRemittance)} บาท</strong> มีภาษีต้องชำระสุทธิ <strong>${formatMoney(calc.netThaiTaxPayable)} บาท</strong> (อัตราภาษีเฉลี่ย ~${calc.effectiveTaxRate.toFixed(1)}%)<br>
+           • ยอดเงินได้ที่ต้องเสียภาษีสุทธิคือ <strong>${formatMoney(calc.taxableRemittance)} บาท</strong> มีภาษีต้องชำระสุทธิ <strong>${formatMoney(calc.netThaiTaxPayable)} บาท</strong> (อัตราภาษีเฉลี่ย ~${effRate.toFixed(1)}%)<br>
            • <strong>การกระจายปีภาษี (Tranche Spreading):</strong> หากไม่จำเป็นต้องใช้เงินก้อนทันที ควรพิจารณาแบ่งยอดนำเงินกลับไทยข้ามปีปฏิทินเพื่อรักษาระดับฐานภาษีบุคคลธรรมดาไม่ให้กระโดดขึ้นไปขั้น ${topBracketRate}<br>
            • <strong>เครดิตภาษีซ้อน (DTA):</strong> หากถูกหักภาษี ณ ต่างประเทศไว้แล้ว (เช่น ภาษีปันผลหุ้นสหรัฐฯ 15% ตามอนุสัญญา DTA) ให้เตรียมเอกสารรับรองการหักภาษี (เช่น Form 1042-S) เพื่อขอลดหย่อนภาษีตาม พ.ร.ฎ. ฉบับที่ 300`;
     }
@@ -3449,9 +3464,21 @@ checkPendingBudget();
 compute();
 updatePriceTimestampUI();
 initAutoRefresh();
-initGoldCalculator();
-initForeignTaxAdvisor();
-initTargetDateGlidepath();
+try {
+  initGoldCalculator();
+} catch (e) {
+  console.warn('initGoldCalculator failed:', e);
+}
+try {
+  initForeignTaxAdvisor();
+} catch (e) {
+  console.warn('initForeignTaxAdvisor failed:', e);
+}
+try {
+  initTargetDateGlidepath();
+} catch (e) {
+  console.warn('initTargetDateGlidepath failed:', e);
+}
 
 if (typeof MoneyApp !== 'undefined' && MoneyApp.initCardLayoutManager) {
   rebalanceLayoutManager = MoneyApp.initCardLayoutManager({

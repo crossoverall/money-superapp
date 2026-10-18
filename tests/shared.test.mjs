@@ -595,9 +595,8 @@ describe('MoneyApp Shared Core Module', () => {
           querySelector: (sel) => {
             if (sel.includes('.card-header') || sel.includes('.panel-header')) {
               return (
-                children.find(
-                  (c) => c.className.includes('card-header') || c.className.includes('panel-header'),
-                ) || null
+                children.find((c) => c.className.includes('card-header') || c.className.includes('panel-header')) ||
+                null
               );
             }
             if (sel.includes('.btn-card-up')) {

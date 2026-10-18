@@ -113,4 +113,26 @@ describe('Foreign Investment & Crypto Repatriation Tax Advisor (Orders P.161/256
     assert.equal(resNull.netThaiTaxPayable, 0);
     assert.equal(resNull.taxableRemittance, 0);
   });
+
+  it('correctly accepts parameter aliases and provides backward-compatible return properties', () => {
+    // Calling with alias parameters matching UI inputs
+    const res = calculateForeignRepatriationTax({
+      remittanceAmount: 1000000,
+      pre2024Amount: 200000,
+      principalAmount: 300000,
+      daysInThailand: 200,
+      foreignTaxPaid: 50000,
+      otherDomesticNetIncome: 500000,
+    });
+
+    assert.equal(res.isResident, true);
+    assert.equal(res.isTaxResident, true);
+    assert.equal(res.totalExemptAmount, 500000); // 200k + 300k
+    assert.equal(res.taxableRemittance, 500000); // 1M - 500k
+    assert.equal(typeof res.effectiveTaxRate, 'number');
+    assert.equal(res.effectiveTaxRate, res.effectiveTaxRatePct);
+    assert.equal(res.dtaForeignTaxCredit, res.allowableDtaCredit);
+    assert.equal(res.netRetainedInThailand, res.totalNetCashRetained);
+    assert.ok(res.effectiveTaxRate >= 0 && res.effectiveTaxRate <= 100);
+  });
 });

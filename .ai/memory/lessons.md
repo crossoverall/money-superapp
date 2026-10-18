@@ -15,6 +15,15 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Runtime Calculation Contract Integrity & Defensive UI Initialization (v2.5.7)
+- **Date & Context:** 2026-10-18, debugging and resolving browser render failure in `rebalance.html` where card reordering controls and collapsed state failed to appear.
+- **Problem:** When `rebalance.html` loaded in Chrome, neither card reorder controls (`↑`, `↓`, `▲`) nor default collapsed states were applied to auxiliary cards, leaving cards uncollapsible on initial load.
+- **Root Cause:** A property naming discrepancy between `calculateForeignRepatriationTax` (`js/shared.js`, which returns `effectiveTaxRatePct`) and `updateForeignTaxUI` (`js/rebalance.js`, which accessed `calc.effectiveTaxRate.toFixed(1)`) triggered an uncaught `TypeError: Cannot read properties of undefined (reading 'toFixed')` during initial load. Because component initializers were called synchronously without defensive isolation, the uncaught exception halted the script before `MoneyApp.initCardLayoutManager(...)` could execute.
+- **Solution & Rule:**
+  1. **Contract Invariance:** Ensure shared core functions support property aliases bidirectionally (`effectiveTaxRate: effectiveTaxRatePct`, etc.) and UI formatting guards all numerical accesses (`((calc.effectiveTaxRate ?? calc.effectiveTaxRatePct) || 0).toFixed(1)`).
+  2. **Defensive Component Initialization:** Always isolate individual sub-calculator and tool initializers (`initGoldCalculator()`, `initForeignTaxAdvisor()`, `initTargetDateGlidepath()`) with defensive `try/catch` blocks so an isolated error in an optional sub-tool never prevents core page layout managers or other cards from mounting.
+  3. **Headless Chrome CDP Verification:** Verify real browser execution using Chrome DevTools Protocol to capture unhandled console errors and verify DOM class attachment in a live V8 environment.
+
 ### 2026-10-18: Card Layout Multi-Child Collapsing & Single Source of Truth for Panel Folding (v2.5.6)
 - **Date & Context:** 2026-10-18, fixing card folding bugs and auxiliary panel positioning in `rebalance.html` and `js/shared.js`.
 - **Problem:** Cards lacking a single enclosing `.card-body` wrapper (e.g. cards having 3-6 direct sibling children such as inputs, summaries, tables, action buttons) only hid `card.children[1]` when collapsed, leaving all remaining children visible and breaking layout. Simultaneously, auxiliary panels had legacy inline toggle click handlers (`onclick="toggle..."`) and chevron arrow icons (`▼`) manipulating inline `style.display`, which collided and desynchronized with the Card Layout Manager's injected toggle button and `.card-collapsed-hidden` class.

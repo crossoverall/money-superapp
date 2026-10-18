@@ -1,5 +1,5 @@
 ---
-task_id: "SDLC-BUGFIX-CARD-LAYOUT-AND-AUXILIARY"
+task_id: "SDLC-BUGFIX-FOREIGN-TAX-RUNTIME-AND-LAYOUT-CONTROLS"
 status: "completed"
 current_stage: "completed"
 complexity: "level_2"
@@ -7,34 +7,39 @@ iteration_count: 0
 pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Problem Diagnosis & Root Causes
-1. **Multi-Child Collapsing Bug in `initCardLayoutManager` (`js/shared.js`):**
-   - `getCardBody(card)` fell back to `card.children[1]`.
-   - Cards without an explicit `.card-body` wrapper have multiple direct child elements (inputs, tables, summaries, actions).
-   - Toggling `.card-collapsed-hidden` only hid the second element, leaving all other children visible underneath the collapsed header.
-   - **Fix:** Update `initCardLayoutManager` to toggle `.card-collapsed-hidden` on ALL non-header child elements of a card (or all elements in `getCardBodies(card)`), ensuring complete collapse.
-2. **Duplicate Toggle Controls & State Desynchronization in `rebalance.html`:**
-   - `#panelTargetDateGlidepath`, `#panelThaiGold`, and `#panelForeignTaxAdvisor` had legacy inline toggles (`glidepathToggleArrow`, `goldToggleArrow`, `foreignTaxToggleArrow`, custom `onclick` handlers, and inline `style="display:none"`).
-   - When `initCardLayoutManager` injected its own `▲`/`▼` toggle button, two independent arrows appeared side-by-side, causing conflicting click events and broken collapse/expand states.
-   - **Fix:** Retire legacy conflicting toggle arrows and inline handlers. Wire panels to use the unified Card Layout Manager folding mechanism.
-3. **Auxiliary Panels Ordering in `rebalance.html`:**
-   - In HTML markup, `#panelTargetDateGlidepath` was positioned above `#panelThaiGold`, `#panelForeignTaxAdvisor`, and `#howto`.
-   - The user requested moving all 3 auxiliary sub-tools ("Target Date Retirement", "Thai Gold DCA", and "Foreign Investment & Crypto Tax") to the bottom of the page.
-   - **Fix:** Relocate the 3 auxiliary card DOM blocks to the bottom of `rebalance.html` (after `#panelBuckets` and `#howto`, above the action buttons), and initialize them as collapsed by default.
+### Problem Diagnosis & Root Causes (Browser Inspection)
+1. **Uncaught Runtime Exception in `updateForeignTaxUI` (`js/rebalance.js:3118`):**
+   - Headless Chrome DevTools Protocol (CDP) live inspection revealed:
+     `TypeError: Cannot read properties of undefined (reading 'toFixed')` at `updateForeignTaxUI` during initial script execution (`initForeignTaxAdvisor()` at line 3453).
+   - Root cause: `calculateForeignRepatriationTax` in `js/shared.js` returns `effectiveTaxRatePct`, whereas `updateForeignTaxUI` accessed `calc.effectiveTaxRate.toFixed(1)`. Parameter names and exemption fields also had key discrepancies (`pre2024Amount` vs `pre2024AccumulatedAmount`, etc.).
+2. **Cascade Breakdown of Card Layout Initialization:**
+   - Because the uncaught exception halted `rebalance.js` at line 3453:
+     - Line 3454: `initTargetDateGlidepath()` was never executed.
+     - Line 3456: `MoneyApp.initCardLayoutManager(...)` was never reached.
+   - As a result, no card reordering controls (`card-reorder-controls` with `↑`, `↓`, `▲`/`▼`) were injected into any card header, and the 3 bottom auxiliary cards were never collapsed by default (`cardsWithControls = 0`, `cardsCollapsed = 0`).
 
 ### Atomic SDLC Action Plan
-- **Slice 1: Card Layout Engine Core Fix (`js/shared.js`)**
-  - Make `initCardLayoutManager` manage all non-header child elements when collapsing cards without a single wrapper.
-  - Support `defaultCollapsed` option for specific card IDs so sub-tools can start folded.
-- **Slice 2: Rebalance HTML & Controller Harmonization (`rebalance.html`, `js/rebalance.js`)**
-  - Move `#panelTargetDateGlidepath`, `#panelThaiGold`, and `#panelForeignTaxAdvisor` to the bottom of `rebalance.html`.
-  - Harmonize header structures and remove redundant duplicate toggle arrows/handlers.
-  - Pass `defaultCollapsed: ['panelTargetDateGlidepath', 'panelThaiGold', 'panelForeignTaxAdvisor']` to `initCardLayoutManager`.
-- **Slice 3: QA Verification & Smoke Test Expansion (`tests/smoke.test.mjs`)**
-  - Add headless DOM assertions testing multi-child collapsing behavior and DOM position order in `rebalance.html`.
-  - Run full test suite (`npm test`) and linter (`npx @biomejs/biome lint`).
-- **Slice 4: Independent Security & Adversarial Review (`reviewer.md`)**
-  - Verify ADR-001 offline invariance, zero external network requests, keyboard accessibility, and bilingual parity.
-- **Slice 5: Release & Memory Consolidation (`release.md`)**
-  - Bump patch version, append lessons to `.ai/memory/lessons.md`, commit and push one-by-one to `origin/master`.
-
+- **Slice 1: Bridge Parameter & Return Object Contract (`js/shared.js`, `js/rebalance.js`)**
+  - In `js/shared.js` (`calculateForeignRepatriationTax`):
+    - Support both input parameter naming conventions (`pre2024Amount` / `pre2024AccumulatedAmount`, `principalAmount` / `principalCapitalAmount`, `foreignTaxPaid` / `foreignTaxPaidThb`, `otherDomesticNetIncome` / `otherTaxableNetIncome`).
+    - Add backward-compatible return properties (`effectiveTaxRate: effectiveTaxRatePct`, `totalExemptAmount`, `isResident`, `dtaForeignTaxCredit`, `netRetainedInThailand`).
+  - In `js/rebalance.js` (`updateForeignTaxUI`):
+    - Safe-guard numeric access: `((calc.effectiveTaxRate ?? calc.effectiveTaxRatePct) || 0).toFixed(1)`.
+    - Harmonize input mapping and fallback object to match shared contracts.
+    - Wrap auxiliary initializers (`initForeignTaxAdvisor()`, `initTargetDateGlidepath()`) in defensive `try/catch` blocks so a calculation quirk never impedes layout manager initialization.
+- **Slice 2: Automated Verification & Smoke Regression Test (`tests/smoke.test.mjs`)**
+  - Add end-to-end DOM test simulating full `rebalance.js` execution in JSDOM, asserting:
+    1. Zero uncaught exceptions on load.
+    2. All 6 `.reorder-card` elements have `.card-reorder-controls` attached.
+    3. The 3 auxiliary panels (`#panelTargetDateGlidepath`, `#panelThaiGold`, `#panelForeignTaxAdvisor`) are collapsed with `.card-collapsed-hidden` on clean load.
+  - Run full test suite (`npm test`) and Biome linter.
+- **Slice 3: Live Chrome CDP Headless Inspection**
+  - Execute `diagnose_browser.mjs` against local HTTP server to verify live Chrome execution produces:
+    - 0 browser exceptions.
+    - `cardsWithControls: 6`.
+    - `cardsCollapsed: 3`.
+    - Fresh full-page screenshot confirming visual folding and reorder button rendering.
+- **Slice 4: Independent Security & Review Audit (`reviewer.md`)**
+  - Verify ADR-001 offline invariance, zero telemetry, no CDN.
+- **Slice 5: Release & Version Bump (`release.md`)**
+  - Bump patch version (`v2.5.7`), update `.ai/memory/lessons.md`, commit and push one-by-one to `origin/master`.

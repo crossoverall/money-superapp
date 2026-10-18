@@ -1838,11 +1838,25 @@
   function calculateForeignRepatriationTax(params) {
     params = params || {};
     var remittanceAmount = Math.max(0, parseNum(params.remittanceAmount));
-    var pre2024AccumulatedAmount = Math.max(0, parseNum(params.pre2024AccumulatedAmount));
-    var principalCapitalAmount = Math.max(0, parseNum(params.principalCapitalAmount));
+    var pre2024AccumulatedAmount = Math.max(
+      0,
+      parseNum(params.pre2024AccumulatedAmount !== undefined ? params.pre2024AccumulatedAmount : params.pre2024Amount),
+    );
+    var principalCapitalAmount = Math.max(
+      0,
+      parseNum(params.principalCapitalAmount !== undefined ? params.principalCapitalAmount : params.principalAmount),
+    );
     var daysInThailand = params.daysInThailand !== undefined ? parseNum(params.daysInThailand) : 180;
-    var foreignTaxPaidThb = Math.max(0, parseNum(params.foreignTaxPaidThb));
-    var otherTaxableNetIncome = Math.max(0, parseNum(params.otherTaxableNetIncome));
+    var foreignTaxPaidThb = Math.max(
+      0,
+      parseNum(params.foreignTaxPaidThb !== undefined ? params.foreignTaxPaidThb : params.foreignTaxPaid),
+    );
+    var otherTaxableNetIncome = Math.max(
+      0,
+      parseNum(
+        params.otherTaxableNetIncome !== undefined ? params.otherTaxableNetIncome : params.otherDomesticNetIncome,
+      ),
+    );
 
     var isTaxResident = daysInThailand >= 180;
     var isExempt = false;
@@ -1855,17 +1869,22 @@
         remittanceAmount: remittanceAmount,
         daysInThailand: daysInThailand,
         isTaxResident: false,
+        isResident: false,
         isExempt: true,
         exemptionReason: exemptionReason,
         pre2024ExemptAmount: 0,
         capitalPrincipalExemptAmount: 0,
+        totalExemptAmount: remittanceAmount,
         taxableRemittance: 0,
         grossThaiTaxOnRemittance: 0,
         allowableDtaCredit: 0,
+        dtaForeignTaxCredit: 0,
         netThaiTaxPayable: 0,
         dtaSavings: 0,
         effectiveTaxRatePct: 0,
+        effectiveTaxRate: 0,
         totalNetCashRetained: remittanceAmount,
+        netRetainedInThailand: remittanceAmount,
       };
     }
 
@@ -1895,17 +1914,22 @@
       remittanceAmount: remittanceAmount,
       daysInThailand: daysInThailand,
       isTaxResident: true,
+      isResident: true,
       isExempt: isExempt,
       exemptionReason: exemptionReason,
       pre2024ExemptAmount: pre2024ExemptAmount,
       capitalPrincipalExemptAmount: capitalPrincipalExemptAmount,
+      totalExemptAmount: pre2024ExemptAmount + capitalPrincipalExemptAmount,
       taxableRemittance: taxableRemittance,
       grossThaiTaxOnRemittance: grossThaiTaxOnRemittance,
       allowableDtaCredit: allowableDtaCredit,
+      dtaForeignTaxCredit: allowableDtaCredit,
       netThaiTaxPayable: netThaiTaxPayable,
       dtaSavings: allowableDtaCredit,
       effectiveTaxRatePct: effectiveTaxRatePct,
+      effectiveTaxRate: effectiveTaxRatePct,
       totalNetCashRetained: totalNetCashRetained,
+      netRetainedInThailand: totalNetCashRetained,
     };
   }
 
@@ -2130,25 +2154,18 @@
 
     function getCardHeader(card) {
       return (
-        card.querySelector('.card-header, .panel-header, .panel-title, [data-card-header]') ||
-        card.firstElementChild
+        card.querySelector('.card-header, .panel-header, .panel-title, [data-card-header]') || card.firstElementChild
       );
     }
 
     function getCardBodies(card) {
-      const explicit = Array.prototype.slice.call(
-        card.querySelectorAll('.card-body, .panel-body, [data-card-body]')
-      );
+      const explicit = Array.prototype.slice.call(card.querySelectorAll('.card-body, .panel-body, [data-card-body]'));
       if (explicit.length > 0) return explicit;
 
       const cardId = getCardId(card);
       const namedBody =
         document.getElementById(`${cardId}Body`) ||
-        document.getElementById(
-          `${cardId
-            .replace(/^panel/, '')
-            .toLowerCase()}PanelBody`,
-        ) ||
+        document.getElementById(`${cardId.replace(/^panel/, '').toLowerCase()}PanelBody`) ||
         card.querySelector('[id$="Body"], [id$="PanelBody"]');
       if (namedBody && (namedBody.parentNode === card || namedBody.closest('.reorder-card') === card)) {
         return [namedBody];
@@ -2842,9 +2859,7 @@
         : trackTuitionDefaults[track] || trackTuitionDefaults.thai_public;
 
     var inflationRate =
-      typeof p.tuitionInflationRate === 'number' && p.tuitionInflationRate >= 0
-        ? p.tuitionInflationRate / 100
-        : 0.05; // default 5.0% annual tuition inflation
+      typeof p.tuitionInflationRate === 'number' && p.tuitionInflationRate >= 0 ? p.tuitionInflationRate / 100 : 0.05; // default 5.0% annual tuition inflation
 
     var returnRate =
       typeof p.expectedInvestmentReturn === 'number' && p.expectedInvestmentReturn >= 0
@@ -3669,8 +3684,7 @@
     if (typeof global.detectSwipeGesture === 'undefined') global.detectSwipeGesture = detectSwipeGesture;
     if (typeof global.formatBytes === 'undefined') global.formatBytes = formatBytes;
     if (typeof global.partitionSnapshots === 'undefined') global.partitionSnapshots = partitionSnapshots;
-    if (typeof global.createIndexedDBAdapter === 'undefined')
-      global.createIndexedDBAdapter = createIndexedDBAdapter;
+    if (typeof global.createIndexedDBAdapter === 'undefined') global.createIndexedDBAdapter = createIndexedDBAdapter;
     if (typeof global.idbStorage === 'undefined') global.idbStorage = idbStorage;
     if (typeof global.encryptVaultData === 'undefined') global.encryptVaultData = encryptVaultData;
     if (typeof global.decryptVaultData === 'undefined') global.decryptVaultData = decryptVaultData;
@@ -3710,7 +3724,6 @@
     if (typeof global.generateSalt === 'undefined') global.generateSalt = generateSalt;
     if (typeof global.hashPin === 'undefined') global.hashPin = hashPin;
     if (typeof global.verifyPin === 'undefined') global.verifyPin = verifyPin;
-    if (typeof global.formatAppLockTimeout === 'undefined')
-      global.formatAppLockTimeout = formatAppLockTimeout;
+    if (typeof global.formatAppLockTimeout === 'undefined') global.formatAppLockTimeout = formatAppLockTimeout;
   }
 })(typeof window !== 'undefined' ? window : this);
