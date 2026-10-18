@@ -2799,6 +2799,53 @@
   }
 
   /**
+   * Phase 81: Estimates affordable Term Life Insurance premium to bridge protection shortfall
+   *
+   * @param {number} coverageGap - Protection shortfall amount in THB
+   * @param {Object} [options]
+   * @param {number} [options.ratePerMillion=3000] - Benchmark pure term annual premium per 1M THB (default: 3,000 THB)
+   * @param {number} [options.marginalTaxRate=0] - Marginal tax bracket (%) for Section 47 tax deduction savings
+   * @returns {Object} Structured premium estimate
+   */
+  function calculateTermLifePremiumEstimate(coverageGap, options) {
+    var gap = Math.max(0, parseNum(coverageGap));
+    options = options || {};
+    var ratePerMillion = Math.max(1000, parseNum(options.ratePerMillion) || 3000);
+    var marginalTaxRate = Math.max(0, Math.min(35, parseNum(options.marginalTaxRate) || 0));
+
+    if (gap <= 0) {
+      return {
+        hasShortfall: false,
+        coverageGap: 0,
+        annualPremium: 0,
+        monthlyPremium: 0,
+        potentialTaxSavings: 0,
+        netAnnualCost: 0,
+        netMonthlyCost: 0,
+        ratePerMillion: ratePerMillion,
+      };
+    }
+
+    var annualPremium = Math.round((gap / 1000000) * ratePerMillion);
+    var monthlyPremium = Math.max(100, Math.round(annualPremium / 12));
+    var potentialTaxSavings = Math.round(Math.min(annualPremium, 100000) * (marginalTaxRate / 100));
+    var netAnnualCost = Math.max(0, annualPremium - potentialTaxSavings);
+    var netMonthlyCost = Math.max(0, Math.round(netAnnualCost / 12));
+
+    return {
+      hasShortfall: true,
+      coverageGap: gap,
+      annualPremium: annualPremium,
+      monthlyPremium: monthlyPremium,
+      potentialTaxSavings: potentialTaxSavings,
+      netAnnualCost: netAnnualCost,
+      netMonthlyCost: netMonthlyCost,
+      marginalTaxRate: marginalTaxRate,
+      ratePerMillion: ratePerMillion,
+    };
+  }
+
+  /**
    * Phase 74: Statutory 500k Retirement Deductions Pool Warning Engine (Section 47 Thai Revenue Code).
    * Combines PVD (Provident Fund), RMF, SSF, GPF, NSF, and Annuity Life Insurance under the statutory 500,000 THB ceiling.
    */
@@ -4388,6 +4435,7 @@
     calculateTaxBracketStepDown: calculateTaxBracketStepDown,
     formatExecutiveDossierSummaryText: formatExecutiveDossierSummaryText,
     validateShareTargetPayload: validateShareTargetPayload,
+    calculateTermLifePremiumEstimate: calculateTermLifePremiumEstimate,
     THAI_PIT_TIERS: THAI_PIT_TIERS,
   };
 
@@ -4439,6 +4487,8 @@
       global.formatExecutiveDossierSummaryText = formatExecutiveDossierSummaryText;
     if (typeof global.validateShareTargetPayload === 'undefined')
       global.validateShareTargetPayload = validateShareTargetPayload;
+    if (typeof global.calculateTermLifePremiumEstimate === 'undefined')
+      global.calculateTermLifePremiumEstimate = calculateTermLifePremiumEstimate;
     if (typeof global.calculateThaiEFilingWorksheet === 'undefined')
       global.calculateThaiEFilingWorksheet = calculateThaiEFilingWorksheet;
     if (typeof global.calculateIncomeShockStressTest === 'undefined')

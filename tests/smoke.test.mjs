@@ -868,6 +868,54 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       );
       assert.ok(sharedJs.includes('validateShareTargetPayload'), 'shared.js must export validateShareTargetPayload');
     });
+
+    it('verifies dashboard, remaining-money, and shared.js declare Phase 81 Insurance Gap Budget Bridge', () => {
+      const dashHtml = fs.readFileSync(path.join(ROOT_DIR, 'dashboard.html'), 'utf8');
+      assert.ok(dashHtml.includes('id="box-ins-premium-bridge"'), 'dashboard.html must define #box-ins-premium-bridge');
+      assert.ok(dashHtml.includes('id="val-ins-bridge-gap"'), 'dashboard.html must define #val-ins-bridge-gap');
+      assert.ok(dashHtml.includes('id="val-ins-bridge-monthly"'), 'dashboard.html must define #val-ins-bridge-monthly');
+      assert.ok(dashHtml.includes('id="val-ins-bridge-annual"'), 'dashboard.html must define #val-ins-bridge-annual');
+      assert.ok(
+        dashHtml.includes('id="btnBridgeInsuranceToBudget"'),
+        'dashboard.html must define #btnBridgeInsuranceToBudget',
+      );
+
+      const dashJs = fs.readFileSync(path.join(ROOT_DIR, 'js/dashboard.js'), 'utf8');
+      assert.ok(
+        dashJs.includes('bridgeInsurancePremiumToBudget'),
+        'dashboard.js must define bridgeInsurancePremiumToBudget',
+      );
+      assert.ok(
+        dashJs.includes('moneySuperapp.pendingInsurancePremium'),
+        'dashboard.js must persist pendingInsurancePremium',
+      );
+
+      const remHtml = fs.readFileSync(path.join(ROOT_DIR, 'remaining-money.html'), 'utf8');
+      assert.ok(
+        remHtml.includes('id="insurancePremiumBridgeAlert"'),
+        'remaining-money.html must define #insurancePremiumBridgeAlert',
+      );
+      assert.ok(
+        remHtml.includes('id="insurancePremiumBridgeAlertText"'),
+        'remaining-money.html must define #insurancePremiumBridgeAlertText',
+      );
+
+      const remJs = fs.readFileSync(path.join(ROOT_DIR, 'js/remaining-money.js'), 'utf8');
+      assert.ok(
+        remJs.includes('checkPendingInsurancePremium'),
+        'remaining-money.js must define checkPendingInsurancePremium',
+      );
+      assert.ok(
+        remJs.includes('moneySuperapp.pendingInsurancePremium'),
+        'remaining-money.js must listen for pendingInsurancePremium',
+      );
+
+      const sharedJs = fs.readFileSync(path.join(ROOT_DIR, 'js/shared.js'), 'utf8');
+      assert.ok(
+        sharedJs.includes('calculateTermLifePremiumEstimate: calculateTermLifePremiumEstimate'),
+        'shared.js must export calculateTermLifePremiumEstimate',
+      );
+    });
   });
 
   describe('Bilingual Localization Structural Symmetry', () => {

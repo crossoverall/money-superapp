@@ -1086,6 +1086,68 @@ function checkPendingBankStatement() {
 
 window.checkPendingBankStatement = checkPendingBankStatement;
 
+function checkPendingInsurancePremium() {
+  try {
+    const raw = localStorage.getItem('moneySuperapp.pendingInsurancePremium');
+    if (!raw) return;
+    const payload = JSON.parse(raw);
+    localStorage.removeItem('moneySuperapp.pendingInsurancePremium');
+    if (!payload || !payload.amount || payload.amount <= 0) return;
+
+    undoMgr.push(captureSnapshot());
+    const nameTh = 'เบี้ยประกันชีวิตคุ้มครองความเสี่ยง (Term Life)';
+    const nameEn = 'Term Life Insurance Premium';
+    const itemName = LANG === 'en' ? nameEn : nameTh;
+
+    const existing = (state.expenses || []).find(
+      (item) =>
+        item.name === nameTh ||
+        item.name === nameEn ||
+        item.name.includes('เบี้ยประกันชีวิต') ||
+        item.name.includes('Term Life'),
+    );
+    if (existing) {
+      existing.value = payload.amount;
+      existing.name = itemName;
+    } else {
+      if (!state.expenses) state.expenses = [];
+      state.expenses.push({
+        id: 'ins_premium_' + Date.now(),
+        name: itemName,
+        value: payload.amount,
+      });
+    }
+
+    renderRows();
+    renderPvdRow();
+    compute();
+    saveState();
+    updateUndoUI();
+
+    const banner = document.getElementById('insurancePremiumBridgeAlert');
+    const bannerText = document.getElementById('insurancePremiumBridgeAlertText');
+    const formattedAmount = `${fmt(payload.amount)} ${LANG === 'en' ? 'THB/month' : 'บาท/เดือน'}`;
+    const formattedGap = `${fmt(payload.coverageGap || 0)} ${LANG === 'en' ? 'THB' : 'บาท'}`;
+    const msg =
+      LANG === 'en'
+        ? `✓ Added +${formattedAmount} term life premium to close ${formattedGap} coverage gap!`
+        : `✓ นำเข้าประมาณการเบี้ยประกันชีวิต +${formattedAmount} เพื่อปิดช่องว่างความคุ้มครอง ${formattedGap} แล้ว!`;
+
+    if (bannerText) {
+      bannerText.textContent = msg;
+    }
+    if (banner) {
+      banner.style.display = 'flex';
+      setTimeout(() => {
+        banner.style.display = 'none';
+      }, 5500);
+    }
+    showBridgeNotification(msg);
+  } catch (_e) {}
+}
+
+window.checkPendingInsurancePremium = checkPendingInsurancePremium;
+
 if (resetBtn) {
   resetBtn.addEventListener('click', () => {
     if (confirm(LANG === 'en' ? EN.resetConfirm : 'ล้างข้อมูลที่บันทึกไว้ในเบราว์เซอร์นี้ และกลับไปใช้ค่าตั้งต้น?')) {
@@ -4205,6 +4267,7 @@ checkPendingSlipImport();
 checkPendingTaxAccrual();
 checkPendingRefinanceSavings();
 checkPendingBankStatement();
+checkPendingInsurancePremium();
 updateAutoExpenses(pvdPercent);
 renderRows();
 renderPvdRow();
@@ -4273,6 +4336,9 @@ window.addEventListener('storage', (e) => {
   if (e.key === 'moneySuperapp.pendingBankStatement') {
     checkPendingBankStatement();
   }
+  if (e.key === 'moneySuperapp.pendingInsurancePremium') {
+    checkPendingInsurancePremium();
+  }
 });
 window.addEventListener('message', (e) => {
   if (e.data && e.data.action === 'importPendingData') {
@@ -4281,5 +4347,6 @@ window.addEventListener('message', (e) => {
     checkPendingTaxAccrual();
     checkPendingRefinanceSavings();
     checkPendingBankStatement();
+    checkPendingInsurancePremium();
   }
 });

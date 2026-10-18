@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.5.23">
+  <meta name="version" content="2.5.24">
   <script>
     try {
       var t = localStorage.getItem('moneySuperapp.theme');
@@ -720,6 +720,36 @@
       <span id="txt-ins-hlv-content">เกณฑ์มาตรฐาน 7 เท่าของรายได้ต่อปี แนะนำทุนประกันประมาณ 0 บาท</span>
     </div>
 
+    <!-- Phase 81: Term Life Insurance Coverage Gap to Budget Bridge Callout -->
+    <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:10px; display:none;" id="box-ins-premium-bridge">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+        <div style="font-size:12px; font-weight:800; color:var(--core);" id="lbl-ins-bridge-title">🛡️ แผนปิดช่องว่างความคุ้มครองด้วยประกันชีวิตแบบชั่วระยะเวลา (Term Life)</div>
+        <span id="badge-ins-bridge-tag" style="font-size:9.5px; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--warn-dim); color:var(--warn); border:1px solid var(--warn);">Pure Protection</span>
+      </div>
+      <div style="font-size:11px; color:var(--ink-dim); margin-bottom:10px; line-height:1.45;" id="lbl-ins-bridge-desc">
+        ประมาณการเบี้ยประกันชีวิตแบบชั่วระยะเวลา (Term Life) คุ้มครองความเสี่ยง 10-20 ปี เน้นทุนประกันสูงเพื่อปิดภาระหนี้และคุ้มครองครอบครัวด้วยเบี้ยที่ประหยัดที่สุด:
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; margin-bottom:10px; font-size:11px;">
+        <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
+          <div style="color:var(--ink-faint); font-size:9.5px;" id="lbl-ins-tile-gap">ช่องว่างที่ต้องปิด</div>
+          <div style="font-size:13px; font-weight:800; color:var(--warn);" id="val-ins-bridge-gap">0 บาท</div>
+        </div>
+        <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
+          <div style="color:var(--ink-faint); font-size:9.5px;" id="lbl-ins-tile-monthly">ประมาณการเบี้ย/เดือน</div>
+          <div style="font-size:13px; font-weight:800; color:var(--core);" id="val-ins-bridge-monthly">0 บาท</div>
+        </div>
+        <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
+          <div style="color:var(--ink-faint); font-size:9.5px;" id="lbl-ins-tile-annual">เบี้ยต่อปี (ประหยัดภาษี)</div>
+          <div style="font-size:13px; font-weight:800; color:var(--ok);" id="val-ins-bridge-annual">0 บาท</div>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
+        <button type="button" class="action-btn" id="btnBridgeInsuranceToBudget" onclick="bridgeInsurancePremiumToBudget()" style="background:var(--core); border-color:var(--core); color:#fff; font-weight:700; font-size:11px; padding:6px 14px; border-radius:8px;">
+          <span id="lbl-btn-bridge-ins">🛡️ บันทึกเบี้ยประกันลงงบรายจ่าย (Remaining Money) ➔</span>
+        </button>
+      </div>
+    </div>
+
     <!-- Statutory PIT Life Insurance Deduction Benefit Callout -->
     <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;" id="box-ins-tax-benefit">
       <div style="flex:1; min-width:210px; font-size:11px; color:var(--ink-dim); line-height:1.45;">
@@ -1307,7 +1337,7 @@
     </div>
   </div>
 
-  <p class="version-tag">Money Superapp v2.5.23</p>
+  <p class="version-tag">Money Superapp v2.5.24</p>
 
 <script src="js/shared.js"></script>
 <script src="js/dashboard.js"></script>

@@ -15,6 +15,20 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Life Insurance Adequacy Coverage Gap to Budget Bridge (v2.5.24)
+- **Date & Context:** 2026-10-18, implementing Phase 81 Life Insurance Adequacy Coverage Gap to Budget Bridge (`v2.5.24`).
+- **Problem:**
+  1. In `dashboard.html`, when the Life Insurance Adequacy panel diagnosed a large protection shortfall (e.g. 1,000,000–3,000,000 THB to cover outstanding debt, family support, and child education), users often felt overwhelmed. In Thailand, life insurance is culturally conflated with expensive endowment/savings policies (saving 30,000–50,000 THB/year), discouraging users from closing their coverage gap.
+  2. Users lacked an actionable step to translate a multi-million baht protection shortfall into an affordable pure Term Life policy (~3,000 THB/year or ~250 THB/month per 1M THB coverage) and incorporate it into their living budget in `remaining-money.html`.
+- **Root Cause:**
+  1. Insurance calculations in `dashboard.js` only displayed the capital shortfall without translating the shortfall into an estimated market premium.
+  2. `remaining-money.html` had no inbound listener or storage key for life insurance premium bridges.
+- **Solution & Rule:**
+  1. **Pure Term Life Engine:** Implement `MoneyApp.calculateTermLifePremiumEstimate(coverageGap, options)` in `js/shared.js`, modeling benchmark pure term life premiums (~3,000 THB/year per 1,000,000 THB face value, min 100 THB/month floor). Support Section 47 tax deduction savings capped at the 100,000 THB statutory ceiling based on the user's marginal PIT bracket.
+  2. **Dashboard Bridge UI:** In `dashboard.html`, add `#box-ins-premium-bridge` that automatically appears when `calc.protectionGap > 0`. Display estimated monthly premium, annual premium, tax savings, and an action button `#btnBridgeInsuranceToBudget` that persists `moneySuperapp.pendingInsurancePremium` and routes to `remaining-money.html`.
+  3. **Inbound Expense Bridge in Remaining Money:** In `remaining-money.html` & `js/remaining-money.js`, implement `checkPendingInsurancePremium()` to upsert the monthly term life premium into `state.expenses`, recompute cash flow, push undo snapshots, and display `#insurancePremiumBridgeAlert` with a 5.5s auto-dismiss.
+  4. **Full SDLC & Verification:** Validate via 396 passing tests, 0 Biome errors, and headless Chrome CDP captures across Light, Dark, and Mobile viewports.
+
 ### 2026-10-18: Card Reorder & Fold Layout Parity across Tax and Slips Tools (v2.5.21)
 - **Date & Context:** 2026-10-18, implementing Phase 78 Card Reorder & Fold Layout Parity across Tax and Slips Tools (`v2.5.21`).
 - **Problem:**

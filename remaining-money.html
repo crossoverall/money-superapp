@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.5.23">
+  <meta name="version" content="2.5.24">
   <script>
     try {
       var t = localStorage.getItem('moneySuperapp.theme');
@@ -688,6 +688,13 @@
         </div>
         <button type="button" onclick="document.getElementById('refinanceSavingsAlert').style.display='none'" style="background:none; border:none; color:var(--ink-dim); cursor:pointer; font-size:14px; padding:0 4px;" aria-label="Close">×</button>
       </div>
+      <div id="insurancePremiumBridgeAlert" role="alert" aria-live="polite" style="display:none; background:var(--ok-dim, rgba(47,139,118,0.1)); border:1px solid var(--ok, #2F8B76); color:var(--ink); padding:8px 12px; border-radius:8px; font-size:12px; font-weight:600; margin-bottom:10px; align-items:center; justify-content:space-between; gap:8px;">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span>🛡️</span>
+          <span id="insurancePremiumBridgeAlertText">นำเข้าประมาณการเบี้ยประกันชีวิตเรียบร้อยแล้ว</span>
+        </div>
+        <button type="button" onclick="document.getElementById('insurancePremiumBridgeAlert').style.display='none'" style="background:none; border:none; color:var(--ink-dim); cursor:pointer; font-size:14px; padding:0 4px;" aria-label="Close">×</button>
+      </div>
       <div id="expenseContainer"></div>
       <button class="add-btn" id="expenseAddBtn">+ เพิ่มค่าใช้จ่าย</button>
     </div>
@@ -883,7 +890,7 @@
       <button class="reset-btn" id="resetBtn" style="color:var(--ink-faint);">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v2.5.23</p>
+  <p class="version-tag">v2.5.24</p>
 
   <!-- Import Preview Modal -->
   <div id="importModal" role="dialog" aria-modal="true" aria-labelledby="importModalTitle" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; display:none; align-items:center; justify-content:center; backdrop-filter:blur(2px);" onclick="if(event.target===this)closeImportModal()">

@@ -1558,4 +1558,69 @@ describe('MoneyApp Shared Core Module', () => {
       assert.equal(MoneyApp.validateShareTargetPayload({ content: '   ' }).isValid, false);
     });
   });
+
+  describe('MoneyApp.calculateTermLifePremiumEstimate (Phase 81 Insurance Gap Bridge)', () => {
+    const { MoneyApp } = createEnvironment('th');
+
+    it('accurately estimates annual and monthly term life premiums for a 1M gap', () => {
+      const res = MoneyApp.calculateTermLifePremiumEstimate(1000000);
+      assert.equal(res.hasShortfall, true);
+      assert.equal(res.coverageGap, 1000000);
+      assert.equal(res.annualPremium, 3000);
+      assert.equal(res.monthlyPremium, 250);
+      assert.equal(res.potentialTaxSavings, 0);
+      assert.equal(res.netAnnualCost, 3000);
+      assert.equal(res.netMonthlyCost, 250);
+    });
+
+    it('accounts for marginal tax deduction savings under Section 47', () => {
+      const res = MoneyApp.calculateTermLifePremiumEstimate(2500000, { marginalTaxRate: 15 });
+      assert.equal(res.hasShortfall, true);
+      assert.equal(res.coverageGap, 2500000);
+      assert.equal(res.annualPremium, 7500); // 2.5 * 3,000
+      assert.equal(res.monthlyPremium, 625); // 7,500 / 12
+      assert.equal(res.potentialTaxSavings, 1125); // 7,500 * 15%
+      assert.equal(res.netAnnualCost, 6375); // 7,500 - 1,125
+      assert.equal(res.netMonthlyCost, 531); // 6,375 / 12 round
+      assert.equal(res.marginalTaxRate, 15);
+    });
+
+    it('caps Section 47 tax deduction savings at the statutory 100,000 THB ceiling', () => {
+      // 40M coverage gap -> 40 * 3,000 = 120,000 THB annual premium
+      const res = MoneyApp.calculateTermLifePremiumEstimate(40000000, { marginalTaxRate: 20 });
+      assert.equal(res.annualPremium, 120000);
+      assert.equal(res.monthlyPremium, 10000);
+      // Tax deduction capped at 100,000 -> 100,000 * 20% = 20,000 THB
+      assert.equal(res.potentialTaxSavings, 20000);
+      assert.equal(res.netAnnualCost, 100000);
+      assert.equal(res.netMonthlyCost, 8333);
+    });
+
+    it('respects custom benchmark rate per million', () => {
+      const res = MoneyApp.calculateTermLifePremiumEstimate(3000000, { ratePerMillion: 2000 });
+      assert.equal(res.annualPremium, 6000);
+      assert.equal(res.monthlyPremium, 500);
+    });
+
+    it('applies a minimum 100 THB monthly floor for small coverage gaps', () => {
+      const res = MoneyApp.calculateTermLifePremiumEstimate(100000);
+      assert.equal(res.annualPremium, 300);
+      assert.equal(res.monthlyPremium, 100); // floored at 100
+    });
+
+    it('returns zero values when coverage gap is zero, negative, or invalid', () => {
+      const resZero = MoneyApp.calculateTermLifePremiumEstimate(0);
+      assert.equal(resZero.hasShortfall, false);
+      assert.equal(resZero.annualPremium, 0);
+      assert.equal(resZero.monthlyPremium, 0);
+
+      const resNeg = MoneyApp.calculateTermLifePremiumEstimate(-500000);
+      assert.equal(resNeg.hasShortfall, false);
+      assert.equal(resNeg.coverageGap, 0);
+
+      const resNull = MoneyApp.calculateTermLifePremiumEstimate(null);
+      assert.equal(resNull.hasShortfall, false);
+      assert.equal(resNull.coverageGap, 0);
+    });
+  });
 });

@@ -133,6 +133,13 @@ const translations = {
     insHlvTitle: 'มุมมองมูลค่าชีวิตมนุษย์ (Human Life Value - HLV):',
     insTaxTitle: '🧾 สิทธิประโยชน์ลดหย่อนภาษี (PIT Deduction)',
     insGotoTaxBtn: 'วางแผนภาษี ➔',
+    insBridgeTitle: '🛡️ แผนปิดช่องว่างความคุ้มครองด้วยประกันชีวิตแบบชั่วระยะเวลา (Term Life)',
+    insBridgeDesc:
+      'ประมาณการเบี้ยประกันชีวิตแบบชั่วระยะเวลา (Term Life) คุ้มครองความเสี่ยง 10-20 ปี เน้นทุนประกันสูงเพื่อปิดภาระหนี้และคุ้มครองครอบครัวด้วยเบี้ยที่ประหยัดที่สุด:',
+    insTileGap: 'ช่องว่างที่ต้องปิด',
+    insTileMonthly: 'ประมาณการเบี้ย/เดือน',
+    insTileAnnual: 'เบี้ยต่อปี (ประหยัดภาษี)',
+    insBtnBridge: '🛡️ บันทึกเบี้ยประกันลงงบรายจ่าย (Remaining Money) ➔',
     threeBucketTitle: '📦 กลยุทธ์ 3 ถังเกษียณสุข & บำนาญประกันสังคม (Retirement 3-Bucket Strategy)',
     threeBucketAssumptions: '📋 สมมติฐานกระแสเงินสดวัยเกษียณ (Cash Flow Assumptions)',
     threeBucketSyncBtn: 'ดึงข้อมูลอัตโนมัติ',
@@ -321,6 +328,13 @@ const translations = {
     insHlvTitle: 'Human Life Value (HLV) Perspective:',
     insTaxTitle: '🧾 Tax Deduction Opportunity (PIT)',
     insGotoTaxBtn: 'Tax Planning ➔',
+    insBridgeTitle: '🛡️ Term Life Insurance Protection Gap Elimination Plan',
+    insBridgeDesc:
+      'Estimated pure term life insurance premium (10-20 yrs) to eliminate debt liabilities and protect dependents at the most cost-effective rate:',
+    insTileGap: 'Protection Gap',
+    insTileMonthly: 'Est. Monthly Premium',
+    insTileAnnual: 'Annual Premium (Tax Savings)',
+    insBtnBridge: '🛡️ Bridge Term Life Premium to Budget (Remaining Money) ➔',
     threeBucketTitle: '📦 Retirement 3-Bucket Strategy & SSO Drawdown',
     threeBucketAssumptions: '📋 Retirement Cash Flow Assumptions',
     threeBucketSyncBtn: 'Auto-Sync Data',
@@ -493,6 +507,12 @@ function applyLocalization() {
     'lbl-ins-hlv-title': t.insHlvTitle,
     'lbl-ins-tax-title': t.insTaxTitle,
     'btn-ins-goto-tax': t.insGotoTaxBtn,
+    'lbl-ins-bridge-title': t.insBridgeTitle,
+    'lbl-ins-bridge-desc': t.insBridgeDesc,
+    'lbl-ins-tile-gap': t.insTileGap,
+    'lbl-ins-tile-monthly': t.insTileMonthly,
+    'lbl-ins-tile-annual': t.insTileAnnual,
+    'lbl-btn-bridge-ins': t.insBtnBridge,
     'lbl-three-bucket-title': t.threeBucketTitle,
     'lbl-bucket-assumptions-title': t.threeBucketAssumptions,
     lblSyncThreeBuckets: t.threeBucketSyncBtn,
@@ -1715,7 +1735,94 @@ function updateInsuranceAdequacy() {
           : 'เบี้ยประกันชีวิตทั่วไปสามารถนำมาหักลดหย่อนภาษีเงินได้บุคคลธรรมดาได้สูงสุด 100,000 บาท/ปี ตามมาตรา 47(1)(ง)';
     }
   }
+
+  // Phase 81: Term Life Insurance Coverage Gap to Budget Bridge
+  const bridgeBox = document.getElementById('box-ins-premium-bridge');
+  if (bridgeBox) {
+    if (calc.protectionGap > 0) {
+      bridgeBox.style.display = 'block';
+      const termCalc =
+        typeof MoneyApp !== 'undefined' && MoneyApp.calculateTermLifePremiumEstimate
+          ? MoneyApp.calculateTermLifePremiumEstimate(calc.protectionGap, { marginalTaxRate: p.topMarginalRate })
+          : {
+              coverageGap: calc.protectionGap,
+              monthlyPremium: Math.max(100, Math.round((calc.protectionGap * 0.003) / 12)),
+              annualPremium: Math.round(calc.protectionGap * 0.003),
+              potentialTaxSavings: 0,
+            };
+
+      const valGapEl = document.getElementById('val-ins-bridge-gap');
+      const valMonthlyEl = document.getElementById('val-ins-bridge-monthly');
+      const valAnnualEl = document.getElementById('val-ins-bridge-annual');
+
+      const isEn = LANG === 'en';
+      if (valGapEl) valGapEl.textContent = `${formatMoney(termCalc.coverageGap)} ${unit}`;
+      if (valMonthlyEl)
+        valMonthlyEl.textContent = `~${formatMoney(termCalc.monthlyPremium)} ${isEn ? 'THB/mo' : 'บาท/เดือน'}`;
+      if (valAnnualEl) {
+        valAnnualEl.textContent = `~${formatMoney(termCalc.annualPremium)} ${isEn ? 'THB/yr' : 'บาท/ปี'}${
+          termCalc.potentialTaxSavings > 0
+            ? isEn
+              ? ` (Tax Saved: ~${formatMoney(termCalc.potentialTaxSavings)})`
+              : ` (ประหยัดภาษี: ~${formatMoney(termCalc.potentialTaxSavings)} บ.)`
+            : ''
+        }`;
+      }
+    } else {
+      bridgeBox.style.display = 'none';
+    }
+  }
 }
+
+function bridgeInsurancePremiumToBudget() {
+  const p = gatherFinancialProfile();
+  const calc = MoneyApp.calculateInsuranceAdequacy({
+    debtClearance: p.debts,
+    monthlyExpenses: p.monthlyExpenses,
+    supportYears: insuranceAdequacyState.supportYears || 5,
+    childEducation: insuranceAdequacyState.childEducation || 0,
+    emergencyCushion:
+      insuranceAdequacyState.emergencyCushion !== undefined
+        ? insuranceAdequacyState.emergencyCushion
+        : p.monthlyExpenses * 6,
+    liquidAssets: p.liquidAssets,
+    existingCoverage: insuranceAdequacyState.existingCoverage || 0,
+    annualIncome: p.annualIncome || p.monthlyIncome * 12,
+    marginalTaxRate: p.topMarginalRate,
+  });
+
+  const termCalc =
+    typeof MoneyApp !== 'undefined' && MoneyApp.calculateTermLifePremiumEstimate
+      ? MoneyApp.calculateTermLifePremiumEstimate(calc.protectionGap, { marginalTaxRate: p.topMarginalRate })
+      : {
+          coverageGap: calc.protectionGap,
+          monthlyPremium: Math.max(100, Math.round((calc.protectionGap * 0.003) / 12)),
+          annualPremium: Math.round(calc.protectionGap * 0.003),
+          potentialTaxSavings: 0,
+        };
+
+  if (termCalc.monthlyPremium <= 0) return;
+
+  try {
+    localStorage.setItem(
+      'moneySuperapp.pendingInsurancePremium',
+      JSON.stringify({
+        amount: termCalc.monthlyPremium,
+        annualPremium: termCalc.annualPremium,
+        coverageGap: termCalc.coverageGap,
+        taxSavings: termCalc.potentialTaxSavings,
+        timestamp: Date.now(),
+      }),
+    );
+  } catch (_e) {}
+
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({ action: 'switchToTab', target: 'remaining-money' }, '*');
+  } else {
+    window.location.href = 'remaining-money.html';
+  }
+}
+window.bridgeInsurancePremiumToBudget = bridgeInsurancePremiumToBudget;
 
 // --- Retirement 3-Bucket Cash Flow & SSO Drawdown Simulator (Roadmap Phase 59) ---
 const THREE_BUCKET_STORAGE_KEY = 'moneySuperapp.retirementThreeBuckets.state.v1';
