@@ -422,6 +422,8 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
     it('verifies rebalance.html contains Thai Gold Bar & Jewelry DCA calculator panel and controls', () => {
       const rebalHtml = fs.readFileSync(path.join(ROOT_DIR, 'rebalance.html'), 'utf8');
       assert.ok(rebalHtml.includes('id="panelThaiGold"'), 'rebalance.html must contain #panelThaiGold');
+      assert.ok(rebalHtml.includes('id="btnToggleThaiGold"'), 'rebalance.html must contain #btnToggleThaiGold');
+      assert.ok(rebalHtml.includes('id="goldPanelBody"'), 'rebalance.html must contain #goldPanelBody');
       assert.ok(rebalHtml.includes('id="selGoldType"'), 'rebalance.html must contain #selGoldType');
       assert.ok(rebalHtml.includes('id="selGoldUnit"'), 'rebalance.html must contain #selGoldUnit');
       assert.ok(rebalHtml.includes('id="inpGoldWeight"'), 'rebalance.html must contain #inpGoldWeight');
@@ -431,8 +433,21 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(rebalHtml.includes('id="goldLotsContainer"'), 'rebalance.html must contain #goldLotsContainer');
       assert.ok(rebalHtml.includes('id="boxGoldTaxExemption"'), 'rebalance.html must contain #boxGoldTaxExemption');
 
+      // Verify layout order: bucketsContainer -> targetDateGlidepath -> thaiGold -> foreignTaxAdvisor -> howto
+      const idxBuckets = rebalHtml.indexOf('id="bucketsContainer"');
+      const idxGlidepath = rebalHtml.indexOf('id="panelTargetDateGlidepath"');
+      const idxGold = rebalHtml.indexOf('id="panelThaiGold"');
+      const idxForeign = rebalHtml.indexOf('id="panelForeignTaxAdvisor"');
+      const idxHowto = rebalHtml.indexOf('id="howto"');
+      assert.ok(idxBuckets !== -1 && idxGlidepath !== -1 && idxGold !== -1 && idxForeign !== -1 && idxHowto !== -1);
+      assert.ok(idxBuckets < idxGlidepath, '#bucketsContainer must precede auxiliary panels');
+      assert.ok(idxGlidepath < idxGold, '#panelTargetDateGlidepath must precede #panelThaiGold');
+      assert.ok(idxGold < idxForeign, '#panelThaiGold must precede #panelForeignTaxAdvisor');
+      assert.ok(idxForeign < idxHowto, '#panelForeignTaxAdvisor must precede #howto');
+
       const rebalJs = fs.readFileSync(path.join(ROOT_DIR, 'js/rebalance.js'), 'utf8');
       assert.ok(rebalJs.includes('initGoldCalculator'), 'js/rebalance.js must define initGoldCalculator');
+      assert.ok(rebalJs.includes('toggleThaiGoldCalculator'), 'js/rebalance.js must define toggleThaiGoldCalculator');
       assert.ok(rebalJs.includes('updateGoldCalculator'), 'js/rebalance.js must define updateGoldCalculator');
       assert.ok(rebalJs.includes('exportGoldToPortfolio'), 'js/rebalance.js must define exportGoldToPortfolio');
       assert.ok(rebalJs.includes('lblGoldTitle'), 'js/rebalance.js EN must contain lblGoldTitle');

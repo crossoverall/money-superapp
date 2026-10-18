@@ -35,6 +35,7 @@ const EN = {
   lblUndo: 'Undo',
   lblDivTitle: '🌐 Asset Class Correlation & Risk Diversification',
   lblGoldTitle: 'Physical Thai Gold DCA & Weight Converter (96.5%)',
+  lblGoldSubtitle: 'Average cost, block fee break-even, Gold Traders Association buyback price, and portfolio export',
   badgeGoldStatus: '96.5% Thai Gold',
   lblGoldType: 'Gold Product Type:',
   lblGoldWeight: 'Weight:',
@@ -129,6 +130,7 @@ if (LANG === 'en') {
     'btnSaveModal',
     'lblDivTitle',
     'lblGoldTitle',
+    'lblGoldSubtitle',
     'badgeGoldStatus',
     'lblGoldType',
     'lblGoldWeight',
@@ -2601,6 +2603,7 @@ window.addEventListener('focus', () => {
 const GOLD_STORAGE_KEY = 'moneySuperapp.thaiGold.state.v1';
 
 let goldState = {
+  isOpen: false,
   goldType: 'bar',
   weightUnit: 'baht',
   weight: 1,
@@ -2623,6 +2626,22 @@ function saveGoldState() {
   try {
     localStorage.setItem(GOLD_STORAGE_KEY, JSON.stringify(goldState));
   } catch (_e) {}
+}
+
+function toggleThaiGoldCalculator() {
+  const panel = document.getElementById('goldPanelBody');
+  const arrow = document.getElementById('goldToggleArrow');
+  const btn = document.getElementById('btnToggleThaiGold');
+  if (!panel) return;
+  const isHidden = panel.style.display === 'none' || !panel.style.display;
+  panel.style.display = isHidden ? 'block' : 'none';
+  if (arrow) arrow.textContent = isHidden ? '▲' : '▼';
+  if (btn) btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+  goldState.isOpen = isHidden;
+  saveGoldState();
+  if (isHidden) {
+    updateGoldCalculator();
+  }
 }
 
 function updateGoldCalculator(save = true) {
@@ -2929,6 +2948,15 @@ function exportGoldToPortfolio() {
 
 function initGoldCalculator() {
   loadGoldState();
+  const panel = document.getElementById('goldPanelBody');
+  const arrow = document.getElementById('goldToggleArrow');
+  const btn = document.getElementById('btnToggleThaiGold');
+  if (goldState.isOpen && panel) {
+    panel.style.display = 'block';
+    if (arrow) arrow.textContent = '▲';
+    if (btn) btn.setAttribute('aria-expanded', 'true');
+  }
+
   const typeEl = document.getElementById('selGoldType');
   const unitEl = document.getElementById('selGoldUnit');
   const weightEl = document.getElementById('inpGoldWeight');
@@ -3409,6 +3437,7 @@ function initTargetDateGlidepath() {
 
 // Global window exposure for inline handlers
 if (typeof window !== 'undefined') {
+  window.toggleThaiGoldCalculator = toggleThaiGoldCalculator;
   window.setGoldWeightPreset = setGoldWeightPreset;
   window.updateGoldCalculator = updateGoldCalculator;
   window.syncGoldMarketPrice = syncGoldMarketPrice;
