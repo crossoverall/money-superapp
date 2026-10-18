@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="2.5.4">
+<meta name="version" content="2.5.5">
 <meta name="theme-color" content="#2F8B76">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -279,6 +279,49 @@
       overflow: hidden;
       max-width: 100%;
     }
+    .pin-key-btn {
+      width: 66px;
+      height: 66px;
+      border-radius: 50%;
+      background: #131E19;
+      border: 1px solid #24352C;
+      color: #EAF2EE;
+      font-size: 22px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.1s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pin-key-btn:active {
+      background: #2F8B76;
+      color: #ffffff;
+      transform: scale(0.92);
+    }
+    .pin-key-btn.pin-key-fn {
+      font-size: 15px;
+      color: #8FA69C;
+    }
+    .app-lock-slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: #8FA69C;
+      transition: .3s;
+      border-radius: 50%;
+    }
+    input:checked + .app-lock-slider {
+      background-color: #2F8B76;
+    }
+    input:checked + .app-lock-slider:before {
+      transform: translateX(18px);
+      background-color: #ffffff;
+    }
   }
 </style>
 </head>
@@ -311,7 +354,7 @@
       <span>🔍</span>
       <span style="font-size:10px; opacity:0.75; background:#1e293b; padding:1px 4px; border-radius:4px; border:1px solid #475569;">Ctrl+K</span>
     </button>
-    <span class="version-badge">v2.5.4</span>
+    <span class="version-badge">v2.5.5</span>
     <button id="btn-help-modal" onclick="openOnboardingModal()" title="คู่มือการใช้งาน (Quick Tour)" aria-label="Open Quick Tour and Guide">
       <span class="help-icon">❓</span>
     </button>
@@ -343,7 +386,7 @@
 <!-- Privacy Footer Notice -->
 <div class="privacy-bar">
   <span id="lbl-privacy-footer">🔒 100% Client-Side Privacy — ทุกการคำนวณและข้อมูลถูกเก็บไว้ในอุปกรณ์ของคุณเท่านั้น ไม่มีการส่งข้อมูลสู่เซิร์ฟเวอร์</span>
-  <span style="color: #64748b; font-size: 10px;">Money Superapp v2.5.4</span>
+  <span style="color: #64748b; font-size: 10px;">Money Superapp v2.5.5</span>
 </div>
 
 <!-- Mobile Bottom Navigation Bar (Visible on Mobile <= 768px) -->
@@ -502,6 +545,51 @@
           <button onclick="openQrImportModal()" id="btn-open-qr-import" style="background: #7c3aed; color: #fff; border: none; padding: 7px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
             <span id="lbl-btn-open-qr-import">📷 สแกน QR</span>
           </button>
+        </div>
+      </div>
+
+      <!-- Phase 70: Biometric & PIN App Lock -->
+      <div style="background: #0E1512; padding: 12px 14px; border-radius: 10px; border: 1px solid #24352C;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <div>
+            <div style="font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+              <span>🔒</span>
+              <span id="lbl-app-lock-title">การล็อกแอป & ความเป็นส่วนตัว (App Lock)</span>
+            </div>
+            <div style="font-size: 11px; color: #8FA69C; margin-top: 2px;" id="lbl-app-lock-desc">
+              ล็อกหน้าจอด้วยรหัส PIN หรือสแกนลายนิ้วมือ / ใบหน้า (Biometrics)
+            </div>
+          </div>
+          <label style="position: relative; display: inline-block; width: 40px; height: 22px; cursor: pointer; margin-left: 8px; flex-shrink: 0;">
+            <input type="checkbox" id="chkAppLockEnabled" onchange="toggleAppLockSetting(this.checked)" style="opacity: 0; width: 0; height: 0;">
+            <span class="app-lock-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #24352C; transition: .3s; border-radius: 22px;"></span>
+          </label>
+        </div>
+        <div id="appLockConfigPanel" style="display: none; flex-direction: column; gap: 8px; border-top: 1px solid #1a2721; padding-top: 8px; margin-top: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px;">
+            <span style="color: #8FA69C;" id="lbl-autolock-timeout">ระยะเวลาล็อกอัตโนมัติ:</span>
+            <select id="selAutoLockTimeout" onchange="updateAutoLockTimeout(this.value)" style="background: #131E19; border: 1px solid #24352C; color: #EAF2EE; border-radius: 6px; padding: 4px 8px; font-size: 11px;">
+              <option value="0">ล็อกทันทีเมื่อสลับหน้าต่าง</option>
+              <option value="60">1 นาที</option>
+              <option value="300" selected>5 นาที (แนะนำ)</option>
+              <option value="900">15 นาที</option>
+              <option value="-1">ไม่ล็อกอัตโนมัติ</option>
+            </select>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <button onclick="promptChangePin()" id="btnChangePin" style="background: rgba(255,255,255,0.06); border: 1px solid #334155; color: #e2e8f0; padding: 5px 10px; border-radius: 6px; font-size: 11px; cursor: pointer;">
+              <span id="lbl-btn-change-pin">🔑 เปลี่ยนรหัส PIN</span>
+            </button>
+            <button onclick="lockAppNow()" id="btnLockNow" style="background: #e11d48; color: #fff; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;">
+              <span id="lbl-btn-lock-now">🔒 ล็อกเดี๋ยวนี้</span>
+            </button>
+          </div>
+          <div id="biometricEnrollRow" style="display: none; justify-content: space-between; align-items: center; font-size: 11.5px; padding-top: 4px;">
+            <span style="color: #8FA69C;" id="lbl-biometric-toggle">สแกนใบหน้า / ลายนิ้วมือ (Biometrics):</span>
+            <button onclick="toggleBiometricsEnrollment()" id="btnBiometricToggle" style="background: rgba(79, 168, 148, 0.15); border: 1px solid #2F8B76; color: #4FA894; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer;">
+              <span id="lbl-btn-biometric-status">เปิดใช้งาน</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -785,6 +873,56 @@
         </div>
       </div>
     </details>
+  </div>
+</div>
+
+<!-- Phase 70: Fullscreen App Lock Screen Overlay -->
+<div id="appLockOverlay" role="dialog" aria-modal="true" aria-labelledby="lbl-lock-screen-title" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #070B09; z-index: 99999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; user-select: none;">
+  <div style="max-width: 320px; width: 100%; display: flex; flex-direction: column; align-items: center; text-align: center;">
+    <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(79, 168, 148, 0.15); border: 1px solid #2F8B76; display: flex; align-items: center; justify-content: center; font-size: 26px; margin-bottom: 12px;">
+      🔒
+    </div>
+    <h2 id="lbl-lock-screen-title" style="margin: 0 0 6px; font-size: 18px; font-weight: 700; color: #EAF2EE;">
+      Money Superapp
+    </h2>
+    <p id="lbl-lock-screen-subtitle" style="margin: 0 0 20px; font-size: 12px; color: #8FA69C;">
+      กรุณากรอกรหัส PIN 6 หลักเพื่อปลดล็อก
+    </p>
+
+    <!-- 6 PIN Dots Indicator -->
+    <div id="pinDotsContainer" style="display: flex; gap: 12px; margin-bottom: 24px;">
+      <span class="pin-dot" id="pindot-0" style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid #2F8B76; background: transparent; transition: all 0.15s ease;"></span>
+      <span class="pin-dot" id="pindot-1" style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid #2F8B76; background: transparent; transition: all 0.15s ease;"></span>
+      <span class="pin-dot" id="pindot-2" style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid #2F8B76; background: transparent; transition: all 0.15s ease;"></span>
+      <span class="pin-dot" id="pindot-3" style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid #2F8B76; background: transparent; transition: all 0.15s ease;"></span>
+      <span class="pin-dot" id="pindot-4" style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid #2F8B76; background: transparent; transition: all 0.15s ease;"></span>
+      <span class="pin-dot" id="pindot-5" style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid #2F8B76; background: transparent; transition: all 0.15s ease;"></span>
+    </div>
+
+    <!-- Error notice -->
+    <div id="pinErrorNotice" style="min-height: 20px; font-size: 11.5px; color: #ef4444; margin-bottom: 12px; font-weight: 600;"></div>
+
+    <!-- Numeric Keypad Grid 3x4 -->
+    <div style="display: grid; grid-template-columns: repeat(3, 66px); gap: 14px; margin-bottom: 20px;">
+      <button type="button" class="pin-key-btn" onclick="enterPinDigit('1')">1</button>
+      <button type="button" class="pin-key-btn" onclick="enterPinDigit('2')">2</button>
+      <button type="button" class="pin-key-btn" onclick="enterPinDigit('3')">3</button>
+      <button type="button" class="pin-key-btn" onclick="enterPinDigit('4')">4</button>
+      <button type="button" class="pin-key-btn" onclick="enterPinDigit('5')">5</button>
+      <button type="button" class="pin-key-btn" onclick="enterPinDigit('6')">6</button>
+      <button type="button" class="pin-key-btn" onclick="enterPinDigit('7')">7</button>
+      <button type="button" class="pin-key-btn" onclick="enterPinDigit('8')">8</button>
+      <button type="button" class="pin-key-btn" onclick="enterPinDigit('9')">9</button>
+      <button type="button" class="pin-key-btn pin-key-fn" onclick="clearPinInput()" title="Clear">C</button>
+      <button type="button" class="pin-key-btn" onclick="enterPinDigit('0')">0</button>
+      <button type="button" class="pin-key-btn pin-key-fn" onclick="deletePinDigit()" title="Backspace">⌫</button>
+    </div>
+
+    <!-- Biometric Unlock Button (if enrolled) -->
+    <button type="button" id="btnBiometricUnlock" onclick="triggerBiometricUnlock()" style="display: none; align-items: center; justify-content: center; gap: 8px; background: rgba(79, 168, 148, 0.15); border: 1px solid #2F8B76; color: #4FA894; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; width: 100%;">
+      <span>🪪</span>
+      <span id="lbl-btn-biometric-unlock">ปลดล็อกด้วย Face ID / Touch ID</span>
+    </button>
   </div>
 </div>
 

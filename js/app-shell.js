@@ -75,6 +75,17 @@ const translations = {
     qrImportModalTitle: 'สแกน / นำเข้า QR Code (Offline P2P)',
     qrImportModalDesc: 'สแกน QR Code จากเครื่องต้นทาง หรือวางโค้ดชิ้นส่วนเพื่อประกอบข้อมูลและถอดรหัส',
     qrBtnProcessChunk: '📥 บันทึกชิ้นส่วนนี้',
+    appLockTitle: 'การล็อกแอป & ความเป็นส่วนตัว (App Lock)',
+    appLockDesc: 'ล็อกหน้าจอด้วยรหัส PIN หรือสแกนลายนิ้วมือ / ใบหน้า (Biometrics)',
+    autoLockTimeout: 'ระยะเวลาล็อกอัตโนมัติ:',
+    btnChangePin: '🔑 เปลี่ยนรหัส PIN',
+    btnLockNow: '🔒 ล็อกเดี๋ยวนี้',
+    biometricToggle: 'สแกนใบหน้า / ลายนิ้วมือ (Biometrics):',
+    btnBiometricStatusOn: 'เปิดใช้งานอยู่',
+    btnBiometricStatusOff: 'เปิดใช้งาน',
+    lockScreenTitle: 'Money Superapp',
+    lockScreenSubtitle: 'กรุณากรอกรหัส PIN 6 หลักเพื่อปลดล็อก',
+    btnBiometricUnlock: 'ปลดล็อกด้วย Face ID / Touch ID',
   },
   en: {
     skipLink: 'Skip to main content',
@@ -146,6 +157,17 @@ const translations = {
     qrImportModalTitle: 'Scan / Import QR Code (Offline P2P)',
     qrImportModalDesc: 'Scan QR codes from source device or paste slices manually to assemble and decrypt.',
     qrBtnProcessChunk: '📥 Process Slice',
+    appLockTitle: 'App Lock & Privacy Guard',
+    appLockDesc: 'Lock screen with 6-digit PIN or biometrics (Face ID / Touch ID).',
+    autoLockTimeout: 'Auto-Lock Inactivity Timeout:',
+    btnChangePin: '🔑 Change PIN',
+    btnLockNow: '🔒 Lock Now',
+    biometricToggle: 'Face ID / Fingerprint (Biometrics):',
+    btnBiometricStatusOn: 'Enabled',
+    btnBiometricStatusOff: 'Enable',
+    lockScreenTitle: 'Money Superapp',
+    lockScreenSubtitle: 'Enter 6-digit PIN to unlock',
+    btnBiometricUnlock: 'Unlock with Face ID / Touch ID',
   },
 };
 
@@ -329,6 +351,25 @@ function applyLang(lang) {
       lang === 'en' ? '⌨️ Paste Slices Manually (Fallback)' : '⌨️ วางโค้ดชิ้นส่วนด้วยตนเอง (Manual Fallback)';
   if (document.getElementById('lbl-btn-process-qr-chunk'))
     document.getElementById('lbl-btn-process-qr-chunk').textContent = t.qrBtnProcessChunk;
+
+  if (document.getElementById('lbl-app-lock-title'))
+    document.getElementById('lbl-app-lock-title').textContent = t.appLockTitle;
+  if (document.getElementById('lbl-app-lock-desc'))
+    document.getElementById('lbl-app-lock-desc').textContent = t.appLockDesc;
+  if (document.getElementById('lbl-autolock-timeout'))
+    document.getElementById('lbl-autolock-timeout').textContent = t.autoLockTimeout;
+  if (document.getElementById('lbl-btn-change-pin'))
+    document.getElementById('lbl-btn-change-pin').textContent = t.btnChangePin;
+  if (document.getElementById('lbl-btn-lock-now'))
+    document.getElementById('lbl-btn-lock-now').textContent = t.btnLockNow;
+  if (document.getElementById('lbl-biometric-toggle'))
+    document.getElementById('lbl-biometric-toggle').textContent = t.biometricToggle;
+  if (document.getElementById('lbl-lock-screen-title'))
+    document.getElementById('lbl-lock-screen-title').textContent = t.lockScreenTitle;
+  if (document.getElementById('lbl-lock-screen-subtitle'))
+    document.getElementById('lbl-lock-screen-subtitle').textContent = t.lockScreenSubtitle;
+  if (document.getElementById('lbl-btn-biometric-unlock'))
+    document.getElementById('lbl-btn-biometric-unlock').textContent = t.btnBiometricUnlock;
 
   updateGoogleUI();
 }
@@ -734,6 +775,7 @@ const CANONICAL_STORAGE_SCHEMAS = {
   'moneySuperapp.googleUser': { label: 'ข้อมูลผู้ใช้ Google', isJson: true, defaultVal: '{}' },
   'moneySuperapp.lastGoogleSync': { label: 'ประวัติ Sync Drive', isJson: false, defaultVal: '' },
   'moneySuperapp.pendingBudget': { label: 'งบประมาณข้ามเครื่องมือ', isJson: false, defaultVal: '0' },
+  'moneySuperapp.appLock.v1': { label: 'ระบบล็อกแอป (App Lock)', isJson: true, defaultVal: '{}' },
 };
 
 function inspectStorageHealth(storageMap, schemas) {
@@ -938,6 +980,7 @@ window.inspectStorageHealth = inspectStorageHealth;
 
 function openSettingsModal() {
   updateGoogleUI();
+  if (typeof updateAppLockSettingsUI === 'function') updateAppLockSettingsUI();
   runStorageHealthCheck(false);
   document.getElementById('settingsModal').style.display = 'flex';
 }
@@ -1461,6 +1504,396 @@ window.openQrImportModal = openQrImportModal;
 window.closeQrImportModal = closeQrImportModal;
 window.processManualQrChunk = processManualQrChunk;
 window.handleScannedChunkString = handleScannedChunkString;
+
+// --- Phase 70: Biometric / PIN App Lock & Session Privacy Guard Subsystem ---
+const APP_LOCK_STORAGE_KEY = 'moneySuperapp.appLock.v1';
+let appLockConfig = {
+  enabled: false,
+  salt: '',
+  pinHash: '',
+  timeout: 300, // seconds (5 min default)
+  biometricEnabled: false,
+  biometricCredId: null,
+};
+let isAppLocked = false;
+let currentEnteredPin = '';
+let appLockFailedAttempts = 0;
+let appLockLockoutUntil = 0;
+let appLastActivityTimestamp = Date.now();
+let appInactivityInterval = null;
+
+function loadAppLockConfig() {
+  try {
+    const raw = localStorage.getItem(APP_LOCK_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      appLockConfig = Object.assign(appLockConfig, parsed);
+    }
+  } catch (_e) {}
+}
+
+function saveAppLockConfig() {
+  try {
+    localStorage.setItem(APP_LOCK_STORAGE_KEY, JSON.stringify(appLockConfig));
+  } catch (_e) {}
+  updateAppLockSettingsUI();
+}
+
+function updateAppLockSettingsUI() {
+  const chk = document.getElementById('chkAppLockEnabled');
+  const panel = document.getElementById('appLockConfigPanel');
+  const selTimeout = document.getElementById('selAutoLockTimeout');
+  const bioRow = document.getElementById('biometricEnrollRow');
+  const bioBtn = document.getElementById('lbl-btn-biometric-status');
+  const t = translations[getLang()] || translations.th;
+
+  if (chk) chk.checked = Boolean(appLockConfig.enabled);
+  if (panel) panel.style.display = appLockConfig.enabled ? 'flex' : 'none';
+  if (selTimeout) selTimeout.value = String(appLockConfig.timeout);
+
+  if (bioRow && typeof window !== 'undefined' && window.PublicKeyCredential) {
+    bioRow.style.display = 'flex';
+    if (bioBtn) {
+      bioBtn.textContent = appLockConfig.biometricEnabled ? t.btnBiometricStatusOn : t.btnBiometricStatusOff;
+    }
+  }
+}
+
+async function toggleAppLockSetting(enable) {
+  const isEn = getLang() === 'en';
+  if (enable) {
+    const pin = prompt(isEn ? 'Create a 6-digit PIN to lock your app:' : 'กรุณากำหนดรหัส PIN 6 หลักเพื่อล็อกแอป:');
+    if (!pin || pin.trim().length < 4) {
+      alert(isEn ? 'PIN must be at least 4 digits.' : 'รหัส PIN ต้องมีความยาวอย่างน้อย 4 หลัก');
+      const chk = document.getElementById('chkAppLockEnabled');
+      if (chk) chk.checked = false;
+      return;
+    }
+    const confirmPin = prompt(isEn ? 'Confirm your PIN:' : 'ยืนยันรหัส PIN อีกครั้ง:');
+    if (pin !== confirmPin) {
+      alert(isEn ? 'PINs do not match.' : 'รหัส PIN ไม่ตรงกัน');
+      const chk = document.getElementById('chkAppLockEnabled');
+      if (chk) chk.checked = false;
+      return;
+    }
+
+    const saltFn = (typeof MoneyApp !== 'undefined' && MoneyApp.generateSalt) || window.generateSalt;
+    const hashFn = (typeof MoneyApp !== 'undefined' && MoneyApp.hashPin) || window.hashPin;
+    const salt = saltFn ? saltFn(16) : 'default_salt';
+    const hash = hashFn ? await hashFn(pin, salt) : pin;
+
+    appLockConfig.enabled = true;
+    appLockConfig.salt = salt;
+    appLockConfig.pinHash = hash;
+    saveAppLockConfig();
+    alert(isEn ? '✓ App Lock enabled successfully!' : '✓ เปิดใช้งานการล็อกแอปเรียบร้อยแล้ว!');
+  } else {
+    const isConfirmed = confirm(
+      isEn
+        ? 'Disable App Lock? Anyone with access to this device will be able to view your data.'
+        : 'ต้องการปิดการล็อกแอปหรือไม่? ทุกคนที่ใช้อุปกรณ์นี้จะสามารถดูข้อมูลได้',
+    );
+    if (!isConfirmed) {
+      updateAppLockSettingsUI();
+      return;
+    }
+    appLockConfig.enabled = false;
+    saveAppLockConfig();
+    unlockApp();
+  }
+}
+
+async function promptChangePin() {
+  const isEn = getLang() === 'en';
+  const currentPin = prompt(isEn ? 'Enter current PIN:' : 'กรุณากรอกรหัส PIN ปัจจุบัน:');
+  if (!currentPin) return;
+
+  const verifyFn = (typeof MoneyApp !== 'undefined' && MoneyApp.verifyPin) || window.verifyPin;
+  const isMatch = verifyFn ? await verifyFn(currentPin, appLockConfig.salt, appLockConfig.pinHash) : false;
+  if (!isMatch) {
+    alert(isEn ? 'Incorrect PIN.' : 'รหัส PIN ไม่ถูกต้อง');
+    return;
+  }
+
+  const newPin = prompt(isEn ? 'Enter new 6-digit PIN:' : 'กรุณากรอกรหัส PIN 6 หลักใหม่:');
+  if (!newPin || newPin.trim().length < 4) {
+    alert(isEn ? 'PIN must be at least 4 digits.' : 'รหัส PIN ต้องมีความยาวอย่างน้อย 4 หลัก');
+    return;
+  }
+  const confirmPin = prompt(isEn ? 'Confirm new PIN:' : 'ยืนยันรหัส PIN ใหม่อีกครั้ง:');
+  if (newPin !== confirmPin) {
+    alert(isEn ? 'PINs do not match.' : 'รหัส PIN ไม่ตรงกัน');
+    return;
+  }
+
+  const saltFn = (typeof MoneyApp !== 'undefined' && MoneyApp.generateSalt) || window.generateSalt;
+  const hashFn = (typeof MoneyApp !== 'undefined' && MoneyApp.hashPin) || window.hashPin;
+  const salt = saltFn ? saltFn(16) : 'default_salt';
+  const hash = hashFn ? await hashFn(newPin, salt) : newPin;
+
+  appLockConfig.salt = salt;
+  appLockConfig.pinHash = hash;
+  saveAppLockConfig();
+  alert(isEn ? '✓ PIN changed successfully!' : '✓ เปลี่ยนรหัส PIN เรียบร้อยแล้ว!');
+}
+
+function updateAutoLockTimeout(val) {
+  appLockConfig.timeout = parseInt(val, 10);
+  saveAppLockConfig();
+}
+
+async function toggleBiometricsEnrollment() {
+  const isEn = getLang() === 'en';
+  if (!window.PublicKeyCredential) {
+    alert(isEn ? 'Biometrics (WebAuthn) is not supported in this browser.' : 'เบราว์เซอร์นี้ไม่รองรับการสแกนลายนิ้วมือ/ใบหน้า');
+    return;
+  }
+
+  if (appLockConfig.biometricEnabled) {
+    appLockConfig.biometricEnabled = false;
+    appLockConfig.biometricCredId = null;
+    saveAppLockConfig();
+    alert(isEn ? 'Biometrics disabled.' : 'ปิดการใช้งาน Biometrics แล้ว');
+    return;
+  }
+
+  try {
+    const challenge = new Uint8Array(32);
+    if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(challenge);
+    const userId = new Uint8Array(16);
+    if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(userId);
+
+    const credential = await navigator.credentials.create({
+      publicKey: {
+        challenge: challenge,
+        rp: { name: 'Money Superapp' },
+        user: {
+          id: userId,
+          name: 'user@moneysuperapp.local',
+          displayName: 'Money Superapp Owner',
+        },
+        pubKeyCredParams: [{ alg: -7, type: 'public-key' }, { alg: -257, type: 'public-key' }],
+        authenticatorSelection: { userVerification: 'preferred' },
+        timeout: 60000,
+      },
+    });
+
+    if (credential && credential.id) {
+      appLockConfig.biometricEnabled = true;
+      appLockConfig.biometricCredId = credential.id;
+      saveAppLockConfig();
+      alert(isEn ? '✓ Biometrics enrolled successfully!' : '✓ ลงทะเบียน Biometrics เรียบร้อยแล้ว!');
+    }
+  } catch (err) {
+    console.warn('WebAuthn enrollment error:', err);
+    alert(
+      (isEn ? 'Biometrics setup cancelled or failed: ' : 'การลงทะเบียน Biometrics ล้มเหลวหรือถูกยกเลิก: ') +
+        err.message,
+    );
+  }
+}
+
+function lockAppNow() {
+  if (!appLockConfig.enabled) {
+    alert(getLang() === 'en' ? 'App Lock is not enabled.' : 'ยังไม่ได้เปิดใช้งานการล็อกแอป');
+    return;
+  }
+  closeSettingsModal();
+  isAppLocked = true;
+  currentEnteredPin = '';
+  refreshPinDots();
+  const notice = document.getElementById('pinErrorNotice');
+  if (notice) notice.textContent = '';
+
+  const overlay = document.getElementById('appLockOverlay');
+  if (overlay) overlay.style.display = 'flex';
+
+  const bioBtn = document.getElementById('btnBiometricUnlock');
+  if (bioBtn) {
+    bioBtn.style.display = appLockConfig.biometricEnabled ? 'inline-flex' : 'none';
+  }
+}
+
+function unlockApp() {
+  isAppLocked = false;
+  currentEnteredPin = '';
+  appLockFailedAttempts = 0;
+  appLastActivityTimestamp = Date.now();
+  const overlay = document.getElementById('appLockOverlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function refreshPinDots() {
+  for (let i = 0; i < 6; i++) {
+    const dot = document.getElementById(`pindot-${i}`);
+    if (dot) {
+      if (i < currentEnteredPin.length) {
+        dot.style.background = '#2F8B76';
+        dot.style.borderColor = '#2F8B76';
+      } else {
+        dot.style.background = 'transparent';
+        dot.style.borderColor = '#2F8B76';
+      }
+    }
+  }
+}
+
+function enterPinDigit(digit) {
+  if (Date.now() < appLockLockoutUntil) {
+    const waitSec = Math.ceil((appLockLockoutUntil - Date.now()) / 1000);
+    const notice = document.getElementById('pinErrorNotice');
+    if (notice) {
+      notice.textContent =
+        getLang() === 'en' ? `Locked out. Try again in ${waitSec}s.` : `กรุณารออีก ${waitSec} วินาที`;
+    }
+    return;
+  }
+
+  if (currentEnteredPin.length < 6) {
+    currentEnteredPin += String(digit);
+    refreshPinDots();
+  }
+
+  if (currentEnteredPin.length === 6) {
+    verifyEnteredPin(currentEnteredPin);
+  }
+}
+
+function clearPinInput() {
+  currentEnteredPin = '';
+  refreshPinDots();
+  const notice = document.getElementById('pinErrorNotice');
+  if (notice) notice.textContent = '';
+}
+
+function deletePinDigit() {
+  if (currentEnteredPin.length > 0) {
+    currentEnteredPin = currentEnteredPin.slice(0, -1);
+    refreshPinDots();
+  }
+}
+
+async function verifyEnteredPin(pin) {
+  const verifyFn = (typeof MoneyApp !== 'undefined' && MoneyApp.verifyPin) || window.verifyPin;
+  const isMatch = verifyFn ? await verifyFn(pin, appLockConfig.salt, appLockConfig.pinHash) : false;
+
+  if (isMatch) {
+    unlockApp();
+  } else {
+    appLockFailedAttempts++;
+    const notice = document.getElementById('pinErrorNotice');
+    if (appLockFailedAttempts >= 5) {
+      appLockLockoutUntil = Date.now() + 30000;
+      if (notice) {
+        notice.textContent =
+          getLang() === 'en' ? 'Too many failed attempts. Locked for 30s.' : 'ใส่รหัสผิดเกิน 5 ครั้ง ระงับการลอง 30 วินาที';
+      }
+    } else {
+      const remaining = 5 - appLockFailedAttempts;
+      if (notice) {
+        notice.textContent =
+          getLang() === 'en'
+            ? `Incorrect PIN (${remaining} attempts left)`
+            : `รหัส PIN ไม่ถูกต้อง (เหลืออีก ${remaining} ครั้ง)`;
+      }
+    }
+    currentEnteredPin = '';
+    setTimeout(() => {
+      refreshPinDots();
+    }, 200);
+  }
+}
+
+async function triggerBiometricUnlock() {
+  if (!appLockConfig.biometricEnabled) return;
+  const isEn = getLang() === 'en';
+  try {
+    const challenge = new Uint8Array(32);
+    if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(challenge);
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge: challenge,
+        timeout: 60000,
+        userVerification: 'preferred',
+      },
+    });
+    if (assertion) {
+      unlockApp();
+    }
+  } catch (_err) {
+    const notice = document.getElementById('pinErrorNotice');
+    if (notice) {
+      notice.textContent = isEn ? 'Biometric verification failed.' : 'การสแกนไม่สำเร็จ กรุณาใช้รหัส PIN';
+    }
+  }
+}
+
+function initAppLockGuard() {
+  loadAppLockConfig();
+  updateAppLockSettingsUI();
+
+  if (appLockConfig.enabled) {
+    lockAppNow();
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (!isAppLocked) return;
+    if (e.key >= '0' && e.key <= '9') {
+      enterPinDigit(e.key);
+    } else if (e.key === 'Backspace') {
+      deletePinDigit();
+    } else if (e.key === 'Escape' || e.key === 'c' || e.key === 'C') {
+      clearPinInput();
+    }
+  });
+
+  const recordActivity = () => {
+    appLastActivityTimestamp = Date.now();
+  };
+  window.addEventListener('pointerdown', recordActivity, { passive: true });
+  window.addEventListener('keydown', recordActivity, { passive: true });
+  window.addEventListener('touchstart', recordActivity, { passive: true });
+
+  document.addEventListener('visibilitychange', () => {
+    if (!appLockConfig.enabled || isAppLocked) return;
+    if (document.visibilityState === 'hidden') {
+      if (appLockConfig.timeout === 0) {
+        lockAppNow();
+      }
+    } else if (document.visibilityState === 'visible') {
+      if (appLockConfig.timeout > 0) {
+        const elapsedSec = (Date.now() - appLastActivityTimestamp) / 1000;
+        if (elapsedSec >= appLockConfig.timeout) {
+          lockAppNow();
+        }
+      }
+    }
+  });
+
+  if (appInactivityInterval) clearInterval(appInactivityInterval);
+  appInactivityInterval = setInterval(() => {
+    if (!appLockConfig.enabled || isAppLocked) return;
+    if (appLockConfig.timeout > 0) {
+      const elapsedSec = (Date.now() - appLastActivityTimestamp) / 1000;
+      if (elapsedSec >= appLockConfig.timeout) {
+        lockAppNow();
+      }
+    }
+  }, 10000);
+}
+
+window.toggleAppLockSetting = toggleAppLockSetting;
+window.promptChangePin = promptChangePin;
+window.updateAutoLockTimeout = updateAutoLockTimeout;
+window.toggleBiometricsEnrollment = toggleBiometricsEnrollment;
+window.lockAppNow = lockAppNow;
+window.unlockApp = unlockApp;
+window.enterPinDigit = enterPinDigit;
+window.clearPinInput = clearPinInput;
+window.deletePinDigit = deletePinDigit;
+window.triggerBiometricUnlock = triggerBiometricUnlock;
+window.initAppLockGuard = initAppLockGuard;
+window.updateAppLockSettingsUI = updateAppLockSettingsUI;
 
 
 function resetAllData() {
@@ -2136,6 +2569,11 @@ const savedTab = (() => {
   }
 })();
 activateTab(initialHash || savedTab || 'dashboard', false);
+
+// Initialize App Lock and Session Privacy Guard
+if (typeof initAppLockGuard === 'function') {
+  initAppLockGuard();
+}
 
 // Check for first-time user onboarding
 try {

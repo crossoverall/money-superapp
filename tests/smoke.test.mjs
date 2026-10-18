@@ -459,6 +459,27 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(sharedContent.includes('chunkPayload: chunkPayload'), 'MoneyApp must export chunkPayload');
       assert.ok(sharedContent.includes('assembleChunks: assembleChunks'), 'MoneyApp must export assembleChunks');
     });
+
+    it('verifies index.html declares Phase 70 Biometric & PIN App Lock settings and fullscreen overlay', () => {
+      const indexContent = fs.readFileSync(path.join(ROOT_DIR, 'index.html'), 'utf8');
+      assert.ok(indexContent.includes('id="chkAppLockEnabled"'), 'index.html must define #chkAppLockEnabled');
+      assert.ok(indexContent.includes('id="appLockConfigPanel"'), 'index.html must define #appLockConfigPanel');
+      assert.ok(indexContent.includes('id="selAutoLockTimeout"'), 'index.html must define #selAutoLockTimeout');
+      assert.ok(indexContent.includes('id="btnChangePin"'), 'index.html must define #btnChangePin');
+      assert.ok(indexContent.includes('id="btnLockNow"'), 'index.html must define #btnLockNow');
+      assert.ok(indexContent.includes('id="appLockOverlay"'), 'index.html must define #appLockOverlay');
+      assert.ok(indexContent.includes('id="pinDotsContainer"'), 'index.html must define #pinDotsContainer');
+      assert.ok(indexContent.includes('id="btnBiometricUnlock"'), 'index.html must define #btnBiometricUnlock');
+
+      const sharedContent = fs.readFileSync(path.join(ROOT_DIR, 'js/shared.js'), 'utf8');
+      assert.ok(sharedContent.includes('generateSalt: generateSalt'), 'MoneyApp must export generateSalt');
+      assert.ok(sharedContent.includes('hashPin: hashPin'), 'MoneyApp must export hashPin');
+      assert.ok(sharedContent.includes('verifyPin: verifyPin'), 'MoneyApp must export verifyPin');
+      assert.ok(
+        sharedContent.includes('formatAppLockTimeout: formatAppLockTimeout'),
+        'MoneyApp must export formatAppLockTimeout',
+      );
+    });
   });
 
   describe('Bilingual Localization Structural Symmetry', () => {

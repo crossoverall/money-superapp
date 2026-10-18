@@ -908,4 +908,67 @@ describe('MoneyApp Shared Core Module', () => {
       assert.equal(invalidAssemble.complete, false);
     });
   });
+
+  describe('MoneyApp App Lock & Cryptographic PIN Engine (Phase 70 Biometric / PIN Lock)', () => {
+    const { MoneyApp } = createEnvironment();
+
+    it('generates random hex salt strings of specified byte length', () => {
+      const salt16 = MoneyApp.generateSalt(16);
+      assert.equal(typeof salt16, 'string');
+      assert.equal(salt16.length, 32); // 16 bytes = 32 hex chars
+
+      const salt32 = MoneyApp.generateSalt(32);
+      assert.equal(salt32.length, 64); // 32 bytes = 64 hex chars
+
+      // Distinct calls produce different random values
+      const saltA = MoneyApp.generateSalt(16);
+      const saltB = MoneyApp.generateSalt(16);
+      assert.notEqual(saltA, saltB);
+    });
+
+    it('hashes PIN with salt and verifies matching vs non-matching PINs', async () => {
+      const pin = '123456';
+      const salt = MoneyApp.generateSalt(16);
+
+      const hash = await MoneyApp.hashPin(pin, salt);
+      assert.ok(typeof hash === 'string');
+      assert.ok(hash.length >= 8);
+
+      const isMatch = await MoneyApp.verifyPin('123456', salt, hash);
+      assert.equal(isMatch, true);
+
+      const isWrong = await MoneyApp.verifyPin('654321', salt, hash);
+      assert.equal(isWrong, false);
+
+      const isWrongSalt = await MoneyApp.verifyPin('123456', 'diff_salt', hash);
+      assert.equal(isWrongSalt, false);
+    });
+
+    it('formats auto-lock timeouts into bilingual human readable text', () => {
+      assert.equal(MoneyApp.formatAppLockTimeout(0, 'th'), 'ล็อกทันทีเมื่อสลับหน้าต่าง');
+      assert.equal(MoneyApp.formatAppLockTimeout(0, 'en'), 'Immediately when switching apps');
+
+      assert.equal(MoneyApp.formatAppLockTimeout(60, 'th'), '1 นาที');
+      assert.equal(MoneyApp.formatAppLockTimeout(60, 'en'), '1 minute');
+
+      assert.equal(MoneyApp.formatAppLockTimeout(300, 'th'), '5 นาที (แนะนำ)');
+      assert.equal(MoneyApp.formatAppLockTimeout(300, 'en'), '5 minutes (Recommended)');
+
+      assert.equal(MoneyApp.formatAppLockTimeout(-1, 'th'), 'ไม่ล็อกอัตโนมัติ (ล็อกด้วยตนเองเท่านั้น)');
+      assert.equal(MoneyApp.formatAppLockTimeout(-1, 'en'), 'Never (Manual lock only)');
+    });
+
+    it('safely throws on invalid or empty PIN input', async () => {
+      await assert.rejects(async () => {
+        await MoneyApp.hashPin('', 'salt');
+      });
+
+      await assert.rejects(async () => {
+        await MoneyApp.hashPin(null, 'salt');
+      });
+
+      const badVerify = await MoneyApp.verifyPin('', '', '');
+      assert.equal(badVerify, false);
+    });
+  });
 });

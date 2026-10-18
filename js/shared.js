@@ -578,6 +578,81 @@
     return dec.decode(decBuffer);
   }
 
+  /**
+   * Phase 70: Biometric & PIN App Lock Engine.
+   * Provides salted SHA-256 PIN hashing, verification, and timeout formatting.
+   */
+  function generateSalt(byteLength) {
+    var len = Number(byteLength) || 16;
+    var cryptoObj = typeof crypto !== 'undefined' ? crypto : typeof window !== 'undefined' ? window.crypto : null;
+    var bytes;
+    var hex = '';
+    var i;
+    if (cryptoObj && typeof cryptoObj.getRandomValues === 'function') {
+      bytes = cryptoObj.getRandomValues(new Uint8Array(len));
+      for (i = 0; i < bytes.length; i++) {
+        hex += ('00' + bytes[i].toString(16)).slice(-2);
+      }
+      return hex;
+    }
+    for (i = 0; i < len * 2; i++) {
+      hex += Math.floor(Math.random() * 16).toString(16);
+    }
+    return hex;
+  }
+
+  async function hashPin(pin, salt) {
+    if (!pin || typeof pin !== 'string') {
+      throw new Error('PIN must be a non-empty string');
+    }
+    var saltStr = salt || '';
+    var cryptoObj = typeof crypto !== 'undefined' ? crypto : typeof window !== 'undefined' ? window.crypto : null;
+    var enc;
+    var data;
+    var hashBuffer;
+    var hashArray;
+    var hex;
+    var h;
+    var str;
+    var i;
+    if (cryptoObj && cryptoObj.subtle && typeof cryptoObj.subtle.digest === 'function') {
+      enc = new TextEncoder();
+      data = enc.encode(saltStr + ':' + pin);
+      hashBuffer = await cryptoObj.subtle.digest('SHA-256', data);
+      hashArray = Array.from(new Uint8Array(hashBuffer));
+      hex = hashArray
+        .map(function (b) {
+          return ('00' + b.toString(16)).slice(-2);
+        })
+        .join('');
+      return hex;
+    }
+    h = 0x811c9dc5;
+    str = saltStr + ':' + pin;
+    for (i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h += (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24);
+    }
+    return ('00000000' + (h >>> 0).toString(16)).slice(-8);
+  }
+
+  async function verifyPin(pin, salt, expectedHash) {
+    if (!pin || !expectedHash) return false;
+    var computed = await hashPin(pin, salt);
+    return computed === expectedHash;
+  }
+
+  function formatAppLockTimeout(seconds, lang) {
+    var sec = Number(seconds);
+    var isEn = lang === 'en';
+    if (sec === 0) return isEn ? 'Immediately when switching apps' : 'ล็อกทันทีเมื่อสลับหน้าต่าง';
+    if (sec === 60) return isEn ? '1 minute' : '1 นาที';
+    if (sec === 300) return isEn ? '5 minutes (Recommended)' : '5 นาที (แนะนำ)';
+    if (sec === 900) return isEn ? '15 minutes' : '15 นาที';
+    if (sec === -1) return isEn ? 'Never (Manual lock only)' : 'ไม่ล็อกอัตโนมัติ (ล็อกด้วยตนเองเท่านั้น)';
+    return isEn ? sec + ' seconds' : sec + ' วินาที';
+  }
+
   var TAX_DEADLINE_MILESTONES = [
     {
       id: 'pnd90_paper',
@@ -3525,6 +3600,10 @@
     generateQrSvg: renderQrSvg,
     chunkPayload: chunkPayload,
     assembleChunks: assembleChunks,
+    generateSalt: generateSalt,
+    hashPin: hashPin,
+    verifyPin: verifyPin,
+    formatAppLockTimeout: formatAppLockTimeout,
   };
 
   // Expose on global window object
@@ -3581,5 +3660,10 @@
     if (typeof global.generateQrSvg === 'undefined') global.generateQrSvg = renderQrSvg;
     if (typeof global.chunkPayload === 'undefined') global.chunkPayload = chunkPayload;
     if (typeof global.assembleChunks === 'undefined') global.assembleChunks = assembleChunks;
+    if (typeof global.generateSalt === 'undefined') global.generateSalt = generateSalt;
+    if (typeof global.hashPin === 'undefined') global.hashPin = hashPin;
+    if (typeof global.verifyPin === 'undefined') global.verifyPin = verifyPin;
+    if (typeof global.formatAppLockTimeout === 'undefined')
+      global.formatAppLockTimeout = formatAppLockTimeout;
   }
 })(typeof window !== 'undefined' ? window : this);
