@@ -108,6 +108,11 @@ const translations = {
     subGlideCoreDesc: 'หุ้นโลก / SET / อสังหาฯ',
     subGlideBallastDesc: 'พันธบัตร / กองทุนตราสารหนี้',
     subGlideSatDesc: 'ทองคำ / คริปโต / ธีมเฉพาะ',
+    lblCopyPortfolio: 'คัดลอกสรุป',
+    lblCopyTrade: 'คัดลอกรายการสั่งซื้อ',
+    lblExportCsv: 'ดาวน์โหลด CSV',
+    lblPrintRebalance: 'พิมพ์ / บันทึก PDF',
+    resetBtn: 'ล้างข้อมูลที่บันทึกไว้',
   },
   en: {
     eyebrow: 'DCA TOOL',
@@ -218,6 +223,11 @@ const translations = {
     subGlideCoreDesc: 'Global Equities / SET / REITs',
     subGlideBallastDesc: 'Bonds / Fixed Income Funds',
     subGlideSatDesc: 'Gold / Crypto / Thematic',
+    lblCopyPortfolio: 'Copy Summary',
+    lblCopyTrade: 'Copy Trade Orders',
+    lblExportCsv: 'Export CSV',
+    lblPrintRebalance: 'Print / Save PDF',
+    resetBtn: 'Clear saved data',
   },
 };
 

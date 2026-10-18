@@ -15,6 +15,18 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Universal Declarative i18n & Exhaustive Coverage Suite (v2.5.48)
+- **Date & Context:** 2026-10-18, Phase 105 Universal Declarative i18n & Coverage Test (`v2.5.48`).
+- **Problem:**
+  1. While Phases 100–104 rolled out `data-i18n` attributes across all 7 tool sub-pages, the host `index.html` shell (85+ modal and settings controls, quick tour, storage health, PWA toast, Google Drive sync, and offline QR sync) still relied on manual imperative DOM text assignments.
+  2. Without an automated, exhaustive crawler verifying that every `data-i18n` key referenced in HTML actually resolves to both languages, latent typos or missing keys could slip into production (as discovered during the audit where 5 action buttons in `rebalance.html` and `lblPool500kTitle` in `tax-calculator-base.html` were missing from dictionaries).
+- **Root Cause:** Transition to declarative `data-i18n` lacked an automated static verification suite that cross-checks HTML AST against dictionary registrations.
+- **Solution & Rule:**
+  1. **Complete Declarative Coverage on `index.html`:** Added 85+ declarative `data-i18n` attributes across all modals, panels, and tooltips in `index.html`.
+  2. **Audit & Reconciliation:** Added missing action buttons (`lblCopyPortfolio`, `lblCopyTrade`, `lblExportCsv`, `lblPrintRebalance`, `resetBtn`) to `js/rebalance.js` and `lblPool500kTitle` to `js/tax-calculator-base.js`.
+  3. **Permanent Exhaustive Coverage Test (`tests/i18n-coverage.test.mjs`):** Built automated test suite auditing all 8 HTML files and all 728 `data-i18n*` attributes, verifying 100% key existence in both Thai and English, non-empty text, and parameter placeholder (`{param}`) consistency.
+  4. **Quality Gates & Invariants:** Added Phase 105 smoke assertions in `tests/smoke.test.mjs`, achieved 531/531 tests passing across 118 test suites (0 failures), 0 Biome lint errors/warnings, and zero CSP/offline violations.
+
 ### 2026-10-18: Declarative data-i18n Localization Migration for Tax & Payslip Tools (v2.5.47)
 - **Date & Context:** 2026-10-18, Phase 104 Declarative data-i18n Migration (`v2.5.47`).
 - **Problem:**

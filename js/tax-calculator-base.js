@@ -189,6 +189,7 @@ const translations = {
     btnCopyNetBalance: '📋 คัดลอกยอดสุทธิ',
     btnBridgeTaxAccrualMonthly: 'ตั้งสำรองจ่ายภาษีรายเดือนในงบประมาณ (Remaining Money)',
     btnBridgeTaxAccrualInstallments: 'ตั้งงบผ่อนชำระ 3 งวด (0%) ในงบประมาณ',
+    lblPool500kTitle: 'เพดานลดหย่อนกลุ่มเกษียณ 500,000 บาท (ม.47 แห่งประมวลรัษฎากร)',
     lblPoolExcessTitle: 'มียอดเงินสะสม/ลงทุนเกินเพดานที่กฎหมายกำหนด',
     lblPoolExcessDesc:
       'คุณมียอดรวม PVD + SSF + RMF เกินเพดาน 500,000 บาท ตาม ม.47 อยู่เป็นจำนวน <strong id="valPoolExcessAmount" class="font-mono">0</strong> บาท สรรพากรจะตัดส่วนเกินนี้ออกอัตโนมัติในการยื่นแบบ ภ.ง.ด. 90/91',
@@ -382,6 +383,7 @@ const translations = {
     btnCopyNetBalance: '📋 Copy Net Balance',
     btnBridgeTaxAccrualMonthly: 'Reserve Monthly Tax in Budget (Remaining Money)',
     btnBridgeTaxAccrualInstallments: 'Reserve 3-Installment Plan (0%) in Budget',
+    lblPool500kTitle: 'Retirement Deduction Group 500,000 THB Statutory Ceiling (Sec. 47)',
     lblPoolExcessTitle: 'Retirement Fund Contributions Exceed Statutory 500k Ceiling',
     lblPoolExcessDesc:
       'Your combined PVD + SSF + RMF contributions exceed the 500,000 THB Section 47 ceiling by <strong id="valPoolExcessAmount" class="font-mono">0</strong> THB. The Revenue Department will automatically cap your deduction at 500,000 THB.',

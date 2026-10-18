@@ -1,5 +1,5 @@
 ---
-task_id: "SDLC-PHASE-104-DECLARATIVE-I18N-TAX-TOOLS"
+task_id: "SDLC-PHASE-105-I18N-UNIVERSAL-COVERAGE"
 status: "completed"
 current_stage: "release"
 complexity: "level_2"
@@ -7,15 +7,14 @@ iteration_count: 0
 pipeline: ["orchestrator", "planner", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Problem Diagnosis & Scope (Phase 104 - Declarative data-i18n Localization Migration for Tax & Payslip Tools)
+### Problem Diagnosis & Scope (Phase 105 - Universal Declarative i18n & Exhaustive Coverage Suite)
 1. **Diagnosis**:
-   - `tax-calculator.html`, `tax-calculator-base.html`, and `months-slips.html` currently use one-way imperative `EN` dictionary lookups in `js/tax-calculator.js`, `js/tax-calculator-base.js`, and `js/months-slips.js`.
-   - Migrating to declarative `data-i18n` attributes completes the declarative localization rollout across the entire suite of 7 interactive tools.
-   - Symmetrical `translations = { th: {...}, en: {...} }` enables adding all remaining tool scripts to `LOCALIZED_MODULES` in `tests/bilingual-parity.test.mjs`.
+   - In Phases 100-104, declarative `data-i18n` attributes were rolled out across all 7 interactive sub-tools (`dashboard`, `debt-calculator`, `remaining-money`, `rebalance`, `tax-calculator`, `tax-calculator-base`, `months-slips`).
+   - `index.html` (the host shell, modals, quick tour, storage health, app lock, Google Drive sync, and offline QR sync) still relies almost exclusively on imperative DOM updates in `applyLang()` without declarative `data-i18n` markup on its modal controls.
+   - We need an automated **Exhaustive Translation Coverage Test** (`tests/i18n-coverage.test.mjs`) that audits every single `data-i18n`, `data-i18n-placeholder`, `data-i18n-title`, and `data-i18n-aria-label` attribute across all 8 core application HTML pages, verifying 100% presence and bidirectional symmetry in the respective translation dictionaries.
 2. **Strategy & Slices**:
-   - Slice 1: Decorate `tax-calculator.html` with declarative `data-i18n` attributes (severance, PVD, RMF rollover, SSO simulator, inheritance & gift tax, land & building tax).
-   - Slice 2: Decorate `tax-calculator-base.html` with declarative `data-i18n` attributes (income, deductions, waterfall results, scenario stress-tester, tax calendar, dividend tax credit, e-filing worksheet, bracket step-down analyzer, pre-flight checklist).
-   - Slice 3: Decorate `months-slips.html` with declarative `data-i18n` attributes (income setup, payslip summary, 12-month stream, year-end PIT reconciliation & refund tracker, job offer comparison).
-   - Slice 4: Define symmetrical `translations = { th: {...}, en: {...} }` in `js/tax-calculator.js`, `js/tax-calculator-base.js`, and `js/months-slips.js`, register with `MoneyApp.I18n`, call `MoneyApp.I18n.applyLocalization(document, LANG)`, and retain `const EN = translations.en` for 100% backward compatibility.
-   - Slice 5: Add `'js/tax-calculator.js'`, `'js/tax-calculator-base.js'`, and `'js/months-slips.js'` to `LOCALIZED_MODULES` in `tests/bilingual-parity.test.mjs` and add Phase 104 smoke invariants to `tests/smoke.test.mjs`.
-   - Slice 6: QA Verification (`rtk npm run lint` 0 errors/0 warnings, `npm test` 100% passing across all 494+ tests), Security Review, bump patch to `v2.5.47`, commit and push to `origin/master`.
+   - Slice 1: Decorate `index.html` with declarative `data-i18n` attributes across all modals, settings sections, and action buttons.
+   - Slice 2: Synchronize and verify all keys in `js/app-shell.js` `translations.th` and `translations.en`.
+   - Slice 3: Create `tests/i18n-coverage.test.mjs` verifying that 100% of declared `data-i18n*` attributes across all 8 HTML pages have corresponding entries in both `th` and `en`.
+   - Slice 4: Add Phase 105 smoke test invariants in `tests/smoke.test.mjs`.
+   - Slice 5: Quality Gates (`rtk npm run lint` 0 errors/warnings, `npm test` 100% passing across all suites), bump patch to `v2.5.48`, commit and push to `origin/master`.

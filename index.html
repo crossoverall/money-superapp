@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="2.5.47">
+<meta name="version" content="2.5.48">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://accounts.google.com/ https://www.googleapis.com/; frame-src 'self' https://accounts.google.com/; object-src 'none'; base-uri 'self';">
 <script>
   try {
@@ -483,7 +483,7 @@
       <span>🔍</span>
       <span class="cmd-k-badge">Ctrl+K</span>
     </button>
-    <span class="version-badge">v2.5.47</span>
+    <span class="version-badge">v2.5.48</span>
     <button id="btn-help-modal" onclick="openOnboardingModal()" title="คู่มือการใช้งาน (Quick Tour)" aria-label="Open Quick Tour and Guide">
       <span class="help-icon">❓</span>
     </button>
@@ -515,7 +515,7 @@
 <!-- Privacy Footer Notice -->
 <div class="privacy-bar">
   <span id="lbl-privacy-footer" data-i18n="privacyFooter">🔒 100% Client-Side Privacy — ทุกการคำนวณและข้อมูลถูกเก็บไว้ในอุปกรณ์ของคุณเท่านั้น ไม่มีการส่งข้อมูลสู่เซิร์ฟเวอร์</span>
-  <span style="color: #64748b; font-size: 10px;">Money Superapp v2.5.47</span>
+  <span style="color: #64748b; font-size: 10px;">Money Superapp v2.5.48</span>
 </div>
 
 <!-- Mobile Bottom Navigation Bar (Visible on Mobile <= 768px) -->
@@ -554,14 +554,14 @@
 <div id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="lbl-modal-title" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.65); z-index: 9999; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(2px);">
   <div style="background: #131E19; color: #EAF2EE; border: 1px solid #24352C; border-radius: 16px; max-width: 500px; width: 100%; padding: 22px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #24352C; padding-bottom: 10px;">
-      <h3 style="margin: 0; font-size: 16px; font-weight: 700;" id="lbl-modal-title">จัดการข้อมูล & ความเป็นส่วนตัว</h3>
+      <h3 style="margin: 0; font-size: 16px; font-weight: 700;" id="lbl-modal-title" data-i18n="modalTitle">จัดการข้อมูล & ความเป็นส่วนตัว</h3>
       <button onclick="closeSettingsModal()" style="background: none; border: none; color: #8FA69C; font-size: 20px; cursor: pointer; padding: 0 4px;">&times;</button>
     </div>
 
     <!-- Privacy Banner -->
     <div style="background: rgba(47, 139, 118, 0.12); border: 1px solid #2F8B76; border-radius: 10px; padding: 10px 12px; margin-bottom: 16px; color: #4FA894; font-size: 11.5px; line-height: 1.45;">
-      <div style="font-weight: 700; margin-bottom: 2px;" id="lbl-modal-privacy-title">🔒 ความเป็นส่วนตัว 100% ปลอดภัยบนเครื่องของคุณ</div>
-      <div id="lbl-modal-privacy-desc">ข้อมูลการเงินและผลการคำนวณทั้งหมดได้รับการบันทึกและประมวลผลภายในเบราว์เซอร์ของคุณเท่านั้น (Client-Side Storage) ไม่มีการส่งข้อมูลใดๆ ไปยังเซิร์ฟเวอร์ภายนอก</div>
+      <div style="font-weight: 700; margin-bottom: 2px;" id="lbl-modal-privacy-title" data-i18n="modalPrivacyTitle">🔒 ความเป็นส่วนตัว 100% ปลอดภัยบนเครื่องของคุณ</div>
+      <div id="lbl-modal-privacy-desc" data-i18n="modalPrivacyDesc">ข้อมูลการเงินและผลการคำนวณทั้งหมดได้รับการบันทึกและประมวลผลภายในเบราว์เซอร์ของคุณเท่านั้น (Client-Side Storage) ไม่มีการส่งข้อมูลใดๆ ไปยังเซิร์ฟเวอร์ภายนอก</div>
     </div>
 
     <div style="display: flex; flex-direction: column; gap: 10px;">
@@ -571,9 +571,9 @@
           <div>
             <div style="font-weight: 700; font-size: 13.5px; display: flex; align-items: center; gap: 6px;">
               <span>☁️</span>
-              <span id="lbl-gdrive-title">Google Drive Cloud Sync</span>
+              <span id="lbl-gdrive-title" data-i18n="gdriveTitle">Google Drive Cloud Sync</span>
             </div>
-            <div style="font-size: 11px; color: #8FA69C; margin-top: 2px;" id="lbl-gdrive-desc">สำรองและกู้คืนข้อมูลผ่าน Google Drive ส่วนตัวของคุณ (AppData Folder)</div>
+            <div style="font-size: 11px; color: #8FA69C; margin-top: 2px;" id="lbl-gdrive-desc" data-i18n="gdriveDesc">สำรองและกู้คืนข้อมูลผ่าน Google Drive ส่วนตัวของคุณ (AppData Folder)</div>
           </div>
         </div>
 
@@ -581,10 +581,10 @@
         <div id="gdrive-auth-container" style="margin-top: 8px;">
           <!-- State 1: Signed Out -->
           <div id="gdrive-signed-out" style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 8px; border: 1px solid #24352C;">
-            <div style="font-size: 11.5px; color: #8FA69C;" id="lbl-gdrive-not-connected">ยังไม่ได้เชื่อมต่อบัญชี Google</div>
+            <div style="font-size: 11.5px; color: #8FA69C;" id="lbl-gdrive-not-connected" data-i18n="gdriveNotConnected">ยังไม่ได้เชื่อมต่อบัญชี Google</div>
             <button onclick="handleGoogleSignIn()" id="btn-google-signin" style="display: inline-flex; align-items: center; gap: 8px; background: #FFFFFF; color: #1f2937; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">
               <svg width="15" height="15" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-              <span id="lbl-btn-google-signin">เข้าสู่ระบบด้วย Google</span>
+              <span id="lbl-btn-google-signin" data-i18n="btnGoogleSignin">เข้าสู่ระบบด้วย Google</span>
             </button>
           </div>
 
@@ -596,37 +596,37 @@
                 <span id="gdrive-user-email" style="font-size: 12px; font-weight: 600; color: #EAF2EE; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">user@gmail.com</span>
               </div>
               <button onclick="handleGoogleSignOut()" id="btn-google-signout" style="background: none; border: 1px solid #24352C; color: #8FA69C; padding: 4px 8px; border-radius: 5px; font-size: 11px; cursor: pointer;">
-                <span id="lbl-btn-google-signout">ออกจากระบบ</span>
+                <span id="lbl-btn-google-signout" data-i18n="btnGoogleSignout">ออกจากระบบ</span>
               </button>
             </div>
 
             <!-- Sync Action Buttons -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px;">
               <button onclick="saveToGoogleDrive()" id="btn-gdrive-upload" style="display: flex; align-items: center; justify-content: center; gap: 6px; background: #2F8B76; color: #fff; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
-                <span id="lbl-btn-gdrive-upload">📤 สำรองขึ้น Drive</span>
+                <span id="lbl-btn-gdrive-upload" data-i18n="btnGdriveUpload">📤 สำรองขึ้น Drive</span>
               </button>
               <button onclick="restoreFromGoogleDrive()" id="btn-gdrive-download" style="display: flex; align-items: center; justify-content: center; gap: 6px; background: #2563eb; color: #fff; border: none; padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
-                <span id="lbl-btn-gdrive-download">📥 กู้คืนจาก Drive</span>
+                <span id="lbl-btn-gdrive-download" data-i18n="btnGdriveDownload">📥 กู้คืนจาก Drive</span>
               </button>
             </div>
 
             <!-- Sync Status Text -->
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: #8FA69C; padding: 0 2px;">
-              <span id="lbl-gdrive-last-sync">สำรองล่าสุด: ยังไม่เคยสำรอง</span>
-              <span id="gdrive-sync-spinner" style="display: none; color: #4FA894;">⏳ กำลังทำงาน...</span>
+              <span id="lbl-gdrive-last-sync" data-i18n="gdriveNeverSynced">สำรองล่าสุด: ยังไม่เคยสำรอง</span>
+              <span id="gdrive-sync-spinner" style="display: none; color: #4FA894;" data-i18n="gdriveWorking">⏳ กำลังทำงาน...</span>
             </div>
           </div>
         </div>
 
         <!-- Optional Custom Client ID toggle for self-hosters -->
         <details style="margin-top: 10px; font-size: 11px; color: #8FA69C;">
-          <summary style="cursor: pointer; user-select: none;" id="lbl-gdrive-advanced">⚙️ การตั้งค่าขั้นสูง (Client ID)</summary>
+          <summary style="cursor: pointer; user-select: none;" id="lbl-gdrive-advanced" data-i18n="gdriveAdvanced">⚙️ การตั้งค่าขั้นสูง (Client ID)</summary>
           <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px; background: rgba(0,0,0,0.25); padding: 8px; border-radius: 6px; border: 1px solid #24352C;">
             <div style="display: flex; gap: 6px;">
               <input type="text" id="inputGoogleClientId" placeholder="Google OAuth Client ID" style="flex: 1; background: #131E19; border: 1px solid #24352C; color: #EAF2EE; font-size: 11px; padding: 4px 8px; border-radius: 4px;">
-              <button onclick="saveCustomClientId()" style="background: #24352C; color: #EAF2EE; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;" id="lbl-btn-save-client-id">บันทึก</button>
+              <button onclick="saveCustomClientId()" style="background: #24352C; color: #EAF2EE; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;" id="lbl-btn-save-client-id" data-i18n="btnSaveClientId">บันทึก</button>
             </div>
-            <div style="font-size: 10px; color: #5B7168;" id="lbl-gdrive-client-id-note">ค่าเริ่มต้น: ผูกกับ https://crossoverall.github.io</div>
+            <div style="font-size: 10px; color: #5B7168;" id="lbl-gdrive-client-id-note" data-i18n="gdriveClientIdNote">ค่าเริ่มต้น: ผูกกับ https://crossoverall.github.io</div>
           </div>
         </details>
       </div>
@@ -634,15 +634,15 @@
       <!-- Export -->
       <div style="display: flex; justify-content: space-between; align-items: center; background: #0E1512; padding: 12px 14px; border-radius: 10px; border: 1px solid #24352C;">
         <div>
-          <div style="font-weight: 600; font-size: 13px;" id="lbl-export-title">สำรองข้อมูลทั้งหมด (JSON / Vault)</div>
-          <div style="font-size: 11px; color: #8FA69C;" id="lbl-export-desc">ดาวน์โหลดไฟล์สำรองข้อมูล JSON หรือไฟล์เข้ารหัส (.vault)</div>
+          <div style="font-weight: 600; font-size: 13px;" id="lbl-export-title" data-i18n="exportTitle">สำรองข้อมูลทั้งหมด (JSON / Vault)</div>
+          <div style="font-size: 11px; color: #8FA69C;" id="lbl-export-desc" data-i18n="exportDesc">ดาวน์โหลดไฟล์สำรองข้อมูล JSON หรือไฟล์เข้ารหัส (.vault)</div>
         </div>
         <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end;">
           <button onclick="exportBackupData()" id="btn-export-backup" style="background: #2F8B76; color: #fff; border: none; padding: 7px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
-            <span id="lbl-btn-export">📤 ส่งออก (JSON)</span>
+            <span id="lbl-btn-export" data-i18n="btnExport">📤 ส่งออก (JSON)</span>
           </button>
           <button onclick="exportEncryptedVault()" id="btn-export-vault" style="background: #10b981; color: #fff; border: none; padding: 7px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
-            <span id="lbl-btn-export-vault">🔐 ส่งออก Vault</span>
+            <span id="lbl-btn-export-vault" data-i18n="btnExportVault">🔐 ส่งออก Vault</span>
           </button>
         </div>
       </div>
@@ -650,13 +650,13 @@
       <!-- Import -->
       <div style="display: flex; justify-content: space-between; align-items: center; background: #0E1512; padding: 12px 14px; border-radius: 10px; border: 1px solid #24352C;">
         <div>
-          <div style="font-weight: 600; font-size: 13px;" id="lbl-import-title">กู้คืนข้อมูลจากไฟล์สำรอง</div>
-          <div style="font-size: 11px; color: #8FA69C;" id="lbl-import-desc">นำเข้าไฟล์ JSON หรือไฟล์เข้ารหัส (.vault) เพื่อกู้คืนข้อมูล</div>
+          <div style="font-weight: 600; font-size: 13px;" id="lbl-import-title" data-i18n="importTitle">กู้คืนข้อมูลจากไฟล์สำรอง</div>
+          <div style="font-size: 11px; color: #8FA69C;" id="lbl-import-desc" data-i18n="importDesc">นำเข้าไฟล์ JSON หรือไฟล์เข้ารหัส (.vault) เพื่อกู้คืนข้อมูล</div>
         </div>
         <div>
           <input type="file" id="backupFileInput" accept=".json,.vault" style="display: none;" onchange="handleImportFile(this)">
           <button onclick="document.getElementById('backupFileInput').click()" id="btn-import-backup" style="background: #2563eb; color: #fff; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
-            <span id="lbl-btn-import">📥 นำเข้า</span>
+            <span id="lbl-btn-import" data-i18n="btnImport">📥 นำเข้า</span>
           </button>
         </div>
       </div>
@@ -664,15 +664,15 @@
       <!-- Phase 69: Offline QR Code P2P Device Sync -->
       <div style="display: flex; justify-content: space-between; align-items: center; background: #0E1512; padding: 12px 14px; border-radius: 10px; border: 1px solid #24352C;">
         <div>
-          <div style="font-weight: 600; font-size: 13px;" id="lbl-qr-sync-title">📲 ซิงค์ข้ามเครื่องออฟไลน์ (Offline QR P2P Sync)</div>
-          <div style="font-size: 11px; color: #8FA69C;" id="lbl-qr-sync-desc">ส่ง-รับข้อมูลข้ามเครื่องด้วย QR Code แบบเข้ารหัส ไม่ต้องต่อเน็ต</div>
+          <div style="font-weight: 600; font-size: 13px;" id="lbl-qr-sync-title" data-i18n="qrSyncTitle">📲 ซิงค์ข้ามเครื่องออฟไลน์ (Offline QR P2P Sync)</div>
+          <div style="font-size: 11px; color: #8FA69C;" id="lbl-qr-sync-desc" data-i18n="qrSyncDesc">ส่ง-รับข้อมูลข้ามเครื่องด้วย QR Code แบบเข้ารหัส ไม่ต้องต่อเน็ต</div>
         </div>
         <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end;">
           <button onclick="openQrExportModal()" id="btn-open-qr-export" style="background: #0284c7; color: #fff; border: none; padding: 7px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
-            <span id="lbl-btn-open-qr-export">📲 ส่งออก QR</span>
+            <span id="lbl-btn-open-qr-export" data-i18n="btnOpenQrExport">📲 ส่งออก QR</span>
           </button>
           <button onclick="openQrImportModal()" id="btn-open-qr-import" style="background: #7c3aed; color: #fff; border: none; padding: 7px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
-            <span id="lbl-btn-open-qr-import">📷 สแกน QR</span>
+            <span id="lbl-btn-open-qr-import" data-i18n="btnOpenQrImport">📷 สแกน QR</span>
           </button>
         </div>
       </div>
@@ -683,9 +683,9 @@
           <div>
             <div style="font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px;">
               <span>🔒</span>
-              <span id="lbl-app-lock-title">การล็อกแอป & ความเป็นส่วนตัว (App Lock)</span>
+              <span id="lbl-app-lock-title" data-i18n="appLockTitle">การล็อกแอป & ความเป็นส่วนตัว (App Lock)</span>
             </div>
-            <div style="font-size: 11px; color: #8FA69C; margin-top: 2px;" id="lbl-app-lock-desc">
+            <div style="font-size: 11px; color: #8FA69C; margin-top: 2px;" id="lbl-app-lock-desc" data-i18n="appLockDesc">
               ล็อกหน้าจอด้วยรหัส PIN หรือสแกนลายนิ้วมือ / ใบหน้า (Biometrics)
             </div>
           </div>
@@ -696,27 +696,27 @@
         </div>
         <div id="appLockConfigPanel" style="display: none; flex-direction: column; gap: 8px; border-top: 1px solid #1a2721; padding-top: 8px; margin-top: 6px;">
           <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px;">
-            <span style="color: #8FA69C;" id="lbl-autolock-timeout">ระยะเวลาล็อกอัตโนมัติ:</span>
+            <span style="color: #8FA69C;" id="lbl-autolock-timeout" data-i18n="autoLockTimeout">ระยะเวลาล็อกอัตโนมัติ:</span>
             <select id="selAutoLockTimeout" onchange="updateAutoLockTimeout(this.value)" style="background: #131E19; border: 1px solid #24352C; color: #EAF2EE; border-radius: 6px; padding: 4px 8px; font-size: 11px;">
-              <option value="0">ล็อกทันทีเมื่อสลับหน้าต่าง</option>
-              <option value="60">1 นาที</option>
-              <option value="300" selected>5 นาที (แนะนำ)</option>
-              <option value="900">15 นาที</option>
-              <option value="-1">ไม่ล็อกอัตโนมัติ</option>
+              <option value="0" data-i18n="autoLockOpt0">ล็อกทันทีเมื่อสลับหน้าต่าง</option>
+              <option value="60" data-i18n="autoLockOpt1">1 นาที</option>
+              <option value="300" selected data-i18n="autoLockOpt5">5 นาที (แนะนำ)</option>
+              <option value="900" data-i18n="autoLockOpt15">15 นาที</option>
+              <option value="-1" data-i18n="autoLockOptNever">ไม่ล็อกอัตโนมัติ</option>
             </select>
           </div>
           <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
             <button onclick="promptChangePin()" id="btnChangePin" style="background: rgba(255,255,255,0.06); border: 1px solid #334155; color: #e2e8f0; padding: 5px 10px; border-radius: 6px; font-size: 11px; cursor: pointer;">
-              <span id="lbl-btn-change-pin">🔑 เปลี่ยนรหัส PIN</span>
+              <span id="lbl-btn-change-pin" data-i18n="btnChangePin">🔑 เปลี่ยนรหัส PIN</span>
             </button>
             <button onclick="lockAppNow()" id="btnLockNow" style="background: #e11d48; color: #fff; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;">
-              <span id="lbl-btn-lock-now">🔒 ล็อกเดี๋ยวนี้</span>
+              <span id="lbl-btn-lock-now" data-i18n="btnLockNow">🔒 ล็อกเดี๋ยวนี้</span>
             </button>
           </div>
           <div id="biometricEnrollRow" style="display: none; justify-content: space-between; align-items: center; font-size: 11.5px; padding-top: 4px;">
-            <span style="color: #8FA69C;" id="lbl-biometric-toggle">สแกนใบหน้า / ลายนิ้วมือ (Biometrics):</span>
+            <span style="color: #8FA69C;" id="lbl-biometric-toggle" data-i18n="biometricToggle">สแกนใบหน้า / ลายนิ้วมือ (Biometrics):</span>
             <button onclick="toggleBiometricsEnrollment()" id="btnBiometricToggle" style="background: rgba(79, 168, 148, 0.15); border: 1px solid #2F8B76; color: #4FA894; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer;">
-              <span id="lbl-btn-biometric-status">เปิดใช้งาน</span>
+              <span id="lbl-btn-biometric-status" data-i18n="btnBiometricStatusOff">เปิดใช้งาน</span>
             </button>
           </div>
         </div>
@@ -725,11 +725,11 @@
       <!-- Quick Tour Link -->
       <div style="display: flex; justify-content: space-between; align-items: center; background: #0E1512; padding: 12px 14px; border-radius: 10px; border: 1px solid #24352C;">
         <div>
-          <div style="font-weight: 600; font-size: 13px;" id="lbl-settings-guide-title">📖 คู่มือเริ่มต้นใช้งาน (Quick Tour)</div>
-          <div style="font-size: 11px; color: #8FA69C;" id="lbl-settings-guide-desc">ดูภาพรวมขั้นตอนการทำงานของเครื่องมือทั้งหมด</div>
+          <div style="font-weight: 600; font-size: 13px;" id="lbl-settings-guide-title" data-i18n="settingsGuideTitle">📖 คู่มือเริ่มต้นใช้งาน (Quick Tour)</div>
+          <div style="font-size: 11px; color: #8FA69C;" id="lbl-settings-guide-desc" data-i18n="settingsGuideDesc">ดูภาพรวมขั้นตอนการทำงานของเครื่องมือทั้งหมด</div>
         </div>
         <button onclick="closeSettingsModal(); openOnboardingModal();" style="background: none; border: 1px solid #2F8B76; color: #4FA894; padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
-          <span id="lbl-btn-open-guide">เปิดคู่มือ</span>
+          <span id="lbl-btn-open-guide" data-i18n="btnOpenGuide">เปิดคู่มือ</span>
         </button>
       </div>
 
@@ -739,19 +739,19 @@
           <div>
             <div style="font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px;">
               <span>🩺</span>
-              <span id="lbl-storage-health-title">สุขภาพข้อมูล & พื้นที่จัดเก็บ (Storage Health)</span>
+              <span id="lbl-storage-health-title" data-i18n="storageHealthTitle">สุขภาพข้อมูล & พื้นที่จัดเก็บ (Storage Health)</span>
             </div>
-            <div style="font-size: 11px; color: #8FA69C; margin-top: 2px;" id="lbl-storage-health-desc">ตรวจสอบความสมบูรณ์และขนาดของข้อมูลในเครื่อง (Client-Side)</div>
+            <div style="font-size: 11px; color: #8FA69C; margin-top: 2px;" id="lbl-storage-health-desc" data-i18n="storageHealthDesc">ตรวจสอบความสมบูรณ์และขนาดของข้อมูลในเครื่อง (Client-Side)</div>
           </div>
           <button onclick="runStorageHealthCheck(true)" id="btn-diagnose-storage" style="background: rgba(47, 139, 118, 0.15); border: 1px solid #2F8B76; color: #4FA894; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap;">
-            <span id="lbl-btn-diagnose">🔍 ตรวจเช็ค</span>
+            <span id="lbl-btn-diagnose" data-i18n="btnDiagnose">🔍 ตรวจเช็ค</span>
           </button>
         </div>
 
         <!-- Storage Progress & Status Summary -->
         <div style="background: rgba(0,0,0,0.25); padding: 8px 10px; border-radius: 6px; border: 1px solid #24352C; font-size: 11px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <span style="color: #8FA69C;" id="lbl-storage-usage-text">พื้นที่ที่ใช้งาน:</span>
+            <span style="color: #8FA69C;" id="lbl-storage-usage-text" data-i18n="storageUsageText">พื้นที่ที่ใช้งาน:</span>
             <span id="storage-usage-badge" style="font-weight: 700; color: #4FA894; font-family: monospace;">0.0 KB / ~5,120 KB (0.00%)</span>
           </div>
           <div style="width: 100%; height: 6px; background: #1a2721; border-radius: 3px; overflow: hidden; margin-bottom: 6px;">
@@ -766,13 +766,13 @@
 
         <!-- Diagnostic Key Details (Expandable) -->
         <details id="storage-details-accordion" style="margin-top: 8px; font-size: 11px; color: #8FA69C;">
-          <summary style="cursor: pointer; user-select: none; color: #8FA69C;" id="lbl-storage-details-summary">📋 ดูรายละเอียดข้อมูลแต่ละส่วน (Key Inventory)</summary>
+          <summary style="cursor: pointer; user-select: none; color: #8FA69C;" id="lbl-storage-details-summary" data-i18n="storageDetailsSummary">📋 ดูรายละเอียดข้อมูลแต่ละส่วน (Key Inventory)</summary>
           <div id="storage-keys-list" style="margin-top: 6px; max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; background: #070B09; padding: 6px; border-radius: 6px; border: 1px solid #1a2721;">
             <!-- Populated dynamically by runStorageHealthCheck() -->
           </div>
           <div id="storage-repair-container" style="display: none; margin-top: 8px; text-align: right;">
             <button onclick="repairCorruptedStorage()" style="background: #C97D5A; color: #fff; border: none; padding: 5px 10px; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer;">
-              <span id="lbl-btn-repair-storage">🛠️ ซ่อมแซมข้อมูลที่เสียหาย</span>
+              <span id="lbl-btn-repair-storage" data-i18n="btnRepairStorage">🛠️ ซ่อมแซมข้อมูลที่เสียหาย</span>
             </button>
           </div>
         </details>
@@ -781,11 +781,11 @@
       <!-- Reset -->
       <div style="display: flex; justify-content: space-between; align-items: center; background: #0E1512; padding: 12px 14px; border-radius: 10px; border: 1px dashed #C97D5A;">
         <div>
-          <div style="font-weight: 600; font-size: 13px; color: #C97D5A;" id="lbl-reset-title">ล้างข้อมูลทั้งหมด (Master Reset)</div>
-          <div style="font-size: 11px; color: #8FA69C;" id="lbl-reset-desc">ลบข้อมูลในเครื่องมือทั้งหมดและคืนค่าเริ่มต้น</div>
+          <div style="font-weight: 600; font-size: 13px; color: #C97D5A;" id="lbl-reset-title" data-i18n="resetTitle">ล้างข้อมูลทั้งหมด (Master Reset)</div>
+          <div style="font-size: 11px; color: #8FA69C;" id="lbl-reset-desc" data-i18n="resetDesc">ลบข้อมูลในเครื่องมือทั้งหมดและคืนค่าเริ่มต้น</div>
         </div>
         <button onclick="resetAllData()" id="btn-master-reset" style="background: #C97D5A; color: #fff; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
-          <span id="lbl-btn-reset">🗑️ ล้างทั้งหมด</span>
+          <span id="lbl-btn-reset" data-i18n="btnReset">🗑️ ล้างทั้งหมด</span>
         </button>
       </div>
     </div>
@@ -799,9 +799,9 @@
       <div>
         <h3 style="margin: 0; font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
           <span>🚀</span>
-          <span id="lbl-onboarding-title">เริ่มต้นใช้งาน Money Superapp</span>
+          <span id="lbl-onboarding-title" data-i18n="onboardingTitle">เริ่มต้นใช้งาน Money Superapp</span>
         </h3>
-        <p style="margin: 4px 0 0; font-size: 12px; color: #8FA69C;" id="lbl-onboarding-subtitle">คู่มือ 5 ขั้นตอนจัดระเบียบการเงินแบบครบวงจร ปลอดภัย 100% บนเครื่องของคุณ</p>
+        <p style="margin: 4px 0 0; font-size: 12px; color: #8FA69C;" id="lbl-onboarding-subtitle" data-i18n="onboardingSubtitle">คู่มือ 5 ขั้นตอนจัดระเบียบการเงินแบบครบวงจร ปลอดภัย 100% บนเครื่องของคุณ</p>
       </div>
       <button onclick="closeOnboardingModal()" style="background: none; border: none; color: #8FA69C; font-size: 22px; cursor: pointer; padding: 0 4px; line-height: 1;" aria-label="Close Tour">&times;</button>
     </div>
@@ -811,72 +811,72 @@
       <!-- Step 1: Payslip -->
       <div style="background: #0E1512; border: 1px solid #24352C; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
         <div style="flex: 1;">
-          <div style="font-weight: 700; font-size: 13px; color: #4FA894;" id="lbl-step1-title">1. 💵 สลิปเงินเดือน (Payslip)</div>
-          <div style="font-size: 11.5px; color: #8FA69C; margin-top: 2px;" id="lbl-step1-desc">จำลองรายได้สุทธิ, ภาษีหัก ณ ที่จ่าย, ปกส., และเงินสะสมกองทุนสำรองเลี้ยงชีพ (PVD)</div>
+          <div style="font-weight: 700; font-size: 13px; color: #4FA894;" id="lbl-step1-title" data-i18n="step1Title">1. 💵 สลิปเงินเดือน (Payslip)</div>
+          <div style="font-size: 11.5px; color: #8FA69C; margin-top: 2px;" id="lbl-step1-desc" data-i18n="step1Desc">จำลองรายได้สุทธิ, ภาษีหัก ณ ที่จ่าย, ปกส., และเงินสะสมกองทุนสำรองเลี้ยงชีพ (PVD)</div>
         </div>
         <button onclick="closeOnboardingModal(); activateTab('months-slips');" class="tour-step-btn" style="background: rgba(47,139,118,0.15); border: 1px solid #2F8B76; color: #4FA894; padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer; white-space: nowrap;">
-          <span class="lbl-btn-try-step">เปิดใช้</span>
+          <span class="lbl-btn-try-step" data-i18n="btnTryStep">เปิดใช้</span>
         </button>
       </div>
 
       <!-- Step 2: Remaining Money -->
       <div style="background: #0E1512; border: 1px solid #24352C; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
         <div style="flex: 1;">
-          <div style="font-weight: 700; font-size: 13px; color: #38bdf8;" id="lbl-step2-title">2. 💰 เงินคงเหลือ (Remaining Money)</div>
-          <div style="font-size: 11.5px; color: #8FA69C; margin-top: 2px;" id="lbl-step2-desc">วางแผนงบรายจ่าย จัดสรรเงินออมฉุกเฉิน และส่งเงินส่วนเกินไปลงทุน</div>
+          <div style="font-weight: 700; font-size: 13px; color: #38bdf8;" id="lbl-step2-title" data-i18n="step2Title">2. 💰 เงินคงเหลือ (Remaining Money)</div>
+          <div style="font-size: 11.5px; color: #8FA69C; margin-top: 2px;" id="lbl-step2-desc" data-i18n="step2Desc">วางแผนงบรายจ่าย จัดสรรเงินออมฉุกเฉิน และส่งเงินส่วนเกินไปลงทุน</div>
         </div>
         <button onclick="closeOnboardingModal(); activateTab('remaining-money');" class="tour-step-btn" style="background: rgba(56,189,248,0.15); border: 1px solid #0284c7; color: #38bdf8; padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer; white-space: nowrap;">
-          <span class="lbl-btn-try-step">เปิดใช้</span>
+          <span class="lbl-btn-try-step" data-i18n="btnTryStep">เปิดใช้</span>
         </button>
       </div>
 
       <!-- Step 3: Rebalance -->
       <div style="background: #0E1512; border: 1px solid #24352C; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
         <div style="flex: 1;">
-          <div style="font-weight: 700; font-size: 13px; color: #a78bfa;" id="lbl-step3-title">3. ⚖️ ปรับพอร์ต (Rebalance)</div>
-          <div style="font-size: 11.5px; color: #8FA69C; margin-top: 2px;" id="lbl-step3-desc">จัดสรรเงินลงทุนตามสัดส่วนเป้าหมาย คำนวณ DCA ขั้นต่ำแบบ Zero-Drift</div>
+          <div style="font-weight: 700; font-size: 13px; color: #a78bfa;" id="lbl-step3-title" data-i18n="step3Title">3. ⚖️ ปรับพอร์ต (Rebalance)</div>
+          <div style="font-size: 11.5px; color: #8FA69C; margin-top: 2px;" id="lbl-step3-desc" data-i18n="step3Desc">จัดสรรเงินลงทุนตามสัดส่วนเป้าหมาย คำนวณ DCA ขั้นต่ำแบบ Zero-Drift</div>
         </div>
         <button onclick="closeOnboardingModal(); activateTab('rebalance');" class="tour-step-btn" style="background: rgba(167,139,250,0.15); border: 1px solid #7c3aed; color: #a78bfa; padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer; white-space: nowrap;">
-          <span class="lbl-btn-try-step">เปิดใช้</span>
+          <span class="lbl-btn-try-step" data-i18n="btnTryStep">เปิดใช้</span>
         </button>
       </div>
 
       <!-- Step 4: Debt Payoff -->
       <div style="background: #0E1512; border: 1px solid #24352C; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
         <div style="flex: 1;">
-          <div style="font-weight: 700; font-size: 13px; color: #fb923c;" id="lbl-step4-title">4. 📉 วางแผนปลดหนี้ (Debt Payoff)</div>
-          <div style="font-size: 11.5px; color: #8FA69C; margin-top: 2px;" id="lbl-step4-desc">เปรียบเทียบวิธี Snowball และ Avalanche พร้อมกราฟ Timeline ปลดหนี้</div>
+          <div style="font-weight: 700; font-size: 13px; color: #fb923c;" id="lbl-step4-title" data-i18n="step4Title">4. 📉 วางแผนปลดหนี้ (Debt Payoff)</div>
+          <div style="font-size: 11.5px; color: #8FA69C; margin-top: 2px;" id="lbl-step4-desc" data-i18n="step4Desc">เปรียบเทียบวิธี Snowball และ Avalanche พร้อมกราฟ Timeline ปลดหนี้</div>
         </div>
         <button onclick="closeOnboardingModal(); activateTab('debt-calculator');" class="tour-step-btn" style="background: rgba(251,146,60,0.15); border: 1px solid #ea580c; color: #fb923c; padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer; white-space: nowrap;">
-          <span class="lbl-btn-try-step">เปิดใช้</span>
+          <span class="lbl-btn-try-step" data-i18n="btnTryStep">เปิดใช้</span>
         </button>
       </div>
 
       <!-- Step 5: Dashboard -->
       <div style="background: #0E1512; border: 1px solid #24352C; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
         <div style="flex: 1;">
-          <div style="font-weight: 700; font-size: 13px; color: #34d399;" id="lbl-step5-title">5. 📊 ภาพรวม & แดชบอร์ด (Dashboard)</div>
-          <div style="font-size: 11.5px; color: #8FA69C; margin-top: 2px;" id="lbl-step5-desc">บันทึกประวัติความมั่งคั่งสุทธิ (Net Worth) และติดตามเป้าหมายการเงินระยะยาว</div>
+          <div style="font-weight: 700; font-size: 13px; color: #34d399;" id="lbl-step5-title" data-i18n="step5Title">5. 📊 ภาพรวม & แดชบอร์ด (Dashboard)</div>
+          <div style="font-size: 11.5px; color: #8FA69C; margin-top: 2px;" id="lbl-step5-desc" data-i18n="step5Desc">บันทึกประวัติความมั่งคั่งสุทธิ (Net Worth) และติดตามเป้าหมายการเงินระยะยาว</div>
         </div>
         <button onclick="closeOnboardingModal(); activateTab('dashboard');" class="tour-step-btn" style="background: rgba(52,211,153,0.15); border: 1px solid #059669; color: #34d399; padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer; white-space: nowrap;">
-          <span class="lbl-btn-try-step">เปิดใช้</span>
+          <span class="lbl-btn-try-step" data-i18n="btnTryStep">เปิดใช้</span>
         </button>
       </div>
     </div>
 
     <!-- Guarantees Pills -->
     <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
-      <span id="badge-onboard-safe" style="background: rgba(255,255,255,0.04); border: 1px solid #24352C; border-radius: 999px; padding: 4px 10px; font-size: 11px; color: #8FA69C;">🔒 ปลอดภัย 100% บนเครื่อง</span>
-      <span id="badge-onboard-drive" style="background: rgba(255,255,255,0.04); border: 1px solid #24352C; border-radius: 999px; padding: 4px 10px; font-size: 11px; color: #8FA69C;">☁️ ซิงค์ Google Drive ได้</span>
-      <span id="badge-onboard-keys" style="background: rgba(255,255,255,0.04); border: 1px solid #24352C; border-radius: 999px; padding: 4px 10px; font-size: 11px; color: #8FA69C;">⌨️ คีย์ลัด Alt+1..7</span>
+      <span id="badge-onboard-safe" style="background: rgba(255,255,255,0.04); border: 1px solid #24352C; border-radius: 999px; padding: 4px 10px; font-size: 11px; color: #8FA69C;" data-i18n="badgeOnboardSafe">🔒 ปลอดภัย 100% บนเครื่อง</span>
+      <span id="badge-onboard-drive" style="background: rgba(255,255,255,0.04); border: 1px solid #24352C; border-radius: 999px; padding: 4px 10px; font-size: 11px; color: #8FA69C;" data-i18n="badgeOnboardDrive">☁️ ซิงค์ Google Drive ได้</span>
+      <span id="badge-onboard-keys" style="background: rgba(255,255,255,0.04); border: 1px solid #24352C; border-radius: 999px; padding: 4px 10px; font-size: 11px; color: #8FA69C;" data-i18n="badgeOnboardKeys">⌨️ คีย์ลัด Alt+1..7</span>
     </div>
 
     <!-- Action Footer -->
     <div style="display: flex; flex-direction: column; gap: 8px;">
       <button onclick="closeOnboardingModal()" style="width: 100%; background: #2F8B76; color: #FFFFFF; border: none; padding: 11px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: background 0.15s;">
-        <span id="lbl-btn-get-started">🚀 เริ่มต้นใช้งานเลย</span>
+        <span id="lbl-btn-get-started" data-i18n="btnGetStarted">🚀 เริ่มต้นใช้งานเลย</span>
       </button>
-      <div style="text-align: center; font-size: 11px; color: #5B7168;" id="lbl-onboarding-footer-note">
+      <div style="text-align: center; font-size: 11px; color: #5B7168;" id="lbl-onboarding-footer-note" data-i18n="onboardingFooterNote">
         💡 สามารถกดเปิดคู่มือนี้ได้ตลอดเวลาจากปุ่ม ❓ บนแถบเมนูด้านบน
       </div>
     </div>
@@ -907,12 +907,12 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #24352C; padding-bottom: 10px;">
       <h3 style="margin: 0; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 6px; text-align: left;">
         <span>📲</span>
-        <span id="lbl-qr-export-title">ส่งออกข้อมูลผ่าน QR Code (Offline P2P)</span>
+        <span id="lbl-qr-export-title" data-i18n="qrExportModalTitle">ส่งออกข้อมูลผ่าน QR Code (Offline P2P)</span>
       </h3>
       <button onclick="closeQrExportModal()" style="background: none; border: none; color: #8FA69C; font-size: 20px; cursor: pointer; padding: 0 4px;" aria-label="Close">&times;</button>
     </div>
 
-    <p style="font-size: 11.5px; color: #8FA69C; margin: 0 0 12px; line-height: 1.4; text-align: left;" id="lbl-qr-export-desc">
+    <p style="font-size: 11.5px; color: #8FA69C; margin: 0 0 12px; line-height: 1.4; text-align: left;" id="lbl-qr-export-desc" data-i18n="qrExportModalDesc">
       ข้อมูลถูกเข้ารหัส AES-GCM แล้วแปลงเป็น Animated QR Code ให้สแกนรับทีละชิ้น
     </p>
 
@@ -937,16 +937,16 @@
     <!-- Frame Controls -->
     <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
       <button onclick="prevQrExportFrame()" id="btn-qr-prev" style="background: #1e293b; color: #e2e8f0; border: 1px solid #334155; padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
-        <span id="lbl-qr-btn-prev">◀ ก่อนหน้า</span>
+        <span id="lbl-qr-btn-prev" data-i18n="qrBtnPrev">◀ ก่อนหน้า</span>
       </button>
       <button onclick="toggleQrExportAutoPlay()" id="btn-qr-autoplay" style="background: #0284c7; color: #ffffff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
-        <span id="lbl-qr-btn-autoplay">▶ เล่นวนอัตโนมัติ</span>
+        <span id="lbl-qr-btn-autoplay" data-i18n="qrBtnAutoPlay">▶ เล่นวนอัตโนมัติ</span>
       </button>
       <button onclick="nextQrExportFrame()" id="btn-qr-next" style="background: #1e293b; color: #e2e8f0; border: 1px solid #334155; padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
-        <span id="lbl-qr-btn-next">ถัดไป ▶</span>
+        <span id="lbl-qr-btn-next" data-i18n="qrBtnNext">ถัดไป ▶</span>
       </button>
       <button onclick="copyQrCurrentChunk()" id="btn-qr-copy-chunk" style="background: rgba(255,255,255,0.06); color: #8FA69C; border: 1px solid #24352C; padding: 6px 10px; border-radius: 6px; font-size: 11px; cursor: pointer;">
-        <span id="lbl-qr-btn-copy-chunk">📋 คัดลอกชิ้นส่วน</span>
+        <span id="lbl-qr-btn-copy-chunk" data-i18n="qrBtnCopyChunk">📋 คัดลอกชิ้นส่วน</span>
       </button>
     </div>
   </div>
@@ -958,12 +958,12 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #24352C; padding-bottom: 10px;">
       <h3 style="margin: 0; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
         <span>📷</span>
-        <span id="lbl-qr-import-title">สแกน / นำเข้า QR Code (Offline P2P)</span>
+        <span id="lbl-qr-import-title" data-i18n="qrImportModalTitle">สแกน / นำเข้า QR Code (Offline P2P)</span>
       </h3>
       <button onclick="closeQrImportModal()" style="background: none; border: none; color: #8FA69C; font-size: 20px; cursor: pointer; padding: 0 4px;" aria-label="Close">&times;</button>
     </div>
 
-    <p style="font-size: 11.5px; color: #8FA69C; margin: 0 0 12px; line-height: 1.4;" id="lbl-qr-import-desc">
+    <p style="font-size: 11.5px; color: #8FA69C; margin: 0 0 12px; line-height: 1.4;" id="lbl-qr-import-desc" data-i18n="qrImportModalDesc">
       สแกน QR Code จากเครื่องต้นทาง หรือวางโค้ดชิ้นส่วนเพื่อประกอบข้อมูลและถอดรหัส
     </p>
 
@@ -971,7 +971,7 @@
     <div id="qrCameraContainer" style="position: relative; width: 100%; height: 210px; background: #000000; border-radius: 10px; overflow: hidden; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid #24352C;">
       <video id="qrScanVideo" playsinline autoplay muted style="width: 100%; height: 100%; object-fit: cover;"></video>
       <div id="qrCameraOverlay" style="position: absolute; border: 2px dashed #4FA894; width: 150px; height: 150px; border-radius: 12px; pointer-events: none; box-shadow: 0 0 0 9999px rgba(0,0,0,0.35);"></div>
-      <div id="qrCameraFallbackNotice" style="display: none; padding: 14px; text-align: center; color: #94a3b8; font-size: 11.5px;">
+      <div id="qrCameraFallbackNotice" style="display: none; padding: 14px; text-align: center; color: #94a3b8; font-size: 11.5px;" data-i18n="qrCameraFallback">
         📷 กล้องไม่พร้อมใช้งาน หรือเบราว์เซอร์ไม่รองรับ BarcodeDetector คุณสามารถวางโค้ด JSON ชิ้นส่วนด้านล่างเพื่อนำเข้าได้
       </div>
     </div>
@@ -997,7 +997,7 @@
         <textarea id="qrManualChunkInput" rows="3" placeholder="วางข้อมูลชิ้นส่วน JSON ที่นี่ (เช่น {&quot;c&quot;:1,&quot;t&quot;:3,&quot;d&quot;:&quot;...&quot;})" style="width: 100%; background: #0E1512; border: 1px solid #24352C; color: #EAF2EE; border-radius: 6px; padding: 8px; font-family: monospace; font-size: 11px; resize: vertical; box-sizing: border-box;"></textarea>
         <div style="display: flex; justify-content: flex-end; gap: 6px;">
           <button onclick="processManualQrChunk()" id="btn-process-qr-chunk" style="background: #7c3aed; color: #ffffff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
-            <span id="lbl-btn-process-qr-chunk">📥 บันทึกชิ้นส่วนนี้</span>
+            <span id="lbl-btn-process-qr-chunk" data-i18n="qrBtnProcessChunk">📥 บันทึกชิ้นส่วนนี้</span>
           </button>
         </div>
       </div>
@@ -1011,10 +1011,10 @@
     <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(79, 168, 148, 0.15); border: 1px solid #2F8B76; display: flex; align-items: center; justify-content: center; font-size: 26px; margin-bottom: 12px;">
       🔒
     </div>
-    <h2 id="lbl-lock-screen-title" style="margin: 0 0 6px; font-size: 18px; font-weight: 700; color: #EAF2EE;">
+    <h2 id="lbl-lock-screen-title" style="margin: 0 0 6px; font-size: 18px; font-weight: 700; color: #EAF2EE;" data-i18n="lockScreenTitle">
       Money Superapp
     </h2>
-    <p id="lbl-lock-screen-subtitle" style="margin: 0 0 20px; font-size: 12px; color: #8FA69C;">
+    <p id="lbl-lock-screen-subtitle" style="margin: 0 0 20px; font-size: 12px; color: #8FA69C;" data-i18n="lockScreenSubtitle">
       กรุณากรอกรหัส PIN 6 หลักเพื่อปลดล็อก
     </p>
 
@@ -1050,7 +1050,7 @@
     <!-- Biometric Unlock Button (if enrolled) -->
     <button type="button" id="btnBiometricUnlock" onclick="triggerBiometricUnlock()" style="display: none; align-items: center; justify-content: center; gap: 8px; background: rgba(79, 168, 148, 0.15); border: 1px solid #2F8B76; color: #4FA894; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; width: 100%;">
       <span>🪪</span>
-      <span id="lbl-btn-biometric-unlock">ปลดล็อกด้วย Face ID / Touch ID</span>
+      <span id="lbl-btn-biometric-unlock" data-i18n="btnBiometricUnlock">ปลดล็อกด้วย Face ID / Touch ID</span>
     </button>
   </div>
 </div>
@@ -1059,11 +1059,11 @@
 <div id="pwaUpdateToast" role="alert" aria-live="polite" style="display: none;" class="pwa-update-toast">
   <div class="pwa-update-content">
     <span class="pwa-update-icon">⚡</span>
-    <span id="lbl-pwa-update-text" class="pwa-update-text">มีเวอร์ชันใหม่พร้อมใช้งาน</span>
+    <span id="lbl-pwa-update-text" class="pwa-update-text" data-i18n="pwaUpdateText">มีเวอร์ชันใหม่พร้อมใช้งาน</span>
   </div>
   <div class="pwa-update-actions">
     <button type="button" id="btnPwaUpdateNow" class="pwa-update-btn" onclick="applyPwaUpdate()">
-      <span id="lbl-pwa-update-btn">อัปเดตเลย ➔</span>
+      <span id="lbl-pwa-update-btn" data-i18n="pwaUpdateBtn">อัปเดตเลย ➔</span>
     </button>
     <button type="button" id="btnPwaDismissUpdate" class="pwa-dismiss-btn" onclick="dismissPwaUpdateToast()" aria-label="Dismiss">
       &times;

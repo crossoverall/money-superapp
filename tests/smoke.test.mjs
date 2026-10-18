@@ -1774,5 +1774,54 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'months-slips.js must call MoneyApp.I18n.applyLocalization',
       );
     });
+
+    it('verifies Phase 105 Universal Declarative i18n & Exhaustive Coverage Suite', () => {
+      const indexHtml = fs.readFileSync(path.join(ROOT_DIR, 'index.html'), 'utf8');
+      const rebJs = fs.readFileSync(path.join(ROOT_DIR, 'js/rebalance.js'), 'utf8');
+      const taxBaseJs = fs.readFileSync(path.join(ROOT_DIR, 'js/tax-calculator-base.js'), 'utf8');
+      const coverageTestPath = path.join(ROOT_DIR, 'tests/i18n-coverage.test.mjs');
+
+      assert.ok(fs.existsSync(coverageTestPath), 'tests/i18n-coverage.test.mjs must exist');
+      assert.ok(fs.statSync(coverageTestPath).size > 1000, 'tests/i18n-coverage.test.mjs must not be empty');
+
+      // Verify index.html declarative data-i18n modal coverage
+      assert.ok(indexHtml.includes('data-i18n="modalTitle"'), 'index.html must contain data-i18n="modalTitle"');
+      assert.ok(
+        indexHtml.includes('data-i18n="modalPrivacyTitle"'),
+        'index.html must contain data-i18n="modalPrivacyTitle"',
+      );
+      assert.ok(indexHtml.includes('data-i18n="gdriveTitle"'), 'index.html must contain data-i18n="gdriveTitle"');
+      assert.ok(indexHtml.includes('data-i18n="exportTitle"'), 'index.html must contain data-i18n="exportTitle"');
+      assert.ok(indexHtml.includes('data-i18n="importTitle"'), 'index.html must contain data-i18n="importTitle"');
+      assert.ok(indexHtml.includes('data-i18n="qrSyncTitle"'), 'index.html must contain data-i18n="qrSyncTitle"');
+      assert.ok(indexHtml.includes('data-i18n="appLockTitle"'), 'index.html must contain data-i18n="appLockTitle"');
+      assert.ok(
+        indexHtml.includes('data-i18n="storageHealthTitle"'),
+        'index.html must contain data-i18n="storageHealthTitle"',
+      );
+      assert.ok(indexHtml.includes('data-i18n="resetTitle"'), 'index.html must contain data-i18n="resetTitle"');
+      assert.ok(
+        indexHtml.includes('data-i18n="onboardingTitle"'),
+        'index.html must contain data-i18n="onboardingTitle"',
+      );
+      assert.ok(
+        indexHtml.includes('data-i18n="qrExportModalTitle"'),
+        'index.html must contain data-i18n="qrExportModalTitle"',
+      );
+      assert.ok(
+        indexHtml.includes('data-i18n="qrImportModalTitle"'),
+        'index.html must contain data-i18n="qrImportModalTitle"',
+      );
+      assert.ok(
+        indexHtml.includes('data-i18n="lockScreenTitle"'),
+        'index.html must contain data-i18n="lockScreenTitle"',
+      );
+      assert.ok(indexHtml.includes('data-i18n="pwaUpdateText"'), 'index.html must contain data-i18n="pwaUpdateText"');
+
+      // Verify audited keys in rebalance.js and tax-calculator-base.js
+      assert.ok(rebJs.includes('lblCopyPortfolio:'), 'rebalance.js must define lblCopyPortfolio');
+      assert.ok(rebJs.includes('resetBtn:'), 'rebalance.js must define resetBtn');
+      assert.ok(taxBaseJs.includes('lblPool500kTitle:'), 'tax-calculator-base.js must define lblPool500kTitle');
+    });
   });
 });
