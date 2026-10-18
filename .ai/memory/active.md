@@ -8,11 +8,11 @@ pipeline: ["orchestrator", "planner", "coder", "debugger", "reviewer", "release"
 ---
 
 ### Last Completed Task
-- **Task ID**: `SDLC-PHASE-85-LINT-WARNINGS-ELIMINATION`
-- **Version**: `v2.5.28`
+- **Task ID**: `SDLC-PHASE-86-BILINGUAL-PARITY-CI-TEST`
+- **Version**: `v2.5.29`
 - **Summary**:
-  1. Eliminated 100% of the 101 Biome lint warnings across all JavaScript files and test suites.
-  2. Applied safe assist transforms: optional chaining `?.` (`useOptionalChain`), lexical arrow functions (`useArrowFunction`), template literals (`useTemplate`), and safe NaN checks (`noGlobalIsNan`).
-  3. Refactored `updateTaxAdvisor` in `js/tax-calculator-base.js` to use ES6 rest parameters (`...extraArgs`) instead of the legacy `arguments` object (`noArguments`).
-  4. Verified zero lint errors and zero warnings across all 23 files via `npm run lint`.
-  5. Verified 100% test pass rate (398/398 passed) via `npm test`.
+  1. Created `tests/bilingual-parity.test.mjs` as a permanent automated regression test using Node.js native test runner and Headless Chrome CDP.
+  2. Live DOM audits all 8 core application pages in English mode (`window.LANG = 'en'`), dynamically expanding cards and checking both text nodes (via TreeWalker) and input/textarea placeholders for untranslated Thai Unicode leaks.
+  3. Resolved uncovered placeholder leaks in `index.html` (`#qrManualChunkInput`) and `rebalance.html` (`#inputFinnhubKey`, `#inputTwelveDataKey`).
+  4. Expanded test suite from 398 to 409 passing tests with 100% pass rate.
+  5. 100% clean Biome lint check across all 24 files with 0 errors and 0 warnings.

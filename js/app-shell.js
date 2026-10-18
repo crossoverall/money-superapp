@@ -247,6 +247,13 @@ function applyLang(lang) {
   if (document.getElementById('lbl-privacy-footer'))
     document.getElementById('lbl-privacy-footer').textContent = t.privacyFooter;
   if (document.getElementById('lbl-modal-title')) document.getElementById('lbl-modal-title').textContent = t.modalTitle;
+  const qrInput = document.getElementById('qrManualChunkInput');
+  if (qrInput) {
+    qrInput.placeholder =
+      lang === 'en'
+        ? 'Paste JSON slice chunk here (e.g. {"c":1,"t":3,"d":"..."})'
+        : 'วางข้อมูลชิ้นส่วน JSON ที่นี่ (เช่น {"c":1,"t":3,"d":"..."})';
+  }
   if (document.getElementById('lbl-modal-privacy-title'))
     document.getElementById('lbl-modal-privacy-title').textContent = t.modalPrivacyTitle;
   if (document.getElementById('lbl-modal-privacy-desc'))

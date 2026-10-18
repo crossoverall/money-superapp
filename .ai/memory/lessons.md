@@ -15,6 +15,19 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Headless Chrome CDP Bilingual Parity Regression Gate (v2.5.29)
+- **Date & Context:** 2026-10-18, implementing Phase 86 Bilingual Parity CI Test (`v2.5.29`).
+- **Problem:**
+  1. Bilingual parity regression checks previously depended on disposable scratch scripts, meaning future additions could accidentally introduce Thai text into English mode without failing CI.
+  2. Input placeholders (`qrManualChunkInput` in `index.html`, Finnhub and Twelve Data API key inputs in `rebalance.html`) were not being inspected by existing dictionary symmetry tests because placeholder attributes live directly in HTML.
+- **Root Cause:**
+  1. Text node checks overlooked input and textarea `placeholder` attributes.
+  2. Static dictionary symmetry tests verify keys between `.th` and `.en` objects in JS, but cannot assert that all static HTML markup is dynamically bound and rewritten at runtime.
+- **Solution & Rule:**
+  1. Formalize `tests/bilingual-parity.test.mjs` as a permanent CI test using native Node.js test runner and headless Chrome CDP.
+  2. Inspect both text nodes via TreeWalker and input/textarea `placeholder` attributes for Thai Unicode ranges (`/[\u0E01-\u0E3A\u0E40-\u0E4E\u0E50-\u0E59]/`).
+  3. Expand test suite from 398 to 409 passing tests with 0 Biome warnings.
+
 ### 2026-10-18: Automated Lint Warning Elimination & Arguments Rest Parameters (v2.5.28)
 - **Date & Context:** 2026-10-18, implementing Phase 85 Lint Warning Elimination (`v2.5.28`).
 - **Problem:**

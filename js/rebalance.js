@@ -231,6 +231,10 @@ if (LANG === 'en') {
   if (undoTopLbl) undoTopLbl.textContent = EN.lblUndo;
   const undoBtmLbl = document.getElementById('lblUndoBottom');
   if (undoBtmLbl) undoBtmLbl.textContent = EN.lblUndo;
+  const finnhubInp = document.getElementById('inputFinnhubKey');
+  if (finnhubInp) finnhubInp.placeholder = 'e.g. c1234abcd5678';
+  const twelveDataInp = document.getElementById('inputTwelveDataKey');
+  if (twelveDataInp) twelveDataInp.placeholder = 'e.g. 1234567890abcdef';
 
   const selGoldType = document.getElementById('selGoldType');
   if (selGoldType && selGoldType.options.length >= 2) {
