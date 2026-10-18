@@ -6,6 +6,13 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const sharedCode = readFileSync(resolve(__dirname, '../js/shared.js'), 'utf8');
+const enginesCode = [
+  readFileSync(resolve(__dirname, '../js/engines/thai-pit.js'), 'utf8'),
+  readFileSync(resolve(__dirname, '../js/engines/thai-tax-calendar.js'), 'utf8'),
+  readFileSync(resolve(__dirname, '../js/engines/insurance.js'), 'utf8'),
+  readFileSync(resolve(__dirname, '../js/engines/gold.js'), 'utf8'),
+  readFileSync(resolve(__dirname, '../js/engines/foreign-tax.js'), 'utf8'),
+].join(';\n');
 
 function createMockEnvironment(initialStorage = {}) {
   const store = { ...initialStorage };
@@ -35,7 +42,12 @@ function createMockEnvironment(initialStorage = {}) {
     localStorage: mockStorage,
   };
 
-  const fn = new Function('window', 'document', 'localStorage', `${sharedCode}; return window.MoneyApp;`);
+  const fn = new Function(
+    'window',
+    'document',
+    'localStorage',
+    `${enginesCode}; ${sharedCode}; return window.MoneyApp;`,
+  );
   const MoneyApp = fn(mockWindow, mockWindow.document, mockWindow.localStorage);
 
   return { MoneyApp, mockWindow, storage: mockStorage };

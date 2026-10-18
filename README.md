@@ -1,4 +1,4 @@
-# Money Superapp (v2.5.30)
+# Money Superapp (v2.5.31)
 
 A lightweight, offline-first personal finance toolkit for Thailand — seven tools in one unified PWA, no build step, no server, 100% client-side privacy.
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="2.5.30">
+<meta name="version" content="2.5.31">
 <script>
   try {
     var t = localStorage.getItem('moneySuperapp.theme');
@@ -884,7 +884,7 @@
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v2.5.30</p>
+  <p class="version-tag">v2.5.31</p>
 
   <!-- API Settings Modal -->
   <div id="apiSettingsModal" role="dialog" aria-modal="true" aria-labelledby="lblModalTitle" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; align-items:center; justify-content:center; backdrop-filter:blur(2px);">
@@ -938,6 +938,11 @@
     </div>
   </div>
 
+<script src="js/engines/thai-pit.js"></script>
+<script src="js/engines/thai-tax-calendar.js"></script>
+<script src="js/engines/insurance.js"></script>
+<script src="js/engines/gold.js"></script>
+<script src="js/engines/foreign-tax.js"></script>
 <script src="js/shared.js"></script>
 <script src="js/rebalance.js"></script>
 </body>

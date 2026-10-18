@@ -18,6 +18,11 @@ const CORE_HTML_PAGES = [
 
 const CORE_JS_SCRIPTS = [
   'js/shared.js',
+  'js/engines/thai-pit.js',
+  'js/engines/thai-tax-calendar.js',
+  'js/engines/insurance.js',
+  'js/engines/gold.js',
+  'js/engines/foreign-tax.js',
   'js/app-shell.js',
   'js/dashboard.js',
   'js/remaining-money.js',

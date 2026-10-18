@@ -688,374 +688,45 @@
     return isEn ? `${sec} seconds` : `${sec} วินาที`;
   }
 
-  var TAX_DEADLINE_MILESTONES = [
-    {
-      id: 'pnd90_paper',
-      titleTh: 'ภ.ง.ด. 90/91 (ยื่นแบบกระดาษ)',
-      titleEn: 'P.N.D. 90/91 (Paper Filing)',
-      descTh: 'ภาษีเงินได้บุคคลธรรมดาประจำปี สำหรับผู้มีเงินได้ทุกประเภท',
-      descEn: 'Annual Personal Income Tax Return for all assessable income types',
-      targetDateTh: '31 มี.ค.',
-      targetDateEn: 'March 31',
-      month: 3,
-      day: 31,
-      audienceTh: 'พนักงานประจำ, ฟรีแลนซ์, ค้าขาย (ม.40(1)-(8))',
-      audienceEn: 'Salaried employees, freelancers, business owners',
-      badgeTh: 'ยื่นภาษีประจำปี',
-      badgeEn: 'Annual PIT',
-    },
-    {
-      id: 'pnd90_online',
-      titleTh: 'ภ.ง.ด. 90/91 (ออนไลน์ e-Filing)',
-      titleEn: 'P.N.D. 90/91 (Online e-Filing)',
-      descTh: 'ยื่นผ่านระบบ e-Filing กรมสรรพากร ได้สิทธิขยายเวลา 8 วัน ขอคืนภาษีผ่านพร้อมเพย์',
-      descEn: 'File online via RD e-Filing (+8 days extension) with PromptPay refund',
-      targetDateTh: '8 เม.ย.',
-      targetDateEn: 'April 8',
-      month: 4,
-      day: 8,
-      audienceTh: 'ผู้ยื่นแบบออนไลน์ทุกคน (แนะนำ สะดวกและรวดเร็ว)',
-      audienceEn: 'All online taxpayers (recommended, fastest refunds)',
-      badgeTh: 'e-Filing แนะนำ',
-      badgeEn: 'Recommended',
-    },
-    {
-      id: 'land_tax',
-      titleTh: 'ภาษีที่ดินและสิ่งปลูกสร้าง',
-      titleEn: 'Land and Building Tax',
-      descTh: 'ชำระภาษีตามหนังสือแจ้งประเมิน (ภ.ด.ส.6/7/8) ณ เทศบาล / อบต. / สนง.เขต',
-      descEn: 'Pay annual property assessment at local district office / municipality / TAO',
-      targetDateTh: '30 เม.ย.',
-      targetDateEn: 'April 30',
-      month: 4,
-      day: 30,
-      audienceTh: 'เจ้าของที่ดิน บ้าน คอนโด หรือสิ่งปลูกสร้างที่เข้าเกณฑ์ประเมิน',
-      audienceEn: 'Owners of taxable land, residences, condos, or buildings',
-      badgeTh: 'ภาษีทรัพย์สิน',
-      badgeEn: 'Property Tax',
-    },
-    {
-      id: 'pnd94_paper',
-      titleTh: 'ภ.ง.ด. 94 ครึ่งปี (ยื่นแบบกระดาษ)',
-      titleEn: 'P.N.D. 94 Mid-Year (Paper Filing)',
-      descTh: 'ยื่นภาษีเงินได้ครึ่งปีแรก (ม.ค. - มิ.ย.) สำหรับผู้มีเงินได้ตาม ม.40(5) ถึง (8)',
-      descEn: 'Mid-year PIT return on income earned Jan-Jun under Sections 40(5)-(8)',
-      targetDateTh: '30 ก.ย.',
-      targetDateEn: 'September 30',
-      month: 9,
-      day: 30,
-      audienceTh: 'ผู้มีรายได้ค่าเช่า (40(5)), วิชาชีพอิสระ (40(6)), รับเหมา (40(7)), พาณิชย์ (40(8))',
-      audienceEn: 'Rental income (40(5)), liberal professions (40(6)), contract work, commercial',
-      badgeTh: 'ภาษีครึ่งปี',
-      badgeEn: 'Mid-Year PIT',
-    },
-    {
-      id: 'pnd94_online',
-      titleTh: 'ภ.ง.ด. 94 ครึ่งปี (ออนไลน์ e-Filing)',
-      titleEn: 'P.N.D. 94 Mid-Year (Online e-Filing)',
-      descTh: 'ยื่นแบบครึ่งปีออนไลน์ผ่านระบบ e-Filing กรมสรรพากร ได้สิทธิขยายเวลาถึง 8 ต.ค.',
-      descEn: 'Online mid-year e-Filing with statutory extension to October 8',
-      targetDateTh: '8 ต.ค.',
-      targetDateEn: 'October 8',
-      month: 10,
-      day: 8,
-      audienceTh: 'ฟรีแลนซ์/ธุรกิจ ม.40(5)-(8) ยื่นออนไลน์สะดวกและปลอดภัย',
-      audienceEn: 'Freelance & business taxpayers filing online',
-      badgeTh: 'e-Filing ครึ่งปี',
-      badgeEn: 'Online Mid-Year',
-    },
-    {
-      id: 'deduction_window',
-      titleTh: 'วันสุดท้ายลงทุนลดหย่อนภาษีปีปัจจุบัน',
-      titleEn: 'Year-End Deduction Investment Deadline',
-      descTh: 'ซื้อกองทุน SSF, RMF, ThaiESG และประกันชีวิต/สุขภาพ ให้เสร็จสิ้นเพื่อลดหย่อนภาษีปีนี้',
-      descEn: 'Deadline to purchase SSF, RMF, ThaiESG funds & qualifying insurance for this tax year',
-      targetDateTh: '31 ธ.ค.',
-      targetDateEn: 'December 31',
-      month: 12,
-      day: 31,
-      audienceTh: 'ผู้เสียภาษีทุกคนที่ต้องการลดหย่อนภาษีและประหยัดเงิน',
-      audienceEn: 'All taxpayers looking to reduce tax liability and maximize savings',
-      badgeTh: 'โค้งสุดท้ายลดหย่อน',
-      badgeEn: 'Deduction Window',
-    },
-  ];
+  // Batch 1 Engines (Modularized in js/engines/)
+  var _ext = global?.MoneyApp || {};
 
-  function calculateThaiTaxDeadlines(refDate) {
-    var current = refDate ? new Date(refDate) : new Date();
-    var currentYear = current.getFullYear();
-    var startOfDay = new Date(current.getFullYear(), current.getMonth(), current.getDate());
-
-    var computedEvents = TAX_DEADLINE_MILESTONES.map((ev) => {
-      var targetYear = currentYear;
-      var targetDate = new Date(targetYear, ev.month - 1, ev.day);
-      if (targetDate < startOfDay) {
-        targetYear += 1;
-        targetDate = new Date(targetYear, ev.month - 1, ev.day);
+  var TAX_DEADLINE_MILESTONES = _ext.TAX_DEADLINE_MILESTONES || [];
+  var calculateThaiTaxDeadlines =
+    _ext.calculateThaiTaxDeadlines ||
+    ((refDate) => {
+      if (
+        global.MoneyApp &&
+        typeof global.MoneyApp.calculateThaiTaxDeadlines === 'function' &&
+        global.MoneyApp.calculateThaiTaxDeadlines !== calculateThaiTaxDeadlines
+      ) {
+        return global.MoneyApp.calculateThaiTaxDeadlines(refDate);
       }
-      var diffMs = targetDate.getTime() - startOfDay.getTime();
-      var daysRemaining = Math.round(diffMs / (1000 * 60 * 60 * 24));
-      return {
-        id: ev.id,
-        titleTh: ev.titleTh,
-        titleEn: ev.titleEn,
-        descTh: ev.descTh,
-        descEn: ev.descEn,
-        targetDateTh: ev.targetDateTh,
-        targetDateEn: ev.targetDateEn,
-        audienceTh: ev.audienceTh,
-        audienceEn: ev.audienceEn,
-        badgeTh: ev.badgeTh,
-        badgeEn: ev.badgeEn,
-        targetYear: targetYear,
-        targetDate: targetDate,
-        daysRemaining: daysRemaining,
-        isPassedThisYear: targetDate.getFullYear() > currentYear,
-      };
     });
 
-    computedEvents.sort((a, b) => a.daysRemaining - b.daysRemaining);
-
-    return {
-      referenceDate: current,
-      nextDeadline: computedEvents[0],
-      deadlines: computedEvents,
-    };
-  }
-
-  /**
-   * Calculate Life Insurance Adequacy & Family Protection Gap
-   * (Capital Needs Analysis + Human Life Value perspective)
-   *
-   * @param {Object} params
-   * @param {number} [params.debtClearance=0] - Outstanding debts to clear (THB)
-   * @param {number} [params.monthlyExpenses=0] - Monthly family living expenses (THB)
-   * @param {number} [params.supportYears=10] - Number of years of family living expense support
-   * @param {number} [params.childEducation=0] - Future education / milestone fund (THB)
-   * @param {number} [params.emergencyCushion=0] - Transition / funeral / final expense reserve (THB)
-   * @param {number} [params.liquidAssets=0] - Existing cash, savings, and liquid investments (THB)
-   * @param {number} [params.existingCoverage=0] - Current death benefit / sum assured of policies (THB)
-   * @param {number} [params.annualIncome=0] - Annual net income for HLV comparison (THB)
-   * @param {number} [params.marginalTaxRate=0] - Marginal tax rate (%) for deduction savings
-   * @returns {Object} Adequacy metrics, shortfall, HLV benchmark, and tax deduction estimates
-   */
-  function calculateInsuranceAdequacy(params) {
-    params = params || {};
-    var debtClearance = Math.max(0, parseNum(params.debtClearance));
-    var monthlyExpenses = Math.max(0, parseNum(params.monthlyExpenses));
-    var supportYears = params.supportYears !== undefined ? Math.max(0, parseNum(params.supportYears)) : 10;
-    var childEducation = Math.max(0, parseNum(params.childEducation));
-    var emergencyCushion = Math.max(0, parseNum(params.emergencyCushion));
-    var liquidAssets = Math.max(0, parseNum(params.liquidAssets));
-    var existingCoverage = Math.max(0, parseNum(params.existingCoverage));
-    var annualIncome = Math.max(0, parseNum(params.annualIncome));
-    var marginalTaxRate = Math.max(0, parseNum(params.marginalTaxRate));
-
-    var livingNeeds = monthlyExpenses * 12 * supportYears;
-    var totalCapitalNeeds = debtClearance + livingNeeds + childEducation + emergencyCushion;
-    var totalExistingResources = liquidAssets + existingCoverage;
-
-    var protectionGap = Math.max(0, totalCapitalNeeds - totalExistingResources);
-    var surplus = Math.max(0, totalExistingResources - totalCapitalNeeds);
-
-    var adequacyRatio = 100;
-    if (totalCapitalNeeds > 0) {
-      adequacyRatio = (totalExistingResources / totalCapitalNeeds) * 100;
-    } else if (totalExistingResources === 0) {
-      adequacyRatio = 100;
-    }
-
-    var status = 'adequate';
-    if (totalCapitalNeeds > 0) {
-      if (adequacyRatio < 50) {
-        status = 'severe_shortfall';
-      } else if (adequacyRatio < 100) {
-        status = 'shortfall';
-      } else if (adequacyRatio <= 130) {
-        status = 'optimal';
-      } else {
-        status = 'surplus';
+  var calculateInsuranceAdequacy =
+    _ext.calculateInsuranceAdequacy ||
+    ((params) => {
+      if (
+        global.MoneyApp &&
+        typeof global.MoneyApp.calculateInsuranceAdequacy === 'function' &&
+        global.MoneyApp.calculateInsuranceAdequacy !== calculateInsuranceAdequacy
+      ) {
+        return global.MoneyApp.calculateInsuranceAdequacy(params);
       }
-    }
+    });
 
-    // Human Life Value (HLV) standard multiplier: 7x annual income
-    var hlvBenchmark = annualIncome > 0 ? annualIncome * 7 : 0;
-
-    // Thai Personal Income Tax Section 47(1)(d):
-    // General life insurance premiums deductible up to 100,000 THB/yr.
-    // Estimated pure term/protection premium: ~1.5% of protection gap.
-    var estimatedAnnualPremium = Math.round(protectionGap * 0.015);
-    var deductibleAmount = Math.min(estimatedAnnualPremium, 100000);
-    var potentialTaxSavings = Math.round(deductibleAmount * (marginalTaxRate / 100));
-
-    return {
-      debtClearance: debtClearance,
-      livingNeeds: livingNeeds,
-      monthlyExpenses: monthlyExpenses,
-      supportYears: supportYears,
-      childEducation: childEducation,
-      emergencyCushion: emergencyCushion,
-      totalCapitalNeeds: totalCapitalNeeds,
-      liquidAssets: liquidAssets,
-      existingCoverage: existingCoverage,
-      totalExistingResources: totalExistingResources,
-      protectionGap: protectionGap,
-      surplus: surplus,
-      adequacyRatio: Math.min(1000, Math.round(adequacyRatio * 10) / 10),
-      status: status,
-      hlvBenchmark: hlvBenchmark,
-      estimatedAnnualPremium: estimatedAnnualPremium,
-      deductibleAmount: deductibleAmount,
-      potentialTaxSavings: potentialTaxSavings,
-    };
-  }
-
-  /**
-   * Thai Gold Bar & Jewelry DCA P/L & Baht Weight Calculator
-   * Official Thai Standards:
-   * 1 บาททองคำแท่ง (96.5% Gold Bar) = 15.244 grams
-   * 1 บาททองคำรูปพรรณ (96.5% Gold Jewelry) = 15.16 grams
-   * 1 สลึง = 0.25 บาททองคำ = 3.811g (Bar) / 3.79g (Jewelry)
-   * 1 Troy Ounce = 31.1034768 grams
-   *
-   * @param {Object} params
-   * @param {'bar'|'jewelry'} [params.goldType='bar'] - Gold product type
-   * @param {'baht'|'salung'|'gram'} [params.weightUnit='baht'] - Input weight unit
-   * @param {number} [params.weight=0] - Input weight quantity
-   * @param {number} [params.costPerBaht=0] - Purchase price per baht weight (THB)
-   * @param {number} [params.blockFee=0] - Block fee (ค่าบล็อก) or craft fee (ค่ากำเหน็จ) (THB)
-   * @param {number} [params.currentMarketPrice=0] - Current selling price of Gold Traders Assoc (THB/baht)
-   * @param {number} [params.currentBuybackPrice=0] - Current buyback price of Gold Traders Assoc (THB/baht)
-   * @param {Array<Object>} [params.tranches=[]] - Optional array of multiple DCA purchase lots
-   * @returns {Object} Comprehensive weight conversions, cost basis, valuation, and P/L
-   */
-  function calculateThaiGoldMetrics(params) {
-    params = params || {};
-    var goldType = params.goldType === 'jewelry' ? 'jewelry' : 'bar';
-    var weightUnit = params.weightUnit || 'baht';
-    var rawWeight = Math.max(0, parseNum(params.weight));
-    var costPerBaht = Math.max(0, parseNum(params.costPerBaht));
-    var blockFee = Math.max(0, parseNum(params.blockFee));
-    var currentMarketPrice = Math.max(0, parseNum(params.currentMarketPrice));
-    var currentBuybackPrice = Math.max(0, parseNum(params.currentBuybackPrice));
-
-    var gramsPerBaht = goldType === 'jewelry' ? 15.16 : 15.244;
-
-    var weightBaht = 0;
-    if (weightUnit === 'salung') {
-      weightBaht = rawWeight * 0.25;
-    } else if (weightUnit === 'gram') {
-      weightBaht = gramsPerBaht > 0 ? rawWeight / gramsPerBaht : 0;
-    } else {
-      weightBaht = rawWeight;
-    }
-
-    var weightGrams = weightBaht * gramsPerBaht;
-    var weightSalung = weightBaht * 4;
-    var weightTroyOz = weightGrams / 31.1034768;
-
-    var tranches = Array.isArray(params.tranches) ? params.tranches : [];
-    var totalTrancheBaht = 0;
-    var totalTrancheCost = 0;
-    var processedTranches = [];
-    var i;
-    var tr;
-    var trType;
-    var trGramsPerBaht;
-    var trUnit;
-    var trRawWeight;
-    var trBaht;
-    var trCostPerBaht;
-    var trFee;
-    var trTotalCost;
-
-    if (tranches.length > 0) {
-      for (i = 0; i < tranches.length; i++) {
-        tr = tranches[i] || {};
-        trType = tr.goldType === 'jewelry' ? 'jewelry' : 'bar';
-        trGramsPerBaht = trType === 'jewelry' ? 15.16 : 15.244;
-        trUnit = tr.weightUnit || 'baht';
-        trRawWeight = Math.max(0, parseNum(tr.weight));
-        trBaht =
-          trUnit === 'salung'
-            ? trRawWeight * 0.25
-            : trUnit === 'gram'
-              ? trGramsPerBaht > 0
-                ? trRawWeight / trGramsPerBaht
-                : 0
-              : trRawWeight;
-        trCostPerBaht = Math.max(0, parseNum(tr.costPerBaht));
-        trFee = Math.max(0, parseNum(tr.blockFee));
-        trTotalCost = trBaht * trCostPerBaht + trFee;
-
-        totalTrancheBaht += trBaht;
-        totalTrancheCost += trTotalCost;
-
-        processedTranches.push({
-          id: tr.id || `tranche_${i}`,
-          date: tr.date || '',
-          goldType: trType,
-          weightBaht: Math.round(trBaht * 10000) / 10000,
-          weightGrams: Math.round(trBaht * trGramsPerBaht * 100) / 100,
-          costPerBaht: trCostPerBaht,
-          blockFee: trFee,
-          totalCost: trTotalCost,
-        });
+  var calculateThaiGoldMetrics =
+    _ext.calculateThaiGoldMetrics ||
+    ((params) => {
+      if (
+        global.MoneyApp &&
+        typeof global.MoneyApp.calculateThaiGoldMetrics === 'function' &&
+        global.MoneyApp.calculateThaiGoldMetrics !== calculateThaiGoldMetrics
+      ) {
+        return global.MoneyApp.calculateThaiGoldMetrics(params);
       }
-    }
-
-    var activeWeightBaht = tranches.length > 0 ? totalTrancheBaht : weightBaht;
-    var activeWeightGrams = activeWeightBaht * gramsPerBaht;
-    var activeWeightSalung = activeWeightBaht * 4;
-    var activeWeightTroyOz = activeWeightGrams / 31.1034768;
-
-    var totalCost = tranches.length > 0 ? totalTrancheCost : activeWeightBaht * costPerBaht + blockFee;
-    var effectiveCostPerBaht = activeWeightBaht > 0 ? totalCost / activeWeightBaht : 0;
-
-    var effectiveBuybackPrice = currentBuybackPrice;
-    if (effectiveBuybackPrice <= 0 && currentMarketPrice > 0) {
-      if (goldType === 'bar') {
-        effectiveBuybackPrice = Math.max(0, currentMarketPrice - 100);
-      } else {
-        effectiveBuybackPrice = Math.round(currentMarketPrice * 0.95);
-      }
-    }
-
-    var marketValue = activeWeightBaht * currentMarketPrice;
-    var liquidationValue = activeWeightBaht * effectiveBuybackPrice;
-
-    var unrealizedGainLoss = marketValue - totalCost;
-    var unrealizedGainLossPct = totalCost > 0 ? (unrealizedGainLoss / totalCost) * 100 : 0;
-
-    var liquidationGainLoss = liquidationValue - totalCost;
-    var liquidationGainLossPct = totalCost > 0 ? (liquidationGainLoss / totalCost) * 100 : 0;
-
-    var breakEvenMarketPrice = effectiveCostPerBaht;
-    var breakEvenBuybackPrice = goldType === 'bar' ? effectiveCostPerBaht + 100 : effectiveCostPerBaht / 0.95;
-
-    return {
-      goldType: goldType,
-      weightUnit: weightUnit,
-      weightBaht: Math.round(activeWeightBaht * 10000) / 10000,
-      weightGrams: Math.round(activeWeightGrams * 100) / 100,
-      weightSalung: Math.round(activeWeightSalung * 100) / 100,
-      weightTroyOz: Math.round(activeWeightTroyOz * 1000) / 1000,
-      gramsPerBaht: gramsPerBaht,
-      totalCost: Math.round(totalCost),
-      effectiveCostPerBaht: Math.round(effectiveCostPerBaht),
-      currentMarketPrice: currentMarketPrice,
-      currentBuybackPrice: effectiveBuybackPrice,
-      marketValue: Math.round(marketValue),
-      liquidationValue: Math.round(liquidationValue),
-      unrealizedGainLoss: Math.round(unrealizedGainLoss),
-      unrealizedGainLossPct: Math.round(unrealizedGainLossPct * 10) / 10,
-      liquidationGainLoss: Math.round(liquidationGainLoss),
-      liquidationGainLossPct: Math.round(liquidationGainLossPct * 10) / 10,
-      breakEvenMarketPrice: Math.round(breakEvenMarketPrice),
-      breakEvenBuybackPrice: Math.round(breakEvenBuybackPrice),
-      processedTranches: processedTranches,
-    };
-  }
+    });
 
   /**
    * Calculates Thai Inheritance Tax (พ.ร.บ. ภาษีการรับมรดก พ.ศ. 2558)
@@ -1236,7 +907,7 @@
     };
   }
 
-  var THAI_PIT_TAX_BRACKETS = [
+  var THAI_PIT_TAX_BRACKETS = _ext.THAI_PIT_TAX_BRACKETS || [
     { limit: 150000, rate: 0 },
     { limit: 150000, rate: 0.05 },
     { limit: 200000, rate: 0.1 },
@@ -1247,23 +918,7 @@
     { limit: Infinity, rate: 0.35 },
   ];
 
-  function computeThaiPitTax(netIncome) {
-    var remaining = Math.max(0, parseNum(netIncome));
-    var totalTax = 0;
-    var i;
-    var b;
-    var taxable;
-    for (i = 0; i < THAI_PIT_TAX_BRACKETS.length; i++) {
-      if (remaining <= 0) break;
-      b = THAI_PIT_TAX_BRACKETS[i];
-      taxable = Math.min(remaining, b.limit);
-      totalTax += taxable * b.rate;
-      remaining -= taxable;
-    }
-    return Math.round(totalTax);
-  }
-
-  var THAI_PIT_TIERS = [
+  var THAI_PIT_TIERS = _ext.THAI_PIT_TIERS || [
     { min: 0, max: 150000, rate: 0 },
     { min: 150000, max: 300000, rate: 0.05 },
     { min: 300000, max: 500000, rate: 0.1 },
@@ -1274,218 +929,54 @@
     { min: 5000000, max: Infinity, rate: 0.35 },
   ];
 
-  /**
-   * Phase 79: Computes Thai Personal Income Tax Bracket Boundary Headroom & Step-Down Targets.
-   * Calculates the exact deduction needed to drop into the next lower tax bracket,
-   * the immediate guaranteed tax return ROI, and distance to reach the tax-free 0% threshold.
-   *
-   * @param {number} netTaxableIncome - Annual net taxable income after legal expenses and deductions
-   * @returns {Object} Tax bracket boundary metrics, step-down targets, and guaranteed savings
-   */
-  function calculateTaxBracketStepDown(netTaxableIncome) {
-    var net = Math.max(0, parseNum(netTaxableIncome));
-    var totalTax = computeThaiPitTax(net);
-
-    // Identify current active tier
-    var tierIndex = 0;
-    var i;
-    for (i = 0; i < THAI_PIT_TIERS.length; i++) {
-      if (net > THAI_PIT_TIERS[i].min) {
-        tierIndex = i;
+  var computeThaiPitTax =
+    _ext.computeThaiPitTax ||
+    ((netIncome) => {
+      if (
+        global.MoneyApp &&
+        typeof global.MoneyApp.computeThaiPitTax === 'function' &&
+        global.MoneyApp.computeThaiPitTax !== computeThaiPitTax
+      ) {
+        return global.MoneyApp.computeThaiPitTax(netIncome);
       }
-    }
-
-    var currentTier = THAI_PIT_TIERS[tierIndex];
-    var currentRate = currentTier.rate;
-    var currentRatePct = Math.round(currentRate * 100);
-    var isTaxFree = tierIndex === 0;
-
-    var lowerThreshold = currentTier.min;
-    var nextLowerRate = 0;
-    var nextLowerRatePct = 0;
-    if (tierIndex > 0) {
-      nextLowerRate = THAI_PIT_TIERS[tierIndex - 1].rate;
-      nextLowerRatePct = Math.round(nextLowerRate * 100);
-    }
-
-    var amountToStepDown = isTaxFree ? 0 : Math.max(0, net - lowerThreshold);
-    var taxSavedAtStepDown = Math.round(amountToStepDown * currentRate);
-    var stepDownRoiPct = currentRatePct;
-
-    var amountToTaxFree = Math.max(0, net - 150000);
-    var taxSavedToTaxFree = totalTax;
-
-    var tierSpan = currentTier.max - currentTier.min;
-    var progressInCurrentTierPct = 0;
-    if (isTaxFree) {
-      progressInCurrentTierPct = net > 0 ? Math.min(100, Math.round((net / 150000) * 1000) / 10) : 0;
-    } else if (tierSpan !== Infinity) {
-      progressInCurrentTierPct = Math.min(
-        100,
-        Math.max(0, Math.round(((net - currentTier.min) / tierSpan) * 1000) / 10),
-      );
-    } else {
-      progressInCurrentTierPct = 100;
-    }
-
-    return {
-      netTaxableIncome: net,
-      currentRate: currentRate,
-      currentRatePct: currentRatePct,
-      currentTierIndex: tierIndex,
-      isTaxFree: isTaxFree,
-      lowerThreshold: lowerThreshold,
-      nextLowerRate: nextLowerRate,
-      nextLowerRatePct: nextLowerRatePct,
-      amountToStepDown: amountToStepDown,
-      taxSavedAtStepDown: taxSavedAtStepDown,
-      stepDownRoiPct: stepDownRoiPct,
-      amountToTaxFree: amountToTaxFree,
-      taxSavedToTaxFree: taxSavedToTaxFree,
-      progressInCurrentTierPct: progressInCurrentTierPct,
-      totalCurrentTax: totalTax,
-    };
-  }
-
-  /**
-   * Calculates Thai Stock Dividend Tax Credit (เครดิตภาษีเงินปันผล มาตรา 47 ทวิ)
-   *
-   * @param {Object} params
-   * @param {number|Array<Object>} [params.dividends] - Cash dividend amount or array of dividend lots
-   * @param {number} [params.corporateTaxRate=0.20] - Default corporate income tax rate (CIT, typically 0.20)
-   * @param {number} [params.otherTaxableNetIncome=0] - Taxpayer's regular net taxable income before dividends
-   * @param {number} [params.regularTaxWithheld=0] - Regular tax already withheld at source (50 Tawi)
-   * @returns {Object} Dividend tax credit metrics, scenarios, and optimal filing recommendation
-   */
-  function calculateThaiDividendTaxCredit(params) {
-    params = params || {};
-    var defaultCitRate = params.corporateTaxRate !== undefined ? parseNum(params.corporateTaxRate) : 0.2;
-    var otherTaxableNetIncome = Math.max(0, parseNum(params.otherTaxableNetIncome));
-    var regularTaxWithheld = Math.max(0, parseNum(params.regularTaxWithheld));
-
-    var lots = [];
-    var singleAmt;
-    if (Array.isArray(params.dividends)) {
-      lots = params.dividends.map((lot) => {
-        var amt = Math.max(0, parseNum(lot.amount !== undefined ? lot.amount : lot.dividend));
-        var cit = lot.corporateTaxRate !== undefined ? parseNum(lot.corporateTaxRate) : defaultCitRate;
-        var whtRate = lot.withholdingRate !== undefined ? parseNum(lot.withholdingRate) : 0.1;
-        return {
-          name: lot.name || '',
-          amount: amt,
-          corporateTaxRate: cit,
-          withholdingRate: whtRate,
-        };
-      });
-    } else {
-      singleAmt = Math.max(0, parseNum(params.dividends !== undefined ? params.dividends : params.dividendAmount));
-      if (singleAmt > 0) {
-        lots.push({
-          name: 'Dividends',
-          amount: singleAmt,
-          corporateTaxRate: defaultCitRate,
-          withholdingRate: 0.1,
-        });
+      var remaining = Math.max(0, parseNum(netIncome));
+      var totalTax = 0;
+      var i;
+      var b;
+      var taxable;
+      for (i = 0; i < THAI_PIT_TAX_BRACKETS.length; i++) {
+        if (remaining <= 0) break;
+        b = THAI_PIT_TAX_BRACKETS[i];
+        taxable = Math.min(remaining, b.limit);
+        totalTax += taxable * b.rate;
+        remaining -= taxable;
       }
-    }
+      return Math.round(totalTax);
+    });
 
-    var totalDividends = 0;
-    var totalDividendWht = 0;
-    var totalTaxCredit = 0;
-    var totalGrossedUp = 0;
-    var lotsDetail = [];
-    var i;
-    var item;
-    var d;
-    var t;
-    var whtRate;
-    var wht;
-    var creditFactor;
-    var credit;
-    var grossed;
+  var calculateTaxBracketStepDown =
+    _ext.calculateTaxBracketStepDown ||
+    ((netTaxableIncome) => {
+      if (
+        global.MoneyApp &&
+        typeof global.MoneyApp.calculateTaxBracketStepDown === 'function' &&
+        global.MoneyApp.calculateTaxBracketStepDown !== calculateTaxBracketStepDown
+      ) {
+        return global.MoneyApp.calculateTaxBracketStepDown(netTaxableIncome);
+      }
+    });
 
-    for (i = 0; i < lots.length; i++) {
-      item = lots[i];
-      d = item.amount;
-      t = item.corporateTaxRate;
-      whtRate = item.withholdingRate;
-      wht = Math.round(d * whtRate);
-
-      creditFactor = t > 0 && t < 1 ? t / (1 - t) : 0;
-      credit = Math.round(d * creditFactor);
-      grossed = d + credit;
-
-      totalDividends += d;
-      totalDividendWht += wht;
-      totalTaxCredit += credit;
-      totalGrossedUp += grossed;
-
-      lotsDetail.push({
-        name: item.name,
-        amount: d,
-        corporateTaxRate: t,
-        creditFactor: Math.round(creditFactor * 10000) / 10000,
-        taxCredit: credit,
-        grossedUp: grossed,
-        withholdingTax: wht,
-      });
-    }
-
-    var regularTaxLiability = computeThaiPitTax(otherTaxableNetIncome);
-    var regularNetPayable = regularTaxLiability - regularTaxWithheld;
-
-    var scenarioFinalTax = {
-      method: 'final_tax',
-      regularTaxLiability: regularTaxLiability,
-      regularWithheld: regularTaxWithheld,
-      dividendWithheld: totalDividendWht,
-      dividendCreditClaimed: 0,
-      totalTaxCost: regularTaxLiability + totalDividendWht,
-      netPayableOrRefund: regularNetPayable + totalDividendWht,
-    };
-
-    var combinedNetIncome = otherTaxableNetIncome + totalGrossedUp;
-    var combinedTaxLiability = computeThaiPitTax(combinedNetIncome);
-    var totalCredits = regularTaxWithheld + totalDividendWht + totalTaxCredit;
-    var combinedNetPayable = combinedTaxLiability - totalCredits;
-    var combinedTaxCost = combinedTaxLiability - totalTaxCredit;
-
-    var scenarioClaimCredit = {
-      method: 'claim_credit',
-      combinedNetIncome: combinedNetIncome,
-      combinedTaxLiability: combinedTaxLiability,
-      regularWithheld: regularTaxWithheld,
-      dividendWithheld: totalDividendWht,
-      dividendCreditClaimed: totalTaxCredit,
-      totalCredits: totalCredits,
-      totalTaxCost: combinedTaxCost,
-      netPayableOrRefund: combinedNetPayable,
-    };
-
-    var netTaxAdvantage = scenarioFinalTax.totalTaxCost - scenarioClaimCredit.totalTaxCost;
-
-    var optimalChoice = 'equivalent';
-    if (netTaxAdvantage > 0) {
-      optimalChoice = 'claim_credit';
-    } else if (netTaxAdvantage < 0) {
-      optimalChoice = 'final_tax';
-    }
-
-    return {
-      totalDividends: totalDividends,
-      totalDividendWht: totalDividendWht,
-      totalTaxCredit: totalTaxCredit,
-      totalGrossedUp: totalGrossedUp,
-      otherTaxableNetIncome: otherTaxableNetIncome,
-      combinedNetIncome: combinedNetIncome,
-      scenarioFinalTax: scenarioFinalTax,
-      scenarioClaimCredit: scenarioClaimCredit,
-      optimalChoice: optimalChoice,
-      netTaxAdvantage: Math.abs(netTaxAdvantage),
-      isClaimAdvantageous: optimalChoice === 'claim_credit',
-      lotsDetail: lotsDetail,
-    };
-  }
+  var calculateThaiDividendTaxCredit =
+    _ext.calculateThaiDividendTaxCredit ||
+    ((params) => {
+      if (
+        global.MoneyApp &&
+        typeof global.MoneyApp.calculateThaiDividendTaxCredit === 'function' &&
+        global.MoneyApp.calculateThaiDividendTaxCredit !== calculateThaiDividendTaxCredit
+      ) {
+        return global.MoneyApp.calculateThaiDividendTaxCredit(params);
+      }
+    });
 
   /**
    * Calculates Thai Land and Building Tax (ภาษีที่ดินและสิ่งปลูกสร้าง พ.ร.บ. 2562)
@@ -1942,113 +1433,18 @@
 
   /**
    * Calculates Thai Foreign Investment & Crypto Repatriation Tax (คำสั่งกรมสรรพากร ป.161/2566 & ป.162/2566)
-   *
-   * @param {Object} params
-   * @param {number} [params.remittanceAmount=0] - Total foreign funds remitted into Thailand (THB)
-   * @param {number} [params.pre2024AccumulatedAmount=0] - Portion derived abroad before 1 Jan 2024 (exempt under P.162/2566)
-   * @param {number} [params.principalCapitalAmount=0] - Portion representing original invested capital (exempt from assessable income)
-   * @param {number} [params.daysInThailand=180] - Number of days residing in Thailand in the remittance tax year
-   * @param {number} [params.foreignTaxPaidThb=0] - Foreign tax paid abroad eligible for DTA tax credit (THB)
-   * @param {number} [params.otherTaxableNetIncome=0] - Domestic net taxable income in Thailand before remittance (THB)
-   * @returns {Object} Tax liability, DTA credits, exemptions, and strategic repatriation guidance
    */
-  function calculateForeignRepatriationTax(params) {
-    params = params || {};
-    var remittanceAmount = Math.max(0, parseNum(params.remittanceAmount));
-    var pre2024AccumulatedAmount = Math.max(
-      0,
-      parseNum(params.pre2024AccumulatedAmount !== undefined ? params.pre2024AccumulatedAmount : params.pre2024Amount),
-    );
-    var principalCapitalAmount = Math.max(
-      0,
-      parseNum(params.principalCapitalAmount !== undefined ? params.principalCapitalAmount : params.principalAmount),
-    );
-    var daysInThailand = params.daysInThailand !== undefined ? parseNum(params.daysInThailand) : 180;
-    var foreignTaxPaidThb = Math.max(
-      0,
-      parseNum(params.foreignTaxPaidThb !== undefined ? params.foreignTaxPaidThb : params.foreignTaxPaid),
-    );
-    var otherTaxableNetIncome = Math.max(
-      0,
-      parseNum(
-        params.otherTaxableNetIncome !== undefined ? params.otherTaxableNetIncome : params.otherDomesticNetIncome,
-      ),
-    );
-
-    var isTaxResident = daysInThailand >= 180;
-    var isExempt = false;
-    var exemptionReason = 'none';
-
-    if (!isTaxResident) {
-      isExempt = true;
-      exemptionReason = 'non_resident_under_180_days';
-      return {
-        remittanceAmount: remittanceAmount,
-        daysInThailand: daysInThailand,
-        isTaxResident: false,
-        isResident: false,
-        isExempt: true,
-        exemptionReason: exemptionReason,
-        pre2024ExemptAmount: 0,
-        capitalPrincipalExemptAmount: 0,
-        totalExemptAmount: remittanceAmount,
-        taxableRemittance: 0,
-        grossThaiTaxOnRemittance: 0,
-        allowableDtaCredit: 0,
-        dtaForeignTaxCredit: 0,
-        netThaiTaxPayable: 0,
-        dtaSavings: 0,
-        effectiveTaxRatePct: 0,
-        effectiveTaxRate: 0,
-        totalNetCashRetained: remittanceAmount,
-        netRetainedInThailand: remittanceAmount,
-      };
-    }
-
-    var pre2024ExemptAmount = Math.min(remittanceAmount, pre2024AccumulatedAmount);
-    var remainingAfterPre2024 = Math.max(0, remittanceAmount - pre2024ExemptAmount);
-
-    var capitalPrincipalExemptAmount = Math.min(remainingAfterPre2024, principalCapitalAmount);
-    var taxableRemittance = Math.max(0, remainingAfterPre2024 - capitalPrincipalExemptAmount);
-
-    if (remittanceAmount > 0 && taxableRemittance === 0) {
-      isExempt = true;
-      exemptionReason = pre2024ExemptAmount >= remittanceAmount ? 'pre_2024_grandfathered' : 'principal_capital_return';
-    }
-
-    var baseTax = computeThaiPitTax(otherTaxableNetIncome);
-    var totalTaxWithRemittance = computeThaiPitTax(otherTaxableNetIncome + taxableRemittance);
-    var grossThaiTaxOnRemittance = Math.max(0, totalTaxWithRemittance - baseTax);
-
-    var allowableDtaCredit = Math.min(foreignTaxPaidThb, grossThaiTaxOnRemittance);
-    var netThaiTaxPayable = Math.max(0, grossThaiTaxOnRemittance - allowableDtaCredit);
-
-    var effectiveTaxRatePct =
-      remittanceAmount > 0 ? Math.round((netThaiTaxPayable / remittanceAmount) * 10000) / 100 : 0;
-    var totalNetCashRetained = remittanceAmount - netThaiTaxPayable;
-
-    return {
-      remittanceAmount: remittanceAmount,
-      daysInThailand: daysInThailand,
-      isTaxResident: true,
-      isResident: true,
-      isExempt: isExempt,
-      exemptionReason: exemptionReason,
-      pre2024ExemptAmount: pre2024ExemptAmount,
-      capitalPrincipalExemptAmount: capitalPrincipalExemptAmount,
-      totalExemptAmount: pre2024ExemptAmount + capitalPrincipalExemptAmount,
-      taxableRemittance: taxableRemittance,
-      grossThaiTaxOnRemittance: grossThaiTaxOnRemittance,
-      allowableDtaCredit: allowableDtaCredit,
-      dtaForeignTaxCredit: allowableDtaCredit,
-      netThaiTaxPayable: netThaiTaxPayable,
-      dtaSavings: allowableDtaCredit,
-      effectiveTaxRatePct: effectiveTaxRatePct,
-      effectiveTaxRate: effectiveTaxRatePct,
-      totalNetCashRetained: totalNetCashRetained,
-      netRetainedInThailand: totalNetCashRetained,
-    };
-  }
+  var calculateForeignRepatriationTax =
+    _ext.calculateForeignRepatriationTax ||
+    ((params) => {
+      if (
+        global.MoneyApp &&
+        typeof global.MoneyApp.calculateForeignRepatriationTax === 'function' &&
+        global.MoneyApp.calculateForeignRepatriationTax !== calculateForeignRepatriationTax
+      ) {
+        return global.MoneyApp.calculateForeignRepatriationTax(params);
+      }
+    });
 
   /**
    * Target Date Fund (TDF) Glidepath Allocation Engine (Roadmap Phase 64)
@@ -2931,278 +2327,53 @@
    * @param {number} [options.marginalTaxRate=0] - Marginal tax bracket (%) for Section 47 tax deduction savings
    * @returns {Object} Structured premium estimate
    */
-  function calculateTermLifePremiumEstimate(coverageGap, options) {
-    var gap = Math.max(0, parseNum(coverageGap));
-    options = options || {};
-    var ratePerMillion = Math.max(1000, parseNum(options.ratePerMillion) || 3000);
-    var marginalTaxRate = Math.max(0, Math.min(35, parseNum(options.marginalTaxRate) || 0));
-
-    if (gap <= 0) {
-      return {
-        hasShortfall: false,
-        coverageGap: 0,
-        annualPremium: 0,
-        monthlyPremium: 0,
-        potentialTaxSavings: 0,
-        netAnnualCost: 0,
-        netMonthlyCost: 0,
-        ratePerMillion: ratePerMillion,
-      };
-    }
-
-    var annualPremium = Math.round((gap / 1000000) * ratePerMillion);
-    var monthlyPremium = Math.max(100, Math.round(annualPremium / 12));
-    var potentialTaxSavings = Math.round(Math.min(annualPremium, 100000) * (marginalTaxRate / 100));
-    var netAnnualCost = Math.max(0, annualPremium - potentialTaxSavings);
-    var netMonthlyCost = Math.max(0, Math.round(netAnnualCost / 12));
-
-    return {
-      hasShortfall: true,
-      coverageGap: gap,
-      annualPremium: annualPremium,
-      monthlyPremium: monthlyPremium,
-      potentialTaxSavings: potentialTaxSavings,
-      netAnnualCost: netAnnualCost,
-      netMonthlyCost: netMonthlyCost,
-      marginalTaxRate: marginalTaxRate,
-      ratePerMillion: ratePerMillion,
-    };
-  }
-
-  /**
-   * Phase 74: Statutory 500k Retirement Deductions Pool Warning Engine (Section 47 Thai Revenue Code).
-   * Combines PVD (Provident Fund), RMF, SSF, GPF, NSF, and Annuity Life Insurance under the statutory 500,000 THB ceiling.
-   */
-  function calculateRetirementCeilingPool(params) {
-    var p = params || {};
-    var pvd = Math.max(0, Number(p.pvd) || 0);
-    var rmf = Math.max(0, Number(p.rmf) || 0);
-    var ssf = Math.max(0, Number(p.ssf) || 0);
-    var gpf = Math.max(0, Number(p.gpf) || 0);
-    var nsf = Math.max(0, Number(p.nsf) || 0);
-    var pensionInsurance = Math.max(0, Number(p.pensionInsurance) || 0);
-
-    var totalRaw = pvd + rmf + ssf + gpf + nsf + pensionInsurance;
-    var CEILING = 500000;
-    var effectiveTotal = Math.min(totalRaw, CEILING);
-    var excess = Math.max(0, totalRaw - CEILING);
-    var headroom = Math.max(0, CEILING - totalRaw);
-    var utilizationPct = Number(Math.min(100, (totalRaw / CEILING) * 100).toFixed(1));
-
-    var status = 'safe';
-    if (totalRaw > CEILING) {
-      status = 'exceeded';
-    } else if (totalRaw >= 400000) {
-      status = 'warning';
-    }
-
-    return {
-      pvd: pvd,
-      rmf: rmf,
-      ssf: ssf,
-      gpf: gpf,
-      nsf: nsf,
-      pensionInsurance: pensionInsurance,
-      totalRaw: totalRaw,
-      effectiveTotal: effectiveTotal,
-      excess: excess,
-      headroom: headroom,
-      utilizationPct: utilizationPct,
-      status: status,
-      isExceeded: totalRaw > CEILING,
-    };
-  }
-
-  /**
-   * Phase 74: Statutory ภ.ง.ด. 90/91 e-Filing Pre-Flight Checklist Evaluator.
-   * Evaluates 5 statutory compliance milestones before filing on efiling.rd.go.th.
-   */
-  function evaluateEFilingPreFlightChecklist(params) {
-    var p = params || {};
-    var checks = p.checks || {};
-    var pool = p.retirementPool || {};
-
-    var hasExcess = Boolean(pool.isExceeded);
-    var item50Tawi = Boolean(checks.doc50Tawi);
-    var itemPool500k = !hasExcess && Boolean(checks.pool500k);
-    var itemThaiEsg = Boolean(checks.thaiEsg);
-    var itemConsent = Boolean(checks.consentRd);
-    var itemPromptPay = Boolean(checks.promptPayCitizen);
-
-    var checklist = [
-      { id: 'doc50Tawi', completed: item50Tawi },
-      { id: 'pool500k', completed: itemPool500k, isExceeded: hasExcess },
-      { id: 'thaiEsg', completed: itemThaiEsg },
-      { id: 'consentRd', completed: itemConsent },
-      { id: 'promptPayCitizen', completed: itemPromptPay },
-    ];
-
-    var completedCount = checklist.filter((item) => item.completed).length;
-    var totalCount = checklist.length;
-    var completionPct = Math.round((completedCount / totalCount) * 100);
-    var isReady = completedCount === totalCount && !hasExcess;
-
-    return {
-      checklist: checklist,
-      completedCount: completedCount,
-      totalCount: totalCount,
-      completionPct: completionPct,
-      isReady: isReady,
-      hasRetirementExcess: hasExcess,
-    };
-  }
-
-  /**
-   * Phase 66: Thai Revenue Department (ภ.ง.ด. 90/91) e-Filing Form Pre-fill Worksheet Engine.
-   * Maps taxable incomes (40(1), 40(2), 40(4)(b)), statutory standard 50% expenses,
-   * 4-group tax deductions, progressive PIT tax brackets, dividend tax credit,
-   * and 50 Tawi withholding into statutory RD online e-filing boxes.
-   */
-  function calculateThaiEFilingWorksheet(params) {
-    var p = params || {};
-    var salary = Number(p.salary) || 0;
-    var bonus = Number(p.bonus) || 0;
-    var yearlyIncome = Number(p.yearlyIncome) || 0;
-    var income401 = salary * 12 + bonus + yearlyIncome;
-    var income402 = Number(p.freelance402) || 0;
-    var dividend404b = Number(p.dividend404b) || 0;
-    var citRate = typeof p.dividendCitRate === 'number' ? p.dividendCitRate : 0.2;
-    var applyDividendCredit = Boolean(p.applyDividendCredit);
-
-    // Standard 50% statutory expenses capped at 100,000 THB for 40(1) + 40(2)
-    var combinedEarned = income401 + income402;
-    var statutoryExpense = Math.min(100000, combinedEarned * 0.5);
-
-    // Dividend tax credit
-    var dividendCredit = 0;
-    if (applyDividendCredit && dividend404b > 0 && citRate < 1 && citRate > 0) {
-      dividendCredit = Math.round(dividend404b * (citRate / (1 - citRate)));
-    }
-
-    var assessableTotal = combinedEarned + (applyDividendCredit ? dividend404b + dividendCredit : 0);
-    var incomeAfterExpense =
-      Math.max(0, combinedEarned - statutoryExpense) + (applyDividendCredit ? dividend404b + dividendCredit : 0);
-
-    // Group A: Personal & Family
-    var selfDeduction = 60000;
-    var spouse = Number(p.spouseDeduction) || 0;
-    var children = (Number(p.childrenCount) || 0) * 30000;
-    var parents = (Number(p.parentCount) || 0) * 30000;
-    var disabled = (Number(p.disabledCount) || 0) * 60000;
-    var antenatal = Math.min(60000, Number(p.antenatalDeduction) || 0);
-    var groupA = selfDeduction + spouse + children + parents + disabled + antenatal;
-
-    // Group B: Insurance & Retirement Funds
-    var sso = Math.min(10500, Number(p.sso) || 0);
-    var lifeIns = Math.min(100000, Number(p.lifeInsurance) || 0);
-    var healthIns = Math.min(25000, Number(p.healthInsurance) || 0);
-    var combinedLifeHealth = Math.min(100000, lifeIns + healthIns);
-    var parentHealth = Math.min(15000, Number(p.parentHealthInsurance) || 0);
-
-    // 500k retirement bundle (Section 47 Thai Revenue Code)
-    var rmf = Number(p.rmf) || 0;
-    var ssf = Number(p.ssf) || 0;
-    var pvd = Number(p.pvd) || 0;
-    var gpf = Number(p.gpf) || 0;
-    var nsf = Number(p.nsf) || 0;
-    var pensionIns = Number(p.pensionInsurance) || 0;
-    var retirementPool = calculateRetirementCeilingPool({
-      pvd: pvd,
-      rmf: rmf,
-      ssf: ssf,
-      gpf: gpf,
-      nsf: nsf,
-      pensionInsurance: pensionIns,
-    });
-    var retirementBundle = retirementPool.effectiveTotal;
-
-    var thaiEsg = Math.min(300000, Number(p.thaiEsg) || 0);
-    var groupB = sso + combinedLifeHealth + parentHealth + retirementBundle + thaiEsg;
-
-    // Group C: Real estate & mortgage interest
-    var mortgageInterest = Math.min(100000, Number(p.homeLoanInterest) || 0);
-    var groupC = mortgageInterest;
-
-    // Group D: Donations
-    var netBeforeDonation = Math.max(0, incomeAfterExpense - (groupA + groupB + groupC));
-    var maxDonationCap = netBeforeDonation * 0.1;
-    var donationEdu = (Number(p.donationEdu) || 0) * 2; // 2x allowance
-    var donationGeneral = Number(p.donationGeneral) || 0;
-    var totalDonationAllowable = Math.min(maxDonationCap, donationEdu + donationGeneral);
-    var groupD = totalDonationAllowable;
-
-    var totalDeductions = groupA + groupB + groupC + groupD;
-    var netTaxableIncome = Math.max(0, incomeAfterExpense - totalDeductions);
-
-    // Progressive Tax Calculation
-    var tiers = [
-      { limit: 150000, rate: 0.0 },
-      { limit: 150000, rate: 0.05 },
-      { limit: 200000, rate: 0.1 },
-      { limit: 250000, rate: 0.15 },
-      { limit: 250000, rate: 0.2 },
-      { limit: 1000000, rate: 0.25 },
-      { limit: 3000000, rate: 0.3 },
-      { limit: Infinity, rate: 0.35 },
-    ];
-
-    var remaining = netTaxableIncome;
-    var grossTax = 0;
-    var topRatePct = 0;
-    var i;
-    var t;
-    var taxableInTier;
-    for (i = 0; i < tiers.length; i++) {
-      if (remaining <= 0) break;
-      t = tiers[i];
-      taxableInTier = Math.min(remaining, t.limit);
-      grossTax += Math.round(taxableInTier * t.rate);
-      remaining -= taxableInTier;
-      if (t.rate > 0 && taxableInTier > 0) {
-        topRatePct = Math.round(t.rate * 100);
+  var calculateTermLifePremiumEstimate =
+    _ext.calculateTermLifePremiumEstimate ||
+    ((coverageGap, options) => {
+      if (
+        global.MoneyApp &&
+        typeof global.MoneyApp.calculateTermLifePremiumEstimate === 'function' &&
+        global.MoneyApp.calculateTermLifePremiumEstimate !== calculateTermLifePremiumEstimate
+      ) {
+        return global.MoneyApp.calculateTermLifePremiumEstimate(coverageGap, options);
       }
-    }
+    });
 
-    var taxAfterDividendCredit = Math.max(0, grossTax - dividendCredit);
-    var taxWithheld = Number(p.taxWithheld50Tawi) || 0;
+  var calculateRetirementCeilingPool =
+    _ext.calculateRetirementCeilingPool ||
+    ((params) => {
+      if (
+        global.MoneyApp &&
+        typeof global.MoneyApp.calculateRetirementCeilingPool === 'function' &&
+        global.MoneyApp.calculateRetirementCeilingPool !== calculateRetirementCeilingPool
+      ) {
+        return global.MoneyApp.calculateRetirementCeilingPool(params);
+      }
+    });
 
-    // Net outcome: positive = refund, negative = payable
-    var netOutcome = taxWithheld + dividendCredit - grossTax;
+  var evaluateEFilingPreFlightChecklist =
+    _ext.evaluateEFilingPreFlightChecklist ||
+    ((params) => {
+      if (
+        global.MoneyApp &&
+        typeof global.MoneyApp.evaluateEFilingPreFlightChecklist === 'function' &&
+        global.MoneyApp.evaluateEFilingPreFlightChecklist !== evaluateEFilingPreFlightChecklist
+      ) {
+        return global.MoneyApp.evaluateEFilingPreFlightChecklist(params);
+      }
+    });
 
-    var isRefund = netOutcome > 0;
-    var isPayable = netOutcome < 0;
-    var payableAmount = Math.max(0, -netOutcome);
-    var canInstallment = payableAmount >= 3000;
-    var installmentAmount = canInstallment ? Math.ceil(payableAmount / 3) : 0;
-
-    return {
-      income401: income401,
-      income402: income402,
-      income404b: dividend404b,
-      dividendCredit: dividendCredit,
-      totalAssessableIncome: assessableTotal,
-      statutoryExpenseDeduction: statutoryExpense,
-      incomeAfterExpense: incomeAfterExpense,
-      deductions: {
-        groupA: groupA,
-        groupB: groupB,
-        groupC: groupC,
-        groupD: groupD,
-        totalDeductions: totalDeductions,
-      },
-      netTaxableIncome: netTaxableIncome,
-      taxBracketPct: topRatePct,
-      grossCalculatedTax: grossTax,
-      taxAfterDividendCredit: taxAfterDividendCredit,
-      taxWithheld50Tawi: taxWithheld,
-      netTaxDueOrRefund: netOutcome,
-      isRefund: isRefund,
-      isPayable: isPayable,
-      canInstallment: canInstallment,
-      installment3Months: installmentAmount,
-      retirementPool: retirementPool,
-    };
-  }
+  var calculateThaiEFilingWorksheet =
+    _ext.calculateThaiEFilingWorksheet ||
+    ((params) => {
+      if (
+        global.MoneyApp &&
+        typeof global.MoneyApp.calculateThaiEFilingWorksheet === 'function' &&
+        global.MoneyApp.calculateThaiEFilingWorksheet !== calculateThaiEFilingWorksheet
+      ) {
+        return global.MoneyApp.calculateThaiEFilingWorksheet(params);
+      }
+    });
 
   /**
    * Phase 75: Client-side Debt Payoff Simulation Engine.
@@ -4501,7 +3672,7 @@
   initShortcutForwarding();
   initTouchSwipeNavigation();
 
-  var MoneyApp = {
+  var MoneyApp = Object.assign(global.MoneyApp || {}, {
     LANG: LANG,
     THEME: THEME,
     unit: unit,
@@ -4557,7 +3728,7 @@
     validateShareTargetPayload: validateShareTargetPayload,
     calculateTermLifePremiumEstimate: calculateTermLifePremiumEstimate,
     THAI_PIT_TIERS: THAI_PIT_TIERS,
-  };
+  });
 
   // Expose on global window object
   if (typeof global !== 'undefined') {

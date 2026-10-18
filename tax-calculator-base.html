@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="2.5.30">
+    <meta name="version" content="2.5.31">
     <script>
       try {
         var t = localStorage.getItem('moneySuperapp.theme');
@@ -1072,7 +1072,7 @@
                     <span id="lbl-reset-tax">ล้างข้อมูล</span>
                 </button>
             </div>
-            <p class="text-xs text-gray-400">v2.5.30</p>
+            <p class="text-xs text-gray-400">v2.5.31</p>
         </div>
     </div>
 
@@ -1204,7 +1204,12 @@
         </div>
     </div>
 
+    <script src="js/engines/thai-pit.js"></script>
+    <script src="js/engines/thai-tax-calendar.js"></script>
+    <script src="js/engines/insurance.js"></script>
+    <script src="js/engines/gold.js"></script>
+    <script src="js/engines/foreign-tax.js"></script>
     <script src="js/shared.js"></script>
-  <script src="js/tax-calculator-base.js"></script>
+    <script src="js/tax-calculator-base.js"></script>
 </body>
 </html>

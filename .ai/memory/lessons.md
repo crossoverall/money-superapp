@@ -1235,3 +1235,17 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
   3. Built `checkIncomingShareTarget()` in `js/app-shell.js` which detects incoming payload, prompts for backup restoration if `.vault` / JSON, or forwards statement files to `remaining-money.html` where `checkPendingBankStatement()` automatically parses with bank detection and opens the preview modal.
   4. Built `shareOrDownloadFile()` in `js/app-shell.js` for seamless native file sharing with graceful fallback to download, and added `#btnShareDossier` in `dashboard.html` / `js/dashboard.js` with `MoneyApp.formatExecutiveDossierSummaryText()` supporting privacy masks.
 - **Rule:** For offline-first PWAs, implement Web Share Target by intercepting `POST` requests inside the Service Worker fetch event and persisting payloads in a dedicated Cache API bucket; always provide seamless fallbacks to anchor downloads and clipboard copy when native sharing APIs are unavailable.
+
+### 2026-10-18: Modular Calculation Engine Architecture & Script Load Order Independence (Phase 88)
+
+- **Date & Context:** 2026-10-18, modularizing large monolithic calculation domains from `js/shared.js` into self-contained `js/engines/` (`thai-pit.js`, `thai-tax-calendar.js`, `insurance.js`, `gold.js`, `foreign-tax.js`) (`v2.5.31`).
+- **Problem:**
+  1. `js/shared.js` grew to ~4,650 lines, conjoining application shell lifecycle, DOM helpers, and 15+ disparate calculation engines. This bloated bundle size, hampered code navigation, and created risk of circular/order dependencies.
+  2. Under ADR-001 (Zero-Build, 100% offline, `file://` compatibility), ES module `import`/`export` is prohibited due to browser CORS policies on `file://`.
+  3. Simple object overwrites (`global.MoneyApp = { ... }`) risk clobbering engines if loaded in different orders, while self-referencing delegation wrappers risk infinite recursion stack overflows if not guarded against identity match (`global.MoneyApp.fn !== fn`).
+- **Resolution:**
+  1. Extracted 5 pure domain calculation engines into `js/engines/` using self-registering IIFEs that safely initialize and attach to `global.MoneyApp = global.MoneyApp || {}`.
+  2. In `js/shared.js`, unified namespace extension with non-destructive `var MoneyApp = Object.assign(global.MoneyApp || {}, { ... })`, eliminating clobbering regardless of whether engines are loaded before or after `shared.js`.
+  3. Implemented re-entrancy guarded forwarders in `js/shared.js` to ensure backward compatibility and prevent recursive loops: `if (global.MoneyApp.fn && global.MoneyApp.fn !== fn) return global.MoneyApp.fn(args)`.
+  4. Registered all new engine files in `sw.js` (`ASSETS_TO_CACHE`), `tests/smoke.test.mjs` (`CORE_JS_SCRIPTS`), and all dependent HTML pages (`tax-calculator-base.html`, `dashboard.html`, `rebalance.html`, `remaining-money.html`, `debt-calculator.html`, `tax-calculator.html`, `months-slips.html`).
+- **Rule:** When modularizing zero-build offline-first codebases under `file://`, use self-registering IIFEs on the shared global namespace and merge with `Object.assign(global.App || {}, { ... })`, and always guard delegation wrappers with identity checks against recursion.
