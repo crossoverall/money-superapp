@@ -1,5 +1,5 @@
 ---
-task_id: "SDLC-PHASE-96-BUDGET-IMPORT-EXTRACTION"
+task_id: "SDLC-PHASE-97-FINANCIAL-HEALTH-EXTRACTION"
 status: "completed"
 current_stage: "release"
 complexity: "level_2"
@@ -7,19 +7,19 @@ iteration_count: 0
 pipeline: ["orchestrator", "planner", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Completed SDLC Task (Phase 96 - Decompose remaining-money.js: Budget Data Importer & Parser Engine)
-- **Delivered**:
-  - Extracted pure RFC-4180 CSV parsing, column detection, subtotal filtering, and JSON/CSV data extraction into `js/engines/budget-import.js` (`MoneyApp.BudgetImport`):
-    - `parseCSVRows(csvText)`
-    - `detectColumns(headerRow)`
-    - `cleanField(val)`
-    - `cleanAmount(val)`
-    - `isSubtotalRow(cat, item)`
-    - `parseImportJSON(text, options)`
-    - `parseImportCSV(text, options)`
-  - Registered `js/engines/budget-import.js` in `sw.js` and all 8 core HTML files.
-  - Refactored `js/remaining-money.js` into clean forwarders, shrinking it from 3,832 LOC to 3,445 LOC (total 1,000 LOC reduced across Phases 95 and 96).
-  - Added unit test suite in `tests/budget-import.test.mjs` (7 tests).
-  - Added smoke invariant in `tests/smoke.test.mjs` (64 smoke tests).
-  - Verified 100% test pass rate (460 tests across 109 suites) and 0 Biome warnings/errors.
-  - Released and bumped to `v2.5.39`.
+### Problem Diagnosis & Scope (Phase 97 - Decompose dashboard.js: Financial Health & Advisor Engine)
+1. **Diagnosis**:
+   - `js/dashboard.js` was 4,152 lines, containing pure financial health math: 5-pillar scoring algorithms, priority-ranked Next Best Move heuristics, 5-axis spider chart geometry, and net worth solvency math.
+2. **Strategy & Slices Executed**:
+   - Slice 1: Created `js/engines/financial-health.js` (`MoneyApp.FinancialHealth`) containing:
+     - `calculateFinancialHealthScore(options)`
+     - `generateNextBestMoves(profile, health, isEn, formatMoney)`
+     - `calculateRadarCoordinates(pillars, options)`
+     - `renderRadarChartSVG(elements, pillars, options)`
+     - `calculateNetWorthComposition(profile)`
+   - Slice 2: Registered `js/engines/financial-health.js` in `sw.js` and all 8 core HTML files.
+   - Slice 3: Refactored `js/dashboard.js` to delegate health scoring, next best moves, radar chart generation, and solvency composition to `MoneyApp.FinancialHealth`.
+   - Slice 4: Created unit tests in `tests/financial-health.test.mjs` (6 unit tests, all passing).
+   - Slice 5: Added Phase 97 smoke invariant in `tests/smoke.test.mjs`.
+   - Slice 6: Full QA verification (`rtk npm run lint` 0 errors, 467 tests across 109 suites pass 100%).
+   - Slice 7: Released patch `v2.5.40`, updated lessons.md and active.md.

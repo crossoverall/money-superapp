@@ -1366,5 +1366,62 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'remaining-money.js must delegate parseImportCSV to MoneyApp.BudgetImport',
       );
     });
+
+    it('verifies Phase 97 Financial Health & Advisor Engine modularization and clean delegation', () => {
+      const fhPath = path.join(ROOT_DIR, 'js/engines/financial-health.js');
+      assert.ok(fs.existsSync(fhPath), 'js/engines/financial-health.js must exist');
+      const fhContent = fs.readFileSync(fhPath, 'utf8');
+      assert.ok(
+        fhContent.includes('MoneyApp.FinancialHealth = FinancialHealth'),
+        'financial-health.js must export MoneyApp.FinancialHealth',
+      );
+      assert.ok(!fhContent.includes('eval('), 'financial-health.js must never invoke eval()');
+      assert.ok(!fhContent.includes('document.write'), 'financial-health.js must never invoke document.write()');
+
+      // Verify all 8 core HTML files register financial-health.js
+      const htmlFiles = [
+        'dashboard.html',
+        'debt-calculator.html',
+        'index.html',
+        'months-slips.html',
+        'rebalance.html',
+        'remaining-money.html',
+        'tax-calculator-base.html',
+        'tax-calculator.html',
+      ];
+      for (const file of htmlFiles) {
+        const content = fs.readFileSync(path.join(ROOT_DIR, file), 'utf8');
+        assert.ok(
+          content.includes('src="js/engines/financial-health.js"'),
+          `${file} must include js/engines/financial-health.js`,
+        );
+      }
+
+      // Verify service worker registers financial-health.js
+      const swContent = fs.readFileSync(path.join(ROOT_DIR, 'sw.js'), 'utf8');
+      assert.ok(
+        swContent.includes("'./js/engines/financial-health.js'"),
+        'sw.js must cache js/engines/financial-health.js',
+      );
+
+      // Verify js/dashboard.js delegates health scoring, next moves, radar, and net worth composition
+      const dashContent = fs.readFileSync(path.join(ROOT_DIR, 'js/dashboard.js'), 'utf8');
+      assert.ok(
+        dashContent.includes('FinancialHealth?.calculateFinancialHealthScore'),
+        'dashboard.js must delegate calculateFinancialHealthScore to MoneyApp.FinancialHealth',
+      );
+      assert.ok(
+        dashContent.includes('FinancialHealth?.generateNextBestMoves'),
+        'dashboard.js must delegate generateNextBestMoves to MoneyApp.FinancialHealth',
+      );
+      assert.ok(
+        dashContent.includes('FinancialHealth?.renderRadarChartSVG'),
+        'dashboard.js must delegate renderRadarChartSVG to MoneyApp.FinancialHealth',
+      );
+      assert.ok(
+        dashContent.includes('FinancialHealth?.calculateNetWorthComposition'),
+        'dashboard.js must delegate calculateNetWorthComposition to MoneyApp.FinancialHealth',
+      );
+    });
   });
 });

@@ -15,6 +15,17 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Decompose dashboard.js: Financial Health & Advisor Engine (v2.5.40)
+- **Date & Context:** 2026-10-18, Phase 97 Engine Modularization (`v2.5.40`).
+- **Problem:**
+  1. `js/dashboard.js` was the largest monolithic file in the codebase at 4,152 lines, mixing overview charts with 450+ lines of pure advisory scoring (5-pillar composite health scores, priority-ranked Next Best Moves heuristics, 5-axis spider chart geometry, and net worth solvency math).
+  2. The financial advisory algorithms were trapped inside the dashboard DOM controller, preventing them from being independently tested or utilized in summary reports.
+- **Root Cause:** Financial advisory heuristics and SVG radar trigonometry grew directly inside the dashboard lifecycle handlers without domain modularization.
+- **Solution & Rule:**
+  1. **Modular Advisory Engine (`js/engines/financial-health.js`):** Extracted `MoneyApp.FinancialHealth` exporting `calculateFinancialHealthScore`, `generateNextBestMoves`, `calculateRadarCoordinates`, `renderRadarChartSVG`, and `calculateNetWorthComposition`.
+  2. **Clean Dashboard Delegation:** Delegated scoring, next moves, radar SVG rendering, and solvency math in `js/dashboard.js` to `MoneyApp.FinancialHealth`, reducing `dashboard.js` size by ~250 lines while preserving complete backward compatibility.
+  3. **Quality Gates & Invariants:** Added `tests/financial-health.test.mjs` (6 unit tests), updated `tests/smoke.test.mjs` (65 smoke tests), achieved 100% test pass rate (467 tests across 109 suites), zero Biome errors/warnings, and zero CSP violations.
+
 ### 2026-10-18: Decompose remaining-money.js: Budget Data Importer & Parser Engine (v2.5.39)
 - **Date & Context:** 2026-10-18, Phase 96 Engine Modularization (`v2.5.39`).
 - **Problem:**
