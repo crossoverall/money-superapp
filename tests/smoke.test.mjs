@@ -32,6 +32,7 @@ const CORE_JS_SCRIPTS = [
   'js/engines/stress-test.js',
   'js/engines/vault-crypto.js',
   'js/engines/p2p-sync.js',
+  'js/engines/bridge.js',
   'js/app-shell.js',
   'js/dashboard.js',
   'js/remaining-money.js',
@@ -1019,6 +1020,15 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(ciContent.includes('node-version: [20, 22]'), 'CI workflow must test Node.js 20 and 22 LTS matrix');
       assert.ok(ciContent.includes('actions/checkout@v4'), 'CI workflow must use actions/checkout@v4');
       assert.ok(ciContent.includes('actions/setup-node@v4'), 'CI workflow must use actions/setup-node@v4');
+    });
+
+    it('verifies js/engines/bridge.js and MoneyApp.Bridge declare Phase 92 Unified Bridge Protocol', () => {
+      const bridgePath = path.join(ROOT_DIR, 'js/engines/bridge.js');
+      assert.ok(fs.existsSync(bridgePath), 'js/engines/bridge.js must exist on disk');
+      const bridgeContent = fs.readFileSync(bridgePath, 'utf8');
+      assert.ok(bridgeContent.includes('MoneyApp.Bridge = Bridge'), 'bridge.js must export MoneyApp.Bridge');
+      assert.ok(bridgeContent.includes('LEGACY_ACTION_MAP'), 'bridge.js must define LEGACY_ACTION_MAP');
+      assert.ok(bridgeContent.includes('BroadcastChannel'), 'bridge.js must support BroadcastChannel sync');
     });
   });
 

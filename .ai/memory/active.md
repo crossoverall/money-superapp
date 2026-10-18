@@ -1,14 +1,20 @@
 ---
-task_id: "SDLC-PHASE-91-GITHUB-ACTIONS-CI"
-status: "completed"
-current_stage: "release"
+task_id: "SDLC-PHASE-92-UNIFIED-BRIDGE-PROTOCOL"
+status: "in_progress"
+current_stage: "plan"
 complexity: "level_2"
 iteration_count: 0
 pipeline: ["orchestrator", "planner", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Phase 91 Completion Summary (v2.5.34)
-1. Created `.github/workflows/ci.yml` multi-node matrix CI workflow testing Node.js 20 and 22 LTS on `ubuntu-latest`.
-2. Validates `npm ci`, Biome linting (`npm run lint`), and full test runner suite (`npm test` with 411 checks including headless Chrome CDP bilingual parity).
-3. Added automated smoke test assertion in `tests/smoke.test.mjs` ensuring workflow configuration cannot regress.
-4. Clean build: 411 passing tests, 0 Biome warnings, 0 lint errors.
+### Problem Diagnosis & Scope (Phase 92 - Unified Bridge Protocol & Topology)
+1. **Diagnosis**:
+   - Cross-tool data handoffs between the 7 tools rely on 11 ad-hoc `localStorage` keys (`pendingSlipImport`, `pendingTaxAccrual`, `pendingBudget`, `pendingDebtWindfall`, etc.).
+   - Each tool implements its own ad-hoc consume-once logic and listener handlers, with no schema validation, payload versioning, or standardized telemetry.
+2. **Strategy & Slices**:
+   - Slice 1: Create `js/engines/bridge.js` defining `MoneyApp.Bridge` with envelope standardization, consume-once lifecycle, `BroadcastChannel` + `storage` event synchronization, and transparent legacy key mapping.
+   - Slice 2: Register `js/engines/bridge.js` in `sw.js`, `tests/smoke.test.mjs`, `index.html`, all 7 sub-pages, and test harnesses.
+   - Slice 3: Create `tests/bridge-protocol.test.mjs` unit testing send, receive, peek, clear, legacy compatibility, and schema validation.
+   - Slice 4: Update `.ai/context/architecture.md` with the living Mermaid bridge topology diagram.
+   - Slice 5: Full QA verification (`npm test`, `npm run lint`, bilingual parity) & Code/Security Review.
+   - Slice 6: Bump version to `v2.5.35`, document lessons in `.ai/memory/lessons.md`, commit and push to `origin/master`.

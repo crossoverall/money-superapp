@@ -21,6 +21,7 @@ const enginesCode = [
   readFileSync(resolve(__dirname, '../js/engines/stress-test.js'), 'utf8'),
   readFileSync(resolve(__dirname, '../js/engines/vault-crypto.js'), 'utf8'),
   readFileSync(resolve(__dirname, '../js/engines/p2p-sync.js'), 'utf8'),
+  readFileSync(resolve(__dirname, '../js/engines/bridge.js'), 'utf8'),
 ].join(';\n');
 
 function createMockEnvironment(initialStorage = {}) {

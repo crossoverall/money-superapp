@@ -15,6 +15,20 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Cross-Tool Unified Bridge Protocol Engine & Node BroadcastChannel Unref (v2.5.35)
+- **Date & Context:** 2026-10-18, Phase 92 Unified Bridge Protocol & Topology (`v2.5.35`).
+- **Problem:**
+  1. Cross-tool handoffs were using 11 disparate, ad-hoc `localStorage` keys without versioned envelopes, consume-once semantics, or schema validation.
+  2. Running test files that instantiated `new BroadcastChannel('xxx')` caused Node.js test processes to hang indefinitely without exiting.
+- **Root Cause:**
+  1. Inter-tool bridges evolved organically across different feature phases without a centralized dispatcher.
+  2. Node.js 15+ includes a global `BroadcastChannel` implementation which retains an active handle on the Node event loop by default, blocking process exit until explicitly closed or unreferenced.
+- **Solution & Rule:**
+  1. **Unified Bridge Engine (`js/engines/bridge.js`):** Created `MoneyApp.Bridge` providing `send()`, `receive()`, `peek()`, `clear()`, `listen()`, `listPending()`, and `clearAll()` with standardized envelope v1, consume-once lifecycle, and backward-compatible legacy key mapping.
+  2. **Node Event Loop Unref (`channel.unref()`):** In Node environments where `typeof channel.unref === 'function'`, always invoke `channel.unref()` immediately upon `new BroadcastChannel(...)` creation. Also provide `Bridge.closeChannel()` for explicit teardown.
+  3. **Architecture Topology:** Documented the living cross-tool bridge topology with a Mermaid graph in `.ai/context/architecture.md`.
+  4. Verified 100% test pass (418 tests across 103 suites) and 0 Biome warnings.
+
 ### 2026-10-18: GitHub Actions CI Matrix Pipeline Quality Gate (v2.5.34)
 - **Date & Context:** 2026-10-18, Phase 91 GitHub Actions CI Pipeline (`v2.5.34`).
 - **Problem:** While local pre-commit hooks prevented broken commits locally, remote pull requests and pushes lacked automated verification against multiple Node.js LTS versions in cloud CI.

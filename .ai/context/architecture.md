@@ -171,35 +171,54 @@ Iframe loads tool HTML:
   4. Runs calculation engine and updates DOM / SVG charts
 ```
 
-### 4.2 Decoupled Cross-Tool Data Bridge Flow
+### 4.2 Decoupled Cross-Tool Data Bridge Flow (`MoneyApp.Bridge`)
+
+```mermaid
+flowchart TD
+    subgraph Senders["Upstream Tools"]
+        Payslip["Payslip Simulator (months-slips)"]
+        PVDTax["Severance & PVD (tax-calculator)"]
+        TaxBase["Income Tax (tax-calculator-base)"]
+        Dash["Dashboard (dashboard)"]
+        DebtCalc["Debt Calculator (debt-calculator)"]
+        Rebalance["Rebalance Calculator (rebalance)"]
+    end
+
+    subgraph BridgeEngine["Bridge Protocol (js/engines/bridge.js)"]
+        Envelope["Standardized Envelope v1
+        - version: 1
+        - source, target, action
+        - payload, timestamp
+        - BroadcastChannel + storage sync"]
+    end
+
+    subgraph Receivers["Downstream Consumers"]
+        RemMoney["Remaining Money (remaining-money)"]
+        RebalanceRecv["Rebalance Calculator (rebalance)"]
+        DebtRecv["Debt Calculator (debt-calculator)"]
+    end
+
+    Payslip -->|"import_slip"| Envelope
+    PVDTax -->|"lump_sum"| Envelope
+    TaxBase -->|"tax_accrual"| Envelope
+    TaxBase -->|"debt_windfall"| Envelope
+    TaxBase -->|"budget"| Envelope
+    Dash -->|"insurance_premium"| Envelope
+    DebtCalc -->|"refinance_savings"| Envelope
+    DebtCalc -->|"budget"| Envelope
+    Rebalance -->|"dca_budget"| Envelope
+
+    Envelope --> RemMoney
+    Envelope --> RebalanceRecv
+    Envelope --> DebtRecv
 ```
-[ Payslip Simulator ]                [ Severance / PVD ]
-         │                                    │
-(User clicks "Send to Remaining")    (User clicks "Send Lump-Sum")
-         │                                    │
-         ▼                                    ▼
-localStorage.setItem                 localStorage.setItem
-('moneySuperapp.pendingSlipImport')  ('moneySuperapp.pendingLumpSum')
-         │                                    │
-         └─────────────────┬──────────────────┘
-                           ▼
-               [ Remaining Money Tool ]
-             - Ingests pending keys on load
-             - Removes pending keys from localStorage
-             - Updates monthly budget & savings
-                           │
-       ┌───────────────────┴───────────────────┐
-       ▼                                       ▼
-(User clicks "Send to DCA")             [ Debt Payoff Planner ]
-       │                                       │
-localStorage.setItem                     (User clicks "Import Savings")
-('moneySuperapp.pendingBudget')                 │
-       │                                       ▼
-       ▼                                 Reads 'remainingMoneyCalculator.state.v1'
-[ Rebalance Calculator ]                 Injects extra monthly payment into payoff pool
-- Ingests budget into DCA input
-- Removes pendingBudget key
-```
+
+All cross-tool data handoffs use `MoneyApp.Bridge`:
+- **Envelope Standard v1**: `{ version: 1, source, target, action, payload, timestamp }`
+- **Consume-Once Lifecycle**: Calling `Bridge.receive(action, handler)` immediately purges the key to prevent re-entrant loops.
+- **Cross-Frame Sync**: Broadcasts simultaneously over native `BroadcastChannel('money-superapp-bridge')` and fallback `storage` events.
+- **Legacy Compatibility**: Automatically maps modern actions to legacy storage keys (`pendingBudget`, `pendingSlipImport`, `pendingTaxAccrual`, etc.).
+
 
 ### 4.3 Consolidated Dashboard Flow
 ```
