@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="2.5.20">
+    <meta name="version" content="2.5.21">
     <script>
       try {
         var t = localStorage.getItem('moneySuperapp.theme');
@@ -327,6 +327,7 @@
             </div>
         </div>
     </div>
+</div>
 
     <!-- 2. Deductions & Withheld Card -->
     <div id="panelTaxDeductions" class="reorder-card bg-white p-4 rounded-xl border" style="border-color:var(--line);">
@@ -402,8 +403,8 @@
     </div>
 
     <!-- 3. Thai Stock Dividend Tax Credit Simulator (Section 47 bis) - Roadmap Phase 60 -->
-    <div id="dividendTaxCreditCard" class="reorder-card mt-4 p-3.5 rounded-xl space-y-3" style="background:var(--panel-2); border:1px solid var(--line);" role="region" aria-label="Thai Stock Dividend Tax Credit Simulator">
-        <div class="panel-header flex items-center justify-between cursor-pointer" onclick="toggleDividendTaxCredit()" id="btn-toggle-dividend-credit" role="button" tabindex="0" aria-expanded="false">
+    <div id="dividendTaxCreditCard" class="reorder-card mt-4 p-4 rounded-xl border space-y-3" style="background:var(--panel-2); border-color:var(--line);" role="region" aria-label="Thai Stock Dividend Tax Credit Simulator">
+        <div class="panel-header flex items-center justify-between cursor-pointer" onclick="toggleDividendTaxCredit()" id="btn-toggle-dividend-credit" role="button" tabindex="0">
             <div class="flex items-center gap-2">
                 <span class="text-base">📈</span>
                 <div>
@@ -411,10 +412,9 @@
                     <span class="block text-[11px]" style="color:var(--ink-dim);" id="lbl-div-credit-sub">จำลองสิทธิ์ขอคืนภาษีเงินปันผลหุ้นไทย หรือเลือก Final Tax 10%</span>
                 </div>
             </div>
-            <span id="div-credit-toggle-arrow" style="font-size:12px; color:var(--core); font-weight:700;">▼</span>
         </div>
 
-                <div id="div-credit-panel-body" style="display:none; border-top:1px solid var(--line); padding-top:10px;" class="space-y-3">
+        <div id="dividendTaxCreditCardBody" class="panel-body space-y-3 pt-2" style="border-top:1px solid var(--line);">
                     <!-- Dividend Cash Amount & Presets -->
                     <div>
                         <div class="flex items-center justify-between mb-1">
@@ -907,10 +907,7 @@
                     <h3 class="panel-title text-xs font-bold text-gray-800" id="lbl-panel-scenario">4. เปรียบเทียบ Scenario &amp; ทดสอบเงินเฟ้อ</h3>
                 </div>
                 <div id="panelTaxScenarioBody">
-                    <button type="button" id="btn-toggle-scenario-compare" onclick="toggleTaxScenarioComparator()" class="w-full py-2.5 px-4 text-white text-xs font-semibold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2" style="background:var(--core);">
-                        <span id="lbl-toggle-scenario">⚖️ เปรียบเทียบ Scenario ภาษี &amp; ทดสอบเงินเฟ้อ (Bracket Creep)</span>
-                    </button>
-                    <div id="taxScenarioComparePanel" class="mt-3 p-4 rounded-xl shadow-md border text-xs space-y-3" style="display:none; background:var(--panel); border-color:var(--line);">
+                    <div id="taxScenarioComparePanel" class="p-4 rounded-xl shadow-md border text-xs space-y-3" style="background:var(--panel); border-color:var(--line);">
                         <div class="flex justify-between items-center border-b pb-2" style="border-color:var(--line);">
                             <span class="font-bold flex items-center gap-1.5" style="color:var(--ink);" id="lbl-compare-header">
                                 <span>📊</span> <span>เปรียบเทียบ Scenario A (ปัจจุบัน) vs Scenario B (เปรียบเทียบ)</span>
@@ -953,10 +950,7 @@
                     <h3 class="panel-title text-xs font-bold text-gray-800" id="lbl-panel-calendar">5. ปฏิทินภาษี &amp; วันครบกำหนด (Tax Planning Calendar)</h3>
                 </div>
                 <div id="panelTaxCalendarBody">
-                    <button type="button" id="btn-toggle-tax-calendar" onclick="toggleTaxCalendar()" class="w-full py-2.5 px-4 text-white text-xs font-semibold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2" style="background:var(--core);">
-                        <span id="lbl-toggle-tax-calendar">🗓️ ปฏิทินภาษี &amp; วันครบกำหนด (Thai Tax Planning Calendar &amp; Deadlines)</span>
-                    </button>
-                    <div id="taxCalendarPanel" class="mt-3 p-4 rounded-xl shadow-md border text-xs space-y-3" style="display:none; background:var(--panel); border-color:var(--line);">
+                    <div id="taxCalendarPanel" class="p-4 rounded-xl shadow-md border text-xs space-y-3" style="background:var(--panel); border-color:var(--line);">
                         <div class="flex justify-between items-center border-b pb-2" style="border-color:var(--line);">
                             <span class="font-bold flex items-center gap-1.5" style="color:var(--ink);" id="lbl-tax-calendar-header">
                                 <span>🗓️</span> <span>กำหนดการยื่นแบบและชำระภาษีสำคัญ (Statutory Tax Deadlines)</span>
@@ -1012,7 +1006,7 @@
                     <span id="lbl-reset-tax">ล้างข้อมูล</span>
                 </button>
             </div>
-            <p class="text-xs text-gray-400">v2.5.20</p>
+            <p class="text-xs text-gray-400">v2.5.21</p>
         </div>
     </div>
 

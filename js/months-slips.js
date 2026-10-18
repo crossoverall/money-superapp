@@ -705,11 +705,16 @@ function loadState() {
 }
 
 function toggleCompare() {
+  if (typeof slipsLayoutManager !== 'undefined' && slipsLayoutManager && slipsLayoutManager.toggleCard) {
+    slipsLayoutManager.toggleCard('panelJobCompare');
+    return;
+  }
   const panel = document.getElementById('comparePanel');
   if (!panel) return;
-  const isHidden = panel.style.display === 'none' || panel.style.display === '';
-  panel.style.display = isHidden ? 'block' : 'none';
+  const isHidden = panel.classList.contains('card-collapsed-hidden') || panel.style.display === 'none';
   if (isHidden) {
+    panel.classList.remove('card-collapsed-hidden');
+    panel.style.display = 'block';
     // Pre-fill Scenario A from current inputs if empty
     const curSal = document.getElementById('salary')?.value || '';
     const curBon = document.getElementById('bonus')?.value || '';
@@ -721,6 +726,8 @@ function toggleCompare() {
     const pvdA = document.getElementById('cmpPvdA');
     if (pvdA && (!pvdA.value || pvdA.value === '0') && curPvd) pvdA.value = curPvd;
     runCompare();
+  } else {
+    panel.classList.add('card-collapsed-hidden');
   }
 }
 
@@ -847,6 +854,7 @@ const slipsLayoutManager =
         container: document.getElementById('slipsContainer'),
         cardSelector: '.reorder-card',
         storageKey: 'moneySuperapp.layout.slips.v1',
+        defaultCollapsed: ['panelJobCompare'],
         defaultOrder: [
           'panelPayslipSetup',
           'panelPayslipCard',
@@ -854,8 +862,24 @@ const slipsLayoutManager =
           'pitReconciliationCard',
           'panelJobCompare',
         ],
+        onToggle: (cardId, isCollapsed) => {
+          if (!isCollapsed && cardId === 'panelJobCompare') {
+            const curSal = document.getElementById('salary')?.value || '';
+            const curBon = document.getElementById('bonus')?.value || '';
+            const curPvd = document.getElementById('pvd')?.value || '';
+            const cmpA = document.getElementById('cmpSalaryA');
+            if (cmpA && !cmpA.value && curSal) cmpA.value = curSal;
+            const bonA = document.getElementById('cmpBonusA');
+            if (bonA && (!bonA.value || bonA.value === '0') && curBon) bonA.value = curBon;
+            const pvdA = document.getElementById('cmpPvdA');
+            if (pvdA && (!pvdA.value || pvdA.value === '0') && curPvd) pvdA.value = curPvd;
+            runCompare();
+          }
+        },
       })
     : null;
+
+window.slipsLayoutManager = slipsLayoutManager;
 
 window.resetSlipsLayout = function () {
   if (slipsLayoutManager) {

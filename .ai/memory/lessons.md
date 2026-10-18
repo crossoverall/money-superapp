@@ -15,6 +15,20 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Card Reorder & Fold Layout Parity across Tax and Slips Tools (v2.5.21)
+- **Date & Context:** 2026-10-18, implementing Phase 78 Card Reorder & Fold Layout Parity across Tax and Slips Tools (`v2.5.21`).
+- **Problem:**
+  1. `tax-calculator-base.html` and `months-slips.html` lacked card reordering and folding parity with `rebalance.html` and `dashboard.html`. Cards had redundant internal accordion toggle buttons (e.g. `#btn-toggle-scenario-compare`, `#btn-toggle-tax-calendar`, `#compareToggleBtn`) wrapped inside cards, requiring double clicks or awkward nested accordions.
+  2. In `tax-calculator-base.html`, an unclosed `<div>` in `panelTaxIncome` caused all subsequent cards to become nested descendants of `panelTaxIncome` rather than direct children of `#taxCardsContainer`. Consequently, `getCards()` in `initCardLayoutManager` omitted them, breaking reordering and `defaultCollapsed` folding.
+- **Root Cause:**
+  1. Early iteration of tools created manual accordion buttons instead of using `initCardLayoutManager`'s injected control cluster.
+  2. Imbalanced HTML div tags inside complex multi-mode input cards prevented the layout manager's direct-child filter (`el.parentNode === container`) from detecting sibling cards.
+- **Solution & Rule:**
+  1. **Enforce Direct Child Div Balancing:** Always verify that every card in a reorderable container is a direct child of the container (`el.parentNode === container`). Use automated scripts or AST checks to ensure zero unclosed `<div>` tags across complex cards.
+  2. **Eliminate Redundant Nested Accordions:** Remove internal expand/collapse buttons inside cards; expose tool content directly in the card body (`${cardId}Body`) and configure `defaultCollapsed: ['cardId']` in `initCardLayoutManager`.
+  3. **Lazy Sub-Tool Evaluation via `onToggle`:** For cards containing heavy calculations, DOM generations, or comparisons (such as scenario comparison or statutory calendars), trigger calculation and rendering inside `onToggle(cardId, isCollapsed)` so heavy operations run only when the card is expanded, avoiding startup lag.
+  4. **Explicit Global Window Exposure:** Always attach layout managers (`window.taxBaseLayoutManager = ...;`, `window.slipsLayoutManager = ...;`) so DevTools consoles, tests, and cross-tool bridge actions have clean access.
+
 ### 2026-10-18: Debt Refinance Monthly Savings & Faster Payoff Outbound Bridge (v2.5.20)
 - **Date & Context:** 2026-10-18, implementing Phase 77 Debt Refinance Monthly Savings & Faster Payoff Outbound Bridge (`v2.5.20`).
 - **Problem:**

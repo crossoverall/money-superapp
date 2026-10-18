@@ -1,5 +1,5 @@
 ---
-task_id: "SDLC-PHASE-77-DEBT-REFINANCE-SAVINGS-BRIDGE"
+task_id: "SDLC-PHASE-78-CARD-REORDER-AND-FOLD-LAYOUT-PARITY"
 status: "ready_for_release"
 current_stage: "release"
 complexity: "level_2"
@@ -7,15 +7,14 @@ iteration_count: 0
 pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Problem Diagnosis & Scope (Phase 77 - v2.5.20)
-1. **Refinancing Cash Flow Relief Capture:**
-   - Debt refinancing frees up monthly cash flow (`monthlyPaymentDiff > 0`).
-   - Add 1-click bridge buttons in `debt-calculator.html` to direct freed cash into `remaining-money.html` (household budget) or `rebalance.html` (DCA investing).
-2. **Accelerated Elimination Budgeting:**
-   - When term shortening increases monthly payment (`monthlyPaymentDiff < 0`), bridge extra expense into `remaining-money.html`.
-3. **Core Math Normalization:**
-   - Standardize `calculateDebtConsolidation` into `js/shared.js` (`MoneyApp.calculateDebtConsolidation`).
-4. **Verification & Delivery:**
-   - Unit tests in `tests/shared.test.mjs`.
+### Problem Diagnosis & Scope (Phase 78 - v2.5.21)
+1. **Redundant Nested Toggles & Card Folding:**
+   - In `tax-calculator-base.html`, remove redundant inner toggle buttons in `panelTaxScenario` and `panelTaxCalendar` so expanding the card directly displays the tool.
+   - Standardize `dividendTaxCreditCard` body with `dividendTaxCreditCardBody` and remove custom non-standard arrow.
+   - Configure `defaultCollapsed: ['dividendTaxCreditCard', 'panelTaxScenario', 'panelTaxCalendar']` in `taxBaseLayoutManager`.
+2. **Double Accordion in Months Slips:**
+   - In `months-slips.html`, remove redundant `#compareToggleBtn` inside `panelJobCompareBody` and display comparison panel directly.
+   - Configure `defaultCollapsed: ['panelJobCompare']` in `slipsLayoutManager`.
+3. **Verification & Delivery:**
    - Headless CDP verification (Light, Dark, Mobile).
-   - Biome clean & 0 errors.
+   - Biome check clean & full test suite passing.

@@ -721,17 +721,21 @@ function importWithholdingFromPayslip() {
 }
 
 function toggleDividendTaxCredit() {
-  const panel = document.getElementById('div-credit-panel-body');
-  const btn = document.getElementById('btn-toggle-dividend-credit');
-  const arrow = document.getElementById('div-credit-toggle-arrow');
-  if (!panel || !btn || !arrow) return;
+  if (typeof taxBaseLayoutManager !== 'undefined' && taxBaseLayoutManager && taxBaseLayoutManager.toggleCard) {
+    taxBaseLayoutManager.toggleCard('dividendTaxCreditCard');
+    return;
+  }
+  const panel =
+    document.getElementById('dividendTaxCreditCardBody') || document.getElementById('div-credit-panel-body');
+  if (!panel) return;
 
-  const isHidden = panel.style.display === 'none' || panel.style.display === '';
-  panel.style.display = isHidden ? 'block' : 'none';
-  btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
-  arrow.textContent = isHidden ? '▲' : '▼';
+  const isHidden = panel.classList.contains('card-collapsed-hidden') || panel.style.display === 'none';
   if (isHidden) {
+    panel.classList.remove('card-collapsed-hidden');
+    panel.style.display = 'block';
     updateDividendTaxCreditUI();
+  } else {
+    panel.classList.add('card-collapsed-hidden');
   }
 }
 
@@ -2389,17 +2393,24 @@ function revertAdvisorOptimization() {
 }
 
 function toggleTaxScenarioComparator() {
+  if (typeof taxBaseLayoutManager !== 'undefined' && taxBaseLayoutManager && taxBaseLayoutManager.toggleCard) {
+    taxBaseLayoutManager.toggleCard('panelTaxScenario');
+    return;
+  }
   const panel = document.getElementById('taxScenarioComparePanel');
   if (!panel) return;
-  const isHidden = panel.style.display === 'none';
-  panel.style.display = isHidden ? 'block' : 'none';
+  const isHidden = panel.classList.contains('card-collapsed-hidden') || panel.style.display === 'none';
   if (isHidden) {
+    panel.classList.remove('card-collapsed-hidden');
+    panel.style.display = 'block';
     const scenIncInput = document.getElementById('scenIncome');
     if (scenIncInput && !scenIncInput.value) {
       copyCurrentToScenarioB();
     } else {
       runTaxScenarioComparison();
     }
+  } else {
+    panel.classList.add('card-collapsed-hidden');
   }
 }
 
@@ -2722,12 +2733,19 @@ function saveTaxCalendarState(calState) {
 }
 
 function toggleTaxCalendar() {
+  if (typeof taxBaseLayoutManager !== 'undefined' && taxBaseLayoutManager && taxBaseLayoutManager.toggleCard) {
+    taxBaseLayoutManager.toggleCard('panelTaxCalendar');
+    return;
+  }
   const panel = document.getElementById('taxCalendarPanel');
   if (!panel) return;
-  const isHidden = panel.style.display === 'none';
-  panel.style.display = isHidden ? 'block' : 'none';
+  const isHidden = panel.classList.contains('card-collapsed-hidden') || panel.style.display === 'none';
   if (isHidden) {
+    panel.classList.remove('card-collapsed-hidden');
+    panel.style.display = 'block';
     renderTaxCalendar();
+  } else {
+    panel.classList.add('card-collapsed-hidden');
   }
 }
 
@@ -2854,6 +2872,7 @@ const taxBaseLayoutManager =
         container: document.getElementById('taxCardsContainer'),
         cardSelector: '.reorder-card',
         storageKey: 'moneySuperapp.layout.taxbase.v1',
+        defaultCollapsed: ['dividendTaxCreditCard', 'panelTaxScenario', 'panelTaxCalendar'],
         defaultOrder: [
           'panelTaxIncome',
           'panelTaxDeductions',
@@ -2864,8 +2883,26 @@ const taxBaseLayoutManager =
           'panelTaxScenario',
           'panelTaxCalendar',
         ],
+        onToggle: (cardId, isCollapsed) => {
+          if (!isCollapsed) {
+            if (cardId === 'panelTaxScenario') {
+              const scenIncInput = document.getElementById('scenIncome');
+              if (scenIncInput && !scenIncInput.value) {
+                copyCurrentToScenarioB();
+              } else {
+                runTaxScenarioComparison();
+              }
+            } else if (cardId === 'panelTaxCalendar') {
+              renderTaxCalendar();
+            } else if (cardId === 'dividendTaxCreditCard') {
+              updateDividendTaxCreditUI();
+            }
+          }
+        },
       })
     : null;
+
+window.taxBaseLayoutManager = taxBaseLayoutManager;
 
 window.resetTaxBaseLayout = function () {
   if (taxBaseLayoutManager) {

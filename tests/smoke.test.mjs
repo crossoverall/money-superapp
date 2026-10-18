@@ -767,6 +767,30 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       const sharedJs = fs.readFileSync(path.join(ROOT_DIR, 'js/shared.js'), 'utf8');
       assert.ok(sharedJs.includes('calculateDebtConsolidation'), 'shared.js must export calculateDebtConsolidation');
     });
+
+    it('verifies tax-calculator-base and months-slips declare Phase 78 layout parity and defaultCollapsed', () => {
+      const taxHtml = fs.readFileSync(path.join(ROOT_DIR, 'tax-calculator-base.html'), 'utf8');
+      assert.ok(taxHtml.includes('id="dividendTaxCreditCardBody"'), 'tax-base must declare #dividendTaxCreditCardBody');
+      assert.ok(taxHtml.includes('id="panelTaxScenarioBody"'), 'tax-base must declare #panelTaxScenarioBody');
+      assert.ok(taxHtml.includes('id="panelTaxCalendarBody"'), 'tax-base must declare #panelTaxCalendarBody');
+
+      const slipsHtml = fs.readFileSync(path.join(ROOT_DIR, 'months-slips.html'), 'utf8');
+      assert.ok(slipsHtml.includes('id="panelJobCompare"'), 'months-slips must declare #panelJobCompare');
+      assert.ok(slipsHtml.includes('id="panelJobCompareBody"'), 'months-slips must declare #panelJobCompareBody');
+      assert.ok(slipsHtml.includes('id="comparePanel"'), 'months-slips must declare #comparePanel');
+
+      const taxJs = fs.readFileSync(path.join(ROOT_DIR, 'js/tax-calculator-base.js'), 'utf8');
+      assert.ok(
+        taxJs.includes("defaultCollapsed: ['dividendTaxCreditCard', 'panelTaxScenario', 'panelTaxCalendar']"),
+        'tax-base js must define defaultCollapsed for auxiliary cards',
+      );
+
+      const slipsJs = fs.readFileSync(path.join(ROOT_DIR, 'js/months-slips.js'), 'utf8');
+      assert.ok(
+        slipsJs.includes("defaultCollapsed: ['panelJobCompare']"),
+        'months-slips js must define defaultCollapsed for panelJobCompare',
+      );
+    });
   });
 
   describe('Bilingual Localization Structural Symmetry', () => {
