@@ -37,6 +37,7 @@ const EN = {
   lblBridgeBtn: 'Send investable money to Rebalance',
   lblBridgeDebtBtn: 'Use surplus to accelerate Debt Payoff',
   bridgeAlertDefault: '✓ Data imported successfully',
+  taxAccrualAlertText: '✓ Imported annual tax provision into monthly expenses',
   runwayTitle: '🛡️ Calculate Emergency Runway',
   lblCurrentReserve: 'Current Accumulated Emergency Reserve (THB)',
   lblReserveUnit: 'THB',
@@ -286,6 +287,8 @@ if (LANG === 'en') {
   if (bridgeDebtLbl) bridgeDebtLbl.textContent = EN.lblBridgeDebtBtn;
   const bridgeAlertEl = document.getElementById('bridgeAlertText');
   if (bridgeAlertEl) bridgeAlertEl.textContent = EN.bridgeAlertDefault;
+  const taxAlertEl = document.getElementById('taxAccrualAlertText');
+  if (taxAlertEl && EN.taxAccrualAlertText) taxAlertEl.textContent = EN.taxAccrualAlertText;
   const flbl = document.getElementById('lblImportFile');
   if (flbl) flbl.textContent = EN.importFileLabel;
   const sMet = document.getElementById('lblImportMethod');
@@ -914,6 +917,63 @@ function checkPendingSlipImport() {
           : `✓ ซิงค์เงินเดือน (${fmtCurrency(slip.salary)}) และ allowances จากสลิปเงินเดือนเรียบร้อยแล้ว`,
       );
     }
+  } catch (_e) {}
+}
+
+function checkPendingTaxAccrual() {
+  try {
+    const raw = localStorage.getItem('moneySuperapp.pendingTaxAccrual');
+    if (!raw) return;
+    const payload = JSON.parse(raw);
+    localStorage.removeItem('moneySuperapp.pendingTaxAccrual');
+    if (!payload || !payload.monthlyAmount || payload.monthlyAmount <= 0) return;
+
+    undoMgr.push(captureSnapshot());
+    const itemName = LANG === 'en' ? payload.nameEn : payload.nameTh;
+    const existing = (state.expenses || []).find(
+      (item) =>
+        item.name === payload.nameTh ||
+        item.name === payload.nameEn ||
+        item.name.includes('ภ.ง.ด.') ||
+        item.name.includes('Tax Provision') ||
+        item.name.includes('ภาษี ภ.ง.ด.'),
+    );
+
+    if (existing) {
+      existing.value = payload.monthlyAmount;
+      existing.name = itemName;
+    } else {
+      state.expenses.push({
+        id: 'tax_accrual_' + Date.now(),
+        name: itemName,
+        value: payload.monthlyAmount,
+      });
+    }
+
+    renderRows();
+    renderPvdRow();
+    compute();
+    saveState();
+    updateUndoUI();
+
+    const formattedAmount = `${fmt(payload.monthlyAmount)} ${LANG === 'en' ? 'THB/month' : 'บาท/เดือน'}`;
+    const notifyMsg =
+      LANG === 'en'
+        ? `✓ Added annual tax provision of ${formattedAmount} into monthly expenses!`
+        : `✓ นำเข้ายอดสำรองจ่ายภาษี ${formattedAmount} ลงในรายการค่าใช้จ่ายแล้ว!`;
+
+    const banner = document.getElementById('taxAccrualAlert');
+    const bannerText = document.getElementById('taxAccrualAlertText');
+    if (bannerText) {
+      bannerText.textContent = notifyMsg;
+    }
+    if (banner) {
+      banner.style.display = 'flex';
+      setTimeout(() => {
+        banner.style.display = 'none';
+      }, 5500);
+    }
+    showBridgeNotification(notifyMsg);
   } catch (_e) {}
 }
 
@@ -4033,6 +4093,7 @@ window.renderQuickPresetsBar = renderQuickPresetsBar;
 // ── Init ───────────────────────────────────────────────────────────────────
 checkPendingLumpSum();
 checkPendingSlipImport();
+checkPendingTaxAccrual();
 updateAutoExpenses(pvdPercent);
 renderRows();
 renderPvdRow();
@@ -4092,10 +4153,14 @@ window.addEventListener('storage', (e) => {
   if (e.key === 'moneySuperapp.pendingSlipImport') {
     checkPendingSlipImport();
   }
+  if (e.key === 'moneySuperapp.pendingTaxAccrual') {
+    checkPendingTaxAccrual();
+  }
 });
 window.addEventListener('message', (e) => {
   if (e.data && e.data.action === 'importPendingData') {
     checkPendingLumpSum();
     checkPendingSlipImport();
+    checkPendingTaxAccrual();
   }
 });

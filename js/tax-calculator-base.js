@@ -165,6 +165,10 @@ if (LANG === 'en') {
     subEfGroupD: 'e-Donation (2x) + General donation',
     lblEfNetBalanceTitle: 'Net Tax Outcome:',
     descEfNetBalance: 'Reconciled with 50 Tawi withholding and dividend tax credit',
+    lblBridgeTaxAccrualMonthly: 'Reserve Monthly Tax in Budget (Remaining Money)',
+    lblBridgeTaxAccrualInstallments: 'Reserve 3-Installment Plan (0%) in Budget',
+    lblBridgeTaxRefundToDebt: 'Send Tax Refund to Lump-Sum Debt Payoff',
+    lblBridgeTaxRefundToRebalance: 'Send Refund to Rebalance Portfolio',
   };
   Object.keys(EN).forEach((id) => {
     const el = document.getElementById(id);
@@ -539,7 +543,131 @@ function updateTaxRefundView(metrics) {
         : '💡 <strong>ยอดภาษีพอดี:</strong> ภาษีที่ถูกหักไว้ตรงกับยอดที่ต้องชำระพอดี ยื่นแบบแสดงรายการตามปกติโดยไม่ต้องชำระเพิ่มและไม่มีเงินภาษีคืน';
     }
   }
+
+  // Phase 76: Action Bridges for Payable Accrual and Refund Deployment
+  lastTaxRefundMetrics = metrics;
+  const payableBridgeGroup = document.getElementById('taxPayableBridgeGroup');
+  const refundBridgeGroup = document.getElementById('taxRefundBridgeGroup');
+  const btnMonthlyAccrual = document.getElementById('btnBridgeTaxAccrualMonthly');
+  const lblMonthlyAccrual = document.getElementById('lblBridgeTaxAccrualMonthly');
+  const btnInstallments = document.getElementById('btnBridgeTaxAccrualInstallments');
+  const lblInstallments = document.getElementById('lblBridgeTaxAccrualInstallments');
+  const lblRefundToDebt = document.getElementById('lblBridgeTaxRefundToDebt');
+  const lblRefundToRebalance = document.getElementById('lblBridgeTaxRefundToRebalance');
+
+  if (metrics.status === 'payable' && metrics.amount > 0) {
+    if (payableBridgeGroup) payableBridgeGroup.style.display = 'flex';
+    if (refundBridgeGroup) refundBridgeGroup.style.display = 'none';
+
+    const monthlyVal = Math.round(metrics.amount / 12);
+    if (lblMonthlyAccrual) {
+      lblMonthlyAccrual.textContent = isEn
+        ? `Reserve Monthly Tax (${formatMoney(monthlyVal)} ${unit}/mo) in Budget`
+        : `ตั้งสำรองจ่ายภาษีรายเดือน (${formatMoney(monthlyVal)} บาท/เดือน) ในงบประมาณ`;
+    }
+
+    if (btnInstallments) {
+      if (metrics.canInstallment) {
+        btnInstallments.style.display = 'inline-flex';
+        if (lblInstallments) {
+          lblInstallments.textContent = isEn
+            ? `Reserve 3-Installment Plan (${formatMoney(metrics.installmentAmount)} ${unit}/mo) in Budget`
+            : `ตั้งงบผ่อนชำระ 3 งวด (งวดละ ${formatMoney(metrics.installmentAmount)} บาท/เดือน) ในงบประมาณ`;
+        }
+      } else {
+        btnInstallments.style.display = 'none';
+      }
+    }
+  } else if (metrics.status === 'refund' && metrics.amount > 0) {
+    if (payableBridgeGroup) payableBridgeGroup.style.display = 'none';
+    if (refundBridgeGroup) refundBridgeGroup.style.display = 'flex';
+
+    if (lblRefundToDebt) {
+      lblRefundToDebt.textContent = isEn
+        ? `Send Tax Refund (${formatMoney(metrics.amount)} ${unit}) to Debt Payoff Windfall 💳`
+        : `นำเงินคืนภาษี (${formatMoney(metrics.amount)} บาท) ไปเร่งโปะหนี้ก้อนใหญ่ (Windfall) 💳`;
+    }
+    if (lblRefundToRebalance) {
+      lblRefundToRebalance.textContent = isEn
+        ? `Send Refund (${formatMoney(metrics.amount)} ${unit}) to Rebalance Portfolio`
+        : `นำเงินคืนภาษี (${formatMoney(metrics.amount)} บาท) ไปเพิ่มงบลงทุน Rebalance`;
+    }
+  } else {
+    if (payableBridgeGroup) payableBridgeGroup.style.display = 'none';
+    if (refundBridgeGroup) refundBridgeGroup.style.display = 'none';
+  }
 }
+
+let lastTaxRefundMetrics = null;
+
+function sendTaxPayableToBudget(type) {
+  if (!lastTaxRefundMetrics || lastTaxRefundMetrics.amount <= 0) return;
+  const isInstallment = type === 'installment';
+  const monthlyAmount = isInstallment
+    ? lastTaxRefundMetrics.installmentAmount
+    : Math.round(lastTaxRefundMetrics.amount / 12);
+  const totalTax = lastTaxRefundMetrics.amount;
+  const payload = {
+    plan: isInstallment ? 'installment' : 'monthly',
+    monthlyAmount: monthlyAmount,
+    totalTax: totalTax,
+    months: isInstallment ? 3 : 12,
+    nameTh: isInstallment ? 'ผ่อนชำระภาษี 3 งวด (ภ.ง.ด. 90/91)' : 'สำรองจ่ายภาษี ภ.ง.ด. 90/91 (12 เดือน)',
+    nameEn: isInstallment ? 'Tax 3-Installment Plan (0%)' : 'Annual Tax Provision (12 Mo)',
+    timestamp: Date.now(),
+  };
+  try {
+    localStorage.setItem('moneySuperapp.pendingTaxAccrual', JSON.stringify(payload));
+  } catch (_e) {}
+  jumpToTab('remaining');
+}
+
+function sendTaxRefundToDebt() {
+  if (!lastTaxRefundMetrics || lastTaxRefundMetrics.amount <= 0) return;
+  const payload = {
+    amount: lastTaxRefundMetrics.amount,
+    month: 3, // March / April filing windfall
+    source: 'tax_refund',
+    timestamp: Date.now(),
+  };
+  try {
+    localStorage.setItem('moneySuperapp.pendingDebtWindfall', JSON.stringify(payload));
+  } catch (_e) {}
+  jumpToTab('debt');
+}
+
+function sendTaxRefundToRebalance() {
+  if (!lastTaxRefundMetrics || lastTaxRefundMetrics.amount <= 0) return;
+  try {
+    localStorage.setItem('moneySuperapp.pendingBudget', String(Math.round(lastTaxRefundMetrics.amount)));
+  } catch (_e) {}
+  jumpToTab('rebalance');
+}
+
+function jumpToTab(tabId) {
+  if (window.parent && typeof window.parent.switchToTab === 'function') {
+    window.parent.switchToTab(tabId);
+  } else {
+    const targetOrigin = window.location.origin && window.location.origin !== 'null' ? window.location.origin : '*';
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ action: 'switchToTab', target: tabId }, targetOrigin);
+    } else {
+      const fileMap = {
+        remaining: 'remaining-money.html',
+        debt: 'debt-calculator.html',
+        rebalance: 'rebalance.html',
+        dashboard: 'dashboard.html',
+      };
+      if (fileMap[tabId]) {
+        window.location.href = fileMap[tabId];
+      }
+    }
+  }
+}
+window.sendTaxPayableToBudget = sendTaxPayableToBudget;
+window.sendTaxRefundToDebt = sendTaxRefundToDebt;
+window.sendTaxRefundToRebalance = sendTaxRefundToRebalance;
+window.jumpToTab = jumpToTab;
 
 function importWithholdingFromPayslip() {
   try {

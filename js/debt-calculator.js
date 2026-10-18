@@ -1957,8 +1957,67 @@ function checkInboundBridge() {
         }
       }, 100);
     }
+
+    // 3. Check pending tax refund windfall
+    let windfallAmt = 0;
+    let windfallMonth = 3;
+    const queryWindfall = params.get('windfall');
+    if (queryWindfall) {
+      windfallAmt = parseNum(queryWindfall);
+    }
+    const storedWindfall = localStorage.getItem('moneySuperapp.pendingDebtWindfall');
+    if (storedWindfall) {
+      try {
+        const wfPayload = JSON.parse(storedWindfall);
+        localStorage.removeItem('moneySuperapp.pendingDebtWindfall');
+        if (wfPayload && wfPayload.amount > 0) {
+          windfallAmt = wfPayload.amount;
+          if (wfPayload.month) windfallMonth = wfPayload.month;
+        }
+      } catch (_e) {}
+    }
+
+    if (windfallAmt > 0) {
+      state.windfallEnabled = true;
+      state.windfallAmount = windfallAmt;
+      state.windfallMonth = windfallMonth;
+      saveState();
+      const chk = document.getElementById('chkEnableWindfall');
+      if (chk) chk.checked = true;
+      syncWindfallInputs();
+      computePayoff();
+
+      setTimeout(() => {
+        const banner = document.getElementById('windfallBridgeAlert') || document.getElementById('bridgeAlertBanner');
+        const bannerText =
+          document.getElementById('windfallBridgeAlertText') || document.getElementById('bridgeAlertText');
+        if (bannerText) {
+          bannerText.textContent =
+            LANG === 'en'
+              ? `🎉 Imported ${formatMoney(windfallAmt)} THB Tax Refund as lump-sum debt payoff windfall (Month ${state.windfallMonth})!`
+              : `🎉 นำเข้าเงินคืนภาษีจำนวน ${formatMoney(windfallAmt)} บาท เป็นเงินก้อนโปะหนี้พิเศษ (เดือนที่ ${state.windfallMonth}) เรียบร้อยแล้ว!`;
+        }
+        if (banner) {
+          banner.style.display = 'flex';
+          setTimeout(() => {
+            banner.style.display = 'none';
+          }, 5500);
+        }
+      }, 100);
+    }
   } catch (_e) {}
 }
+
+window.addEventListener('storage', (e) => {
+  if (e.key === 'moneySuperapp.pendingDebtExtra' || e.key === 'moneySuperapp.pendingDebtWindfall') {
+    checkInboundBridge();
+  }
+});
+window.addEventListener('message', (e) => {
+  if (e.data && (e.data.action === 'importPendingData' || e.data.action === 'importDebtData')) {
+    checkInboundBridge();
+  }
+});
 
 // Initialize
 loadState();

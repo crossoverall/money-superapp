@@ -2996,6 +2996,60 @@
   }
 
   /**
+   * Phase 76: Calculates Annual Tax Due Accrual & Tax Refund Windfall Planning Metrics.
+   * Amortizes tax due into monthly reserves (12-month provision or 3-installment 0% plan),
+   * or calculates refund windfall deployment amount for debt payoff or rebalancing.
+   *
+   * @param {Object} params
+   * @param {number} [params.calculatedTax=0] - Total annual PIT liability calculated
+   * @param {number} [params.withheldTax=0] - Total tax withheld at source (50 Tawi)
+   * @returns {Object} Tax outcome status, amounts, monthly provisions, and windfall recommendation
+   */
+  function calculateTaxAccrualAndRefundPlan(params) {
+    var p = params || {};
+    var calc = Math.max(0, Number(p.calculatedTax) || 0);
+    var wht = Math.max(0, Number(p.withheldTax) || 0);
+    var net = calc - wht;
+    var monthlyAccrual;
+    var canInstallment;
+    var installmentAmount;
+    var refund;
+
+    if (net > 0) {
+      monthlyAccrual = Math.round(net / 12);
+      canInstallment = net >= 3000;
+      installmentAmount = canInstallment ? Math.round(net / 3) : net;
+      return {
+        status: 'payable',
+        amount: net,
+        monthlyAccrual: monthlyAccrual,
+        canInstallment: canInstallment,
+        installmentAmount: installmentAmount,
+        recommendedWindfall: 0,
+      };
+    } else if (net < 0) {
+      refund = Math.abs(net);
+      return {
+        status: 'refund',
+        amount: refund,
+        monthlyAccrual: 0,
+        canInstallment: false,
+        installmentAmount: 0,
+        recommendedWindfall: refund,
+      };
+    } else {
+      return {
+        status: 'balanced',
+        amount: 0,
+        monthlyAccrual: 0,
+        canInstallment: false,
+        installmentAmount: 0,
+        recommendedWindfall: 0,
+      };
+    }
+  }
+
+  /**
    * Phase 67: Emergency Fund & Income Shock Stress-Tester.
    * Simulates sudden loss of income (layoff, resignation, illness, or total shock),
    * compares Barebones survival vs Standard lifestyle drain, and models Section 33
@@ -4000,6 +4054,7 @@
     evaluateEFilingPreFlightChecklist: evaluateEFilingPreFlightChecklist,
     simulateDebtPayoff: simulateDebtPayoff,
     compareDebtVelocity: compareDebtVelocity,
+    calculateTaxAccrualAndRefundPlan: calculateTaxAccrualAndRefundPlan,
   };
 
   // Expose on global window object
@@ -4065,5 +4120,7 @@
       global.evaluateEFilingPreFlightChecklist = evaluateEFilingPreFlightChecklist;
     if (typeof global.simulateDebtPayoff === 'undefined') global.simulateDebtPayoff = simulateDebtPayoff;
     if (typeof global.compareDebtVelocity === 'undefined') global.compareDebtVelocity = compareDebtVelocity;
+    if (typeof global.calculateTaxAccrualAndRefundPlan === 'undefined')
+      global.calculateTaxAccrualAndRefundPlan = calculateTaxAccrualAndRefundPlan;
   }
 })(typeof window !== 'undefined' ? window : this);

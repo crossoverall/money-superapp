@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="2.5.18">
+    <meta name="version" content="2.5.19">
     <script>
       try {
         var t = localStorage.getItem('moneySuperapp.theme');
@@ -546,6 +546,25 @@
                         <div id="refundActionBox" class="p-2.5 rounded-lg text-xs leading-relaxed border" style="background:var(--panel); border-color:var(--line); color:var(--ink);">
                             💡 <strong>ยอดภาษีพอดี:</strong> ภาษีที่ถูกหักไว้ตรงกับยอดที่ต้องชำระพอดี ยื่นแบบแสดงรายการตามปกติโดยไม่ต้องชำระเพิ่มและไม่มีเงินภาษีคืน
                         </div>
+
+                        <!-- Phase 76: Action Bridges for Payable Accrual and Refund Deployment -->
+                        <div id="taxPayableBridgeGroup" style="display:none;" class="flex flex-col gap-2 pt-1">
+                            <button type="button" id="btnBridgeTaxAccrualMonthly" onclick="sendTaxPayableToBudget('monthly')" class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer" style="background:var(--warn); color:#ffffff; border:1px solid rgba(0,0,0,0.1);">
+                                <span>📥</span> <span id="lblBridgeTaxAccrualMonthly">ตั้งสำรองจ่ายภาษีรายเดือนในงบประมาณ (Remaining Money)</span>
+                            </button>
+                            <button type="button" id="btnBridgeTaxAccrualInstallments" onclick="sendTaxPayableToBudget('installment')" class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer" style="display:none; background:var(--panel); color:var(--warn); border:1px solid var(--warn);">
+                                <span>💳</span> <span id="lblBridgeTaxAccrualInstallments">ตั้งงบผ่อนชำระ 3 งวด (0%) ในงบประมาณ</span>
+                            </button>
+                        </div>
+
+                        <div id="taxRefundBridgeGroup" style="display:none;" class="flex flex-col sm:flex-row gap-2 pt-1">
+                            <button type="button" id="btnBridgeTaxRefundToDebt" onclick="sendTaxRefundToDebt()" class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer" style="background:var(--ok); color:#ffffff; border:1px solid rgba(0,0,0,0.1);">
+                                <span>⚡</span> <span id="lblBridgeTaxRefundToDebt">นำเงินคืนภาษีไปโปะหนี้ก้อนใหญ่ (Debt Payoff)</span>
+                            </button>
+                            <button type="button" id="btnBridgeTaxRefundToRebalance" onclick="sendTaxRefundToRebalance()" class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer" style="background:var(--panel); color:var(--core); border:1px solid var(--line);">
+                                <span>📊</span> <span id="lblBridgeTaxRefundToRebalance">นำไปเพิ่มงบลงทุน Rebalance</span>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="mt-4">
@@ -993,7 +1012,7 @@
                     <span id="lbl-reset-tax">ล้างข้อมูล</span>
                 </button>
             </div>
-            <p class="text-xs text-gray-400">v2.5.18</p>
+            <p class="text-xs text-gray-400">v2.5.19</p>
         </div>
     </div>
 

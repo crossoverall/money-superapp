@@ -1244,4 +1244,52 @@ describe('MoneyApp Shared Core Module', () => {
       assert.equal(empty.recommended, 'equal');
     });
   });
+
+  describe('MoneyApp Tax Accrual & Refund Windfall Bridge (Phase 76)', () => {
+    it('correctly calculates monthly accrual and installment metrics for tax payable', () => {
+      const { MoneyApp } = createEnvironment('th');
+      assert.equal(typeof MoneyApp.calculateTaxAccrualAndRefundPlan, 'function');
+
+      const planPayable = MoneyApp.calculateTaxAccrualAndRefundPlan({
+        calculatedTax: 45000,
+        withheldTax: 30000,
+      });
+
+      assert.equal(planPayable.status, 'payable');
+      assert.equal(planPayable.amount, 15000);
+      assert.equal(planPayable.monthlyAccrual, 1250); // 15,000 / 12
+      assert.equal(planPayable.canInstallment, true); // >= 3000
+      assert.equal(planPayable.installmentAmount, 5000); // 15,000 / 3
+      assert.equal(planPayable.recommendedWindfall, 0);
+    });
+
+    it('correctly models refund windfall for debt payoff and rebalancing', () => {
+      const { MoneyApp } = createEnvironment('th');
+      const planRefund = MoneyApp.calculateTaxAccrualAndRefundPlan({
+        calculatedTax: 12000,
+        withheldTax: 36000,
+      });
+
+      assert.equal(planRefund.status, 'refund');
+      assert.equal(planRefund.amount, 24000);
+      assert.equal(planRefund.monthlyAccrual, 0);
+      assert.equal(planRefund.canInstallment, false);
+      assert.equal(planRefund.recommendedWindfall, 24000);
+    });
+
+    it('handles exact tax balance and edge case zero inputs without throwing', () => {
+      const { MoneyApp } = createEnvironment('th');
+      const balanced = MoneyApp.calculateTaxAccrualAndRefundPlan({
+        calculatedTax: 20000,
+        withheldTax: 20000,
+      });
+      assert.equal(balanced.status, 'balanced');
+      assert.equal(balanced.amount, 0);
+      assert.equal(balanced.monthlyAccrual, 0);
+
+      const empty = MoneyApp.calculateTaxAccrualAndRefundPlan({});
+      assert.equal(empty.status, 'balanced');
+      assert.equal(empty.amount, 0);
+    });
+  });
 });

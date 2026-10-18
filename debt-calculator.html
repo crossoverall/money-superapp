@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.5.18">
+  <meta name="version" content="2.5.19">
   <script>
     try {
       var t = localStorage.getItem('moneySuperapp.theme');
@@ -277,6 +277,13 @@
             <input type="checkbox" id="chkEnableWindfall" onchange="onToggleWindfall(this.checked)" style="cursor:pointer;">
             <span id="lbl-enable-windfall">เปิดใช้งาน</span>
           </label>
+        </div>
+        <div id="windfallBridgeAlert" role="alert" aria-live="polite" style="display:none; background:var(--ok-dim, rgba(16,185,129,0.1)); border:1px solid var(--ok, #10b981); color:var(--ink); padding:8px 12px; border-radius:8px; font-size:12px; font-weight:600; margin-top:8px; margin-bottom:8px; align-items:center; justify-content:space-between; gap:8px;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span>🎉</span>
+            <span id="windfallBridgeAlertText">นำเข้าเงินคืนภาษีเป็นเงินก้อนโปะหนี้สำเร็จ!</span>
+          </div>
+          <button type="button" onclick="document.getElementById('windfallBridgeAlert').style.display='none'" style="background:none; border:none; color:var(--ink-dim); cursor:pointer; font-size:14px; padding:0 4px;" aria-label="Close">×</button>
         </div>
         <div id="windfallInputsContainer" style="display:none; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:12px; margin-top:8px;">
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
@@ -663,7 +670,7 @@
     <button class="reset-btn" id="btnResetDebtLayout" onclick="resetDebtLayout()">🔄 <span id="lblResetDebtLayout">จัดลำดับเดิม</span></button>
     <button class="reset-btn" id="btn-reset-debts" onclick="resetDefaults()">รีเซ็ตค่าเริ่มต้น</button>
   </div>
-  <p class="version-tag">v2.5.18</p>
+  <p class="version-tag">v2.5.19</p>
 
 <script src="js/shared.js"></script>
 <script src="js/debt-calculator.js"></script>

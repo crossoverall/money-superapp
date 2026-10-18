@@ -665,6 +665,54 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(remainingJs.includes('sendToDebtPayoff'), 'remaining-money.js must define sendToDebtPayoff');
       assert.ok(remainingJs.includes('pendingDebtExtra'), 'remaining-money.js must set pendingDebtExtra');
     });
+
+    it('verifies tax-calculator-base, remaining-money, and debt-calculator declare Phase 76 Bridges and Alerts', () => {
+      const taxHtml = fs.readFileSync(path.join(ROOT_DIR, 'tax-calculator-base.html'), 'utf8');
+      assert.ok(taxHtml.includes('id="taxPayableBridgeGroup"'), 'tax-base must define #taxPayableBridgeGroup');
+      assert.ok(taxHtml.includes('id="taxRefundBridgeGroup"'), 'tax-base must define #taxRefundBridgeGroup');
+      assert.ok(
+        taxHtml.includes('id="btnBridgeTaxAccrualMonthly"'),
+        'tax-base must define #btnBridgeTaxAccrualMonthly',
+      );
+      assert.ok(
+        taxHtml.includes('id="btnBridgeTaxAccrualInstallments"'),
+        'tax-base must define #btnBridgeTaxAccrualInstallments',
+      );
+      assert.ok(taxHtml.includes('id="btnBridgeTaxRefundToDebt"'), 'tax-base must define #btnBridgeTaxRefundToDebt');
+      assert.ok(
+        taxHtml.includes('id="btnBridgeTaxRefundToRebalance"'),
+        'tax-base must define #btnBridgeTaxRefundToRebalance',
+      );
+
+      const remHtml = fs.readFileSync(path.join(ROOT_DIR, 'remaining-money.html'), 'utf8');
+      assert.ok(remHtml.includes('id="taxAccrualAlert"'), 'remaining-money must define #taxAccrualAlert');
+      assert.ok(remHtml.includes('id="taxAccrualAlertText"'), 'remaining-money must define #taxAccrualAlertText');
+
+      const debtHtml = fs.readFileSync(path.join(ROOT_DIR, 'debt-calculator.html'), 'utf8');
+      assert.ok(debtHtml.includes('id="windfallBridgeAlert"'), 'debt-calculator must define #windfallBridgeAlert');
+      assert.ok(
+        debtHtml.includes('id="windfallBridgeAlertText"'),
+        'debt-calculator must define #windfallBridgeAlertText',
+      );
+
+      const taxJs = fs.readFileSync(path.join(ROOT_DIR, 'js/tax-calculator-base.js'), 'utf8');
+      assert.ok(taxJs.includes('sendTaxPayableToBudget'), 'tax-base js must define sendTaxPayableToBudget');
+      assert.ok(taxJs.includes('sendTaxRefundToDebt'), 'tax-base js must define sendTaxRefundToDebt');
+      assert.ok(taxJs.includes('sendTaxRefundToRebalance'), 'tax-base js must define sendTaxRefundToRebalance');
+
+      const remJs = fs.readFileSync(path.join(ROOT_DIR, 'js/remaining-money.js'), 'utf8');
+      assert.ok(remJs.includes('checkPendingTaxAccrual'), 'remaining-money js must define checkPendingTaxAccrual');
+      assert.ok(remJs.includes('pendingTaxAccrual'), 'remaining-money js must check pendingTaxAccrual');
+
+      const debtJs = fs.readFileSync(path.join(ROOT_DIR, 'js/debt-calculator.js'), 'utf8');
+      assert.ok(debtJs.includes('pendingDebtWindfall'), 'debt-calculator js must check pendingDebtWindfall');
+
+      const sharedJs = fs.readFileSync(path.join(ROOT_DIR, 'js/shared.js'), 'utf8');
+      assert.ok(
+        sharedJs.includes('calculateTaxAccrualAndRefundPlan'),
+        'shared.js must export calculateTaxAccrualAndRefundPlan',
+      );
+    });
   });
 
   describe('Bilingual Localization Structural Symmetry', () => {

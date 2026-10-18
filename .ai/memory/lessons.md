@@ -15,6 +15,23 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Annual Tax Due Monthly Accrual & Tax Refund Windfall Cross-Tool Bridge (v2.5.19)
+- **Date & Context:** 2026-10-18, implementing Phase 76 Annual Tax Due Monthly Accrual & Tax Refund Windfall Cross-Tool Bridge (`v2.5.19`).
+- **Problem:**
+  1. In `tax-calculator-base.html`, users calculating their annual ภ.ง.ด. 90/91 tax payable or tax refund had no automated integration with their household budget in `remaining-money.html` or debt plan in `debt-calculator.html`.
+  2. Large annual tax dues (e.g. 80k+ THB) often caught users off guard without a monthly accrual sinking fund reserve or knowledge of the Revenue Department's 3-installment 0% e-Filing facility (available for tax payable $\ge$ 3,000 THB).
+  3. Tax refund recipients had to manually remember to direct windfall lump-sums toward debt payoff in `debt-calculator.html` or portfolio capital injection in `rebalance.html`.
+- **Root Cause:**
+  1. Tax calculation results were siloed in `tax-calculator-base.js` without domain math modeling for sinking funds, installment eligibility, or cross-tool communication.
+  2. `remaining-money.html` lacked inbound accrual ingestion, and `debt-calculator.html` only accepted extra monthly cash without a pre-populated lump-sum windfall bridge for tax season (Month 3).
+- **Solution & Rule:**
+  1. **Accrual & Windfall Engine:** Implement `MoneyApp.calculateTaxAccrualAndRefundPlan` in `js/shared.js`. Calculate status (`payable`, `refund`, `balanced`), monthly sinking fund reserve (`amount / 12`), 3-installment eligibility (`amount >= 3000`, `amount / 3`), and debt windfall suggestions.
+  2. **Tax Bridge UI & Actions:** In `tax-calculator-base.html`, display `#taxPayableBridgeGroup` or `#taxRefundBridgeGroup` based on tax calculation verdict. Provide buttons to bridge monthly reserve or 3 installments into `remaining-money.html`, or bridge refund into `debt-calculator.html` or `rebalance.html`.
+  3. **Inbound Sinking Fund Ingestion:** In `remaining-money.html`, listen for `moneySuperapp.pendingTaxAccrual`, add/update expense line item, recalculate budget, display `#taxAccrualAlert`, and sync via storage events. Guard against duplicated currency units (`fmt(val)` instead of `fmtCurrency(val) + " บาท/เดือน"`).
+  4. **Inbound Windfall Injection:** In `debt-calculator.html`, read `moneySuperapp.pendingDebtWindfall`, enable windfall toggle, populate amount and month (Month 3 for tax season), recalculate payoff timeline, and display confirmation banner.
+  5. **ES5 Variable Scoping:** Biome rule `lint/correctness/noInnerDeclarations` forbids `var` declarations inside `if/else` blocks; always declare helper variables at the function top level in ES5 files.
+
+
 ### 2026-10-18: Debt Payoff Visual Velocity Comparator, Multi-Strategy Knockout & Cross-Tool Surplus Bridge (v2.5.18)
 - **Date & Context:** 2026-10-18, implementing Phase 75 Debt Payoff Snowball vs. Avalanche Visual Velocity Comparator & Remaining Money 1-Click Payoff Bridge (`v2.5.18`).
 - **Problem:**
