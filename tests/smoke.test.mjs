@@ -747,6 +747,24 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         rebalJs.includes("defaultCollapsed: ['panelTargetDateGlidepath', 'panelThaiGold', 'panelForeignTaxAdvisor']"),
         'rebalance.js must configure all 3 auxiliary sub-tools as defaultCollapsed',
       );
+
+      // Verify all 3 auxiliary cards possess box container classes and styles
+      assert.ok(
+        rebalHtml.includes('class="panel card reorder-card" id="panelTargetDateGlidepath"'),
+        '#panelTargetDateGlidepath must declare panel card reorder-card box container',
+      );
+      assert.ok(
+        rebalHtml.includes('class="panel card reorder-card" id="panelThaiGold"'),
+        '#panelThaiGold must declare panel card reorder-card box container',
+      );
+      assert.ok(
+        rebalHtml.includes('class="panel card reorder-card" id="panelForeignTaxAdvisor"'),
+        '#panelForeignTaxAdvisor must declare panel card reorder-card box container',
+      );
+      assert.ok(
+        rebalHtml.includes('.panel, .card:not(#panelBuckets)'),
+        'rebalance.html must define standard box container styling for .panel and .card',
+      );
     });
   });
 });

@@ -15,6 +15,15 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Sub-Tool Box Container Harmonization & Card Selector Alignment (v2.5.13)
+- **Date & Context:** 2026-10-18, harmonizing auxiliary sub-tool cards (`#panelTargetDateGlidepath`, `#panelThaiGold`, `#panelForeignTaxAdvisor`) in `rebalance.html` (`v2.5.13`).
+- **Problem:** In `rebalance.html`, the bottom 3 collapsible auxiliary tools appeared without any box container, floating naked on the page background unlike `#panelBudget` and `#howto`.
+- **Root Cause:** The bottom 3 cards were introduced with `class="card reorder-card"`. However, `.card` was never defined in `rebalance.html` (only `.panel` and `.howto` were styled).
+- **Solution & Rule:**
+  1. **Dual Container Rule:** Define `.panel, .card:not(#panelBuckets)` with standard box styling (`background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 16px;`).
+  2. **Harmonized HTML Classes:** Always assign `class="panel card reorder-card"` to collapsible auxiliary cards to ensure backward compatibility with both layout manager `.reorder-card` selectors and `.panel` box rules.
+  3. **Header Affordance:** Add `cursor: pointer; user-select: none;` on `.reorder-card .card-header` across all card tools.
+
 ### 2026-10-18: WebKit Flex Control Grouping, Overflow Barriers & Mobile Suffix Breakout (v2.5.12)
 - **Date & Context:** 2026-10-18, eliminating mobile expense row breakout ("THB x" overflowing outside expense box) in `remaining-money.html` (`v2.5.12`).
 - **Problem:** On mobile screens (especially WebKit / iOS Safari, devices with system font scaling > 1.0x, or narrow viewports $\le 390\text{px}$), the text following the expense amount input—specifically `"THB"` and the delete button `"×"` (plus auto-badges)—broke through and protruded past the right border of `.entry-row` and `.panel`.
