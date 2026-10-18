@@ -15,6 +15,22 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Flexbox `min-width: auto` Input Overflow & Mobile Row Calibration (v2.5.11)
+- **Date & Context:** 2026-10-18, resolving mobile text breakout and flex overflow bugs in `remaining-money.html` (`v2.5.11`).
+- **Problem:** On mobile viewports ($\le 480\text{px}$, especially 360px–390px devices), budget item inputs (`.value-input`), unit text, badges, and delete buttons burst out past the right boundary of `.entry-row` and `.panel`. In `.pvd-row`, the long label `กองทุนสำรองเลี้ยงชีพ (% ของเงินเดือน)` pushed inputs off-screen. In `#cashflowPanel`, the header flex container forced the title and the 4-button view toggle group into an unwrapped 550px row, spilling off-screen.
+- **Root Cause:**
+  1. In HTML and CSS Flexbox, `<input>` elements default to `min-width: auto;` based on their browser default `size="20"` attribute (~160px–200px). Without `min-width: 0;`, `flex: 1;` cannot shrink below this intrinsic width, forcing the row to overflow small mobile containers.
+  2. Fixed amount inputs (`width: 110px`) combined with 64px of cumulative padding left only 287px on a 360px device.
+  3. The `#cashflowPanel` title flex container lacked `flex-wrap: wrap;`.
+- **Solution & Rule:**
+  1. **Universal Flex Input Safety:** Always declare `min-width: 0; width: 0; flex: 1 1 auto;` on inputs and labels inside flex rows to override `min-width: auto;` and enable proper shrinking.
+  2. **Mobile Row Spacing (`@media (max-width: 480px)`):**
+     - Adjust `body` padding to `18px 10px 70px` and `.panel` to `12px 10px`.
+     - Calibrate `.entry-row` to `gap: 6px; padding: 8px 8px; width: 100%; box-sizing: border-box;`.
+     - Calibrate `.value-input` to `width: 82px; flex: 0 0 82px;` and `.pvd-pct-input` to `width: 55px; flex: 0 0 55px;`.
+  3. **Header Wrapping:** Ensure `.cashflow-panel .panel-title > div` and `.view-toggle-group` declare `flex-wrap: wrap;` and set `#svgCashflowWaterfall` min-width to 300px.
+  4. **Multi-Viewport Headless Audits:** Verify responsive layouts across 360px, 375px, and 390px viewports to guarantee 0 element overflows.
+
 ### 2026-10-18: Multi-Card Container Sizing & Responsive Padding Harmonization (v2.5.10)
 - **Date & Context:** 2026-10-18, resolving narrow container width and cramped multi-column financial layouts on Income Tax estimation tool (`tax-calculator-base.html`) (`v2.5.10`).
 - **Problem:** The Income Tax estimation tool was constrained by `max-w-md` (448px) with 32px padding (`p-8`), restricting usable content width to only 384px. On desktop viewports, 65%+ of the screen was empty space, while multi-column financial tables (8-tier progressive tax waterfall table, ภ.ง.ด. 90/91 e-Filing worksheet, dual-scenario comparison cards, and statutory calendar) suffered from cramped typography and awkward multi-line text wrapping. Additionally, `<body>` centered the long card vertically (`flex items-center justify-center`).

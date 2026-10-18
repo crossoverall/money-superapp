@@ -69,6 +69,22 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'tax-calculator-base.html must not be constrained by narrow max-w-md',
       );
     });
+
+    it('verifies remaining-money.html declares mobile responsive entry-row and min-width constraints', () => {
+      const remContent = fs.readFileSync(path.join(ROOT_DIR, 'remaining-money.html'), 'utf8');
+      assert.ok(
+        remContent.includes('@media (max-width: 480px)'),
+        'remaining-money.html must define mobile media query for <= 480px screens',
+      );
+      assert.ok(
+        remContent.includes('.entry-row .name-input') && remContent.includes('min-width: 0'),
+        'remaining-money.html must define min-width: 0 on .name-input to prevent flex overflow',
+      );
+      assert.ok(
+        remContent.includes('.pvd-label') && remContent.includes('min-width: 0'),
+        'remaining-money.html must define min-width: 0 on .pvd-label to prevent flex overflow',
+      );
+    });
   });
 
   describe('Script & Stylesheet Dependency Integrity', () => {

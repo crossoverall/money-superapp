@@ -1,5 +1,5 @@
 ---
-task_id: "SDLC-BUGFIX-TAX-BASE-PAGE-WIDTH"
+task_id: "SDLC-BUGFIX-REMAINING-MOBILE-OVERFLOW"
 status: "completed"
 current_stage: "release"
 complexity: "level_2"
@@ -8,12 +8,19 @@ pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "rev
 ---
 
 ### Problem Diagnosis & Root Causes Resolved
-1. **Narrow Container Constraint (`tax-calculator-base.html`):**
-   - Replaced `max-w-md` (448px) with `w-full max-w-4xl` (896px), harmonizing with `months-slips.html`.
-   - Replaced static `p-8` with responsive `p-4 sm:p-6 md:p-8`, giving +32px usable width on mobile.
-2. **Body Alignment & Theming:**
-   - Updated `<body>` to `flex flex-col items-center justify-start p-4 md:py-8` bound to `var(--bg)` and `var(--ink)`.
-   - Explicitly bound `#screenCalculatorCard` to `var(--panel)` and `var(--line)` for flawless Light and Dark mode contrast.
+1. **`.entry-row` Flex Overflow (`remaining-money.html`):**
+   - Added `min-width: 0; width: 0; flex: 1 1 auto; text-overflow: ellipsis;` to `.name-input` and `.pvd-label`.
+   - In `@media (max-width: 480px)`, calibrated `.value-input` to `width: 82px; flex: 0 0 82px;`, row padding to `8px 8px`, and gaps to `6px`.
+2. **Container Padding & Wrapping:**
+   - On screens $\le 480\text{px}$, adjusted `body` padding to `18px 10px 70px` and card padding to `12px 10px`.
+   - Enabled `flex-wrap: wrap;` on `#cashflowPanel .panel-title > div` and `.view-toggle-group`.
+   - Reduced `#svgCashflowWaterfall` mobile min-width to 300px.
+
+### Verification
+- 333 unit & smoke tests passing (87 suites).
+- 0 Biome linter errors.
+- Headless Chrome CDP audit across 360px, 375px, 390px, and 1280px in Light and Dark themes: 0 element overflows, 0 viewport overflows, 0 exceptions.
+- Version bumped to `v2.5.11`.
 
 ### Verification
 - 332 unit & smoke tests passing (87 suites).

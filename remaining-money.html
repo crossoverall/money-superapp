@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.5.10">
+  <meta name="version" content="2.5.11">
   <script>
     try {
       var t = localStorage.getItem('moneySuperapp.theme');
@@ -82,16 +82,17 @@
       display:flex; align-items:center; gap:10px;
       background: var(--panel-2); border: 1px solid var(--line);
       border-radius: 12px; padding: 10px 12px; margin-bottom: 8px;
+      box-sizing: border-box; width: 100%; max-width: 100%;
     }
     .entry-row .name-input{
-      flex:1; background:transparent; border:none; color: var(--ink);
-      font-size: 14px; font-weight: 600; padding: 4px 2px; outline:none;
+      flex:1 1 auto; min-width: 0; width: 0; background:transparent; border:none; color: var(--ink);
+      font-size: 14px; font-weight: 600; padding: 4px 2px; outline:none; text-overflow: ellipsis;
     }
     .entry-row .value-input{
-      width: 110px; background: var(--bg); border: 1px solid var(--line);
+      flex: 0 0 110px; width: 110px; background: var(--bg); border: 1px solid var(--line);
       border-radius: 8px; color: var(--ink); font-size: 15px; font-weight:700;
       padding: 6px 10px; text-align:right; font-variant-numeric: tabular-nums; outline:none;
-      transition: border-color 0.15s, box-shadow 0.15s;
+      transition: border-color 0.15s, box-shadow 0.15s; box-sizing: border-box;
     }
     .entry-row .value-input:focus{ border-color: var(--core); box-shadow: 0 0 0 2px var(--core-dim); }
     .entry-row .unit{
@@ -131,15 +132,18 @@
       display:flex; align-items:center; gap:10px;
       background: var(--panel-2); border: 1px solid var(--line);
       border-radius: 12px; padding: 10px 12px; margin-bottom: 8px;
+      box-sizing: border-box; width: 100%; max-width: 100%;
     }
     .pvd-label{
-      flex:1; background:transparent; border:none; color: var(--ink-dim);
+      flex:1 1 auto; min-width: 0; width: 0; background:transparent; border:none; color: var(--ink-dim);
       font-size: 13.5px; font-weight:600; padding: 4px 2px; outline:none; white-space:nowrap;
+      overflow: hidden; text-overflow: ellipsis;
     }
     .pvd-pct-input{
-      width: 80px; background: var(--bg); border: 1px solid var(--line);
+      flex: 0 0 80px; width: 80px; background: var(--bg); border: 1px solid var(--line);
       border-radius: 8px; color: var(--ink); font-size: 15px; font-weight:700;
       padding: 6px 10px; text-align:right; font-variant-numeric: tabular-nums; outline:none;
+      box-sizing: border-box;
     }
     .pvd-pct-input:focus{ border-color: var(--ink-dim); }
     .pvd-unit{
@@ -347,6 +351,71 @@
       opacity: 0.92;
       transform: translateY(-1px);
     }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 18px 10px 70px;
+      }
+      .panel {
+        padding: 12px 10px;
+      }
+      .cashflow-panel {
+        padding: 12px 10px;
+      }
+      .entry-row {
+        gap: 6px;
+        padding: 8px 8px;
+      }
+      .entry-row .name-input {
+        font-size: 13.5px;
+      }
+      .entry-row .value-input {
+        flex: 0 0 82px;
+        width: 82px;
+        padding: 5px 6px;
+        font-size: 14px;
+      }
+      .entry-row .unit {
+        font-size: 11px;
+      }
+      .auto-badge {
+        font-size: 8.5px;
+        padding: 1px 4px;
+        margin-left: 0;
+      }
+      .remove-btn {
+        font-size: 16px;
+        padding: 2px 2px;
+      }
+      .pvd-row {
+        gap: 6px;
+        padding: 8px 8px;
+      }
+      .pvd-label {
+        font-size: 12.5px;
+      }
+      .pvd-pct-input {
+        flex: 0 0 55px;
+        width: 55px;
+        padding: 5px 4px;
+        font-size: 13.5px;
+      }
+      .cashflow-panel .panel-title > div {
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .view-toggle-group {
+        flex-wrap: wrap;
+        max-width: 100%;
+      }
+      .btn-cf-view {
+        padding: 3px 6px;
+        font-size: 10px;
+      }
+      #svgCashflowWaterfall {
+        min-width: 300px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -396,9 +465,9 @@
   <!-- Visual Cashflow Allocation Bar & Waterfall -->
   <div class="cashflow-panel reorder-card" id="cashflowPanel">
     <div class="panel-title" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
-      <div style="display:flex; align-items:center; gap:8px;">
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
         <span style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-dim);" id="lblCashflowTitle">สัดส่วนกระแสเงินสด (Cashflow Allocation)</span>
-        <div class="view-toggle-group" style="display:inline-flex; background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:2px;">
+        <div class="view-toggle-group" style="display:inline-flex; background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:2px; flex-wrap:wrap;">
           <button type="button" id="btnCfViewWaterfall" class="btn-cf-view active" title="Waterfall Stream">🌊 <span id="lblCfViewWaterfall">น้ำตก (Waterfall)</span></button>
           <button type="button" id="btnCfViewBar" class="btn-cf-view" title="Proportion Bar">📊 <span id="lblCfViewBar">แถบสัดส่วน (Bar)</span></button>
           <button type="button" id="btnCfView503020" class="btn-cf-view" title="50/30/20 Rule">🎯 <span id="lblCfView503020">กฎ 50/30/20</span></button>
@@ -737,7 +806,7 @@
       <button class="reset-btn" id="resetBtn" style="color:var(--ink-faint);">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v2.5.10</p>
+  <p class="version-tag">v2.5.11</p>
 
   <!-- Import Preview Modal -->
   <div id="importModal" role="dialog" aria-modal="true" aria-labelledby="importModalTitle" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; display:none; align-items:center; justify-content:center; backdrop-filter:blur(2px);" onclick="if(event.target===this)closeImportModal()">
