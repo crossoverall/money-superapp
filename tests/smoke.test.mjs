@@ -1312,5 +1312,59 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'remaining-money.js must delegate calculateBudgetRule503020 to MoneyApp.CashflowViz',
       );
     });
+
+    it('verifies Phase 96 Budget Data Importer & Parser Engine modularization and clean delegation', () => {
+      const impPath = path.join(ROOT_DIR, 'js/engines/budget-import.js');
+      assert.ok(fs.existsSync(impPath), 'js/engines/budget-import.js must exist');
+      const impContent = fs.readFileSync(impPath, 'utf8');
+      assert.ok(
+        impContent.includes('MoneyApp.BudgetImport = BudgetImport'),
+        'budget-import.js must export MoneyApp.BudgetImport',
+      );
+      assert.ok(!impContent.includes('eval('), 'budget-import.js must never invoke eval()');
+      assert.ok(!impContent.includes('document.write'), 'budget-import.js must never invoke document.write()');
+
+      // Verify all 8 core HTML files register budget-import.js
+      const htmlFiles = [
+        'dashboard.html',
+        'debt-calculator.html',
+        'index.html',
+        'months-slips.html',
+        'rebalance.html',
+        'remaining-money.html',
+        'tax-calculator-base.html',
+        'tax-calculator.html',
+      ];
+      for (const file of htmlFiles) {
+        const content = fs.readFileSync(path.join(ROOT_DIR, file), 'utf8');
+        assert.ok(
+          content.includes('src="js/engines/budget-import.js"'),
+          `${file} must include js/engines/budget-import.js`,
+        );
+      }
+
+      // Verify service worker registers budget-import.js
+      const swContent = fs.readFileSync(path.join(ROOT_DIR, 'sw.js'), 'utf8');
+      assert.ok(swContent.includes("'./js/engines/budget-import.js'"), 'sw.js must cache js/engines/budget-import.js');
+
+      // Verify js/remaining-money.js delegates CSV/JSON parsing calls
+      const rmContent = fs.readFileSync(path.join(ROOT_DIR, 'js/remaining-money.js'), 'utf8');
+      assert.ok(
+        rmContent.includes('BudgetImport?.parseCSVRows'),
+        'remaining-money.js must delegate parseCSVRows to MoneyApp.BudgetImport',
+      );
+      assert.ok(
+        rmContent.includes('BudgetImport?.detectColumns'),
+        'remaining-money.js must delegate detectColumns to MoneyApp.BudgetImport',
+      );
+      assert.ok(
+        rmContent.includes('importer?.parseImportJSON'),
+        'remaining-money.js must delegate parseImportJSON to MoneyApp.BudgetImport',
+      );
+      assert.ok(
+        rmContent.includes('importer?.parseImportCSV'),
+        'remaining-money.js must delegate parseImportCSV to MoneyApp.BudgetImport',
+      );
+    });
   });
 });

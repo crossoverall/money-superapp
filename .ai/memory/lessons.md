@@ -15,6 +15,18 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Decompose remaining-money.js: Budget Data Importer & Parser Engine (v2.5.39)
+- **Date & Context:** 2026-10-18, Phase 96 Engine Modularization (`v2.5.39`).
+- **Problem:**
+  1. `js/remaining-money.js` contained ~500 lines of low-level CSV character scanning, quote escaping, column heuristic detection, and JSON backup parsing tightly coupled to the UI controller.
+  2. In unit test suites loaded via `node:vm` scripts, arrays returned from the engine have prototype descriptors bound to the VM realm rather than the test runner's global realm, which causes Node's `assert.deepStrictEqual` to fail on structural array comparisons even when elements are identical.
+- **Root Cause:** Ingestion logic was mixed directly with modal preview DOM logic; Node.js assert strictly compares `Array.prototype` across realms.
+- **Solution & Rule:**
+  1. **Modular Ingestion Engine (`js/engines/budget-import.js`):** Extracted `MoneyApp.BudgetImport` exporting `parseCSVRows`, `detectColumns`, `cleanField`, `cleanAmount`, `isSubtotalRow`, `parseImportJSON`, and `parseImportCSV`.
+  2. **Realm-Safe Test Assertions:** In VM-loaded test harnesses, wrap VM array outputs in `Array.from(vmArray)` before passing to `assert.deepEqual` to ensure prototype consistency across realms.
+  3. **Backward Compatible Delegation:** Retained backward-compatible wrapper functions in `remaining-money.js`, shrinking the file by another ~387 lines to 3,445 LOC (reduced by 1,000 LOC total from original 4,442 LOC).
+  4. **Quality Gates:** Added `tests/budget-import.test.mjs` (7 tests), updated `tests/smoke.test.mjs` (64 smoke tests), achieved 100% test pass rate (460 tests across 109 suites), zero Biome errors/warnings, and zero CSP violations.
+
 ### 2026-10-18: Decompose remaining-money.js: Cash Flow Visualization Engine (v2.5.38)
 - **Date & Context:** 2026-10-18, Phase 95 Engine Modularization (`v2.5.38`).
 - **Problem:**
