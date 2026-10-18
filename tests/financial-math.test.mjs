@@ -5304,6 +5304,143 @@ describe('Financial Math Verification', () => {
     });
   });
 
+  describe('Inter-Tool Physical Asset & Gold Net Worth Synchronization Engine (Phase 72)', () => {
+    function calculateMultiAssetNetWorth({ portfolioVal = 0, emergencyReserve = 0, goldVal = 0, totalDebt = 0 } = {}) {
+      const c = Math.max(0, emergencyReserve || 0);
+      const inv = Math.max(0, portfolioVal || 0);
+      const gold = Math.max(0, goldVal || 0);
+      const d = Math.max(0, totalDebt || 0);
+
+      const grossAssets = c + inv + gold;
+      const netWorth = grossAssets - d;
+
+      let cashPct = 0;
+      let investPct = 0;
+      let goldPct = 0;
+      let debtRatio = 0;
+      let solvencyRatio = 100;
+
+      if (grossAssets > 0) {
+        cashPct = (c / grossAssets) * 100;
+        investPct = (inv / grossAssets) * 100;
+        goldPct = (gold / grossAssets) * 100;
+        debtRatio = (d / grossAssets) * 100;
+        solvencyRatio = (netWorth / grossAssets) * 100;
+      } else if (d > 0) {
+        debtRatio = 100;
+        solvencyRatio = -100;
+      }
+
+      const C = 2 * Math.PI * 60;
+      const segCash = (cashPct / 100) * C;
+      const segInvest = (investPct / 100) * C;
+      const segGold = (goldPct / 100) * C;
+
+      return {
+        grossAssets,
+        netWorth,
+        cashPct,
+        investPct,
+        goldPct,
+        debtRatio,
+        solvencyRatio,
+        donutArcs: {
+          circumference: C,
+          segCash,
+          segInvest,
+          segGold,
+          offsetCash: 0,
+          offsetInvest: -segCash,
+          offsetGold: -(segCash + segInvest),
+        },
+      };
+    }
+
+    it('correctly aggregates physical gold into grossAssets and netWorth', () => {
+      const res = calculateMultiAssetNetWorth({
+        portfolioVal: 1000000,
+        emergencyReserve: 300000,
+        goldVal: 200000, // 5 baht of gold
+        totalDebt: 500000,
+      });
+
+      assert.equal(res.grossAssets, 1500000);
+      assert.equal(res.netWorth, 1000000);
+      assert.equal(res.goldPct, (200000 / 1500000) * 100);
+      assert.equal(res.cashPct, (300000 / 1500000) * 100);
+      assert.equal(res.investPct, (1000000 / 1500000) * 100);
+      assert.ok(Math.abs(res.cashPct + res.investPct + res.goldPct - 100) < 0.0001);
+    });
+
+    it('handles zero gold holdings cleanly without NaN or distorted percentages', () => {
+      const res = calculateMultiAssetNetWorth({
+        portfolioVal: 600000,
+        emergencyReserve: 400000,
+        goldVal: 0,
+        totalDebt: 0,
+      });
+
+      assert.equal(res.grossAssets, 1000000);
+      assert.equal(res.netWorth, 1000000);
+      assert.equal(res.goldPct, 0);
+      assert.equal(res.cashPct, 40);
+      assert.equal(res.investPct, 60);
+      assert.equal(res.donutArcs.segGold, 0);
+    });
+
+    it('improves solvency ratio and lowers debt-to-asset ratio when physical assets exist', () => {
+      const withoutGold = calculateMultiAssetNetWorth({
+        portfolioVal: 500000,
+        emergencyReserve: 100000,
+        goldVal: 0,
+        totalDebt: 300000,
+      });
+
+      const withGold = calculateMultiAssetNetWorth({
+        portfolioVal: 500000,
+        emergencyReserve: 100000,
+        goldVal: 400000,
+        totalDebt: 300000,
+      });
+
+      assert.equal(withoutGold.debtRatio, 50); // 300k / 600k = 50%
+      assert.equal(withGold.debtRatio, 30); // 300k / 1M = 30%
+      assert.ok(withGold.solvencyRatio > withoutGold.solvencyRatio);
+    });
+
+    it('calculates contiguous non-overlapping 3-segment SVG donut arcs', () => {
+      const res = calculateMultiAssetNetWorth({
+        portfolioVal: 500000,
+        emergencyReserve: 250000,
+        goldVal: 250000,
+        totalDebt: 0,
+      });
+
+      const { donutArcs } = res;
+      assert.ok(donutArcs.segCash > 0);
+      assert.ok(donutArcs.segInvest > 0);
+      assert.ok(donutArcs.segGold > 0);
+      const totalArcs = donutArcs.segCash + donutArcs.segInvest + donutArcs.segGold;
+      assert.ok(Math.abs(totalArcs - donutArcs.circumference) < 0.001);
+      assert.equal(donutArcs.offsetCash, 0);
+      assert.equal(donutArcs.offsetInvest, -donutArcs.segCash);
+      assert.equal(donutArcs.offsetGold, -(donutArcs.segCash + donutArcs.segInvest));
+    });
+
+    it('handles negative or missing inputs safely without NaN', () => {
+      const res = calculateMultiAssetNetWorth({
+        portfolioVal: -100,
+        emergencyReserve: -50,
+        goldVal: -20,
+        totalDebt: -10,
+      });
+      assert.equal(res.grossAssets, 0);
+      assert.equal(res.netWorth, 0);
+      assert.equal(Number.isNaN(res.solvencyRatio), false);
+      assert.equal(Number.isNaN(res.debtRatio), false);
+    });
+  });
+
   describe('Section 48(5) PVD Lump-Sum vs Transfer-to-RMF Tax Optimization Engine', () => {
     function progressiveTax48_5(income) {
       if (income <= 0) return 0;

@@ -1,5 +1,5 @@
 ---
-task_id: "SDLC-PHASE-71-NEXT-BEST-MOVE-ADVISOR"
+task_id: "SDLC-PHASE-72-GOLD-NETWORTH-SYNC"
 status: "completed"
 current_stage: "release"
 complexity: "level_2"
@@ -8,17 +8,17 @@ pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "rev
 ---
 
 ### Problem Diagnosis & Root Causes Resolved
-1. **Actionable Financial Advice Deficit (`dashboard.html`):**
-   - Implemented `generateNextBestMoves(profile, health, lang)` in `js/dashboard.js`, mapping multi-tool telemetry to prioritized, actionable intervention objects.
-   - Priority 1: Emergency runway shortage (< 3 mo) -> `remaining-money`, debt burden drag -> `debt-calculator`.
-   - Priority 2: Savings rate under 20% -> `remaining-money`, top marginal tax bracket >= 15% with unutilized deductions -> `tax-calculator-base`.
-   - Priority 3: Monthly DCA surplus deployment -> `rebalance`, 3-bucket retirement resilience check.
-   - Inserted `#healthNextBestMovesSection` and `#healthActionCardsContainer` inside `#panelFinancialHealthScoreBody` with full responsive CSS grid layout.
-   - Rendered 1-click action buttons with robust cross-context bridge `jumpToTab(tabId)`.
-   - Added complete bilingual dictionary entries in `translations.th` and `translations.en` with 100% key symmetry.
+1. **Physical Asset Wealth Silo (`rebalance.html` -> `dashboard.html`):**
+   - Thai Gold holdings tracked in `rebalance.html` (`moneySuperapp.thaiGold.state.v1`) were previously omitted from dashboard net worth calculations.
+   - Updated `gatherFinancialProfile()` in `js/dashboard.js` to ingest `moneySuperapp.thaiGold.state.v1` and compute current market value via `MoneyApp.calculateThaiGoldMetrics`.
+   - Aggregated gold market value into `grossAssets` and `netWorth`.
+   - Enhanced SVG Donut chart with 3rd arc `#donutSegGold` (amber `#f59e0b`).
+   - Added `#row-comp-gold` in Net Worth Composition with progressive disclosure (`display: none` when 0 gold, `display: flex` when gold exists).
+   - Synchronized downstream tools: Insurance Adequacy (`syncInsuranceFromTools`), Retirement 3-Bucket (`syncThreeBucketsFromTools`), and Executive Dossier assets.
+   - Added bilingual translation keys `compGold` in `translations.th` and `translations.en`.
 
 ### Verification
-- 341 / 341 unit & integration smoke tests passing (`npm test`).
+- 347 / 347 unit & integration smoke tests passing (`npm test`).
 - 0 Biome linter errors (`npx @biomejs/biome check`).
-- Headless Chrome CDP visual inspection: Light, Dark, and Mobile (390x844) modes verified with 0 layout overflows.
-- Bumped version to `v2.5.14`.
+- Headless Chrome CDP visual inspection: Verified Light, Dark, and zero-gold fallback modes with clean 3-arc donut and breakdown row.
+- Bumped version to `v2.5.15`.

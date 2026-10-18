@@ -496,6 +496,15 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       );
     });
 
+    it('verifies dashboard.html declares Phase 72 Gold & Physical Asset donut segment and breakdown row', () => {
+      const dashContent = fs.readFileSync(path.join(ROOT_DIR, 'dashboard.html'), 'utf8');
+      assert.ok(dashContent.includes('id="donutSegGold"'), 'dashboard.html must define #donutSegGold');
+      assert.ok(dashContent.includes('id="row-comp-gold"'), 'dashboard.html must define #row-comp-gold');
+      assert.ok(dashContent.includes('id="lbl-comp-gold"'), 'dashboard.html must define #lbl-comp-gold');
+      assert.ok(dashContent.includes('id="val-comp-gold"'), 'dashboard.html must define #val-comp-gold');
+      assert.ok(dashContent.includes('id="pct-comp-gold"'), 'dashboard.html must define #pct-comp-gold');
+    });
+
     it('verifies remaining-money.html declares Income Shock & Emergency Stress-Tester card with controls', () => {
       const remainingContent = fs.readFileSync(path.join(ROOT_DIR, 'remaining-money.html'), 'utf8');
       assert.ok(

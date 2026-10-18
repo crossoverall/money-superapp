@@ -15,6 +15,16 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Inter-Tool Gold & Physical Asset Net Worth Synchronization (v2.5.15)
+- **Date & Context:** 2026-10-18, integrating Thai Gold DCA & physical asset holdings from `rebalance.html` into `dashboard.html` Net Worth & Composition (`v2.5.15`).
+- **Problem:** When users logged physical gold holdings (bars/jewelry/lots) in `rebalance.html` (`moneySuperapp.thaiGold.state.v1`), their physical asset wealth was completely ignored in `dashboard.html`. Net Worth, Gross Assets, Donut composition, Insurance Adequacy, and 3-Bucket retirement calculations omitted physical asset reserves.
+- **Root Cause:** `gatherFinancialProfile()` in `js/dashboard.js` only ingested `rebalanceCalculator.state.v1` and `remainingMoneyCalculator.state.v1`, assuming total assets only consisted of liquid cash and financial portfolio buckets.
+- **Solution & Rule:**
+  1. **Dual Asset Ingestion:** Read `moneySuperapp.thaiGold.state.v1`, parse tranches/weights/current market price, compute market value via `MoneyApp.calculateThaiGoldMetrics`, and aggregate into `grossAssets = portfolioVal + emergencyReserve + goldVal` and `netWorth = grossAssets - totalDebt`.
+  2. **Tri-Asset SVG Donut Arc Layout:** Add a 3rd arc `#donutSegGold` with amber `#f59e0b` styling. Compute cumulative dashoffsets: Cash at `0`, Investment at `-segCash`, and Gold at `-(segCash + segInvest)`.
+  3. **Zero-Clutter Progressive Disclosure:** Default `#row-comp-gold` to `display: none;` and only set `display: flex;` when `goldVal > 0`. Users without gold continue to see the standard clean 2-asset card layout.
+  4. **Downstream Cross-Tool Sync:** Pass `(p.goldVal || 0)` into Insurance Adequacy liquid assets (`syncInsuranceFromTools`) and Retirement 3-Bucket total assets (`syncThreeBucketsFromTools`).
+
 ### 2026-10-18: Next Best Move Action Engine & Cross-Tool 1-Click Navigation Bridges (v2.5.14)
 - **Date & Context:** 2026-10-18, implementing Phase 71 Visual Financial Health "Next Best Move" Advisor Cards & 1-Click Action Bridges in `dashboard.html` (`v2.5.14`).
 - **Problem:** `dashboard.html` provided a 5-pillar radar health score (Runway, Savings, Debt, Wealth, Tax), but actionable guidance was limited to a single static text verdict callout. Users discovering weak pillars or opportunities lacked personalized, prioritized actions and had to manually locate relevant sub-tools.

@@ -64,6 +64,7 @@ const translations = {
     compTitle: '⚖️ โครงสร้างความมั่งคั่งและสินทรัพย์ (Net Worth Composition)',
     compCash: 'เงินสด & สำรองฉุกเฉิน',
     compInvest: 'พอร์ตการลงทุน',
+    compGold: 'ทองคำ & สินทรัพย์จริง (Gold & Physical)',
     compDebt: 'ภาระหนี้สินรวม',
     solvencyTitle: 'อัตราส่วนความมั่งคั่งสุทธิ (Solvency Ratio)',
     solvencyHealthy: 'มั่นคงสูง',
@@ -248,6 +249,7 @@ const translations = {
     compTitle: '⚖️ Net Worth & Asset Composition',
     compCash: 'Cash & Emergency Fund',
     compInvest: 'Investment Portfolio',
+    compGold: 'Gold & Physical Assets',
     compDebt: 'Total Liabilities & Debt',
     solvencyTitle: 'Solvency Ratio (Net Worth / Assets)',
     solvencyHealthy: 'Highly Solvent',
@@ -432,6 +434,7 @@ function applyLocalization() {
     'lbl-composition-title': t.compTitle,
     'lbl-comp-cash': t.compCash,
     'lbl-comp-invest': t.compInvest,
+    'lbl-comp-gold': t.compGold,
     'lbl-comp-debt': t.compDebt,
     'lbl-solvency-title': t.solvencyTitle,
     'lbl-donut-center-title': t.donutCenterNetWorth,
@@ -609,6 +612,57 @@ function gatherFinancialProfile() {
     }
   } catch (_e) {}
 
+  // 1.1 Thai Gold & Physical Assets (Roadmap Phase 72)
+  let goldVal = 0;
+  let goldWeightBaht = 0;
+  try {
+    const rawGold = localStorage.getItem('moneySuperapp.thaiGold.state.v1');
+    if (rawGold) {
+      const gs = JSON.parse(rawGold);
+      if (gs && typeof gs === 'object') {
+        const goldType = gs.goldType || 'bar';
+        const weightUnit = gs.weightUnit || 'baht';
+        const weight = parseNum(gs.weight);
+        const costPerBaht = parseNum(gs.costPerBaht);
+        const blockFee = parseNum(gs.blockFee);
+        const marketPrice = parseNum(gs.marketPrice);
+        const lots = Array.isArray(gs.lots) ? gs.lots : [];
+
+        if (typeof MoneyApp !== 'undefined' && typeof MoneyApp.calculateThaiGoldMetrics === 'function') {
+          const params = {
+            goldType,
+            weightUnit,
+            weight,
+            costPerBaht,
+            blockFee,
+            currentMarketPrice: marketPrice,
+          };
+          if (lots.length > 0) {
+            params.tranches = lots.map((lot) => ({
+              goldType: lot.goldType || goldType,
+              weightUnit: lot.weightUnit || 'baht',
+              weight: parseNum(lot.weight),
+              costPerBaht: parseNum(lot.costPerBaht),
+              blockFee: parseNum(lot.blockFee),
+            }));
+          }
+          const m = MoneyApp.calculateThaiGoldMetrics(params);
+          goldVal = m.marketValue || 0;
+          goldWeightBaht = m.activeWeightBaht || 0;
+        } else {
+          let totalBaht = 0;
+          if (lots.length > 0) {
+            totalBaht = lots.reduce((sum, l) => sum + parseNum(l.weight), 0);
+          } else {
+            totalBaht = weight;
+          }
+          goldVal = totalBaht * marketPrice;
+          goldWeightBaht = totalBaht;
+        }
+      }
+    }
+  } catch (_e) {}
+
   // 2. Remaining Money & Cash Flow
   let monthlyIncome = 0;
   let monthlyExpense = 0;
@@ -737,12 +791,15 @@ function gatherFinancialProfile() {
   } catch (_e) {}
 
   // Computed totals
-  const netWorth = portfolioVal + emergencyReserve - totalDebt;
+  const grossAssets = portfolioVal + emergencyReserve + goldVal;
+  const netWorth = grossAssets - totalDebt;
   const totalSavedAndInvested = monthlySavings + monthlyInvest;
   const savingsRate = monthlyIncome > 0 ? (totalSavedAndInvested / monthlyIncome) * 100 : 0;
 
   return {
     portfolioVal,
+    goldVal,
+    goldWeightBaht,
     monthlyIncome,
     monthlyExpense,
     monthlySavings,
@@ -750,6 +807,7 @@ function gatherFinancialProfile() {
     emergencyReserve,
     runwayMonths,
     totalDebt,
+    grossAssets,
     netWorth,
     savingsRate,
     topMarginalRate,
@@ -800,9 +858,11 @@ function renderDashboardKPIs() {
     document.getElementById('kpi-networth-badge').textContent = p.netWorth >= 0 ? t.statusHealthy : t.statusCaution;
 
   // Subtitles in quick cards
-  if (document.getElementById('qc-rebal-sub'))
+  if (document.getElementById('qc-rebal-sub')) {
+    const goldNote = p.goldVal > 0 ? ` + ${LANG === 'en' ? 'Gold: ' : 'ทอง: '}${formatMoney(p.goldVal)}` : '';
     document.getElementById('qc-rebal-sub').textContent =
-      `${LANG === 'en' ? 'Portfolio: ' : 'พอร์ต: '}${formatMoney(p.portfolioVal)} ${unit}`;
+      `${LANG === 'en' ? 'Portfolio: ' : 'พอร์ต: '}${formatMoney(p.portfolioVal)} ${unit}${goldNote}`;
+  }
   if (document.getElementById('qc-rem-sub'))
     document.getElementById('qc-rem-sub').textContent =
       `${LANG === 'en' ? 'Investable: ' : 'คงเหลือลงทุน: '}${formatMoney(p.monthlyInvest)} ${unit}`;
@@ -887,7 +947,8 @@ function calculateFinancialHealthScore({
 
 function renderFinancialHealthScorecard(p, _t) {
   const goals = getFinancialGoals();
-  const grossAssets = (p.emergencyReserve || 0) + (p.portfolioVal || 0);
+  const grossAssets =
+    p.grossAssets !== undefined ? p.grossAssets : (p.emergencyReserve || 0) + (p.portfolioVal || 0) + (p.goldVal || 0);
   const annualExp = (p.monthlyExpense || 0) * 12;
 
   const health = calculateFinancialHealthScore({
@@ -986,7 +1047,7 @@ function generateNextBestMoves(profile = {}, health = null, lang = 'th') {
       runwayMonths: p.runwayMonths,
       savingsRatePct: p.savingsRate,
       debt: p.totalDebt,
-      assets: (p.emergencyReserve || 0) + (p.portfolioVal || 0),
+      assets: (p.emergencyReserve || 0) + (p.portfolioVal || 0) + (p.goldVal || 0),
       netWorth: p.netWorth,
       fireTarget: 0,
       targetNetWorth: 0,
@@ -1241,18 +1302,21 @@ function renderRadarChartSVG(pillars) {
 function renderNetWorthComposition(p, t) {
   const c = Math.max(0, p.emergencyReserve || 0);
   const inv = Math.max(0, p.portfolioVal || 0);
+  const gold = Math.max(0, p.goldVal || 0);
   const d = Math.max(0, p.totalDebt || 0);
-  const grossAssets = c + inv;
+  const grossAssets = c + inv + gold;
   const nw = p.netWorth;
 
   let cashPct = 0;
   let investPct = 0;
+  let goldPct = 0;
   let debtRatio = 0;
   let solvencyRatio = 100;
 
   if (grossAssets > 0) {
     cashPct = (c / grossAssets) * 100;
     investPct = (inv / grossAssets) * 100;
+    goldPct = (gold / grossAssets) * 100;
     debtRatio = (d / grossAssets) * 100;
     solvencyRatio = (nw / grossAssets) * 100;
   } else if (d > 0) {
@@ -1263,12 +1327,16 @@ function renderNetWorthComposition(p, t) {
   // DOM elements
   const donutCash = document.getElementById('donutSegCash');
   const donutInvest = document.getElementById('donutSegInvest');
+  const donutGold = document.getElementById('donutSegGold');
   const donutCenter = document.getElementById('donutCenterNetWorth');
   const badgeSolvency = document.getElementById('badge-solvency-status');
   const valCash = document.getElementById('val-comp-cash');
   const pctCash = document.getElementById('pct-comp-cash');
   const valInvest = document.getElementById('val-comp-invest');
   const pctInvest = document.getElementById('pct-comp-invest');
+  const rowGold = document.getElementById('row-comp-gold');
+  const valGold = document.getElementById('val-comp-gold');
+  const pctGold = document.getElementById('pct-comp-gold');
   const valDebt = document.getElementById('val-comp-debt');
   const pctDebt = document.getElementById('pct-comp-debt');
   const txtSolvency = document.getElementById('txt-solvency-pct');
@@ -1281,6 +1349,13 @@ function renderNetWorthComposition(p, t) {
   if (pctCash) pctCash.textContent = `(${cashPct.toFixed(1)}%)`;
   if (valInvest) valInvest.textContent = formatMoney(inv) + ' ' + unit;
   if (pctInvest) pctInvest.textContent = `(${investPct.toFixed(1)}%)`;
+
+  if (rowGold) {
+    rowGold.style.display = gold > 0 ? 'flex' : 'none';
+  }
+  if (valGold) valGold.textContent = formatMoney(gold) + ' ' + unit;
+  if (pctGold) pctGold.textContent = `(${goldPct.toFixed(1)}%)`;
+
   if (valDebt) valDebt.textContent = formatMoney(d) + ' ' + unit;
   if (pctDebt)
     pctDebt.textContent =
@@ -1292,13 +1367,20 @@ function renderNetWorthComposition(p, t) {
     if (grossAssets > 0) {
       const segCash = (cashPct / 100) * C;
       const segInvest = (investPct / 100) * C;
+      const segGold = (goldPct / 100) * C;
       donutCash.setAttribute('stroke-dasharray', `${segCash.toFixed(2)} ${(C - segCash).toFixed(2)}`);
       donutCash.setAttribute('stroke-dashoffset', '0');
       donutInvest.setAttribute('stroke-dasharray', `${segInvest.toFixed(2)} ${(C - segInvest).toFixed(2)}`);
       donutInvest.setAttribute('stroke-dashoffset', String(-segCash.toFixed(2)));
+
+      if (donutGold) {
+        donutGold.setAttribute('stroke-dasharray', `${segGold.toFixed(2)} ${(C - segGold).toFixed(2)}`);
+        donutGold.setAttribute('stroke-dashoffset', String(-(segCash + segInvest).toFixed(2)));
+      }
     } else {
       donutCash.setAttribute('stroke-dasharray', `0 ${C.toFixed(2)}`);
       donutInvest.setAttribute('stroke-dasharray', `0 ${C.toFixed(2)}`);
+      if (donutGold) donutGold.setAttribute('stroke-dasharray', `0 ${C.toFixed(2)}`);
     }
   }
 
@@ -1404,7 +1486,7 @@ function initInsuranceAdequacy() {
     liquidInput.value =
       insuranceAdequacyState.liquidAssets !== null
         ? insuranceAdequacyState.liquidAssets
-        : Math.round(p.portfolioVal + p.emergencyReserve);
+        : Math.round(p.portfolioVal + p.emergencyReserve + (p.goldVal || 0));
   }
 
   if (existingInput) {
@@ -1423,7 +1505,7 @@ function syncInsuranceFromTools() {
 
   if (debtInput) debtInput.value = p.totalDebt;
   if (expensesInput) expensesInput.value = Math.round(p.monthlyExpense * 12);
-  if (liquidInput) liquidInput.value = Math.round(p.portfolioVal + p.emergencyReserve);
+  if (liquidInput) liquidInput.value = Math.round(p.portfolioVal + p.emergencyReserve + (p.goldVal || 0));
 
   updateInsuranceAdequacy();
 }
@@ -1673,7 +1755,7 @@ function initThreeBucketsCalculator() {
     inpAssets.value =
       threeBucketState.totalRetirementAssets !== null
         ? threeBucketState.totalRetirementAssets
-        : Math.round(p.portfolioVal + p.emergencyReserve || 6000000);
+        : Math.round(p.portfolioVal + p.emergencyReserve + (p.goldVal || 0) || 6000000);
   }
   if (inpB1Y) inpB1Y.value = threeBucketState.bucket1Years || 2;
   if (inpB2Y) inpB2Y.value = threeBucketState.bucket2Years || 5;
@@ -1686,7 +1768,7 @@ function syncThreeBucketsFromTools() {
   const inpExpense = document.getElementById('inpBucketExpense');
   const inpAssets = document.getElementById('inpBucketTotalAssets');
   if (inpExpense) inpExpense.value = Math.round(p.monthlyExpense * 12 || 360000);
-  if (inpAssets) inpAssets.value = Math.round(p.portfolioVal + p.emergencyReserve || 6000000);
+  if (inpAssets) inpAssets.value = Math.round(p.portfolioVal + p.emergencyReserve + (p.goldVal || 0) || 6000000);
   updateThreeBucketsCalculator();
 }
 
@@ -3586,7 +3668,7 @@ function renderExecutiveDossier() {
           runwayMonths: p.runwayMonths,
           savingsRatePct: p.savingsRate,
           debt: p.totalDebt,
-          assets: p.portfolioVal + p.emergencyReserve,
+          assets: p.portfolioVal + p.emergencyReserve + (p.goldVal || 0),
           netWorth: p.netWorth,
         })
       : { compositeScore: 75 };
@@ -3594,7 +3676,7 @@ function renderExecutiveDossier() {
   const dossier = MoneyApp.generateExecutiveDossier({
     dashboardState: {
       netWorth: p.netWorth,
-      assets: p.portfolioVal + p.emergencyReserve,
+      assets: p.portfolioVal + p.emergencyReserve + (p.goldVal || 0),
       debts: p.totalDebt,
       monthlySavings: p.monthlySavings + p.monthlyInvest,
       runway: p.runwayMonths,
