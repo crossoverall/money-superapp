@@ -15,6 +15,26 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Target Date Retirement Glidepath Monthly DCA to Living Budget Bridge (v2.5.26)
+- **Date & Context:** 2026-10-18, implementing Phase 83 Glidepath DCA to Living Budget Bridge (`v2.5.26`).
+- **Problem:**
+  1. In `rebalance.html`, users determine their monthly investment budget (`#totalBudget`) or plan their Target Date Retirement Glidepath asset allocation split (e.g. 80% Core / 15% Ballast / 5% Satellite), but there was no direct integration to transfer the planned monthly investment amount into their living budget in `remaining-money.html`.
+  2. Users had to remember the amount and manually re-enter it as a savings/investment item in `remaining-money.html`, creating friction and risking misallocation of monthly cash flow.
+- **Root Cause:**
+  1. DCA and Glidepath investment plans in `rebalance.js` were isolated from the cashflow budgeting state bus in `remaining-money.js`.
+  2. `remaining-money.html` lacked an incoming listener or alert banner for DCA budget bridges.
+- **Solution & Rule:**
+  1. **Rebalance DCA Budget Outbound Bridge:** In `rebalance.html` and `js/rebalance.js`, implement `bridgeDcaToBudget(source)`:
+     - Read `#totalBudget` or derive monthly glidepath investment budget.
+     - Validate amount (> 0) and persist into `localStorage['moneySuperapp.pendingDcaBudget']` with payload `{ amount, source, timestamp }`.
+     - Route user cleanly to `remaining-money.html`.
+  2. **Remaining Money Inbound Savings Bridge:** In `remaining-money.html` & `js/remaining-money.js`:
+     - Implement `checkPendingDcaBudget()` listening on `DOMContentLoaded`, `window.storage`, and cross-window `message` events.
+     - Upsert item into `state.savings` (id: `'dca-glidepath-investment'`, name: `'ออมลงทุน DCA ตามแผนพอร์ต'`, amount: `payload.amount`).
+     - Trigger reactive recalculation (`renderTotals()`, `renderAllocationChart()`, `renderWaterfallChart()`, `saveState()`, `pushUndo()`).
+     - Display `#dcaBudgetBridgeAlert` with `#dcaBudgetBridgeAlertText` and 5.5s auto-dismiss.
+  3. **Full SDLC Verification:** Validate via 398 automated passing tests, clean Biome audit, and headless Chrome CDP captures in light, dark, and mobile viewports.
+
 ### 2026-10-18: Universal Card Layout Toolbar & Tablet Responsive Grid Scaling (v2.5.25)
 - **Date & Context:** 2026-10-18, implementing Phase 82 Universal Card Toolbar and Tablet Grid Optimization (`v2.5.25`).
 - **Problem:**

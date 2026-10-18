@@ -1148,6 +1148,72 @@ function checkPendingInsurancePremium() {
 
 window.checkPendingInsurancePremium = checkPendingInsurancePremium;
 
+function checkPendingDcaBudget() {
+  try {
+    const raw = localStorage.getItem('moneySuperapp.pendingDcaBudget');
+    if (!raw) return;
+    const payload = JSON.parse(raw);
+    localStorage.removeItem('moneySuperapp.pendingDcaBudget');
+    if (!payload || !payload.amount || payload.amount <= 0) return;
+
+    undoMgr.push(captureSnapshot());
+    const isEn = LANG === 'en';
+    const nameTh =
+      payload.source === 'glidepath'
+        ? 'เงินออมแผนพอร์ตตามอายุ (Target Date DCA)'
+        : 'เงินลงทุนพอร์ต DCA (Portfolio Rebalance)';
+    const nameEn = payload.source === 'glidepath' ? 'Target Date Glidepath DCA' : 'Portfolio Rebalance DCA';
+    const itemName = isEn ? nameEn : nameTh;
+
+    const existing = (state.savings || []).find(
+      (item) =>
+        item.name === nameTh ||
+        item.name === nameEn ||
+        item.name.includes('Target Date') ||
+        item.name.includes('Portfolio Rebalance') ||
+        item.name.includes('พอร์ตตามอายุ') ||
+        item.name.includes('พอร์ต DCA'),
+    );
+    if (existing) {
+      existing.value = payload.amount;
+      existing.name = itemName;
+    } else {
+      if (!state.savings) state.savings = [];
+      state.savings.push({
+        id: 'dca_saving_' + Date.now(),
+        name: itemName,
+        value: payload.amount,
+      });
+    }
+
+    renderRows();
+    renderPvdRow();
+    compute();
+    saveState();
+    updateUndoUI();
+
+    const banner = document.getElementById('dcaBudgetBridgeAlert');
+    const bannerText = document.getElementById('dcaBudgetBridgeAlertText');
+    const formattedAmount = `${fmt(payload.amount)} ${isEn ? 'THB/month' : 'บาท/เดือน'}`;
+    const msg = isEn
+      ? `✓ Added +${formattedAmount} monthly portfolio DCA investment into your savings plan!`
+      : `✓ นำเข้าแผนเงินออมลงทุน DCA +${formattedAmount} ลงในแผนเงินออมเรียบร้อยแล้ว!`;
+
+    if (bannerText) {
+      bannerText.textContent = msg;
+    }
+    if (banner) {
+      banner.style.display = 'flex';
+      setTimeout(() => {
+        banner.style.display = 'none';
+      }, 5500);
+    }
+    showBridgeNotification(msg);
+  } catch (_e) {}
+}
+
+window.checkPendingDcaBudget = checkPendingDcaBudget;
+
 if (resetBtn) {
   resetBtn.addEventListener('click', () => {
     if (confirm(LANG === 'en' ? EN.resetConfirm : 'ล้างข้อมูลที่บันทึกไว้ในเบราว์เซอร์นี้ และกลับไปใช้ค่าตั้งต้น?')) {
@@ -4268,6 +4334,7 @@ checkPendingTaxAccrual();
 checkPendingRefinanceSavings();
 checkPendingBankStatement();
 checkPendingInsurancePremium();
+checkPendingDcaBudget();
 updateAutoExpenses(pvdPercent);
 renderRows();
 renderPvdRow();
@@ -4339,6 +4406,9 @@ window.addEventListener('storage', (e) => {
   if (e.key === 'moneySuperapp.pendingInsurancePremium') {
     checkPendingInsurancePremium();
   }
+  if (e.key === 'moneySuperapp.pendingDcaBudget') {
+    checkPendingDcaBudget();
+  }
 });
 window.addEventListener('message', (e) => {
   if (e.data && e.data.action === 'importPendingData') {
@@ -4348,5 +4418,6 @@ window.addEventListener('message', (e) => {
     checkPendingRefinanceSavings();
     checkPendingBankStatement();
     checkPendingInsurancePremium();
+    checkPendingDcaBudget();
   }
 });

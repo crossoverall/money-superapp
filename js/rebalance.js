@@ -3438,6 +3438,34 @@ function initTargetDateGlidepath() {
   updateGlidepathUI();
 }
 
+function bridgeDcaToBudget(source) {
+  const budgetInput = document.getElementById('totalBudget');
+  const budgetVal = budgetInput ? parseNum(budgetInput.value) : state.budget || 0;
+  if (budgetVal <= 0) return;
+
+  const glideData = typeof calculateGlidepathData === 'function' ? calculateGlidepathData() : null;
+
+  try {
+    localStorage.setItem(
+      'moneySuperapp.pendingDcaBudget',
+      JSON.stringify({
+        amount: budgetVal,
+        source: source || 'rebalance_budget',
+        targetYear: glideData ? glideData.targetYear : null,
+        split: glideData ? glideData.split : null,
+        timestamp: Date.now(),
+      }),
+    );
+  } catch (_e) {}
+
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({ action: 'switchToTab', target: 'remaining-money' }, '*');
+  } else {
+    window.location.href = 'remaining-money.html';
+  }
+}
+window.bridgeDcaToBudget = bridgeDcaToBudget;
+
 // Global window exposure for inline handlers
 if (typeof window !== 'undefined') {
   window.toggleThaiGoldCalculator = toggleThaiGoldCalculator;

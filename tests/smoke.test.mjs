@@ -948,6 +948,36 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(sharedJs.includes('expandAll: expandAll'), 'shared.js must export expandAll');
       assert.ok(sharedJs.includes('toggleAll: toggleAll'), 'shared.js must export toggleAll');
     });
+
+    it('verifies rebalance and remaining-money declare Phase 83 Glidepath DCA to Budget Bridge and Alerts', () => {
+      const rebHtml = fs.readFileSync(path.join(ROOT_DIR, 'rebalance.html'), 'utf8');
+      assert.ok(rebHtml.includes('id="btnBridgeDcaToBudget"'), 'rebalance.html must define #btnBridgeDcaToBudget');
+      assert.ok(
+        rebHtml.includes('id="btnBridgeGlidepathToBudget"'),
+        'rebalance.html must define #btnBridgeGlidepathToBudget',
+      );
+
+      const rebJs = fs.readFileSync(path.join(ROOT_DIR, 'js/rebalance.js'), 'utf8');
+      assert.ok(rebJs.includes('bridgeDcaToBudget'), 'rebalance.js must define bridgeDcaToBudget');
+      assert.ok(rebJs.includes('moneySuperapp.pendingDcaBudget'), 'rebalance.js must persist pendingDcaBudget');
+
+      const remHtml = fs.readFileSync(path.join(ROOT_DIR, 'remaining-money.html'), 'utf8');
+      assert.ok(
+        remHtml.includes('id="dcaBudgetBridgeAlert"'),
+        'remaining-money.html must define #dcaBudgetBridgeAlert',
+      );
+      assert.ok(
+        remHtml.includes('id="dcaBudgetBridgeAlertText"'),
+        'remaining-money.html must define #dcaBudgetBridgeAlertText',
+      );
+
+      const remJs = fs.readFileSync(path.join(ROOT_DIR, 'js/remaining-money.js'), 'utf8');
+      assert.ok(remJs.includes('checkPendingDcaBudget'), 'remaining-money.js must define checkPendingDcaBudget');
+      assert.ok(
+        remJs.includes('moneySuperapp.pendingDcaBudget'),
+        'remaining-money.js must listen for pendingDcaBudget',
+      );
+    });
   });
 
   describe('Bilingual Localization Structural Symmetry', () => {

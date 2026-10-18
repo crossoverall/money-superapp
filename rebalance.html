@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="2.5.25">
+<meta name="version" content="2.5.26">
 <script>
   try {
     var t = localStorage.getItem('moneySuperapp.theme');
@@ -339,10 +339,13 @@
       <span id="lblBudgetHeading">งบที่จะลงทุนเดือนนี้</span>
     </div>
     <div id="panelBudgetBody">
-      <div class="budget-row">
-      <label id="budgetUnit">บาท</label>
-      <input type="text" inputmode="decimal" id="totalBudget" value="200000" aria-labelledby="budgetPanelTitle" aria-describedby="budgetUnit">
-    </div>
+      <div class="budget-row" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <label id="budgetUnit">บาท</label>
+        <input type="text" inputmode="decimal" id="totalBudget" value="200000" aria-labelledby="budgetPanelTitle" aria-describedby="budgetUnit" style="flex:1; min-width:120px;">
+        <button type="button" id="btnBridgeDcaToBudget" onclick="bridgeDcaToBudget('rebalance_budget')" class="action-btn" style="white-space:nowrap; padding:6px 12px; font-size:11.5px; font-weight:600; background:var(--ok-dim); border:1px solid var(--ok); color:var(--ok); border-radius:8px; cursor:pointer;" title="ส่งยอดลงทุน DCA รายเดือนนี้ไปบันทึกในงบประมาณ / Bridge to Monthly Budget">
+          📤 <span id="lblBridgeDcaToBudget">ส่งงบ DCA ไปหน้างบประมาณ</span>
+        </button>
+      </div>
     <div id="minBudgetBanner" class="min-budget-banner" role="status" aria-live="polite" style="display:none;"></div>
     <div class="split-bar" id="splitBar" role="progressbar" aria-label="Budget Allocation Ratio Split"></div>
     <div class="split-legend" id="splitLegend"></div>
@@ -593,9 +596,14 @@
 
       <!-- Action Button: Apply to Portfolio Split -->
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-        <button type="button" class="min-budget-apply-btn" onclick="applyGlidepathSplitToPortfolio()" style="padding:7px 14px; font-size:11.5px; font-weight:700;">
-          📥 <span id="lblApplyGlidepath">นำสัดส่วนนี้ไปใช้กับพอร์ต (Apply to Portfolio)</span>
-        </button>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="min-budget-apply-btn" onclick="applyGlidepathSplitToPortfolio()" style="padding:7px 14px; font-size:11.5px; font-weight:700;">
+            📥 <span id="lblApplyGlidepath">นำสัดส่วนนี้ไปใช้กับพอร์ต (Apply to Portfolio)</span>
+          </button>
+          <button type="button" id="btnBridgeGlidepathToBudget" onclick="bridgeDcaToBudget('glidepath')" class="action-btn" style="padding:7px 14px; font-size:11.5px; font-weight:700; background:var(--ok-dim); border:1px solid var(--ok); color:var(--ok); border-radius:8px; cursor:pointer;" title="ส่งแผนเงินออมเกษียณไปหน้างบประมาณ / Bridge to Monthly Budget">
+            📤 <span id="lblBridgeGlidepathToBudget">ส่งงบ DCA เกษียณไปงบประมาณ</span>
+          </button>
+        </div>
         <span style="font-size:10.5px; color:var(--ink-dim);" id="txtGlidepathSyncNote">
           💡 สัดส่วนที่เลือกจะอัปเดตช่องเป้าหมาย Core / Ballast / Satellite ด้านบนอัตโนมัติ
         </span>
@@ -876,7 +884,7 @@
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v2.5.25</p>
+  <p class="version-tag">v2.5.26</p>
 
 <script src="js/shared.js"></script>
 <script src="js/rebalance.js"></script>
