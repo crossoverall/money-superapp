@@ -1009,6 +1009,17 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(hookContent.includes('npm run lint'), 'pre-commit hook must run npm run lint');
       assert.ok(hookContent.includes('npm test'), 'pre-commit hook must run npm test');
     });
+
+    it('verifies .github/workflows/ci.yml declares Phase 91 CI Quality Gate across Node matrix', () => {
+      const ciPath = path.join(ROOT_DIR, '.github/workflows/ci.yml');
+      assert.ok(fs.existsSync(ciPath), '.github/workflows/ci.yml must exist');
+      const ciContent = fs.readFileSync(ciPath, 'utf8');
+      assert.ok(ciContent.includes('npm run lint'), 'CI workflow must execute npm run lint');
+      assert.ok(ciContent.includes('npm test'), 'CI workflow must execute npm test');
+      assert.ok(ciContent.includes('node-version: [20, 22]'), 'CI workflow must test Node.js 20 and 22 LTS matrix');
+      assert.ok(ciContent.includes('actions/checkout@v4'), 'CI workflow must use actions/checkout@v4');
+      assert.ok(ciContent.includes('actions/setup-node@v4'), 'CI workflow must use actions/setup-node@v4');
+    });
   });
 
   describe('Bilingual Localization Structural Symmetry', () => {

@@ -15,6 +15,15 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: GitHub Actions CI Matrix Pipeline Quality Gate (v2.5.34)
+- **Date & Context:** 2026-10-18, Phase 91 GitHub Actions CI Pipeline (`v2.5.34`).
+- **Problem:** While local pre-commit hooks prevented broken commits locally, remote pull requests and pushes lacked automated verification against multiple Node.js LTS versions in cloud CI.
+- **Root Cause:** Absence of a standardized GitHub Actions workflow file in `.github/workflows/`.
+- **Solution & Rule:**
+  1. **Multi-Node CI Matrix (`.github/workflows/ci.yml`):** Implemented an automated quality gate executing across Node.js 20 and 22 LTS on `ubuntu-latest`.
+  2. **End-to-End Validation:** Automatically runs `npm run lint` (Biome 0 errors, 0 warnings) and `npm test` (all 411 unit, integration, smoke, and headless Chrome CDP bilingual parity tests).
+  3. **Regression Smoke Invariant:** Added a smoke assertion verifying `.github/workflows/ci.yml` configuration and Node matrix integrity.
+
 ### 2026-10-18: Offline P2P QR Engine & Vault Crypto Extraction (v2.5.33)
 - **Date & Context:** 2026-10-18, Phase 90 P2P Sync & Vault Crypto Engine Extraction (`v2.5.33`).
 - **Problem:**
