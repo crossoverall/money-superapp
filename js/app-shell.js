@@ -1019,7 +1019,36 @@ function closeOnboardingModal() {
 window.openOnboardingModal = openOnboardingModal;
 window.closeOnboardingModal = closeOnboardingModal;
 
-function exportBackupData() {
+async function shareOrDownloadFile(blob, fileName, title, text) {
+  if (typeof navigator !== 'undefined' && typeof File !== 'undefined' && typeof navigator.canShare === 'function') {
+    try {
+      const file = new File([blob], fileName, { type: blob.type || 'application/octet-stream' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: title || fileName,
+          text: text || '',
+          files: [file],
+        });
+        return true;
+      }
+    } catch (shareErr) {
+      if (shareErr.name === 'AbortError') return true;
+    }
+  }
+
+  // Fallback to classic anchor click download
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  return false;
+}
+
+async function exportBackupData() {
   const backup = {
     version: '1.0.0',
     appName: 'Money Superapp',
@@ -1038,15 +1067,9 @@ function exportBackupData() {
     }
   }
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
   const d = new Date().toISOString().slice(0, 10);
-  a.href = url;
-  a.download = `money-superapp-backup-${d}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  const fileName = `money-superapp-backup-${d}.json`;
+  await shareOrDownloadFile(blob, fileName, 'Money Superapp Backup', 'Money Superapp Offline JSON Backup');
   return backup;
 }
 
@@ -1087,15 +1110,9 @@ async function exportEncryptedVault() {
     if (!encryptFn) throw new Error('Encryption module not loaded');
     const encryptedVaultJson = await encryptFn(plainJson, passphrase);
     const blob = new Blob([encryptedVaultJson], { type: 'application/octet-stream' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
     const d = new Date().toISOString().slice(0, 10);
-    a.href = url;
-    a.download = `money-superapp-${d}.superapp.vault`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const fileName = `money-superapp-${d}.superapp.vault`;
+    await shareOrDownloadFile(blob, fileName, 'Money Superapp Vault', 'Money Superapp Encrypted Backup Vault');
     alert(isEn ? '✓ Encrypted vault exported successfully!' : '✓ ส่งออกไฟล์เข้ารหัส (.vault) สำเร็จ!');
   } catch (err) {
     alert((isEn ? 'Encryption failed: ' : 'การเข้ารหัสผิดพลาด: ') + err.message);
@@ -2649,6 +2666,122 @@ function applyPwaUpdate() {
 window.showPwaUpdateToast = showPwaUpdateToast;
 window.dismissPwaUpdateToast = dismissPwaUpdateToast;
 window.applyPwaUpdate = applyPwaUpdate;
+
+// --- Phase 80: PWA Web Share Target Inbound Consumer ---
+async function checkIncomingShareTarget() {
+  if (typeof window === 'undefined') return;
+  const urlParams = new URLSearchParams(window.location.search);
+  const isIncoming = urlParams.get('incoming_share') === '1';
+  if (!isIncoming) return;
+
+  try {
+    const cleanUrl = window.location.pathname + window.location.hash;
+    window.history.replaceState({}, document.title, cleanUrl);
+  } catch (_e) {}
+
+  if (typeof caches === 'undefined') return;
+
+  try {
+    const cache = await caches.open('money-superapp-shared-payload');
+    const cachedResp = await cache.match('./api/shared-target-payload');
+    if (!cachedResp) return;
+
+    const payload = await cachedResp.json();
+    await cache.delete('./api/shared-target-payload');
+
+    if (!payload || !payload.content) return;
+
+    const fileName = payload.name || 'shared_statement.csv';
+    const content = payload.content;
+    const isEn = getLang() === 'en';
+
+    const validator =
+      (typeof MoneyApp !== 'undefined' && MoneyApp.validateShareTargetPayload) || window.validateShareTargetPayload;
+    const validation = validator
+      ? validator(payload)
+      : { isValid: true, kind: fileName.endsWith('.vault') ? 'vault' : 'statement' };
+
+    if (validation.kind === 'vault' || validation.kind === 'backup') {
+      const confirmMsg = isEn
+        ? `📥 Received shared backup file: "${fileName}". Do you want to restore it now?`
+        : `📥 ตรวจพบไฟล์สำรองข้อมูลที่แชร์เข้ามา: "${fileName}" ต้องการนำเข้าข้อมูลตอนนี้หรือไม่?`;
+      if (confirm(confirmMsg)) {
+        if (validation.kind === 'vault') {
+          const pass = prompt(isEn ? 'Enter vault passphrase to decrypt:' : 'กรุณากรอกรหัสผ่านเพื่อถอดรหัสไฟล์ Vault:');
+          if (pass) {
+            try {
+              const decryptFn =
+                (typeof MoneyApp !== 'undefined' && MoneyApp.decryptVaultData) || window.decryptVaultData;
+              if (!decryptFn) throw new Error('Decryption module not loaded');
+              const decryptedStr = await decryptFn(content, pass);
+              const backupObj = JSON.parse(decryptedStr);
+              if (backupObj && backupObj.data) {
+                const allowedPrefixes = ['moneySuperapp.', 'remainingMoneyCalculator.', 'rebalanceCalculator.'];
+                Object.keys(backupObj.data).forEach((k) => {
+                  if (allowedPrefixes.some((p) => k.startsWith(p)) && typeof backupObj.data[k] === 'string') {
+                    localStorage.setItem(k, backupObj.data[k]);
+                  }
+                });
+                alert(isEn ? '✓ Vault restored successfully!' : '✓ กู้คืนข้อมูลจาก Vault สำเร็จ!');
+                if (typeof reloadFrame === 'function') reloadFrame();
+                return;
+              }
+            } catch (err) {
+              alert((isEn ? '❌ Decryption failed: ' : '❌ ถอดรหัสไม่สำเร็จ: ') + err.message);
+              return;
+            }
+          }
+        } else {
+          try {
+            const backupObj = JSON.parse(content);
+            if (backupObj && backupObj.data) {
+              const allowedPrefixes = ['moneySuperapp.', 'remainingMoneyCalculator.', 'rebalanceCalculator.'];
+              Object.keys(backupObj.data).forEach((k) => {
+                if (allowedPrefixes.some((p) => k.startsWith(p)) && typeof backupObj.data[k] === 'string') {
+                  localStorage.setItem(k, backupObj.data[k]);
+                }
+              });
+              alert(isEn ? '✓ Backup restored successfully!' : '✓ นำเข้าข้อมูลสำรองเรียบร้อยแล้ว!');
+              if (typeof reloadFrame === 'function') reloadFrame();
+              return;
+            }
+          } catch (err) {
+            alert((isEn ? 'Invalid backup: ' : 'ข้อมูลสำรองไม่ถูกต้อง: ') + err.message);
+            return;
+          }
+        }
+      }
+      return;
+    }
+
+    // Statement / CSV / TXT
+    try {
+      localStorage.setItem(
+        'moneySuperapp.pendingBankStatement',
+        JSON.stringify({
+          fileName: fileName,
+          csvText: content,
+          timestamp: Date.now(),
+        }),
+      );
+    } catch (_storageErr) {}
+
+    // Navigate to remaining-money tool
+    const navRemainingBtn = document.querySelector('[data-page="remaining-money"]');
+    if (navRemainingBtn && typeof navigateTo === 'function') {
+      navigateTo('remaining-money');
+    } else {
+      window.location.hash = 'remaining-money';
+      const frame = document.getElementById('app-frame');
+      if (frame) frame.src = 'remaining-money.html';
+    }
+  } catch (err) {
+    console.warn('Error processing incoming share target:', err);
+  }
+}
+
+window.checkIncomingShareTarget = checkIncomingShareTarget;
+checkIncomingShareTarget();
 
 // Register Service Worker for PWA and offline access
 if ('serviceWorker' in navigator) {

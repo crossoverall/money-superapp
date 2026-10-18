@@ -1116,3 +1116,17 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
      - Added `#btnBridgeStepDownToRebalance` that converts the annual target into a monthly DCA budget (`amountToStepDown / 12`), sets `moneySuperapp.pendingRebalanceSource = 'tax_stepdown'`, and jumps to `rebalance.html`.
   3. Enhanced `rebalance.js` `checkPendingBudget()` to recognize `'tax_stepdown'` with a tailored bilingual toast notification.
 - **Rule:** When advising on tax brackets, always present downward marginal step-down targets alongside upward headroom, highlight the guaranteed tax savings ROI equal to the current marginal tax rate, and provide an automated monthly DCA bridge to make tax deductions manageable.
+
+### 2026-10-18: PWA Web Share Target & Native Share Sheet Integration
+
+- **Date & Context:** 2026-10-18, implementing PWA Web Share Target API & Native Share Sheet Integration across `manifest.json`, `sw.js`, `js/app-shell.js`, `dashboard.html`, `js/dashboard.js`, and `js/remaining-money.js` (`v2.5.23`).
+- **Problem:**
+  1. On mobile devices (iOS, iPadOS, Android), users who download bank statements from mobile banking apps or receive backups from email/chat had to manually open file pickers and navigate complex directory trees to import files into Money Superapp.
+  2. Native system share sheets on mobile provide a far superior user experience than classic file downloads, allowing direct export to iCloud Drive, Google Drive, AirDrop, LINE, or messaging apps.
+  3. Exporting the Executive Financial Dossier was restricted to printing/PDF, missing a quick, formatted plain-text sharing option that respects privacy masking.
+- **Resolution:**
+  1. Declared W3C `share_target` in `manifest.json` for `.csv`, `.txt`, `.json`, and `.vault` files with `POST multipart/form-data`.
+  2. Intercepted share target `POST` requests in Service Worker `sw.js` completely offline without any network server, caching payloads temporarily under a protected `'money-superapp-shared-payload'` cache and redirecting to `index.html?incoming_share=1`.
+  3. Built `checkIncomingShareTarget()` in `js/app-shell.js` which detects incoming payload, prompts for backup restoration if `.vault` / JSON, or forwards statement files to `remaining-money.html` where `checkPendingBankStatement()` automatically parses with bank detection and opens the preview modal.
+  4. Built `shareOrDownloadFile()` in `js/app-shell.js` for seamless native file sharing with graceful fallback to download, and added `#btnShareDossier` in `dashboard.html` / `js/dashboard.js` with `MoneyApp.formatExecutiveDossierSummaryText()` supporting privacy masks.
+- **Rule:** For offline-first PWAs, implement Web Share Target by intercepting `POST` requests inside the Service Worker fetch event and persisting payloads in a dedicated Cache API bucket; always provide seamless fallbacks to anchor downloads and clipboard copy when native sharing APIs are unavailable.

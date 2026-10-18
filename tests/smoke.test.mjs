@@ -820,6 +820,54 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'shared.js must export calculateTaxBracketStepDown',
       );
     });
+
+    it('verifies manifest, sw, app-shell, dashboard, and remaining-money declare Phase 80 Web Share Target and Native Share', () => {
+      const manifestJson = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'manifest.json'), 'utf8'));
+      assert.ok(manifestJson.share_target, 'manifest.json must define share_target');
+      assert.equal(manifestJson.share_target.method, 'POST');
+      assert.equal(manifestJson.share_target.enctype, 'multipart/form-data');
+      assert.ok(Array.isArray(manifestJson.share_target.params.files), 'share_target must declare file params');
+
+      const swJs = fs.readFileSync(path.join(ROOT_DIR, 'sw.js'), 'utf8');
+      assert.ok(swJs.includes('money-superapp-shared-payload'), 'sw.js must preserve shared-payload cache');
+      assert.ok(swJs.includes("url.pathname.endsWith('/index.html')"), 'sw.js must intercept POST to index.html');
+      assert.ok(swJs.includes('shared-target-payload'), 'sw.js must store shared-target-payload');
+
+      const dashHtml = fs.readFileSync(path.join(ROOT_DIR, 'dashboard.html'), 'utf8');
+      assert.ok(dashHtml.includes('id="btnShareDossier"'), 'dashboard.html must define #btnShareDossier');
+      assert.ok(
+        dashHtml.includes('shareDossierExecutiveSummary()'),
+        'dashboard.html must bind shareDossierExecutiveSummary',
+      );
+
+      const dashJs = fs.readFileSync(path.join(ROOT_DIR, 'js/dashboard.js'), 'utf8');
+      assert.ok(
+        dashJs.includes('shareDossierExecutiveSummary'),
+        'dashboard.js must define shareDossierExecutiveSummary',
+      );
+      assert.ok(dashJs.includes('btnShareDossier'), 'dashboard.js must localize btnShareDossier');
+
+      const appShellJs = fs.readFileSync(path.join(ROOT_DIR, 'js/app-shell.js'), 'utf8');
+      assert.ok(appShellJs.includes('checkIncomingShareTarget'), 'app-shell.js must define checkIncomingShareTarget');
+      assert.ok(appShellJs.includes('shareOrDownloadFile'), 'app-shell.js must define shareOrDownloadFile');
+
+      const remJs = fs.readFileSync(path.join(ROOT_DIR, 'js/remaining-money.js'), 'utf8');
+      assert.ok(
+        remJs.includes('checkPendingBankStatement'),
+        'remaining-money.js must define checkPendingBankStatement',
+      );
+      assert.ok(
+        remJs.includes('moneySuperapp.pendingBankStatement'),
+        'remaining-money.js must listen for pendingBankStatement',
+      );
+
+      const sharedJs = fs.readFileSync(path.join(ROOT_DIR, 'js/shared.js'), 'utf8');
+      assert.ok(
+        sharedJs.includes('formatExecutiveDossierSummaryText'),
+        'shared.js must export formatExecutiveDossierSummaryText',
+      );
+      assert.ok(sharedJs.includes('validateShareTargetPayload'), 'shared.js must export validateShareTargetPayload');
+    });
   });
 
   describe('Bilingual Localization Structural Symmetry', () => {

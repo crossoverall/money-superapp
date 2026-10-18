@@ -1,4 +1,4 @@
-const CACHE_NAME = 'money-superapp-v2.5.22';
+const CACHE_NAME = 'money-superapp-v2.5.23';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -51,7 +51,7 @@ self.addEventListener('activate', event => {
     caches.keys().then(keys => {
       return Promise.all(
         keys.map(key => {
-          if (key !== CACHE_NAME) {
+          if (key !== CACHE_NAME && key !== 'money-superapp-shared-payload') {
             return caches.delete(key);
           }
         })
@@ -61,6 +61,59 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  // Phase 80: Intercept Web Share Target POST requests
+  if (event.request.method === 'POST') {
+    const url = new URL(event.request.url);
+    if (url.pathname.endsWith('/index.html') || url.pathname.endsWith('/')) {
+      event.respondWith((async () => {
+        try {
+          const formData = await event.request.formData();
+          const file = formData.get('statement_files') || formData.get('file');
+          const title = formData.get('title') || '';
+          const text = formData.get('text') || '';
+          const shareUrl = formData.get('url') || '';
+
+          let payload = null;
+          if (file && typeof file.text === 'function') {
+            const content = await file.text();
+            payload = {
+              name: file.name || 'shared_statement.csv',
+              type: file.type || 'text/plain',
+              size: file.size || content.length,
+              content: content,
+              title: title,
+              text: text,
+              timestamp: Date.now()
+            };
+          } else if (text || title || shareUrl) {
+            payload = {
+              name: 'shared_text.txt',
+              type: 'text/plain',
+              size: (text || shareUrl).length,
+              content: text || shareUrl || title,
+              title: title,
+              text: text,
+              url: shareUrl,
+              timestamp: Date.now()
+            };
+          }
+
+          if (payload) {
+            const shareCache = await caches.open('money-superapp-shared-payload');
+            const response = new Response(JSON.stringify(payload), {
+              headers: { 'Content-Type': 'application/json' }
+            });
+            await shareCache.put('./api/shared-target-payload', response);
+          }
+        } catch (_err) {
+          // Fall through to redirect
+        }
+        return Response.redirect('./index.html?incoming_share=1', 303);
+      })());
+      return;
+    }
+  }
+
   if (event.request.method !== 'GET') return;
 
   event.respondWith(

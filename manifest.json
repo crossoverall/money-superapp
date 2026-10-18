@@ -16,5 +16,21 @@
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "share_target": {
+    "action": "./index.html",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "statement_files",
+          "accept": [".csv", ".txt", ".json", ".vault", "text/csv", "text/plain", "application/json"]
+        }
+      ]
+    }
+  }
 }

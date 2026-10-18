@@ -1062,6 +1062,30 @@ function checkPendingRefinanceSavings() {
   } catch (_e) {}
 }
 
+function checkPendingBankStatement() {
+  try {
+    const raw = localStorage.getItem('moneySuperapp.pendingBankStatement');
+    if (!raw) return;
+    const payload = JSON.parse(raw);
+    localStorage.removeItem('moneySuperapp.pendingBankStatement');
+    if (!payload || !payload.csvText) return;
+
+    const fileName = payload.fileName || 'shared_statement.csv';
+    const csvText = payload.csvText;
+
+    const candidate = parseImportCSV(csvText, fileName);
+    if (candidate) {
+      const isEn = LANG === 'en';
+      const msg = isEn
+        ? `✓ Received shared statement: ${fileName}`
+        : `✓ รับไฟล์ Statement ที่แชร์เข้ามาเรียบร้อยแล้ว: ${fileName}`;
+      showBridgeNotification(msg);
+    }
+  } catch (_e) {}
+}
+
+window.checkPendingBankStatement = checkPendingBankStatement;
+
 if (resetBtn) {
   resetBtn.addEventListener('click', () => {
     if (confirm(LANG === 'en' ? EN.resetConfirm : 'ล้างข้อมูลที่บันทึกไว้ในเบราว์เซอร์นี้ และกลับไปใช้ค่าตั้งต้น?')) {
@@ -4180,6 +4204,7 @@ checkPendingLumpSum();
 checkPendingSlipImport();
 checkPendingTaxAccrual();
 checkPendingRefinanceSavings();
+checkPendingBankStatement();
 updateAutoExpenses(pvdPercent);
 renderRows();
 renderPvdRow();
@@ -4245,6 +4270,9 @@ window.addEventListener('storage', (e) => {
   if (e.key === 'moneySuperapp.pendingRefinanceSavings') {
     checkPendingRefinanceSavings();
   }
+  if (e.key === 'moneySuperapp.pendingBankStatement') {
+    checkPendingBankStatement();
+  }
 });
 window.addEventListener('message', (e) => {
   if (e.data && e.data.action === 'importPendingData') {
@@ -4252,5 +4280,6 @@ window.addEventListener('message', (e) => {
     checkPendingSlipImport();
     checkPendingTaxAccrual();
     checkPendingRefinanceSavings();
+    checkPendingBankStatement();
   }
 });

@@ -1432,4 +1432,130 @@ describe('MoneyApp Shared Core Module', () => {
       assert.equal(resNull.netTaxableIncome, 0);
     });
   });
+
+  describe('MoneyApp.formatExecutiveDossierSummaryText (Phase 80 Native Share Summary)', () => {
+    const { MoneyApp } = createEnvironment('th');
+
+    const sampleDossier = MoneyApp.generateExecutiveDossier({
+      dashboardState: {
+        netWorth: 2500000,
+        assets: 3000000,
+        debts: 500000,
+        monthlyExpenses: 40000,
+        monthlySavings: 20000,
+        emergencyFund: 240000,
+        runway: 6,
+        investments: 1200000,
+      },
+      debtState: {
+        totalDebt: 500000,
+        monthsToFreedom: 24,
+        strategy: 'avalanche',
+      },
+      insuranceState: {
+        totalNeed: 3000000,
+        existingCoverage: 2000000,
+        protectionGap: 1000000,
+      },
+      taxBaseState: {
+        netTax: 75000,
+        withholding50Tawi: 90000,
+      },
+    });
+
+    it('formats unmasked executive summary with 6 pillars in Thai', () => {
+      const text = MoneyApp.formatExecutiveDossierSummaryText(sampleDossier, { isMasked: false, lang: 'th' });
+      assert.ok(text.includes('📋 Money Superapp — แฟ้มสรุปการเงินฉบับผู้บริหาร'));
+      assert.ok(text.includes('ความมั่งคั่งสุทธิ: 2,500,000 บาท'));
+      assert.ok(text.includes('หนี้สินรวม: 500,000 บาท'));
+      assert.ok(text.includes('เงินสำรองฉุกเฉิน: 240,000 บาท (6 เดือน)'));
+      assert.ok(text.includes('AVALANCHE'));
+      assert.ok(text.includes('ขอคืน: 15,000 บาท'));
+      assert.ok(text.includes('ความเป็นส่วนตัวสมบูรณ์'));
+    });
+
+    it('masks numbers with •••••• when isMasked is true', () => {
+      const text = MoneyApp.formatExecutiveDossierSummaryText(sampleDossier, { isMasked: true, lang: 'th' });
+      assert.ok(text.includes('ความมั่งคั่งสุทธิ: ฿ ••••••'));
+      assert.ok(text.includes('เงินสำรองฉุกเฉิน: ฿ ••••••'));
+      assert.ok(!text.includes('2,500,000'));
+      assert.ok(!text.includes('240,000'));
+    });
+
+    it('formats executive summary in English when lang is en', () => {
+      const text = MoneyApp.formatExecutiveDossierSummaryText(sampleDossier, { isMasked: false, lang: 'en' });
+      assert.ok(text.includes('📋 Money Superapp — Executive Financial Dossier'));
+      assert.ok(text.includes('Net Worth: 2,500,000 THB'));
+      assert.ok(text.includes('Total Debts: 500,000 THB'));
+      assert.ok(text.includes('Refund: 15,000 THB'));
+    });
+
+    it('returns empty string for null or undefined dossier', () => {
+      assert.equal(MoneyApp.formatExecutiveDossierSummaryText(null), '');
+      assert.equal(MoneyApp.formatExecutiveDossierSummaryText(undefined), '');
+    });
+  });
+
+  describe('MoneyApp.validateShareTargetPayload (Phase 80 Web Share Target)', () => {
+    const { MoneyApp } = createEnvironment('th');
+
+    it('correctly identifies .vault and encrypted vault JSON payload', () => {
+      const resVaultFile = MoneyApp.validateShareTargetPayload({
+        name: 'backup-2026.vault',
+        content: 'raw_encrypted_bytes',
+      });
+      assert.equal(resVaultFile.isValid, true);
+      assert.equal(resVaultFile.kind, 'vault');
+
+      const resVaultJson = MoneyApp.validateShareTargetPayload({
+        name: 'shared.json',
+        content: JSON.stringify({ format: 'money-superapp-vault-v1', data: 'xyz' }),
+      });
+      assert.equal(resVaultJson.isValid, true);
+      assert.equal(resVaultJson.kind, 'vault');
+    });
+
+    it('correctly identifies backup JSON payload', () => {
+      const resBackup = MoneyApp.validateShareTargetPayload({
+        name: 'backup.json',
+        content: JSON.stringify({ appName: 'Money Superapp', data: { 'moneySuperapp.key': 'val' } }),
+      });
+      assert.equal(resBackup.isValid, true);
+      assert.equal(resBackup.kind, 'backup');
+    });
+
+    it('correctly identifies Thai bank statements', () => {
+      const kbankCsv = 'Date,Description,Withdrawal,Deposit,Balance\n2026-10-01,Salary,,50000,100000';
+      const resKbank = MoneyApp.validateShareTargetPayload({
+        name: 'kbank_statement.csv',
+        content: kbankCsv,
+      });
+      assert.equal(resKbank.isValid, true);
+      assert.equal(resKbank.kind, 'statement');
+      assert.equal(resKbank.bankCode, 'kbank');
+    });
+
+    it('correctly identifies generic CSV statement and plain text', () => {
+      const genericCsv = 'Item,Amount\nGroceries,1500\nUtilities,800';
+      const resCsv = MoneyApp.validateShareTargetPayload({
+        name: 'expenses.csv',
+        content: genericCsv,
+      });
+      assert.equal(resCsv.isValid, true);
+      assert.equal(resCsv.kind, 'statement');
+
+      const resText = MoneyApp.validateShareTargetPayload({
+        name: 'note.txt',
+        content: 'Remember to pay electricity bill by Friday',
+      });
+      assert.equal(resText.isValid, true);
+      assert.equal(resText.kind, 'text');
+    });
+
+    it('rejects empty or missing payload safely', () => {
+      assert.equal(MoneyApp.validateShareTargetPayload(null).isValid, false);
+      assert.equal(MoneyApp.validateShareTargetPayload({}).isValid, false);
+      assert.equal(MoneyApp.validateShareTargetPayload({ content: '   ' }).isValid, false);
+    });
+  });
 });

@@ -158,6 +158,9 @@ const translations = {
     btnMaskAmounts: 'ซ่อนตัวเลข',
     btnUnmaskAmounts: 'แสดงตัวเลข',
     btnPrintDossier: 'พิมพ์แฟ้มสรุป',
+    btnShareDossier: 'แชร์แฟ้มสรุป',
+    btnShareDossierTitle: 'แชร์แฟ้มสรุปฉบับผู้บริหาร (Web Share / คัดลอก)',
+    dossierShareCopied: '✓ คัดลอกแฟ้มสรุปฉบับผู้บริหารลง Clipboard แล้ว!',
     dossierCol1Title: '💰 1. ความมั่งคั่งสุทธิ & หนี้สิน',
     dossierCol2Title: '🛡️ 2. สายป่านฉุกเฉิน & การออม',
     dossierCol3Title: '📈 3. พอร์ตลงทุน & Glidepath',
@@ -343,6 +346,9 @@ const translations = {
     btnMaskAmounts: 'Mask Amounts',
     btnUnmaskAmounts: 'Show Amounts',
     btnPrintDossier: 'Print Dossier',
+    btnShareDossier: 'Share Dossier',
+    btnShareDossierTitle: 'Share Executive Financial Dossier (Native Share / Clipboard)',
+    dossierShareCopied: '✓ Executive Dossier summary copied to clipboard!',
     dossierCol1Title: '💰 1. Net Worth & Liabilities',
     dossierCol2Title: '🛡️ 2. Emergency Runway & Savings',
     dossierCol3Title: '📈 3. Investment & Glidepath',
@@ -510,6 +516,7 @@ function applyLocalization() {
     'sub-card-b3': t.subCardB3,
     'lbl-dossier-title': t.dossierTitle,
     lblBtnPrintDossier: t.btnPrintDossier,
+    lblBtnShareDossier: t.btnShareDossier,
     'lbl-dossier-col1-title': t.dossierCol1Title,
     'lbl-dossier-col2-title': t.dossierCol2Title,
     'lbl-dossier-col3-title': t.dossierCol3Title,
@@ -566,6 +573,9 @@ function applyLocalization() {
 
   const btnPrint = document.getElementById('btn-print');
   if (btnPrint) btnPrint.title = t.printTitle;
+
+  const btnShareDossier = document.getElementById('btnShareDossier');
+  if (btnShareDossier) btnShareDossier.title = t.btnShareDossierTitle;
 
   const btnHor5 = document.getElementById('btnHorPreset5');
   if (btnHor5) btnHor5.textContent = LANG === 'en' ? '5 Yrs' : '5 ปี';
@@ -3619,6 +3629,111 @@ function printDossierExecutiveReport() {
   window.print();
 }
 window.printDossierExecutiveReport = printDossierExecutiveReport;
+
+async function shareDossierExecutiveSummary() {
+  const isEn = LANG === 'en';
+  const t = translations[LANG] || translations.th;
+  const isMasked = isPrivacyMaskActive();
+
+  const p = gatherFinancialProfile();
+  const portState = safeJsonParse('moneySuperapp.portfolio.v1', { totalValue: 0, monthlyBudget: 0 });
+  const debtState = safeJsonParse('debtCalculator.state.v1', {
+    totalDebt: 0,
+    monthlyPayment: 0,
+    monthsToFreedom: 0,
+    strategy: 'avalanche',
+  });
+  const taxBaseState = safeJsonParse('taxCalculatorBase.state.v1', {
+    totalIncome: 0,
+    totalDeductions: 0,
+    netTax: 0,
+    withholding50Tawi: 0,
+  });
+  const slipsState = safeJsonParse('moneySuperapp.slips.v1', {
+    annualTotalIncome: 0,
+    annualDeductions: 0,
+    annualProjectedTax: 0,
+    annualTaxWithheld: 0,
+  });
+  const remState = safeJsonParse('remainingMoneyCalculator.state.v1', {
+    monthlyIncome: 0,
+    monthlyExpense: 0,
+    monthlySavings: 0,
+  });
+  const insState = safeJsonParse('moneySuperapp.insurance.v1', {
+    existingCoverage: 0,
+    totalNeed: 0,
+    protectionGap: 0,
+  });
+  const ret3bState = safeJsonParse('moneySuperapp.retirement3b.v1', {
+    bucket1: 0,
+    bucket2: 0,
+    bucket3: 0,
+    ssoPension: 0,
+  });
+  const glideState = safeJsonParse('moneySuperapp.glidepath.v1', { equityPct: 0 });
+
+  const dossierParams = {
+    dashboardState: {
+      netWorth: p.netWorth,
+      assets: p.assets,
+      debts: p.debts,
+      monthlyExpenses: p.monthlyExpenses,
+      monthlySavings: p.monthlySavings,
+      emergencyFund: p.emergencyFund,
+      runway: p.runway,
+      financialHealthScore: p.financialHealthScore,
+      investments: p.investments,
+    },
+    portfolioState: portState,
+    debtState: debtState,
+    taxBaseState: taxBaseState,
+    slipsState: slipsState,
+    remainingState: remState,
+    insuranceState: insState,
+    retire3bState: ret3bState,
+    glidepathState: glideState,
+    isMasked: isMasked,
+  };
+
+  const genFn =
+    (typeof MoneyApp !== 'undefined' && MoneyApp.generateExecutiveDossier) || window.generateExecutiveDossier;
+  const dossier = genFn ? genFn(dossierParams) : { isMasked: isMasked, summary: {}, pillars: {} };
+
+  const formatFn =
+    (typeof MoneyApp !== 'undefined' && MoneyApp.formatExecutiveDossierSummaryText) ||
+    window.formatExecutiveDossierSummaryText;
+  const summaryText = formatFn ? formatFn(dossier, { isMasked: isMasked, lang: LANG }) : '';
+
+  if (!summaryText) return;
+
+  if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+    try {
+      await navigator.share({
+        title: isEn ? 'Money Superapp — Executive Financial Dossier' : 'Money Superapp — แฟ้มสรุปการเงินฉบับผู้บริหาร',
+        text: summaryText,
+      });
+      return;
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+    }
+  }
+
+  // Fallback to clipboard
+  if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(summaryText);
+      alert(
+        t.dossierShareCopied ||
+          (isEn ? '✓ Executive Dossier summary copied to clipboard!' : '✓ คัดลอกแฟ้มสรุปฉบับผู้บริหารลง Clipboard แล้ว!'),
+      );
+      return;
+    } catch (_clipErr) {}
+  }
+
+  alert(summaryText);
+}
+window.shareDossierExecutiveSummary = shareDossierExecutiveSummary;
 
 function renderExecutiveDossier() {
   const panel = document.getElementById('panelExecutiveDossier');

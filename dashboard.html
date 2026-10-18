@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.5.22">
+  <meta name="version" content="2.5.23">
   <script>
     try {
       var t = localStorage.getItem('moneySuperapp.theme');
@@ -217,6 +217,7 @@
       <div style="display:flex; gap:6px; align-items:center;" class="no-print">
         <button type="button" onclick="toggleDossierPrivacyMask()" class="action-btn" style="padding:4px 9px; margin:0; border-radius:8px; font-size:11px;" id="btnTogglePrivacyMask" title="ซ่อน/แสดงจำนวนเงิน / Mask Amounts" aria-label="Toggle Privacy Mask">👁️ <span id="lblBtnPrivacyMask">ซ่อนตัวเลข</span></button>
         <button type="button" onclick="printDossierExecutiveReport()" class="action-btn" style="padding:4px 9px; margin:0; border-radius:8px; font-size:11px; background:var(--ok-dim); border-color:var(--ok); color:var(--ok);" id="btnPrintDossier" title="พิมพ์แฟ้มสรุปฉบับผู้บริหาร / Print Dossier PDF" aria-label="Print Executive Dossier PDF">🖨️ <span id="lblBtnPrintDossier">พิมพ์แฟ้มสรุป</span></button>
+        <button type="button" onclick="shareDossierExecutiveSummary()" class="action-btn" style="padding:4px 9px; margin:0; border-radius:8px; font-size:11px; background:var(--blue-dim, rgba(59,130,246,0.1)); border-color:var(--blue, #3b82f6); color:var(--blue, #3b82f6);" id="btnShareDossier" title="แชร์แฟ้มสรุปฉบับผู้บริหาร / Share Dossier Summary" aria-label="Share Executive Dossier">📤 <span id="lblBtnShareDossier">แชร์แฟ้มสรุป</span></button>
       </div>
     </div>
     <div id="panelExecutiveDossierBody">
@@ -1306,7 +1307,7 @@
     </div>
   </div>
 
-  <p class="version-tag">Money Superapp v2.5.22</p>
+  <p class="version-tag">Money Superapp v2.5.23</p>
 
 <script src="js/shared.js"></script>
 <script src="js/dashboard.js"></script>
