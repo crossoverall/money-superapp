@@ -15,6 +15,16 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-18: Multi-Card Container Sizing & Responsive Padding Harmonization (v2.5.10)
+- **Date & Context:** 2026-10-18, resolving narrow container width and cramped multi-column financial layouts on Income Tax estimation tool (`tax-calculator-base.html`) (`v2.5.10`).
+- **Problem:** The Income Tax estimation tool was constrained by `max-w-md` (448px) with 32px padding (`p-8`), restricting usable content width to only 384px. On desktop viewports, 65%+ of the screen was empty space, while multi-column financial tables (8-tier progressive tax waterfall table, ภ.ง.ด. 90/91 e-Filing worksheet, dual-scenario comparison cards, and statutory calendar) suffered from cramped typography and awkward multi-line text wrapping. Additionally, `<body>` centered the long card vertically (`flex items-center justify-center`).
+- **Root Cause:** Legacy container classes from early minimal mobile mockups were retained even after adding 8 complex sub-panels and financial worksheets across feature releases.
+- **Solution & Rule:**
+  1. **Container Width Harmonization:** Standardize multi-card and tabular tools to `w-full max-w-4xl` (896px), matching `months-slips.html`.
+  2. **Responsive Padding:** Apply `p-4 sm:p-6 md:p-8` so mobile viewports gain +32px usable width while desktop viewports retain clean 32px borders. Add `.sm:p-6` and `.md:p-8` to `css/tailwind-lite.css`.
+  3. **Top-to-Bottom Flow:** Use `flex-col items-center justify-start p-4 md:py-8` on `<body>` for scrollable tools and bind colors directly to `var(--bg)` and `var(--ink)`.
+  4. **Strict Regression Assertions:** Enforce container size assertions in `tests/smoke.test.mjs` to prevent future regressions to `max-w-md`.
+
 ### 2026-10-18: Cross-Frame Theme Propagation, TDZ Hoisting & Shell Variable Harmonization (v2.5.9)
 - **Date & Context:** 2026-10-18, comprehensive UI theme harmonization and runtime exception eradication across all 8 tools (`v2.5.9`).
 - **Problem:**

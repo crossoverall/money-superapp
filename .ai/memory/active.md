@@ -1,5 +1,5 @@
 ---
-task_id: "SDLC-BUGFIX-THEME-HARMONIZATION-AND-UI-CRASHES"
+task_id: "SDLC-BUGFIX-TAX-BASE-PAGE-WIDTH"
 status: "completed"
 current_stage: "release"
 complexity: "level_2"
@@ -7,21 +7,19 @@ iteration_count: 0
 pipeline: ["orchestrator", "planner", "approval_gate", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Problem Diagnosis & Root Causes Resolved (Automated Browser Audit)
-1. **Shell Theme Toggle Disconnected From Tools (`js/app-shell.js`):**
-   - Added direct frame document theme/lang mutation + `postMessage({ type: 'THEME_CHANGE', theme })` / `LANG_CHANGE`.
-   - Added frame `load` event synchronization.
-2. **Hardcoded Dark Navigation in Shell (`index.html`):**
-   - Replaced `#131E19`, `#24352C`, `#8FA69C`, `#0E1512` with semantic theme tokens `var(--panel)`, `var(--line)`, `var(--ink)`, `var(--ink-dim)`, `var(--bg)`, `var(--core)`.
-3. **Three Uncaught Runtime ReferenceErrors Fixed:**
-   - `js/dashboard.js`: Fixed `calculateFinancialHealthScore` call and hoisted `dashboardLayoutManager`.
-   - `js/remaining-money.js`: Hoisted `remainingLayoutManager`.
-   - `js/debt-calculator.js`: Hoisted `MONTH_NAMES_TH`, `MONTH_NAMES_EN`, and `debtLayoutManager`.
-4. **Stale Theme Closure in Core Module (`js/shared.js`):**
-   - Dynamically reads live `localStorage` in `initTheme()`.
-   - Reacts to `message` and `storage` events.
-5. **FOUC in HTML `<head>`:**
-   - Early synchronous inline theme script added to all 8 HTML files.
+### Problem Diagnosis & Root Causes Resolved
+1. **Narrow Container Constraint (`tax-calculator-base.html`):**
+   - Replaced `max-w-md` (448px) with `w-full max-w-4xl` (896px), harmonizing with `months-slips.html`.
+   - Replaced static `p-8` with responsive `p-4 sm:p-6 md:p-8`, giving +32px usable width on mobile.
+2. **Body Alignment & Theming:**
+   - Updated `<body>` to `flex flex-col items-center justify-start p-4 md:py-8` bound to `var(--bg)` and `var(--ink)`.
+   - Explicitly bound `#screenCalculatorCard` to `var(--panel)` and `var(--line)` for flawless Light and Dark mode contrast.
+
+### Verification
+- 332 unit & smoke tests passing (87 suites).
+- 0 Biome linter errors.
+- Chrome CDP headless audit across desktop (1280px) and mobile (390px) in Light and Dark modes: 0 unhandled exceptions, 0 horizontal overflow, card width 896px on desktop and 358px on mobile.
+- Version bumped to `v2.5.10`.
 
 ### Verification
 - 331 unit & smoke tests passing (87 suites).

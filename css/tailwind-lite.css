@@ -46,6 +46,7 @@ button, [type='button'] { -webkit-appearance: button; background-color: transpar
 
 @media (min-width: 640px) {
   .sm\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .sm\:p-6 { padding: 1.5rem; }
 }
 
 @media (min-width: 768px) {
@@ -54,6 +55,7 @@ button, [type='button'] { -webkit-appearance: button; background-color: transpar
   .md\:col-span-5 { grid-column: span 5 / span 5; }
   .md\:col-span-7 { grid-column: span 7 / span 7; }
   .md\:col-span-12 { grid-column: span 12 / span 12; }
+  .md\:p-8 { padding: 2rem; }
   .md\:py-8 { padding-top: 2rem; padding-bottom: 2rem; }
 }
 

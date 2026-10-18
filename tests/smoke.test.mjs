@@ -57,6 +57,18 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         );
       }
     });
+
+    it('verifies tax-calculator-base.html uses responsive max-w-4xl container layout', () => {
+      const taxContent = fs.readFileSync(path.join(ROOT_DIR, 'tax-calculator-base.html'), 'utf8');
+      assert.ok(
+        taxContent.includes('id="screenCalculatorCard"') && taxContent.includes('max-w-4xl'),
+        'tax-calculator-base.html #screenCalculatorCard must use max-w-4xl for comfortable multi-column layout',
+      );
+      assert.ok(
+        !taxContent.includes('max-w-md'),
+        'tax-calculator-base.html must not be constrained by narrow max-w-md',
+      );
+    });
   });
 
   describe('Script & Stylesheet Dependency Integrity', () => {
