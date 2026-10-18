@@ -2568,6 +2568,91 @@
   }
 
   /**
+   * Phase 74: Statutory 500k Retirement Deductions Pool Warning Engine (Section 47 Thai Revenue Code).
+   * Combines PVD (Provident Fund), RMF, SSF, GPF, NSF, and Annuity Life Insurance under the statutory 500,000 THB ceiling.
+   */
+  function calculateRetirementCeilingPool(params) {
+    var p = params || {};
+    var pvd = Math.max(0, Number(p.pvd) || 0);
+    var rmf = Math.max(0, Number(p.rmf) || 0);
+    var ssf = Math.max(0, Number(p.ssf) || 0);
+    var gpf = Math.max(0, Number(p.gpf) || 0);
+    var nsf = Math.max(0, Number(p.nsf) || 0);
+    var pensionInsurance = Math.max(0, Number(p.pensionInsurance) || 0);
+
+    var totalRaw = pvd + rmf + ssf + gpf + nsf + pensionInsurance;
+    var CEILING = 500000;
+    var effectiveTotal = Math.min(totalRaw, CEILING);
+    var excess = Math.max(0, totalRaw - CEILING);
+    var headroom = Math.max(0, CEILING - totalRaw);
+    var utilizationPct = Number(Math.min(100, (totalRaw / CEILING) * 100).toFixed(1));
+
+    var status = 'safe';
+    if (totalRaw > CEILING) {
+      status = 'exceeded';
+    } else if (totalRaw >= 400000) {
+      status = 'warning';
+    }
+
+    return {
+      pvd: pvd,
+      rmf: rmf,
+      ssf: ssf,
+      gpf: gpf,
+      nsf: nsf,
+      pensionInsurance: pensionInsurance,
+      totalRaw: totalRaw,
+      effectiveTotal: effectiveTotal,
+      excess: excess,
+      headroom: headroom,
+      utilizationPct: utilizationPct,
+      status: status,
+      isExceeded: totalRaw > CEILING,
+    };
+  }
+
+  /**
+   * Phase 74: Statutory ภ.ง.ด. 90/91 e-Filing Pre-Flight Checklist Evaluator.
+   * Evaluates 5 statutory compliance milestones before filing on efiling.rd.go.th.
+   */
+  function evaluateEFilingPreFlightChecklist(params) {
+    var p = params || {};
+    var checks = p.checks || {};
+    var pool = p.retirementPool || {};
+
+    var hasExcess = Boolean(pool.isExceeded);
+    var item50Tawi = Boolean(checks.doc50Tawi);
+    var itemPool500k = !hasExcess && Boolean(checks.pool500k);
+    var itemThaiEsg = Boolean(checks.thaiEsg);
+    var itemConsent = Boolean(checks.consentRd);
+    var itemPromptPay = Boolean(checks.promptPayCitizen);
+
+    var checklist = [
+      { id: 'doc50Tawi', completed: item50Tawi },
+      { id: 'pool500k', completed: itemPool500k, isExceeded: hasExcess },
+      { id: 'thaiEsg', completed: itemThaiEsg },
+      { id: 'consentRd', completed: itemConsent },
+      { id: 'promptPayCitizen', completed: itemPromptPay },
+    ];
+
+    var completedCount = checklist.filter(function (item) {
+      return item.completed;
+    }).length;
+    var totalCount = checklist.length;
+    var completionPct = Math.round((completedCount / totalCount) * 100);
+    var isReady = completedCount === totalCount && !hasExcess;
+
+    return {
+      checklist: checklist,
+      completedCount: completedCount,
+      totalCount: totalCount,
+      completionPct: completionPct,
+      isReady: isReady,
+      hasRetirementExcess: hasExcess,
+    };
+  }
+
+  /**
    * Phase 66: Thai Revenue Department (ภ.ง.ด. 90/91) e-Filing Form Pre-fill Worksheet Engine.
    * Maps taxable incomes (40(1), 40(2), 40(4)(b)), statutory standard 50% expenses,
    * 4-group tax deductions, progressive PIT tax brackets, dividend tax credit,
@@ -2614,14 +2699,22 @@
     var combinedLifeHealth = Math.min(100000, lifeIns + healthIns);
     var parentHealth = Math.min(15000, Number(p.parentHealthInsurance) || 0);
 
-    // 500k retirement bundle
+    // 500k retirement bundle (Section 47 Thai Revenue Code)
     var rmf = Number(p.rmf) || 0;
     var ssf = Number(p.ssf) || 0;
     var pvd = Number(p.pvd) || 0;
     var gpf = Number(p.gpf) || 0;
     var nsf = Number(p.nsf) || 0;
     var pensionIns = Number(p.pensionInsurance) || 0;
-    var retirementBundle = Math.min(500000, rmf + ssf + pvd + gpf + nsf + pensionIns);
+    var retirementPool = calculateRetirementCeilingPool({
+      pvd: pvd,
+      rmf: rmf,
+      ssf: ssf,
+      gpf: gpf,
+      nsf: nsf,
+      pensionInsurance: pensionIns,
+    });
+    var retirementBundle = retirementPool.effectiveTotal;
 
     var thaiEsg = Math.min(300000, Number(p.thaiEsg) || 0);
     var groupB = sso + combinedLifeHealth + parentHealth + retirementBundle + thaiEsg;
@@ -2707,6 +2800,7 @@
       isPayable: isPayable,
       canInstallment: canInstallment,
       installment3Months: installmentAmount,
+      retirementPool: retirementPool,
     };
   }
 
@@ -3711,6 +3805,8 @@
     hashPin: hashPin,
     verifyPin: verifyPin,
     formatAppLockTimeout: formatAppLockTimeout,
+    calculateRetirementCeilingPool: calculateRetirementCeilingPool,
+    evaluateEFilingPreFlightChecklist: evaluateEFilingPreFlightChecklist,
   };
 
   // Expose on global window object
@@ -3770,5 +3866,9 @@
     if (typeof global.hashPin === 'undefined') global.hashPin = hashPin;
     if (typeof global.verifyPin === 'undefined') global.verifyPin = verifyPin;
     if (typeof global.formatAppLockTimeout === 'undefined') global.formatAppLockTimeout = formatAppLockTimeout;
+    if (typeof global.calculateRetirementCeilingPool === 'undefined')
+      global.calculateRetirementCeilingPool = calculateRetirementCeilingPool;
+    if (typeof global.evaluateEFilingPreFlightChecklist === 'undefined')
+      global.evaluateEFilingPreFlightChecklist = evaluateEFilingPreFlightChecklist;
   }
 })(typeof window !== 'undefined' ? window : this);

@@ -1079,10 +1079,76 @@ function calculateTax() {
     refundMetrics,
   });
 
-  updateEFilingWorksheetView();
+  lastCalculatedDeductions = {
+    pvd: pvdDeduction,
+    sso: ssoDeduction,
+    rawFund: fundDeduct,
+    fund: effectiveFund,
+    thaiEsg: effectiveThaiEsg,
+    insurance: effectiveInsurance,
+    mortgage: effectiveMortgage,
+    other: otherDeduct,
+  };
+
+  updateEFilingWorksheetView(lastCalculatedDeductions);
 }
 
-function updateEFilingWorksheetView() {
+// Phase 74: Statutory Pre-Flight Checklist State
+let lastCalculatedDeductions = null;
+let preflightState = {
+  doc50Tawi: false,
+  pool500k: false,
+  thaiEsg: false,
+  consentRd: false,
+  promptPayCitizen: false,
+};
+
+function loadPreflightState() {
+  try {
+    const raw = localStorage.getItem('moneySuperapp.efilingPreflight.v1');
+    if (raw) preflightState = Object.assign(preflightState, JSON.parse(raw));
+  } catch (_e) {}
+}
+
+function savePreflightState() {
+  try {
+    localStorage.setItem('moneySuperapp.efilingPreflight.v1', JSON.stringify(preflightState));
+  } catch (_e) {}
+}
+
+function togglePreflightItem(key, checked) {
+  preflightState[key] = Boolean(checked);
+  savePreflightState();
+  updateEFilingWorksheetView(lastCalculatedDeductions);
+}
+
+function checkAllPreflight() {
+  preflightState.doc50Tawi = true;
+  preflightState.pool500k = true;
+  preflightState.thaiEsg = true;
+  preflightState.consentRd = true;
+  preflightState.promptPayCitizen = true;
+  savePreflightState();
+  updateEFilingWorksheetView(lastCalculatedDeductions);
+}
+
+function resetPreflightChecklist() {
+  preflightState = {
+    doc50Tawi: false,
+    pool500k: false,
+    thaiEsg: false,
+    consentRd: false,
+    promptPayCitizen: false,
+  };
+  savePreflightState();
+  updateEFilingWorksheetView(lastCalculatedDeductions);
+}
+
+window.togglePreflightItem = togglePreflightItem;
+window.checkAllPreflight = checkAllPreflight;
+window.resetPreflightChecklist = resetPreflightChecklist;
+
+function updateEFilingWorksheetView(deductionsArg) {
   const panel = document.getElementById('panelEFilingWorksheet');
   if (!panel || typeof MoneyApp === 'undefined' || !MoneyApp.calculateThaiEFilingWorksheet) return;
 
@@ -1097,6 +1163,54 @@ function updateEFilingWorksheetView() {
   const yearlyIncVal = parseNum(document.getElementById('yearlyIncome')?.value);
   const yearlyBonusVal = parseNum(document.getElementById('yearlyBonus')?.value);
 
+  const deductions = deductionsArg || lastCalculatedDeductions;
+
+  const pvdVal =
+    deductions?.pvd !== undefined
+      ? deductions.pvd
+      : incomeMode === 'yearly'
+        ? parseNum(document.getElementById('yearlyPvd')?.value)
+        : parseNum(document.getElementById('salary')?.value) *
+          12 *
+          (parseNum(document.getElementById('pvd')?.value) / 100);
+
+  const ssoVal =
+    deductions?.sso !== undefined
+      ? deductions.sso
+      : incomeMode === 'yearly'
+        ? parseNum(document.getElementById('yearlySso')?.value)
+        : Math.min(
+            parseNum(document.getElementById('salary')?.value),
+            parseNum(document.getElementById('ssoCap')?.value || 750),
+          ) *
+          0.05 *
+          12;
+
+  const lifeInsVal =
+    deductions?.insurance !== undefined
+      ? deductions.insurance
+      : parseNum(document.getElementById('insuranceDeduct')?.value || document.getElementById('insurance')?.value);
+
+  const rmfVal =
+    deductions?.rawFund !== undefined
+      ? deductions.rawFund
+      : parseNum(document.getElementById('fundDeduct')?.value || document.getElementById('fund')?.value);
+
+  const thaiEsgVal =
+    deductions?.thaiEsg !== undefined
+      ? deductions.thaiEsg
+      : parseNum(document.getElementById('thaiEsgDeduct')?.value || document.getElementById('thaiesg')?.value);
+
+  const mortgageVal =
+    deductions?.mortgage !== undefined
+      ? deductions.mortgage
+      : parseNum(document.getElementById('mortgageDeduct')?.value || document.getElementById('mortgage')?.value);
+
+  const otherVal =
+    deductions?.other !== undefined
+      ? deductions.other
+      : parseNum(document.getElementById('otherDeduct')?.value || document.getElementById('otherDeductions')?.value);
+
   const ws = MoneyApp.calculateThaiEFilingWorksheet({
     salary: incomeMode === 'yearly' ? 0 : salaryVal,
     bonus: incomeMode === 'yearly' ? 0 : bonusVal,
@@ -1105,15 +1219,243 @@ function updateEFilingWorksheetView() {
     dividend404b: isDivApplied ? divAmount : 0,
     dividendCitRate: citRate,
     applyDividendCredit: isDivApplied,
-    pvd: parseNum(document.getElementById('pvdDeduct')?.innerText?.replace(/[^0-9.-]/g, '')),
-    sso: parseNum(document.getElementById('ssoDeduct')?.innerText?.replace(/[^0-9.-]/g, '')),
-    lifeInsurance: parseNum(document.getElementById('insurance')?.value),
-    rmf: parseNum(document.getElementById('fund')?.value),
-    thaiEsg: parseNum(document.getElementById('thaiesg')?.value),
-    homeLoanInterest: parseNum(document.getElementById('mortgage')?.value),
-    donationGeneral: parseNum(document.getElementById('otherDeductions')?.value),
+    pvd: pvdVal,
+    sso: ssoVal,
+    lifeInsurance: lifeInsVal,
+    rmf: rmfVal,
+    thaiEsg: thaiEsgVal,
+    homeLoanInterest: mortgageVal,
+    donationGeneral: otherVal,
     taxWithheld50Tawi: parseNum(document.getElementById('withheldTax')?.value),
   });
+
+  // Phase 74: Statutory 500k Retirement Deductions Ceiling Pool Warning Bridge
+  const pool =
+    ws.retirementPool ||
+    (MoneyApp.calculateRetirementCeilingPool
+      ? MoneyApp.calculateRetirementCeilingPool({ pvd: pvdVal, rmf: rmfVal })
+      : {
+          pvd: pvdVal,
+          rmf: rmfVal,
+          ssf: 0,
+          totalRaw: pvdVal + rmfVal,
+          effectiveTotal: Math.min(500000, pvdVal + rmfVal),
+          excess: Math.max(0, pvdVal + rmfVal - 500000),
+          headroom: Math.max(0, 500000 - (pvdVal + rmfVal)),
+          utilizationPct: Math.min(100, ((pvdVal + rmfVal) / 500000) * 100),
+          status: pvdVal + rmfVal > 500000 ? 'exceeded' : pvdVal + rmfVal >= 400000 ? 'warning' : 'safe',
+          isExceeded: pvdVal + rmfVal > 500000,
+        });
+
+  const elPoolTitle = document.getElementById('lblPool500kTitle');
+  if (elPoolTitle) {
+    elPoolTitle.textContent = isEn
+      ? 'Statutory Retirement Deductions Ceiling 500,000 THB (Section 47 Thai Revenue Code)'
+      : 'เพดานลดหย่อนกลุ่มเกษียณ 500,000 บาท (ม.47 แห่งประมวลรัษฎากร)';
+  }
+
+  const badgePool = document.getElementById('badgePoolStatus');
+  if (badgePool) {
+    if (pool.status === 'exceeded') {
+      badgePool.textContent = isEn ? 'Exceeded Cap (Over 500k)' : 'เกินเพดาน (เกิน 500k)';
+      badgePool.style.background = 'rgba(239, 68, 68, 0.15)';
+      badgePool.style.color = '#ef4444';
+      badgePool.style.borderColor = '#ef4444';
+    } else if (pool.status === 'warning') {
+      badgePool.textContent = isEn ? 'Near Limit (>=80%)' : 'ใกล้เต็มสิทธิ์ (>=80%)';
+      badgePool.style.background = 'var(--warn-dim)';
+      badgePool.style.color = 'var(--warn)';
+      badgePool.style.borderColor = 'var(--warn)';
+    } else {
+      badgePool.textContent = isEn ? 'Safe (<80%)' : 'ปลอดภัย (Safe)';
+      badgePool.style.background = 'var(--ok-dim)';
+      badgePool.style.color = 'var(--ok)';
+      badgePool.style.borderColor = 'var(--ok)';
+    }
+  }
+
+  const elPoolComb = document.getElementById('valPoolCombinedText');
+  if (elPoolComb) {
+    elPoolComb.textContent = `${formatMoney(pool.totalRaw)} / 500,000 ${curUnit}`;
+    elPoolComb.style.color = pool.isExceeded ? '#ef4444' : 'var(--ink)';
+  }
+
+  const barPool = document.getElementById('barPoolProgress');
+  if (barPool) {
+    barPool.style.width = `${pool.utilizationPct}%`;
+    barPool.style.background =
+      pool.status === 'exceeded' ? '#ef4444' : pool.status === 'warning' ? '#f59e0b' : 'var(--core)';
+  }
+
+  const elPoolPvd = document.getElementById('valPoolPvd');
+  if (elPoolPvd) elPoolPvd.textContent = `${formatMoney(pool.pvd)} ${curUnit}`;
+
+  const elPoolRmf = document.getElementById('valPoolRmf');
+  if (elPoolRmf) elPoolRmf.textContent = `${formatMoney(pool.rmf + (pool.ssf || 0))} ${curUnit}`;
+
+  const elPoolHeadroomNotice = document.getElementById('valPoolHeadroomNotice');
+  const elPoolHeadroom = document.getElementById('valPoolHeadroom');
+  if (elPoolHeadroomNotice && elPoolHeadroom) {
+    if (pool.isExceeded) {
+      elPoolHeadroomNotice.style.display = 'none';
+    } else {
+      elPoolHeadroomNotice.style.display = 'block';
+      elPoolHeadroom.textContent = formatMoney(pool.headroom);
+      elPoolHeadroomNotice.innerHTML = isEn
+        ? `💡 Remaining Room: <strong id="valPoolHeadroom" class="font-mono">${formatMoney(pool.headroom)}</strong> THB`
+        : `💡 เพดานคงเหลืออีก: <strong id="valPoolHeadroom" class="font-mono">${formatMoney(pool.headroom)}</strong> บาท`;
+    }
+  }
+
+  const alertExcess = document.getElementById('alertPoolExcessCallout');
+  const valExcessAmt = document.getElementById('valPoolExcessAmount');
+  const elPoolExcessTitle = document.getElementById('lblPoolExcessTitle');
+  const elPoolExcessDesc = document.getElementById('lblPoolExcessDesc');
+  if (alertExcess) {
+    if (pool.isExceeded) {
+      alertExcess.style.display = 'block';
+      if (valExcessAmt) valExcessAmt.textContent = `${formatMoney(pool.excess)} ${curUnit}`;
+      if (elPoolExcessTitle) {
+        elPoolExcessTitle.textContent = isEn
+          ? 'Retirement Fund Contributions Exceed Statutory 500k Ceiling'
+          : 'มียอดเงินสะสม/ลงทุนเกินเพดานที่กฎหมายกำหนด';
+      }
+      if (elPoolExcessDesc) {
+        elPoolExcessDesc.innerHTML = isEn
+          ? `Your combined PVD + SSF + RMF contributions exceed the 500,000 THB Section 47 ceiling by <strong id="valPoolExcessAmount" class="font-mono">${formatMoney(pool.excess)} ${curUnit}</strong>. The Revenue Department will automatically cap your deduction at 500,000 THB.`
+          : `คุณมียอดรวม PVD + SSF + RMF เกินเพดาน 500,000 บาท ตาม ม.47 อยู่เป็นจำนวน <strong id="valPoolExcessAmount" class="font-mono">${formatMoney(pool.excess)} ${curUnit}</strong> สรรพากรจะตัดส่วนเกินนี้ออกอัตโนมัติในการยื่นแบบ ภ.ง.ด. 90/91`;
+      }
+    } else {
+      alertExcess.style.display = 'none';
+    }
+  }
+
+  // Phase 74: Statutory Pre-Flight Checklist Evaluator & Localization
+  const elPreflightTitle = document.getElementById('lblPreflightTitle');
+  if (elPreflightTitle) {
+    elPreflightTitle.textContent = isEn
+      ? 'Online Filing Pre-Flight Checklist'
+      : 'รายการตรวจสอบก่อนยื่นแบบออนไลน์ (Pre-Flight Checklist)';
+  }
+  const elBtnCheckAll = document.getElementById('btnCheckAllPreflight');
+  if (elBtnCheckAll) elBtnCheckAll.textContent = isEn ? '✓ Check All' : '✓ ตรวจทั้งหมด';
+  const elBtnResetPre = document.getElementById('btnResetPreflight');
+  if (elBtnResetPre) elBtnResetPre.textContent = isEn ? 'Reset' : 'รีเซ็ต';
+
+  const elChk50Tawi = document.getElementById('lbl-chk-50tawi');
+  if (elChk50Tawi) {
+    elChk50Tawi.textContent = isEn
+      ? '1. Verify 50 Tawi Withholding Certificates from all employers/clients'
+      : '1. ตรวจสอบหนังสือรับรองหัก ณ ที่จ่าย (ใบ 50 ทวิ) ครบทุกที่';
+  }
+  const elSub50Tawi = document.getElementById('sub-chk-50tawi');
+  if (elSub50Tawi) {
+    elSub50Tawi.textContent = isEn
+      ? 'Ensure salary, bonus, freelance income, and tax withheld match physical slips'
+      : 'รวมยอดเงินเดือน โบนัส และฟรีแลนซ์ตรงกับเอกสารจริงทุกบริษัท';
+  }
+
+  const elChkPool = document.getElementById('lbl-chk-pool500k');
+  if (elChkPool) {
+    elChkPool.textContent = isEn
+      ? '2. Retirement pool (PVD + SSF + RMF) within 500,000 THB ceiling'
+      : '2. ยอดกลุ่มกองทุนเกษียณ (PVD + SSF + RMF) ไม่เกินเพดาน 500,000 บาท';
+  }
+  const elSubPool = document.getElementById('sub-chk-pool500k');
+  if (elSubPool) {
+    elSubPool.textContent = isEn
+      ? 'Compliant with Section 47 ceiling; no non-deductible excess contributions'
+      : 'ผ่านเกณฑ์มาตรา 47 แห่งประมวลรัษฎากร ไม่มียอดส่วนเกินตกหล่น';
+  }
+
+  const elChkEsg = document.getElementById('lbl-chk-thaiesg');
+  if (elChkEsg) {
+    elChkEsg.textContent = isEn
+      ? '3. ThaiESG funds comply with 300,000 THB & 5-year holding requirements'
+      : '3. กองทุนรวมไทยเพื่อความยั่งยืน (ThaiESG) ถูกต้องตามเกณฑ์';
+  }
+  const elSubEsg = document.getElementById('sub-chk-thaiesg');
+  if (elSubEsg) {
+    elSubEsg.textContent = isEn
+      ? 'Not exceeding 300,000 THB (and 30% of income), held for 5 full calendar years'
+      : 'ไม่เกิน 300,000 บาท (และไม่เกิน 30% ของเงินได้) พร้อมถือครองครบ 5 ปีวันชนวัน';
+  }
+
+  const elChkConsent = document.getElementById('lbl-chk-consent');
+  if (elChkConsent) {
+    elChkConsent.textContent = isEn
+      ? '4. Confirm consent given to AMCs/insurers to transmit data to Revenue Dept'
+      : '4. ยืนยันการให้ความยินยอม (Consent) ส่งข้อมูลลดหย่อนสู่สรรพากร';
+  }
+  const elSubConsent = document.getElementById('sub-chk-consent');
+  if (elSubConsent) {
+    elSubConsent.textContent = isEn
+      ? 'Opt-in confirmed in banking/fund apps to allow automatic e-Filing pre-population'
+      : 'กดยินยอมในแอปพลิเคชัน บลจ. หรือบริษัทประกัน ให้ส่งข้อมูลภาษีออนไลน์อัตโนมัติ';
+  }
+
+  const elChkPromptPay = document.getElementById('lbl-chk-promptpay');
+  if (elChkPromptPay) {
+    elChkPromptPay.textContent = isEn
+      ? '5. Link PromptPay with 13-digit Thai National Citizen ID'
+      : '5. ผูกบัญชีพร้อมเพย์ด้วยเลขบัตรประชาชน 13 หลัก';
+  }
+  const elSubPromptPay = document.getElementById('sub-chk-promptpay');
+  if (elSubPromptPay) {
+    elSubPromptPay.textContent = isEn
+      ? 'Enables direct electronic tax refund transfer from the Revenue Department'
+      : 'สำหรับการรับเงินภาษีคืนเข้าบัญชีธนาคารโดยตรงจากกรมสรรพากรโดยไม่ต้องรอเช็ค';
+  }
+
+  if (MoneyApp.evaluateEFilingPreFlightChecklist) {
+    const evalRes = MoneyApp.evaluateEFilingPreFlightChecklist({
+      checks: preflightState,
+      retirementPool: pool,
+    });
+
+    const chk50 = document.getElementById('chk-ef-50tawi');
+    if (chk50) chk50.checked = Boolean(preflightState.doc50Tawi);
+
+    const chkPoolBox = document.getElementById('chk-ef-pool500k');
+    if (chkPoolBox) {
+      if (pool.isExceeded) {
+        chkPoolBox.checked = false;
+        chkPoolBox.disabled = true;
+      } else {
+        chkPoolBox.disabled = false;
+        chkPoolBox.checked = Boolean(preflightState.pool500k);
+      }
+    }
+
+    const chkEsgBox = document.getElementById('chk-ef-thaiesg');
+    if (chkEsgBox) chkEsgBox.checked = Boolean(preflightState.thaiEsg);
+
+    const chkConsentBox = document.getElementById('chk-ef-consent');
+    if (chkConsentBox) chkConsentBox.checked = Boolean(preflightState.consentRd);
+
+    const chkPromptBox = document.getElementById('chk-ef-promptpay');
+    if (chkPromptBox) chkPromptBox.checked = Boolean(preflightState.promptPayCitizen);
+
+    const badgePreflight = document.getElementById('badgeEfPreflightStatus');
+    if (badgePreflight) {
+      if (evalRes.isReady) {
+        badgePreflight.textContent = isEn ? '5/5 Ready to File 🚀' : '5/5 พร้อมยื่นแบบ 🚀';
+        badgePreflight.style.background = 'var(--ok-dim)';
+        badgePreflight.style.color = 'var(--ok)';
+        badgePreflight.style.borderColor = 'var(--ok)';
+      } else if (evalRes.hasRetirementExcess) {
+        badgePreflight.textContent = `${evalRes.completedCount}/5 ${isEn ? 'Blocked by Excess ⚠️' : 'ติดยอดเกินเพดาน ⚠️'}`;
+        badgePreflight.style.background = 'rgba(239, 68, 68, 0.15)';
+        badgePreflight.style.color = '#ef4444';
+        badgePreflight.style.borderColor = '#ef4444';
+      } else {
+        badgePreflight.textContent = `${evalRes.completedCount}/5 ${isEn ? 'Incomplete' : 'ยังไม่พร้อม'}`;
+        badgePreflight.style.background = 'var(--panel-2)';
+        badgePreflight.style.color = 'var(--ink-dim)';
+        badgePreflight.style.borderColor = 'var(--line)';
+      }
+    }
+  }
 
   // Populate box elements
   const el401 = document.getElementById('valEf401');
@@ -2373,6 +2715,7 @@ window.toggleCalendarItem = toggleCalendarItem;
 window.resetTaxCalendarChecklist = resetTaxCalendarChecklist;
 window.renderTaxCalendar = renderTaxCalendar;
 
+loadPreflightState();
 loadState();
 renderTaxCalendar();
 

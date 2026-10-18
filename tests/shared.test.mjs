@@ -1112,4 +1112,83 @@ describe('MoneyApp Shared Core Module', () => {
       assert.equal(badVerify, false);
     });
   });
+
+  describe('MoneyApp Retirement Ceiling Pool & Pre-Flight Checklist (Phase 74 Section 47 Warning)', () => {
+    it('exports calculateRetirementCeilingPool and calculates pools accurately', () => {
+      const { MoneyApp } = createEnvironment('th');
+      assert.equal(typeof MoneyApp.calculateRetirementCeilingPool, 'function');
+
+      const safe = MoneyApp.calculateRetirementCeilingPool({ pvd: 150000, rmf: 100000 });
+      assert.equal(safe.totalRaw, 250000);
+      assert.equal(safe.effectiveTotal, 250000);
+      assert.equal(safe.excess, 0);
+      assert.equal(safe.headroom, 250000);
+      assert.equal(safe.status, 'safe');
+      assert.equal(safe.isExceeded, false);
+
+      const warn = MoneyApp.calculateRetirementCeilingPool({ pvd: 250000, ssf: 180000 });
+      assert.equal(warn.totalRaw, 430000);
+      assert.equal(warn.status, 'warning');
+      assert.equal(warn.headroom, 70000);
+
+      const overflow = MoneyApp.calculateRetirementCeilingPool({ pvd: 350000, rmf: 200000, ssf: 50000 });
+      assert.equal(overflow.totalRaw, 600000);
+      assert.equal(overflow.effectiveTotal, 500000);
+      assert.equal(overflow.excess, 100000);
+      assert.equal(overflow.headroom, 0);
+      assert.equal(overflow.status, 'exceeded');
+      assert.equal(overflow.isExceeded, true);
+    });
+
+    it('exports evaluateEFilingPreFlightChecklist and evaluates checklist state', () => {
+      const { MoneyApp } = createEnvironment('th');
+      assert.equal(typeof MoneyApp.evaluateEFilingPreFlightChecklist, 'function');
+
+      const empty = MoneyApp.evaluateEFilingPreFlightChecklist({ checks: {} });
+      assert.equal(empty.completedCount, 0);
+      assert.equal(empty.completionPct, 0);
+      assert.equal(empty.isReady, false);
+
+      const ready = MoneyApp.evaluateEFilingPreFlightChecklist({
+        checks: {
+          doc50Tawi: true,
+          pool500k: true,
+          thaiEsg: true,
+          consentRd: true,
+          promptPayCitizen: true,
+        },
+        retirementPool: { isExceeded: false },
+      });
+      assert.equal(ready.completedCount, 5);
+      assert.equal(ready.completionPct, 100);
+      assert.equal(ready.isReady, true);
+      assert.equal(ready.hasRetirementExcess, false);
+
+      const blockedByExcess = MoneyApp.evaluateEFilingPreFlightChecklist({
+        checks: {
+          doc50Tawi: true,
+          pool500k: true,
+          thaiEsg: true,
+          consentRd: true,
+          promptPayCitizen: true,
+        },
+        retirementPool: { isExceeded: true, excess: 50000 },
+      });
+      assert.equal(blockedByExcess.isReady, false);
+      assert.equal(blockedByExcess.hasRetirementExcess, true);
+    });
+
+    it('calculateThaiEFilingWorksheet automatically embeds retirementPool in return object', () => {
+      const { MoneyApp } = createEnvironment('th');
+      const ws = MoneyApp.calculateThaiEFilingWorksheet({
+        salary: 50000,
+        pvd: 50000,
+        rmf: 100000,
+      });
+      assert.ok(ws.retirementPool, 'Worksheet must embed retirementPool');
+      assert.equal(ws.retirementPool.totalRaw, 150000);
+      assert.equal(ws.retirementPool.effectiveTotal, 150000);
+      assert.equal(ws.retirementPool.isExceeded, false);
+    });
+  });
 });

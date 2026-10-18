@@ -6310,4 +6310,208 @@ describe('Financial Math Verification', () => {
       assert.equal(cal.nextDeadline.daysRemaining, 0);
     });
   });
+
+  describe('calculateRetirementCeilingPool (Phase 74 Section 47 500k Retirement Ceiling)', () => {
+    function calculateRetirementCeilingPool(params) {
+      const p = params || {};
+      const pvd = Math.max(0, Number(p.pvd) || 0);
+      const rmf = Math.max(0, Number(p.rmf) || 0);
+      const ssf = Math.max(0, Number(p.ssf) || 0);
+      const gpf = Math.max(0, Number(p.gpf) || 0);
+      const nsf = Math.max(0, Number(p.nsf) || 0);
+      const pensionInsurance = Math.max(0, Number(p.pensionInsurance) || 0);
+
+      const totalRaw = pvd + rmf + ssf + gpf + nsf + pensionInsurance;
+      const CEILING = 500000;
+      const effectiveTotal = Math.min(totalRaw, CEILING);
+      const excess = Math.max(0, totalRaw - CEILING);
+      const headroom = Math.max(0, CEILING - totalRaw);
+      const utilizationPct = Number(Math.min(100, (totalRaw / CEILING) * 100).toFixed(1));
+
+      let status = 'safe';
+      if (totalRaw > CEILING) {
+        status = 'exceeded';
+      } else if (totalRaw >= 400000) {
+        status = 'warning';
+      }
+
+      return {
+        pvd,
+        rmf,
+        ssf,
+        gpf,
+        nsf,
+        pensionInsurance,
+        totalRaw,
+        effectiveTotal,
+        excess,
+        headroom,
+        utilizationPct,
+        status,
+        isExceeded: totalRaw > CEILING,
+      };
+    }
+
+    it('accurately calculates safe retirement contributions below 80% ceiling', () => {
+      const res = calculateRetirementCeilingPool({
+        pvd: 100000,
+        rmf: 150000,
+      });
+      assert.equal(res.totalRaw, 250000);
+      assert.equal(res.effectiveTotal, 250000);
+      assert.equal(res.excess, 0);
+      assert.equal(res.headroom, 250000);
+      assert.equal(res.utilizationPct, 50);
+      assert.equal(res.status, 'safe');
+      assert.equal(res.isExceeded, false);
+    });
+
+    it('flags warning when pooled contributions reach or exceed 80% (400,000 THB)', () => {
+      const res = calculateRetirementCeilingPool({
+        pvd: 200000,
+        ssf: 220000,
+      });
+      assert.equal(res.totalRaw, 420000);
+      assert.equal(res.effectiveTotal, 420000);
+      assert.equal(res.excess, 0);
+      assert.equal(res.headroom, 80000);
+      assert.equal(res.utilizationPct, 84);
+      assert.equal(res.status, 'warning');
+      assert.equal(res.isExceeded, false);
+    });
+
+    it('correctly handles exact 500,000 THB statutory ceiling', () => {
+      const res = calculateRetirementCeilingPool({
+        pvd: 200000,
+        rmf: 300000,
+      });
+      assert.equal(res.totalRaw, 500000);
+      assert.equal(res.effectiveTotal, 500000);
+      assert.equal(res.excess, 0);
+      assert.equal(res.headroom, 0);
+      assert.equal(res.utilizationPct, 100);
+      assert.equal(res.status, 'warning');
+      assert.equal(res.isExceeded, false);
+    });
+
+    it('caps effective deduction at 500,000 THB and detects excess when contributions overflow', () => {
+      const res = calculateRetirementCeilingPool({
+        pvd: 300000,
+        rmf: 250000,
+        ssf: 100000,
+        pensionInsurance: 50000,
+      });
+      assert.equal(res.totalRaw, 700000);
+      assert.equal(res.effectiveTotal, 500000);
+      assert.equal(res.excess, 200000);
+      assert.equal(res.headroom, 0);
+      assert.equal(res.utilizationPct, 100);
+      assert.equal(res.status, 'exceeded');
+      assert.equal(res.isExceeded, true);
+    });
+
+    it('gracefully handles empty, missing, or negative values', () => {
+      const res = calculateRetirementCeilingPool({});
+      assert.equal(res.totalRaw, 0);
+      assert.equal(res.effectiveTotal, 0);
+      assert.equal(res.headroom, 500000);
+      assert.equal(res.status, 'safe');
+      assert.equal(res.isExceeded, false);
+    });
+  });
+
+  describe('evaluateEFilingPreFlightChecklist (Phase 74 ภ.ง.ด. 90/91 Statutory Pre-Flight Checklist)', () => {
+    function evaluateEFilingPreFlightChecklist(params) {
+      const p = params || {};
+      const checks = p.checks || {};
+      const pool = p.retirementPool || {};
+
+      const hasExcess = Boolean(pool.isExceeded);
+      const item50Tawi = Boolean(checks.doc50Tawi);
+      const itemPool500k = !hasExcess && Boolean(checks.pool500k);
+      const itemThaiEsg = Boolean(checks.thaiEsg);
+      const itemConsent = Boolean(checks.consentRd);
+      const itemPromptPay = Boolean(checks.promptPayCitizen);
+
+      const checklist = [
+        { id: 'doc50Tawi', completed: item50Tawi },
+        { id: 'pool500k', completed: itemPool500k, isExceeded: hasExcess },
+        { id: 'thaiEsg', completed: itemThaiEsg },
+        { id: 'consentRd', completed: itemConsent },
+        { id: 'promptPayCitizen', completed: itemPromptPay },
+      ];
+
+      const completedCount = checklist.filter((item) => item.completed).length;
+      const totalCount = checklist.length;
+      const completionPct = Math.round((completedCount / totalCount) * 100);
+      const isReady = completedCount === totalCount && !hasExcess;
+
+      return {
+        checklist,
+        completedCount,
+        totalCount,
+        completionPct,
+        isReady,
+        hasRetirementExcess: hasExcess,
+      };
+    }
+
+    it('returns zero completion when no checks are completed', () => {
+      const evalRes = evaluateEFilingPreFlightChecklist({
+        checks: {},
+        retirementPool: { isExceeded: false },
+      });
+      assert.equal(evalRes.completedCount, 0);
+      assert.equal(evalRes.totalCount, 5);
+      assert.equal(evalRes.completionPct, 0);
+      assert.equal(evalRes.isReady, false);
+      assert.equal(evalRes.hasRetirementExcess, false);
+    });
+
+    it('calculates partial progress accurately', () => {
+      const evalRes = evaluateEFilingPreFlightChecklist({
+        checks: {
+          doc50Tawi: true,
+          pool500k: true,
+          thaiEsg: true,
+        },
+        retirementPool: { isExceeded: false },
+      });
+      assert.equal(evalRes.completedCount, 3);
+      assert.equal(evalRes.completionPct, 60);
+      assert.equal(evalRes.isReady, false);
+    });
+
+    it('confirms readiness when all 5 statutory items are satisfied without pool excess', () => {
+      const evalRes = evaluateEFilingPreFlightChecklist({
+        checks: {
+          doc50Tawi: true,
+          pool500k: true,
+          thaiEsg: true,
+          consentRd: true,
+          promptPayCitizen: true,
+        },
+        retirementPool: { isExceeded: false },
+      });
+      assert.equal(evalRes.completedCount, 5);
+      assert.equal(evalRes.completionPct, 100);
+      assert.equal(evalRes.isReady, true);
+    });
+
+    it('blocks readiness if retirement ceiling pool is exceeded even if all checkboxes were ticked', () => {
+      const evalRes = evaluateEFilingPreFlightChecklist({
+        checks: {
+          doc50Tawi: true,
+          pool500k: true,
+          thaiEsg: true,
+          consentRd: true,
+          promptPayCitizen: true,
+        },
+        retirementPool: { isExceeded: true, excess: 150000 },
+      });
+      assert.equal(evalRes.hasRetirementExcess, true);
+      assert.equal(evalRes.isReady, false);
+      assert.equal(evalRes.completedCount, 4); // pool500k invalidated by excess
+    });
+  });
 });

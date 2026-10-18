@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="2.5.16">
+    <meta name="version" content="2.5.17">
     <script>
       try {
         var t = localStorage.getItem('moneySuperapp.theme');
@@ -658,6 +658,113 @@
                         </a>
                     </div>
 
+                    <!-- Phase 74: Statutory 500,000 THB Retirement Deductions Ceiling Pool Warning Bridge -->
+                    <div id="boxRetirementPool500k" class="p-3 rounded-xl border space-y-2 text-xs" style="background:var(--panel); border-color:var(--line);">
+                        <div class="flex justify-between items-center flex-wrap gap-2">
+                            <div class="font-bold flex items-center gap-1.5" style="color:var(--ink);">
+                                <span>🛡️</span>
+                                <span id="lblPool500kTitle">เพดานลดหย่อนกลุ่มเกษียณ 500,000 บาท (ม.47 แห่งประมวลรัษฎากร)</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span id="badgePoolStatus" class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="background:var(--ok-dim); color:var(--ok); border:1px solid var(--ok);">
+                                    ปลอดภัย (Safe)
+                                </span>
+                                <span id="valPoolCombinedText" class="font-mono font-bold" style="color:var(--ink);">0 / 500,000 บาท</span>
+                            </div>
+                        </div>
+
+                        <!-- Progress Bar Container -->
+                        <div class="w-full h-2 rounded-full overflow-hidden" style="background:var(--panel-2); border:1px solid var(--line);">
+                            <div id="barPoolProgress" class="h-full rounded-full transition-all duration-300" style="width: 0%; background:var(--core);"></div>
+                        </div>
+
+                        <!-- Breakdown Chips & Headroom Notice -->
+                        <div class="flex justify-between items-center flex-wrap gap-2 text-[11px] pt-1" style="color:var(--ink-dim);">
+                            <div class="flex items-center gap-2 flex-wrap" id="poolBreakdownChips">
+                                <span class="px-1.5 py-0.5 rounded" style="background:var(--panel-2); border:1px solid var(--line);">PVD: <strong id="valPoolPvd" class="font-mono">0</strong></span>
+                                <span class="px-1.5 py-0.5 rounded" style="background:var(--panel-2); border:1px solid var(--line);">SSF/RMF: <strong id="valPoolRmf" class="font-mono">0</strong></span>
+                            </div>
+                            <div id="valPoolHeadroomNotice" class="font-medium text-emerald-600">
+                                💡 เพดานคงเหลืออีก: <strong id="valPoolHeadroom" class="font-mono">500,000</strong> บาท
+                            </div>
+                        </div>
+
+                        <!-- Excess Alert Callout (hidden by default, revealed if > 500k) -->
+                        <div id="alertPoolExcessCallout" class="p-2.5 rounded-lg border text-[11.5px] leading-relaxed" style="display:none; background:rgba(239, 68, 68, 0.08); border-color:#ef4444; color:#b91c1c;">
+                            <div class="font-bold flex items-center gap-1 mb-0.5">
+                                <span>⚠️</span>
+                                <span id="lblPoolExcessTitle">มียอดเงินสะสม/ลงทุนเกินเพดานที่กฎหมายกำหนด</span>
+                            </div>
+                            <div id="lblPoolExcessDesc">
+                                คุณมียอดรวม PVD + SSF + RMF เกินเพดาน 500,000 บาท ตาม ม.47 อยู่เป็นจำนวน <strong id="valPoolExcessAmount" class="font-mono">0</strong> บาท สรรพากรจะตัดส่วนเกินนี้ออกอัตโนมัติในการยื่นแบบ ภ.ง.ด. 90/91
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Phase 74: ภ.ง.ด. 90/91 Statutory Pre-Flight Checklist -->
+                    <div id="panelEFilingPreFlightChecklist" class="p-3 rounded-xl border space-y-2.5 text-xs" style="background:var(--panel); border-color:var(--line);">
+                        <div class="flex justify-between items-center flex-wrap gap-2 pb-1 border-b" style="border-color:var(--line);">
+                            <div class="font-bold flex items-center gap-1.5" style="color:var(--ink);">
+                                <span>🚀</span>
+                                <span id="lblPreflightTitle">รายการตรวจสอบก่อนยื่นแบบออนไลน์ (Pre-Flight Checklist)</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span id="badgeEfPreflightStatus" class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="background:var(--panel-2); color:var(--ink-dim); border:1px solid var(--line);">
+                                    0/5 ยังไม่พร้อม
+                                </span>
+                                <button type="button" onclick="checkAllPreflight()" class="py-0.5 px-2 text-[10.5px] font-semibold rounded hover:bg-emerald-50 text-emerald-600 border border-emerald-300" id="btnCheckAllPreflight">
+                                    ✓ ตรวจทั้งหมด
+                                </button>
+                                <button type="button" onclick="resetPreflightChecklist()" class="py-0.5 px-2 text-[10.5px] font-semibold rounded hover:bg-gray-100 text-gray-500 border border-gray-300" id="btnResetPreflight">
+                                    รีเซ็ต
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 5 Pre-Flight Checkbox Items -->
+                        <div class="space-y-1.5 text-[11.5px]" style="color:var(--ink);">
+                            <label class="flex items-start gap-2 p-1.5 rounded cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                <input type="checkbox" id="chk-ef-50tawi" onchange="togglePreflightItem('doc50Tawi', this.checked)" class="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500">
+                                <div>
+                                    <div class="font-semibold" id="lbl-chk-50tawi">1. ตรวจสอบหนังสือรับรองหัก ณ ที่จ่าย (ใบ 50 ทวิ) ครบทุกที่</div>
+                                    <div class="text-[10px]" style="color:var(--ink-dim);" id="sub-chk-50tawi">รวมยอดเงินเดือน โบนัส และฟรีแลนซ์ตรงกับเอกสารจริงทุกบริษัท</div>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start gap-2 p-1.5 rounded cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                <input type="checkbox" id="chk-ef-pool500k" onchange="togglePreflightItem('pool500k', this.checked)" class="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500">
+                                <div>
+                                    <div class="font-semibold" id="lbl-chk-pool500k">2. ยอดกลุ่มกองทุนเกษียณ (PVD + SSF + RMF) ไม่เกินเพดาน 500,000 บาท</div>
+                                    <div class="text-[10px]" style="color:var(--ink-dim);" id="sub-chk-pool500k">ผ่านเกณฑ์มาตรา 47 แห่งประมวลรัษฎากร ไม่มียอดส่วนเกินตกหล่น</div>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start gap-2 p-1.5 rounded cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                <input type="checkbox" id="chk-ef-thaiesg" onchange="togglePreflightItem('thaiEsg', this.checked)" class="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500">
+                                <div>
+                                    <div class="font-semibold" id="lbl-chk-thaiesg">3. กองทุนรวมไทยเพื่อความยั่งยืน (ThaiESG) ถูกต้องตามเกณฑ์</div>
+                                    <div class="text-[10px]" style="color:var(--ink-dim);" id="sub-chk-thaiesg">ไม่เกิน 300,000 บาท (และไม่เกิน 30% ของเงินได้) พร้อมถือครองครบ 5 ปีวันชนวัน</div>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start gap-2 p-1.5 rounded cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                <input type="checkbox" id="chk-ef-consent" onchange="togglePreflightItem('consentRd', this.checked)" class="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500">
+                                <div>
+                                    <div class="font-semibold" id="lbl-chk-consent">4. ยืนยันการให้ความยินยอม (Consent) ส่งข้อมูลลดหย่อนสู่สรรพากร</div>
+                                    <div class="text-[10px]" style="color:var(--ink-dim);" id="sub-chk-consent">กดยินยอมในแอปพลิเคชัน บลจ. หรือบริษัทประกัน ให้ส่งข้อมูลภาษีออนไลน์อัตโนมัติ</div>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start gap-2 p-1.5 rounded cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                <input type="checkbox" id="chk-ef-promptpay" onchange="togglePreflightItem('promptPayCitizen', this.checked)" class="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500">
+                                <div>
+                                    <div class="font-semibold" id="lbl-chk-promptpay">5. ผูกบัญชีพร้อมเพย์ด้วยเลขบัตรประชาชน 13 หลัก</div>
+                                    <div class="text-[10px]" style="color:var(--ink-dim);" id="sub-chk-promptpay">สำหรับการรับเงินภาษีคืนเข้าบัญชีธนาคารโดยตรงจากกรมสรรพากรโดยไม่ต้องรอเช็ค</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
                     <!-- 4 Step Boxes Grid -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                         <!-- Box 1: รายการเงินได้พึงประเมิน 40(1) - 40(8) -->
@@ -886,7 +993,7 @@
                     <span id="lbl-reset-tax">ล้างข้อมูล</span>
                 </button>
             </div>
-            <p class="text-xs text-gray-400">v2.5.16</p>
+            <p class="text-xs text-gray-400">v2.5.17</p>
         </div>
     </div>
 

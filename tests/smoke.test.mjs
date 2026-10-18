@@ -443,6 +443,42 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(taxContent.includes('id="valEf401"'), 'tax-calculator-base.html must define #valEf401');
       assert.ok(taxContent.includes('id="valEfGroupA"'), 'tax-calculator-base.html must define #valEfGroupA');
       assert.ok(taxContent.includes('id="valEfNetBalance"'), 'tax-calculator-base.html must define #valEfNetBalance');
+
+      // Phase 74: 500k Ceiling Warning Bridge & Pre-Flight Checklist
+      assert.ok(
+        taxContent.includes('id="boxRetirementPool500k"'),
+        'tax-calculator-base.html must define #boxRetirementPool500k',
+      );
+      assert.ok(taxContent.includes('id="barPoolProgress"'), 'tax-calculator-base.html must define #barPoolProgress');
+      assert.ok(
+        taxContent.includes('id="valPoolCombinedText"'),
+        'tax-calculator-base.html must define #valPoolCombinedText',
+      );
+      assert.ok(
+        taxContent.includes('id="alertPoolExcessCallout"'),
+        'tax-calculator-base.html must define #alertPoolExcessCallout',
+      );
+      assert.ok(
+        taxContent.includes('id="panelEFilingPreFlightChecklist"'),
+        'tax-calculator-base.html must define #panelEFilingPreFlightChecklist',
+      );
+      assert.ok(
+        taxContent.includes('id="badgeEfPreflightStatus"'),
+        'tax-calculator-base.html must define #badgeEfPreflightStatus',
+      );
+      assert.ok(taxContent.includes('id="chk-ef-50tawi"'), 'tax-calculator-base.html must define #chk-ef-50tawi');
+      assert.ok(taxContent.includes('id="chk-ef-pool500k"'), 'tax-calculator-base.html must define #chk-ef-pool500k');
+      assert.ok(taxContent.includes('id="chk-ef-thaiesg"'), 'tax-calculator-base.html must define #chk-ef-thaiesg');
+      assert.ok(taxContent.includes('id="chk-ef-consent"'), 'tax-calculator-base.html must define #chk-ef-consent');
+      assert.ok(taxContent.includes('id="chk-ef-promptpay"'), 'tax-calculator-base.html must define #chk-ef-promptpay');
+      assert.ok(
+        taxContent.includes('id="btnCheckAllPreflight"'),
+        'tax-calculator-base.html must define #btnCheckAllPreflight',
+      );
+      assert.ok(
+        taxContent.includes('id="btnResetPreflight"'),
+        'tax-calculator-base.html must define #btnResetPreflight',
+      );
     });
 
     it('verifies tax-calculator.html declares Land & Building Tax card with controls', () => {

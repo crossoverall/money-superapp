@@ -118,6 +118,15 @@ When adding a lesson, include:
   3. **Lexical Declaration Order:** Always declare module-level variables (`let *LayoutManager = null;`, constants) before executing setup functions that assign or reference them.
   4. **Synchronous Head Theme Script:** Place an inline `<script>` in `<head>` before `<link rel="stylesheet">` in every HTML file to synchronously assign `dataset.theme` from `localStorage` prior to layout/paint.
 
+### 2026-10-18: Statutory Retirement 500k Ceiling Bridge & Direct Deduction Parameter Passing (v2.5.17)
+- **Date & Context:** 2026-10-18, implementing Phase 74 ภ.ง.ด. 90/91 Statutory Pre-Flight Checklist & 500k Ceiling Pool Warning Bridge in `tax-calculator-base.html` and `js/tax-calculator-base.js`.
+- **Problem:** Attempting to extract Provident Fund (PVD) deductions from DOM innerText (`"- 36,000.00 บาท"`) using regex stripping `/[^0-9.-]/g` produced negative numbers (`-36000`), causing `Math.max(0, pvd)` to evaluate to `0`. Furthermore, reading effective/capped retirement deductions prevented the statutory pool monitor from detecting raw contributions exceeding the Section 47 500k ceiling.
+- **Root Cause:** Scraping rendered UI text with negative formatting prefixes instead of passing structured numeric calculation snapshots (`lastCalculatedDeductions`) directly between controller routines, combined with confusing raw contributions with capped effective deductions.
+- **Solution & Rule:**
+  1. **Direct Parameter Snapshots:** Always capture and pass raw calculation snapshots (`lastCalculatedDeductions = { pvd, sso, rawFund, fund, ... }`) directly to downstream worksheet and view rendering routines rather than parsing formatted UI text from DOM nodes.
+  2. **Raw vs Effective Separation:** Always maintain separate fields for raw user contributions (for statutory ceiling excess warnings) and effective deductible amounts (for actual tax reduction math).
+  3. **Multi-State Verification:** Verify both safe (<500k) and exceeded (>500k) states across Light, Dark, and Mobile viewports via headless Chrome CDP.
+
 ### 2026-10-18: CSS Grid Responsive Column Spanning & Implicit Track Synthesis (v2.5.8)
 - **Date & Context:** 2026-10-18, resolving broken layout on the payslip simulator (`months-slips.html`) on both desktop and mobile viewports.
 - **Problem:**
