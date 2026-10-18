@@ -68,6 +68,8 @@ if (LANG === 'en') {
     'lbl-recon-card-withheld': 'Total Withheld (50 Tawi)',
     'lbl-recon-card-liability': 'Final Tax Liability',
     'lbl-recon-card-settlement': 'Reconciliation Result',
+    'lbl-slips-subtitle': 'Reorder and collapse cards to customize your payslip workspace',
+    'lbl-reset-slips-layout': 'Reset Layout',
   };
   Object.keys(EN).forEach((id) => {
     const el = document.getElementById(id);
@@ -837,3 +839,26 @@ function runCompare() {
 }
 
 loadState();
+
+// Universal Card Layout Manager
+const slipsLayoutManager =
+  typeof MoneyApp !== 'undefined' && MoneyApp.initCardLayoutManager
+    ? MoneyApp.initCardLayoutManager({
+        container: document.getElementById('slipsContainer'),
+        cardSelector: '.reorder-card',
+        storageKey: 'moneySuperapp.layout.slips.v1',
+        defaultOrder: [
+          'panelPayslipSetup',
+          'panelPayslipCard',
+          'panelCashflowStream',
+          'pitReconciliationCard',
+          'panelJobCompare',
+        ],
+      })
+    : null;
+
+window.resetSlipsLayout = function () {
+  if (slipsLayoutManager) {
+    slipsLayoutManager.resetLayout();
+  }
+};

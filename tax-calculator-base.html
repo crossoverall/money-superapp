@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="2.4.8">
+    <meta name="version" content="2.4.9">
     <meta name="description" content="คำนวณภาษีเงินได้บุคคลธรรมดา — ประมาณการภาษีเงินได้จากเงินเดือนและโบนัส พร้อมแสดงรายละเอียดตามขั้นบันได">
     <title>คำนวณภาษีเงินได้บุคคลธรรมดา</title>
     <link rel="stylesheet" href="css/tailwind-lite.css">
@@ -201,25 +201,37 @@
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
 
     <div id="screenCalculatorCard" class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md no-print">
-        <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center justify-between mb-4">
             <h2 class="text-2xl font-semibold text-gray-800" id="lbl-title">คำนวณภาษีเบื้องต้น 📊</h2>
-            <button type="button" onclick="undoTaxChange()" id="btn-undo-tax-top" class="py-1 px-2.5 text-xs font-semibold rounded-lg no-print" style="display:none; color:var(--core); background:var(--panel-2); border:1px solid var(--line); cursor:pointer;" title="เลิกทำ / Undo (Ctrl+Z)" aria-label="Undo last change">↩ <span id="lbl-undo-tax-top">เลิกทำ (Undo)</span></button>
+            <div class="flex items-center gap-2">
+                <button type="button" id="btnResetTaxBaseLayout" onclick="resetTaxBaseLayout()" class="py-1 px-2.5 text-xs font-semibold rounded-lg no-print" style="color:var(--ink-dim); background:var(--panel-2); border:1px solid var(--line); cursor:pointer;" title="รีเซ็ตลำดับการแสดงผล / Reset Layout">
+                    ↺ <span id="lbl-reset-taxbase-layout">รีเซ็ตลำดับ</span>
+                </button>
+                <button type="button" onclick="undoTaxChange()" id="btn-undo-tax-top" class="py-1 px-2.5 text-xs font-semibold rounded-lg no-print" style="display:none; color:var(--core); background:var(--panel-2); border:1px solid var(--line); cursor:pointer;" title="เลิกทำ / Undo (Ctrl+Z)" aria-label="Undo last change">↩ <span id="lbl-undo-tax-top">เลิกทำ (Undo)</span></button>
+            </div>
         </div>
 
-        <!-- Income Mode Switcher Tabs (Material Design 3 Segmented Button) -->
-        <div class="md-segmented-group mb-5" role="tablist" aria-label="โหมดรายได้">
-            <button type="button" id="tab-mode-monthly" onclick="switchIncomeMode('monthly')" class="md-segment-btn active" role="tab" aria-selected="true">
-                <svg class="md-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                <span id="lbl-tab-monthly">รายได้รายเดือน</span>
-            </button>
-            <button type="button" id="tab-mode-yearly" onclick="switchIncomeMode('yearly')" class="md-segment-btn" role="tab" aria-selected="false">
-                <svg class="md-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                <span id="lbl-tab-yearly">รายได้รายปี (ไม่คงที่)</span>
-            </button>
-        </div>
+        <div id="taxCardsContainer" class="space-y-4">
+            <!-- 1. Income Card -->
+            <div id="panelTaxIncome" class="reorder-card bg-white p-4 rounded-xl border" style="border-color:var(--line);">
+                <div class="panel-header flex items-center justify-between mb-3">
+                    <h3 class="panel-title text-base font-bold text-gray-800" id="lbl-panel-income">1. ข้อมูลรายได้ (Income)</h3>
+                </div>
+                <div id="panelTaxIncomeBody" class="space-y-4">
+                    <!-- Income Mode Switcher Tabs (Material Design 3 Segmented Button) -->
+                    <div class="md-segmented-group mb-5" role="tablist" aria-label="โหมดรายได้">
+                        <button type="button" id="tab-mode-monthly" onclick="switchIncomeMode('monthly')" class="md-segment-btn active" role="tab" aria-selected="true">
+                            <svg class="md-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            <span id="lbl-tab-monthly">รายได้รายเดือน</span>
+                        </button>
+                        <button type="button" id="tab-mode-yearly" onclick="switchIncomeMode('yearly')" class="md-segment-btn" role="tab" aria-selected="false">
+                            <svg class="md-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            <span id="lbl-tab-yearly">รายได้รายปี (ไม่คงที่)</span>
+                        </button>
+                    </div>
 
-        <!-- Input Section -->
-        <div class="space-y-4 mb-6">
+                    <!-- Input Section -->
+                    <div class="space-y-4 mb-2">
             <!-- Monthly Input Mode -->
             <div id="section-monthly" class="space-y-4">
                 <div>
@@ -305,6 +317,15 @@
                     <div id="warn-yearly-sso" style="display:none; color:#d97706; font-size:11px; margin-top:3px; font-weight:500;"></div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- 2. Deductions & Withheld Card -->
+    <div id="panelTaxDeductions" class="reorder-card bg-white p-4 rounded-xl border" style="border-color:var(--line);">
+        <div class="panel-header flex items-center justify-between mb-3">
+            <h3 class="panel-title text-base font-bold text-gray-800" id="lbl-panel-deductions">2. สิทธิลดหย่อน &amp; ภาษีหัก ณ ที่จ่าย (Deductions &amp; Withheld)</h3>
+        </div>
+        <div id="panelTaxDeductionsBody" class="space-y-4">
             <details class="border rounded-lg p-3 text-sm" style="background:var(--panel-2); border-color:var(--line);">
                 <summary class="font-medium text-gray-700 cursor-pointer select-none" id="lbl-more-deduct">+ ค่าลดหย่อนเพิ่มเติม (SSF, RMF, ThaiESG, ประกัน, ดอกเบี้ยบ้าน, Easy E-Receipt)</summary>
                 <div class="space-y-3 mt-3 pt-3 border-t" style="border-top-color:var(--line);">
@@ -369,19 +390,21 @@
                 </p>
                 <div id="payslip-import-feedback" style="display:none; background:var(--panel); border:1px solid var(--core); color:var(--ink);" class="p-2 rounded text-[11px] font-medium items-center justify-between"></div>
             </div>
+        </div>
+    </div>
 
-            <!-- Thai Stock Dividend Tax Credit Simulator (Section 47 bis) - Roadmap Phase 60 -->
-            <div id="dividendTaxCreditCard" class="mt-4 p-3.5 rounded-xl space-y-3" style="background:var(--panel-2); border:1px solid var(--line);" role="region" aria-label="Thai Stock Dividend Tax Credit Simulator">
-                <div class="flex items-center justify-between cursor-pointer" onclick="toggleDividendTaxCredit()" id="btn-toggle-dividend-credit" role="button" tabindex="0" aria-expanded="false">
-                    <div class="flex items-center gap-2">
-                        <span class="text-base">📈</span>
-                        <div>
-                            <span class="block text-xs font-bold" style="color:var(--ink);" id="lbl-div-credit-title">เครดิตภาษีเงินปันผลหุ้นไทย (ม.47 ทวิ)</span>
-                            <span class="block text-[11px]" style="color:var(--ink-dim);" id="lbl-div-credit-sub">จำลองสิทธิ์ขอคืนภาษีเงินปันผลหุ้นไทย หรือเลือก Final Tax 10%</span>
-                        </div>
-                    </div>
-                    <span id="div-credit-toggle-arrow" style="font-size:12px; color:var(--core); font-weight:700;">▼</span>
+    <!-- 3. Thai Stock Dividend Tax Credit Simulator (Section 47 bis) - Roadmap Phase 60 -->
+    <div id="dividendTaxCreditCard" class="reorder-card mt-4 p-3.5 rounded-xl space-y-3" style="background:var(--panel-2); border:1px solid var(--line);" role="region" aria-label="Thai Stock Dividend Tax Credit Simulator">
+        <div class="panel-header flex items-center justify-between cursor-pointer" onclick="toggleDividendTaxCredit()" id="btn-toggle-dividend-credit" role="button" tabindex="0" aria-expanded="false">
+            <div class="flex items-center gap-2">
+                <span class="text-base">📈</span>
+                <div>
+                    <span class="panel-title block text-xs font-bold" style="color:var(--ink);" id="lbl-div-credit-title">เครดิตภาษีเงินปันผลหุ้นไทย (ม.47 ทวิ)</span>
+                    <span class="block text-[11px]" style="color:var(--ink-dim);" id="lbl-div-credit-sub">จำลองสิทธิ์ขอคืนภาษีเงินปันผลหุ้นไทย หรือเลือก Final Tax 10%</span>
                 </div>
+            </div>
+            <span id="div-credit-toggle-arrow" style="font-size:12px; color:var(--core); font-weight:700;">▼</span>
+        </div>
 
                 <div id="div-credit-panel-body" style="display:none; border-top:1px solid var(--line); padding-top:10px;" class="space-y-3">
                     <!-- Dividend Cash Amount & Presets -->
@@ -448,228 +471,245 @@
                     </div>
                 </div>
             </div>
-        </div>
 
-        <hr class="my-6 border-gray-200">
-
-        <!-- Result Section -->
-        <div class="space-y-3 text-sm text-gray-600">
-            <div class="flex justify-between">
-                <span id="lbl-totalIncome">รายได้รวมทั้งปี:</span>
-                <span id="totalIncome" class="font-medium text-gray-900">0 บาท</span>
-            </div>
-            <div class="flex justify-between">
-                <span id="lbl-expenseDeduct">หักค่าใช้จ่าย (สูงสุด 100,000):</span>
-                <span id="expenseDeduct" class="font-medium text-red-500">- 0 บาท</span>
-            </div>
-            <div class="flex justify-between">
-                <span id="lbl-personalDeduct">หักค่าลดหย่อนส่วนตัว:</span>
-                <span class="font-medium text-red-500" id="personalDeductVal">- 60,000 บาท</span>
-            </div>
-            <div class="flex justify-between">
-                <span id="lbl-pvdDeduct">หักกองทุนสำรองเลี้ยงชีพ (PVD):</span>
-                <span id="pvdDeduct" class="font-medium text-red-500">- 0 บาท</span>
-            </div>
-            <div class="flex justify-between">
-                <span id="lbl-ssoDeduct">หักประกันสังคม (ทั้งปี):</span>
-                <span id="ssoDeduct" class="font-medium text-red-500">- 0 บาท</span>
-            </div>
-            <div class="flex justify-between" id="row-more-deduct" style="display:none;">
-                <span id="lbl-moreDeduct">หักลดหย่อนอื่นๆ เพิ่มเติม:</span>
-                <span id="moreDeduct" class="font-medium text-red-500">- 0 บาท</span>
-            </div>
-
-            <div class="border-t pt-3 mt-3 flex justify-between items-center text-base" style="border-top-color:var(--line);">
-                <span class="font-semibold text-gray-800" id="lbl-netIncome">เงินได้สุทธิ:</span>
-                <span id="netIncome" class="font-semibold" style="color:var(--core);">0 บาท</span>
-            </div>
-        </div>
-
-        <div class="mt-6 p-4 rounded-xl border text-center" style="background:var(--panel-2); border-color:var(--line);">
-            <span class="block text-sm mb-1" style="color:var(--ink-dim);" id="lbl-taxAmount">ภาษีที่ต้องชำระโดยประมาณ</span>
-            <span id="taxAmount" class="text-3xl font-bold" style="color:var(--core);">0</span>
-            <span class="font-medium" style="color:var(--ink-dim);" id="unitLabel"> บาท</span>
-        </div>
-
-        <!-- Tax Refund / Additional Payable Dynamic Verdict Card -->
-        <div id="taxRefundCard" class="mt-4 p-4 rounded-xl border space-y-3 transition-all duration-300" style="background:var(--panel-2); border-color:var(--line);">
-            <div class="flex items-center justify-between">
-                <span id="refundVerdictBadge" class="px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 shadow-xs" style="background:var(--core); color:#ffffff;">
-                    <span>✓</span> <span>ภาษีพอดี</span>
-                </span>
-                <span id="refundComparisonSub" class="text-[11px] font-semibold" style="color:var(--ink-dim);">ภาษีคำนวณตรงกับยอดหัก ณ ที่จ่าย</span>
-            </div>
-            <div class="flex items-baseline justify-between">
-                <div>
-                    <span class="block text-xs font-medium" style="color:var(--ink-dim);" id="lbl-net-balance-headline">ผลการยื่นภาษีสุทธิ</span>
-                    <span id="refundNetBalanceAmount" class="text-2xl sm:text-3xl font-black tracking-tight" style="color:var(--core);">0 บาท</span>
+            <!-- 4. Tax Results & Dynamic Refund Card -->
+            <div id="panelTaxResults" class="reorder-card bg-white p-4 rounded-xl border" style="border-color:var(--line);">
+                <div class="panel-header flex items-center justify-between mb-3">
+                    <h3 class="panel-title text-base font-bold text-gray-800" id="lbl-panel-results">3. สรุปผลภาษีและเงินคืน (Tax Results &amp; Refund)</h3>
                 </div>
-                <div class="text-right text-[11px] space-y-0.5" style="color:var(--ink-dim);">
-                    <div><span id="lbl-card-calc-tax">ภาษีที่คำนวณได้:</span> <span id="cardCalcTaxVal" class="font-semibold" style="color:var(--ink);">0 บาท</span></div>
-                    <div><span id="lbl-card-withheld-tax">หักไว้แล้ว (50 ทวิ):</span> <span id="cardWithheldVal" class="font-semibold" style="color:var(--ink);">0 บาท</span></div>
-                </div>
-            </div>
-            <div id="refundActionBox" class="p-2.5 rounded-lg text-xs leading-relaxed border" style="background:var(--panel); border-color:var(--line); color:var(--ink);">
-                💡 <strong>ยอดภาษีพอดี:</strong> ภาษีที่ถูกหักไว้ตรงกับยอดที่ต้องชำระพอดี ยื่นแบบแสดงรายการตามปกติโดยไม่ต้องชำระเพิ่มและไม่มีเงินภาษีคืน
-            </div>
-        </div>
+                <div id="panelTaxResultsBody" class="space-y-4">
+                    <!-- Result Section -->
+                    <div class="space-y-3 text-sm text-gray-600">
+                        <div class="flex justify-between">
+                            <span id="lbl-totalIncome">รายได้รวมทั้งปี:</span>
+                            <span id="totalIncome" class="font-medium text-gray-900">0 บาท</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span id="lbl-expenseDeduct">หักค่าใช้จ่าย (สูงสุด 100,000):</span>
+                            <span id="expenseDeduct" class="font-medium text-red-500">- 0 บาท</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span id="lbl-personalDeduct">หักค่าลดหย่อนส่วนตัว:</span>
+                            <span class="font-medium text-red-500" id="personalDeductVal">- 60,000 บาท</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span id="lbl-pvdDeduct">หักกองทุนสำรองเลี้ยงชีพ (PVD):</span>
+                            <span id="pvdDeduct" class="font-medium text-red-500">- 0 บาท</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span id="lbl-ssoDeduct">หักประกันสังคม (ทั้งปี):</span>
+                            <span id="ssoDeduct" class="font-medium text-red-500">- 0 บาท</span>
+                        </div>
+                        <div class="flex justify-between" id="row-more-deduct" style="display:none;">
+                            <span id="lbl-moreDeduct">หักลดหย่อนอื่นๆ เพิ่มเติม:</span>
+                            <span id="moreDeduct" class="font-medium text-red-500">- 0 บาท</span>
+                        </div>
 
-        <div class="mt-4">
-            <div class="flex items-center justify-between mb-2">
-                <p class="text-xs font-semibold uppercase tracking-wide" style="color:var(--ink-dim);" id="lbl-breakdownTitle">รายละเอียดภาษีตามขั้นบันได (Waterfall)</p>
-                <span id="txt-effective-tax-rate" class="text-xs font-bold" style="color:var(--ink-dim);"></span>
-            </div>
-
-            <!-- Segmented Waterfall Bar -->
-            <div id="waterfallBarContainer" class="w-full h-3 rounded-full overflow-hidden flex mb-2.5 border" style="background:var(--panel-2); border-color:var(--line);" role="progressbar" aria-label="Tax bracket distribution"></div>
-
-            <!-- Headroom Alert Banner -->
-            <div id="bracketHeadroomBanner" class="p-2.5 rounded-lg text-xs mb-3 border flex items-center justify-between" style="display:none;"></div>
-
-            <!-- Detailed Tiers List -->
-            <div id="taxBreakdown" class="space-y-2 text-xs" style="color:var(--ink-dim);"></div>
-        </div>
-
-        <!-- Tax Optimization Advisor & Deduction Capacity Room -->
-        <div id="taxAdvisorCard" class="mt-4 p-4 rounded-xl border space-y-3 text-xs" style="display:none; background:var(--panel-2); border-color:var(--line);">
-            <div class="flex items-center justify-between">
-                <span class="font-bold flex items-center gap-1.5" style="color:var(--ink);" id="lbl-advisor-title">
-                    <span>💡</span> <span id="txt-advisor-title">คำแนะนำและโอกาสประหยัดภาษี (Optimization Room)</span>
-                </span>
-                <span id="badge-marginal-rate" class="px-2.5 py-0.5 rounded-full font-bold text-[11px]" style="background:var(--core-dim); color:var(--core);"></span>
-            </div>
-
-            <p id="advisor-summary" class="leading-relaxed" style="color:var(--ink-dim);"></p>
-
-            <!-- Deduction Capacity Progress Meters -->
-            <div class="p-3 rounded-lg border space-y-2.5" id="advisor-meters-box" style="background:var(--panel); border-color:var(--line); color:var(--ink);">
-                <div class="flex justify-between items-center text-[11px] font-semibold" style="color:var(--ink-dim);">
-                    <span id="lbl-capacity-title">📊 สิทธิ์ลดหย่อนและโควตาคงเหลือ (Deduction Capacity)</span>
-                    <span id="txt-total-room-badge" class="px-2 py-0.5 rounded font-bold" style="background:var(--core-dim); color:var(--core);"></span>
-                </div>
-                <div id="capacityMetersList" class="space-y-2">
-                    <!-- Dynamic capacity meters rendered by updateTaxAdvisor -->
-                </div>
-            </div>
-
-            <!-- What-If Simulation Playground -->
-            <div id="advisor-sim-box" class="p-3 rounded-lg border space-y-2" style="display:none; background:var(--panel); border-color:var(--line); color:var(--ink);">
-                <div class="flex justify-between items-center text-[11px] font-semibold" style="color:var(--ink-dim);">
-                    <span id="lbl-sim-title">⚡ จำลองผลภาษีเมื่อลงทุนเพิ่ม (What-If Simulation)</span>
-                    <span id="txt-sim-roi-badge" class="px-2 py-0.5 rounded font-bold text-[10px]" style="background:var(--core-dim); color:var(--core);"></span>
-                </div>
-                <!-- Simulation Quick Pills -->
-                <div class="flex items-center gap-1.5 flex-wrap">
-                    <span class="text-[11px] font-medium" style="color:var(--ink-dim);" id="lbl-sim-pills">เลือกลงทุนเพิ่ม:</span>
-                    <button type="button" class="sim-pill px-2 py-1 rounded border font-medium text-[11px] transition-all" style="background:var(--panel-2); color:var(--ink); border-color:var(--line);" onclick="selectSimExtra(10000)">+10k</button>
-                    <button type="button" class="sim-pill px-2 py-1 rounded border font-medium text-[11px] transition-all" style="background:var(--panel-2); color:var(--ink); border-color:var(--line);" onclick="selectSimExtra(30000)">+30k</button>
-                    <button type="button" class="sim-pill px-2 py-1 rounded border font-medium text-[11px] transition-all" style="background:var(--panel-2); color:var(--ink); border-color:var(--line);" onclick="selectSimExtra(50000)">+50k</button>
-                    <button type="button" class="sim-pill px-2 py-1 rounded border font-medium text-[11px] transition-all" style="background:var(--panel-2); color:var(--ink); border-color:var(--line);" onclick="selectSimExtra(100000)">+100k</button>
-                    <button type="button" class="sim-pill px-2 py-1 rounded border font-medium text-[11px] transition-all" style="background:var(--panel-2); color:var(--ink); border-color:var(--line);" onclick="selectSimExtra('max')">Max Room</button>
-                </div>
-                <!-- Simulated Result Callout -->
-                <div id="sim-result-callout" class="p-2.5 rounded border text-[11px] leading-normal" style="background:var(--panel-2); border-color:var(--line); color:var(--ink);"></div>
-                <div class="flex justify-end pt-1">
-                    <button type="button" id="btn-apply-sim" onclick="applyCurrentSimulation()" class="py-1 px-3 text-white font-medium rounded-md text-[11px] transition-all shadow-xs" style="background:var(--core);">
-                        ✓ นำยอดจำลองนี้ไปกรอกจริง
-                    </button>
-                </div>
-            </div>
-
-            <!-- Legacy Quick Actions -->
-            <div id="advisor-actions" class="flex flex-wrap gap-2 pt-1">
-                <button type="button" id="btn-advisor-drop" onclick="applyAdvisorDropOne()" class="flex-1 py-1.5 px-2 text-white font-medium rounded-lg text-center transition-all shadow-xs" style="background:var(--core);">
-                    🎯 ลด 1 ขั้นบันได
-                </button>
-                <button type="button" id="btn-advisor-max" onclick="applyAdvisorMax()" class="flex-1 py-1.5 px-2 text-white font-medium rounded-lg text-center transition-all shadow-xs" style="background:var(--core);">
-                    🌟 ใช้สิทธิ์สูงสุด
-                </button>
-                <button type="button" id="btn-advisor-revert" onclick="revertAdvisorOptimization()" class="py-1.5 px-2 font-medium rounded-lg text-center transition-all" style="display:none; background:var(--panel-2); color:var(--ink); border:1px solid var(--line);">
-                    ↺ คืนค่าเดิม
-                </button>
-            </div>
-        </div>
-
-        <!-- Tax Scenario Comparator & Bracket Inflation Stress-Tester -->
-        <div class="mt-4 no-print">
-            <button type="button" id="btn-toggle-scenario-compare" onclick="toggleTaxScenarioComparator()" class="w-full py-2.5 px-4 text-white text-xs font-semibold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2" style="background:var(--core);">
-                <span id="lbl-toggle-scenario">⚖️ เปรียบเทียบ Scenario ภาษี &amp; ทดสอบเงินเฟ้อ (Bracket Creep)</span>
-            </button>
-            <div id="taxScenarioComparePanel" class="mt-3 p-4 rounded-xl shadow-md border text-xs space-y-3" style="display:none; background:var(--panel); border-color:var(--line);">
-                <div class="flex justify-between items-center border-b pb-2" style="border-color:var(--line);">
-                    <span class="font-bold flex items-center gap-1.5" style="color:var(--ink);" id="lbl-compare-header">
-                        <span>📊</span> <span>เปรียบเทียบ Scenario A (ปัจจุบัน) vs Scenario B (เปรียบเทียบ)</span>
-                    </span>
-                    <button type="button" onclick="copyCurrentToScenarioB()" class="py-1 px-2.5 font-medium rounded text-[11px] transition-all" style="background:var(--panel-2); color:var(--ink); border:1px solid var(--line); cursor:pointer;">
-                        <span id="lbl-copy-curr-b">📋 คัดลอกค่าปัจจุบันไป B</span>
-                    </button>
-                </div>
-
-                <!-- Scenario B Inputs Grid -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                        <label class="block font-medium mb-1" style="color:var(--ink-dim);" id="lbl-scen-income">รายได้รวม B (บาท/ปี):</label>
-                        <input type="number" id="scenIncome" class="w-full p-2 rounded-lg text-xs" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" placeholder="เช่น 600000" oninput="runTaxScenarioComparison()">
-                    </div>
-                    <div>
-                        <label class="block font-medium mb-1" style="color:var(--ink-dim);" id="lbl-scen-ded">ลดหย่อนอื่นๆ B (บาท/ปี):</label>
-                        <input type="number" id="scenDeductions" class="w-full p-2 rounded-lg text-xs" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" placeholder="เช่น 100000" oninput="runTaxScenarioComparison()">
-                    </div>
-                    <div>
-                        <label class="block font-medium mb-1" style="color:var(--ink-dim);" id="lbl-scen-infl">อัตราเงินเฟ้อ / Inflation (%):</label>
-                        <input type="number" id="scenInflation" class="w-full p-2 rounded-lg text-xs" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" placeholder="เช่น 4" value="0" oninput="runTaxScenarioComparison()">
-                    </div>
-                </div>
-
-                <!-- Comparison Verdict Cards -->
-                <div id="scenCompareResults" class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-center">
-                    <!-- Populated by runTaxScenarioComparison -->
-                </div>
-
-                <!-- Bracket Creep & Real Purchasing Power Callout -->
-                <div id="scenBracketCreepCallout" class="p-2.5 rounded-lg border text-[11px] leading-relaxed" style="display:none; background:var(--panel-2); border-color:var(--line); color:var(--ink);"></div>
-            </div>
-        </div>
-
-        <!-- Thai Tax Planning Calendar & Deadline Compliance Tracker (Roadmap Phase 52) -->
-        <div class="mt-4 no-print">
-            <button type="button" id="btn-toggle-tax-calendar" onclick="toggleTaxCalendar()" class="w-full py-2.5 px-4 text-white text-xs font-semibold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2" style="background:var(--core);">
-                <span id="lbl-toggle-tax-calendar">🗓️ ปฏิทินภาษี & วันครบกำหนด (Thai Tax Planning Calendar & Deadlines)</span>
-            </button>
-            <div id="taxCalendarPanel" class="mt-3 p-4 rounded-xl shadow-md border text-xs space-y-3" style="display:none; background:var(--panel); border-color:var(--line);">
-                <div class="flex justify-between items-center border-b pb-2" style="border-color:var(--line);">
-                    <span class="font-bold flex items-center gap-1.5" style="color:var(--ink);" id="lbl-tax-calendar-header">
-                        <span>🗓️</span> <span>กำหนดการยื่นแบบและชำระภาษีสำคัญ (Statutory Tax Deadlines)</span>
-                    </span>
-                    <button type="button" onclick="resetTaxCalendarChecklist()" class="py-1 px-2.5 font-medium rounded text-[11px] transition-all" style="background:var(--panel-2); color:var(--ink-faint); border:1px solid var(--line); cursor:pointer;">
-                        <span id="lbl-reset-tax-calendar">↺ รีเซ็ตเช็คลิสต์</span>
-                    </button>
-                </div>
-
-                <!-- Next Deadline Urgency Banner -->
-                <div id="taxCalendarNextBanner" class="p-3 rounded-lg border flex items-center justify-between flex-wrap gap-2" style="background:var(--panel-2); border-color:var(--core);">
-                    <div class="flex items-center gap-2">
-                        <span style="font-size:20px;">⏳</span>
-                        <div>
-                            <div class="font-semibold" style="color:var(--ink);" id="lbl-next-deadline-title">วันครบกำหนดที่ใกล้ที่สุด:</div>
-                            <div class="text-[11px]" style="color:var(--ink-dim);" id="val-next-deadline-desc">-</div>
+                        <div class="border-t pt-3 mt-3 flex justify-between items-center text-base" style="border-top-color:var(--line);">
+                            <span class="font-semibold text-gray-800" id="lbl-netIncome">เงินได้สุทธิ:</span>
+                            <span id="netIncome" class="font-semibold" style="color:var(--core);">0 บาท</span>
                         </div>
                     </div>
-                    <span id="val-next-deadline-badge" class="px-3 py-1 rounded-full font-bold text-xs" style="background:var(--core); color:#fff;">- วัน</span>
-                </div>
 
-                <!-- Statutory Milestones Grid -->
-                <div id="taxCalendarMilestonesList" class="space-y-2.5 pt-1">
-                    <!-- Populated dynamically by renderTaxCalendar() -->
-                </div>
-
-                <!-- Year-End Tax Deduction Checklist Callout -->
-                <div class="p-3 rounded-lg border text-[11px] leading-relaxed" style="background:rgba(16, 185, 129, 0.08); border-color:var(--ok); color:var(--ink);">
-                    <div class="font-bold flex items-center gap-1.5 mb-1" style="color:var(--ok);">
-                        <span>💡</span> <span id="lbl-tax-calendar-tip-title">ข้อแนะนำการวางแผนลดหย่อนภาษี</span>
+                    <div class="mt-4 p-4 rounded-xl border text-center" style="background:var(--panel-2); border-color:var(--line);">
+                        <span class="block text-sm mb-1" style="color:var(--ink-dim);" id="lbl-taxAmount">ภาษีที่ต้องชำระโดยประมาณ</span>
+                        <span id="taxAmount" class="text-3xl font-bold" style="color:var(--core);">0</span>
+                        <span class="font-medium" style="color:var(--ink-dim);" id="unitLabel"> บาท</span>
                     </div>
-                    <div id="lbl-tax-calendar-tip-desc">
-                        การลงทุนลดหย่อนภาษี (SSF, RMF, ThaiESG และเบี้ยประกันชีวิต/สุขภาพ) ต้องดำเนินการและชำระเงินให้แล้วเสร็จภายใน <strong>31 ธ.ค.</strong> ของปีภาษีนั้นๆ พร้อมทั้งกดยินยอมให้ บลจ./บริษัทประกัน ส่งข้อมูลให้กรมสรรพากรผ่านระบบ e-Donation / Data Transfer
+
+                    <!-- Tax Refund / Additional Payable Dynamic Verdict Card -->
+                    <div id="taxRefundCard" class="mt-4 p-4 rounded-xl border space-y-3 transition-all duration-300" style="background:var(--panel-2); border-color:var(--line);">
+                        <div class="flex items-center justify-between">
+                            <span id="refundVerdictBadge" class="px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 shadow-xs" style="background:var(--core); color:#ffffff;">
+                                <span>✓</span> <span>ภาษีพอดี</span>
+                            </span>
+                            <span id="refundComparisonSub" class="text-[11px] font-semibold" style="color:var(--ink-dim);">ภาษีคำนวณตรงกับยอดหัก ณ ที่จ่าย</span>
+                        </div>
+                        <div class="flex items-baseline justify-between">
+                            <div>
+                                <span class="block text-xs font-medium" style="color:var(--ink-dim);" id="lbl-net-balance-headline">ผลการยื่นภาษีสุทธิ</span>
+                                <span id="refundNetBalanceAmount" class="text-2xl sm:text-3xl font-black tracking-tight" style="color:var(--core);">0 บาท</span>
+                            </div>
+                            <div class="text-right text-[11px] space-y-0.5" style="color:var(--ink-dim);">
+                                <div><span id="lbl-card-calc-tax">ภาษีที่คำนวณได้:</span> <span id="cardCalcTaxVal" class="font-semibold" style="color:var(--ink);">0 บาท</span></div>
+                                <div><span id="lbl-card-withheld-tax">หักไว้แล้ว (50 ทวิ):</span> <span id="cardWithheldVal" class="font-semibold" style="color:var(--ink);">0 บาท</span></div>
+                            </div>
+                        </div>
+                        <div id="refundActionBox" class="p-2.5 rounded-lg text-xs leading-relaxed border" style="background:var(--panel); border-color:var(--line); color:var(--ink);">
+                            💡 <strong>ยอดภาษีพอดี:</strong> ภาษีที่ถูกหักไว้ตรงกับยอดที่ต้องชำระพอดี ยื่นแบบแสดงรายการตามปกติโดยไม่ต้องชำระเพิ่มและไม่มีเงินภาษีคืน
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-xs font-semibold uppercase tracking-wide" style="color:var(--ink-dim);" id="lbl-breakdownTitle">รายละเอียดภาษีตามขั้นบันได (Waterfall)</p>
+                            <span id="txt-effective-tax-rate" class="text-xs font-bold" style="color:var(--ink-dim);"></span>
+                        </div>
+
+                        <!-- Segmented Waterfall Bar -->
+                        <div id="waterfallBarContainer" class="w-full h-3 rounded-full overflow-hidden flex mb-2.5 border" style="background:var(--panel-2); border-color:var(--line);" role="progressbar" aria-label="Tax bracket distribution"></div>
+
+                        <!-- Headroom Alert Banner -->
+                        <div id="bracketHeadroomBanner" class="p-2.5 rounded-lg text-xs mb-3 border flex items-center justify-between" style="display:none;"></div>
+
+                        <!-- Detailed Tiers List -->
+                        <div id="taxBreakdown" class="space-y-2 text-xs" style="color:var(--ink-dim);"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Tax Optimization Advisor & Deduction Capacity Room -->
+            <div id="taxAdvisorCard" class="reorder-card mt-4 p-4 rounded-xl border space-y-3 text-xs" style="display:none; background:var(--panel-2); border-color:var(--line);">
+                <div class="panel-header flex items-center justify-between">
+                    <span class="panel-title font-bold flex items-center gap-1.5" style="color:var(--ink);" id="lbl-advisor-title">
+                        <span>💡</span> <span id="txt-advisor-title">คำแนะนำและโอกาสประหยัดภาษี (Optimization Room)</span>
+                    </span>
+                    <span id="badge-marginal-rate" class="px-2.5 py-0.5 rounded-full font-bold text-[11px]" style="background:var(--core-dim); color:var(--core);"></span>
+                </div>
+                <div id="taxAdvisorBody" class="space-y-3">
+                    <p id="advisor-summary" class="leading-relaxed" style="color:var(--ink-dim);"></p>
+
+                    <!-- Deduction Capacity Progress Meters -->
+                    <div class="p-3 rounded-lg border space-y-2.5" id="advisor-meters-box" style="background:var(--panel); border-color:var(--line); color:var(--ink);">
+                        <div class="flex justify-between items-center text-[11px] font-semibold" style="color:var(--ink-dim);">
+                            <span id="lbl-capacity-title">📊 สิทธิ์ลดหย่อนและโควตาคงเหลือ (Deduction Capacity)</span>
+                            <span id="txt-total-room-badge" class="px-2 py-0.5 rounded font-bold" style="background:var(--core-dim); color:var(--core);"></span>
+                        </div>
+                        <div id="capacityMetersList" class="space-y-2">
+                            <!-- Dynamic capacity meters rendered by updateTaxAdvisor -->
+                        </div>
+                    </div>
+
+                    <!-- What-If Simulation Playground -->
+                    <div id="advisor-sim-box" class="p-3 rounded-lg border space-y-2" style="display:none; background:var(--panel); border-color:var(--line); color:var(--ink);">
+                        <div class="flex justify-between items-center text-[11px] font-semibold" style="color:var(--ink-dim);">
+                            <span id="lbl-sim-title">⚡ จำลองผลภาษีเมื่อลงทุนเพิ่ม (What-If Simulation)</span>
+                            <span id="txt-sim-roi-badge" class="px-2 py-0.5 rounded font-bold text-[10px]" style="background:var(--core-dim); color:var(--core);"></span>
+                        </div>
+                        <!-- Simulation Quick Pills -->
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <span class="text-[11px] font-medium" style="color:var(--ink-dim);" id="lbl-sim-pills">เลือกลงทุนเพิ่ม:</span>
+                            <button type="button" class="sim-pill px-2 py-1 rounded border font-medium text-[11px] transition-all" style="background:var(--panel-2); color:var(--ink); border-color:var(--line);" onclick="selectSimExtra(10000)">+10k</button>
+                            <button type="button" class="sim-pill px-2 py-1 rounded border font-medium text-[11px] transition-all" style="background:var(--panel-2); color:var(--ink); border-color:var(--line);" onclick="selectSimExtra(30000)">+30k</button>
+                            <button type="button" class="sim-pill px-2 py-1 rounded border font-medium text-[11px] transition-all" style="background:var(--panel-2); color:var(--ink); border-color:var(--line);" onclick="selectSimExtra(50000)">+50k</button>
+                            <button type="button" class="sim-pill px-2 py-1 rounded border font-medium text-[11px] transition-all" style="background:var(--panel-2); color:var(--ink); border-color:var(--line);" onclick="selectSimExtra(100000)">+100k</button>
+                            <button type="button" class="sim-pill px-2 py-1 rounded border font-medium text-[11px] transition-all" style="background:var(--panel-2); color:var(--ink); border-color:var(--line);" onclick="selectSimExtra('max')">Max Room</button>
+                        </div>
+                        <!-- Simulated Result Callout -->
+                        <div id="sim-result-callout" class="p-2.5 rounded border text-[11px] leading-normal" style="background:var(--panel-2); border-color:var(--line); color:var(--ink);"></div>
+                        <div class="flex justify-end pt-1">
+                            <button type="button" id="btn-apply-sim" onclick="applyCurrentSimulation()" class="py-1 px-3 text-white font-medium rounded-md text-[11px] transition-all shadow-xs" style="background:var(--core);">
+                                ✓ นำยอดจำลองนี้ไปกรอกจริง
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Legacy Quick Actions -->
+                    <div id="advisor-actions" class="flex flex-wrap gap-2 pt-1">
+                        <button type="button" id="btn-advisor-drop" onclick="applyAdvisorDropOne()" class="flex-1 py-1.5 px-2 text-white font-medium rounded-lg text-center transition-all shadow-xs" style="background:var(--core);">
+                            🎯 ลด 1 ขั้นบันได
+                        </button>
+                        <button type="button" id="btn-advisor-max" onclick="applyAdvisorMax()" class="flex-1 py-1.5 px-2 text-white font-medium rounded-lg text-center transition-all shadow-xs" style="background:var(--core);">
+                            🌟 ใช้สิทธิ์สูงสุด
+                        </button>
+                        <button type="button" id="btn-advisor-revert" onclick="revertAdvisorOptimization()" class="py-1.5 px-2 font-medium rounded-lg text-center transition-all" style="display:none; background:var(--panel-2); color:var(--ink); border:1px solid var(--line);">
+                            ↺ คืนค่าเดิม
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Tax Scenario Comparator & Bracket Inflation Stress-Tester -->
+            <div id="panelTaxScenario" class="reorder-card mt-4 p-4 rounded-xl border text-xs space-y-3 no-print" style="background:var(--panel-2); border-color:var(--line);">
+                <div class="panel-header flex items-center justify-between mb-2">
+                    <h3 class="panel-title text-xs font-bold text-gray-800" id="lbl-panel-scenario">4. เปรียบเทียบ Scenario &amp; ทดสอบเงินเฟ้อ</h3>
+                </div>
+                <div id="panelTaxScenarioBody">
+                    <button type="button" id="btn-toggle-scenario-compare" onclick="toggleTaxScenarioComparator()" class="w-full py-2.5 px-4 text-white text-xs font-semibold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2" style="background:var(--core);">
+                        <span id="lbl-toggle-scenario">⚖️ เปรียบเทียบ Scenario ภาษี &amp; ทดสอบเงินเฟ้อ (Bracket Creep)</span>
+                    </button>
+                    <div id="taxScenarioComparePanel" class="mt-3 p-4 rounded-xl shadow-md border text-xs space-y-3" style="display:none; background:var(--panel); border-color:var(--line);">
+                        <div class="flex justify-between items-center border-b pb-2" style="border-color:var(--line);">
+                            <span class="font-bold flex items-center gap-1.5" style="color:var(--ink);" id="lbl-compare-header">
+                                <span>📊</span> <span>เปรียบเทียบ Scenario A (ปัจจุบัน) vs Scenario B (เปรียบเทียบ)</span>
+                            </span>
+                            <button type="button" onclick="copyCurrentToScenarioB()" class="py-1 px-2.5 font-medium rounded text-[11px] transition-all" style="background:var(--panel-2); color:var(--ink); border:1px solid var(--line); cursor:pointer;">
+                                <span id="lbl-copy-curr-b">📋 คัดลอกค่าปัจจุบันไป B</span>
+                            </button>
+                        </div>
+
+                        <!-- Scenario B Inputs Grid -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block font-medium mb-1" style="color:var(--ink-dim);" id="lbl-scen-income">รายได้รวม B (บาท/ปี):</label>
+                                <input type="number" id="scenIncome" class="w-full p-2 rounded-lg text-xs" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" placeholder="เช่น 600000" oninput="runTaxScenarioComparison()">
+                            </div>
+                            <div>
+                                <label class="block font-medium mb-1" style="color:var(--ink-dim);" id="lbl-scen-ded">ลดหย่อนอื่นๆ B (บาท/ปี):</label>
+                                <input type="number" id="scenDeductions" class="w-full p-2 rounded-lg text-xs" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" placeholder="เช่น 100000" oninput="runTaxScenarioComparison()">
+                            </div>
+                            <div>
+                                <label class="block font-medium mb-1" style="color:var(--ink-dim);" id="lbl-scen-infl">อัตราเงินเฟ้อ / Inflation (%):</label>
+                                <input type="number" id="scenInflation" class="w-full p-2 rounded-lg text-xs" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" placeholder="เช่น 4" value="0" oninput="runTaxScenarioComparison()">
+                            </div>
+                        </div>
+
+                        <!-- Comparison Verdict Cards -->
+                        <div id="scenCompareResults" class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-center">
+                            <!-- Populated by runTaxScenarioComparison -->
+                        </div>
+
+                        <!-- Bracket Creep & Real Purchasing Power Callout -->
+                        <div id="scenBracketCreepCallout" class="p-2.5 rounded-lg border text-[11px] leading-relaxed" style="display:none; background:var(--panel-2); border-color:var(--line); color:var(--ink);"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. Thai Tax Planning Calendar & Deadline Compliance Tracker (Roadmap Phase 52) -->
+            <div id="panelTaxCalendar" class="reorder-card mt-4 p-4 rounded-xl border text-xs space-y-3 no-print" style="background:var(--panel-2); border-color:var(--line);">
+                <div class="panel-header flex items-center justify-between mb-2">
+                    <h3 class="panel-title text-xs font-bold text-gray-800" id="lbl-panel-calendar">5. ปฏิทินภาษี &amp; วันครบกำหนด (Tax Planning Calendar)</h3>
+                </div>
+                <div id="panelTaxCalendarBody">
+                    <button type="button" id="btn-toggle-tax-calendar" onclick="toggleTaxCalendar()" class="w-full py-2.5 px-4 text-white text-xs font-semibold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2" style="background:var(--core);">
+                        <span id="lbl-toggle-tax-calendar">🗓️ ปฏิทินภาษี &amp; วันครบกำหนด (Thai Tax Planning Calendar &amp; Deadlines)</span>
+                    </button>
+                    <div id="taxCalendarPanel" class="mt-3 p-4 rounded-xl shadow-md border text-xs space-y-3" style="display:none; background:var(--panel); border-color:var(--line);">
+                        <div class="flex justify-between items-center border-b pb-2" style="border-color:var(--line);">
+                            <span class="font-bold flex items-center gap-1.5" style="color:var(--ink);" id="lbl-tax-calendar-header">
+                                <span>🗓️</span> <span>กำหนดการยื่นแบบและชำระภาษีสำคัญ (Statutory Tax Deadlines)</span>
+                            </span>
+                            <button type="button" onclick="resetTaxCalendarChecklist()" class="py-1 px-2.5 font-medium rounded text-[11px] transition-all" style="background:var(--panel-2); color:var(--ink-faint); border:1px solid var(--line); cursor:pointer;">
+                                <span id="lbl-reset-tax-calendar">↺ รีเซ็ตเช็คลิสต์</span>
+                            </button>
+                        </div>
+
+                        <!-- Next Deadline Urgency Banner -->
+                        <div id="taxCalendarNextBanner" class="p-3 rounded-lg border flex items-center justify-between flex-wrap gap-2" style="background:var(--panel-2); border-color:var(--core);">
+                            <div class="flex items-center gap-2">
+                                <span style="font-size:20px;">⏳</span>
+                                <div>
+                                    <div class="font-semibold" style="color:var(--ink);" id="lbl-next-deadline-title">วันครบกำหนดที่ใกล้ที่สุด:</div>
+                                    <div class="text-[11px]" style="color:var(--ink-dim);" id="val-next-deadline-desc">-</div>
+                                </div>
+                            </div>
+                            <span id="val-next-deadline-badge" class="px-3 py-1 rounded-full font-bold text-xs" style="background:var(--core); color:#fff;">- วัน</span>
+                        </div>
+
+                        <!-- Statutory Milestones Grid -->
+                        <div id="taxCalendarMilestonesList" class="space-y-2.5 pt-1">
+                            <!-- Populated dynamically by renderTaxCalendar() -->
+                        </div>
+
+                        <!-- Year-End Tax Deduction Checklist Callout -->
+                        <div class="p-3 rounded-lg border text-[11px] leading-relaxed" style="background:rgba(16, 185, 129, 0.08); border-color:var(--ok); color:var(--ink);">
+                            <div class="font-bold flex items-center gap-1.5 mb-1" style="color:var(--ok);">
+                                <span>💡</span> <span id="lbl-tax-calendar-tip-title">ข้อแนะนำการวางแผนลดหย่อนภาษี</span>
+                            </div>
+                            <div id="lbl-tax-calendar-tip-desc">
+                                การลงทุนลดหย่อนภาษี (SSF, RMF, ThaiESG และเบี้ยประกันชีวิต/สุขภาพ) ต้องดำเนินการและชำระเงินให้แล้วเสร็จภายใน <strong>31 ธ.ค.</strong> ของปีภาษีนั้นๆ พร้อมทั้งกดยินยอมให้ บลจ./บริษัทประกัน ส่งข้อมูลให้กรมสรรพากรผ่านระบบ e-Donation / Data Transfer
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -690,7 +730,7 @@
                     <span id="lbl-reset-tax">ล้างข้อมูล</span>
                 </button>
             </div>
-            <p class="text-xs text-gray-400">v2.4.8</p>
+            <p class="text-xs text-gray-400">v2.4.9</p>
         </div>
     </div>
 

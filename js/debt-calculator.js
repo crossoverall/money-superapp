@@ -27,6 +27,8 @@ const translations = {
     cmpSnInterest: 'ดอกเบี้ยรวม:',
     cmpSnSaved: 'ประหยัดดอกเบี้ย vs ขั้นต่ำ:',
     scheduleTitle: '📅 ดูตารางกำหนดการปลดหนี้ (Timeline & Schedule)',
+    schedulePanelTitle: '📅 ตารางกำหนดการปลดหนี้ (Payoff Schedule)',
+    resetLayout: 'จัดลำดับเดิม',
     thSchMonth: 'เดือนที่',
     thSchPayment: 'จ่ายรวม',
     thSchPrincipal: 'ตัดเงินต้น',
@@ -174,6 +176,8 @@ const translations = {
     resCarApr: 'True Effective APR',
     resCarPmt: 'Monthly Payment (incl. 7% VAT)',
     resCarInterest: 'Total Interest Paid',
+    schedulePanelTitle: '📅 Payoff Schedule & Timeline',
+    resetLayout: 'Reset Layout',
   },
 };
 
@@ -187,6 +191,8 @@ if (LANG === 'en') {
     'lbl-import-savings': t.importSavings,
     'lbl-copy-plan': t.copyPlan,
     'lbl-print-plan': t.printPlan,
+    lblResetDebtLayout: t.resetLayout,
+    txtScheduleTitle: t.schedulePanelTitle,
     'lbl-kpi-total-debt': t.kpiTotalDebt,
     'lbl-kpi-debtfree-date': t.kpiDebtFreeDate,
     'lbl-kpi-total-interest': t.kpiTotalInterest,
@@ -1797,3 +1803,25 @@ renderTable();
 setStrategy(state.strategy);
 computePrepay();
 computeCarLoan();
+initDebtLayout();
+
+let debtLayoutManager = null;
+function initDebtLayout() {
+  if (typeof MoneyApp !== 'undefined' && MoneyApp.initCardLayoutManager) {
+    debtLayoutManager = MoneyApp.initCardLayoutManager({
+      container: document.body,
+      cardSelector: '.reorder-card',
+      storageKey: 'moneySuperapp.layout.debt.v1',
+    });
+  }
+}
+
+function resetDebtLayout() {
+  if (debtLayoutManager && debtLayoutManager.reset) {
+    debtLayoutManager.reset();
+  } else {
+    localStorage.removeItem('moneySuperapp.layout.debt.v1');
+    window.location.reload();
+  }
+}
+window.resetDebtLayout = resetDebtLayout;

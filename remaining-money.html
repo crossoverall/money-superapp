@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.4.8">
+  <meta name="version" content="2.4.9">
   <title>คำนวณเงินคงเหลือ</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -386,8 +386,8 @@
   </div>
 
   <!-- Visual Cashflow Allocation Bar & Waterfall -->
-  <div class="cashflow-panel" id="cashflowPanel">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+  <div class="cashflow-panel reorder-card" id="cashflowPanel">
+    <div class="panel-title" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
       <div style="display:flex; align-items:center; gap:8px;">
         <span style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-dim);" id="lblCashflowTitle">สัดส่วนกระแสเงินสด (Cashflow Allocation)</span>
         <div class="view-toggle-group" style="display:inline-flex; background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:2px;">
@@ -400,6 +400,7 @@
       <span id="cashflowSurplusBadge" style="font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px;"></span>
     </div>
 
+    <div id="cashflowPanelBody">
     <!-- 1. Interactive Waterfall Stream Diagram -->
     <div id="cashflowWaterfallContainer" class="cashflow-waterfall-wrap">
       <svg id="svgCashflowWaterfall" viewBox="0 0 600 230" style="width:100%; height:auto; display:block; min-width:380px;"></svg>
@@ -524,74 +525,90 @@
         <b id="cfValRemaining" style="color:var(--ink);">0 บาท (0%)</b>
       </div>
     </div>
+    </div>
   </div>
 
-  <div class="panel">
+  <div class="panel reorder-card" id="panelIncome">
     <div class="panel-title" id="incomePanelTitle">รายได้</div>
-    <div id="incomeContainer"></div>
-    <button class="add-btn" id="incomeAddBtn">+ เพิ่มรายได้</button>
+    <div id="panelIncomeBody">
+      <div id="incomeContainer"></div>
+      <button class="add-btn" id="incomeAddBtn">+ เพิ่มรายได้</button>
+    </div>
   </div>
 
-  <div class="panel">
+  <div class="panel reorder-card" id="panelExpense">
     <div class="panel-title" id="expensePanelTitle">ค่าใช้จ่าย</div>
-    <div id="expenseContainer"></div>
-    <button class="add-btn" id="expenseAddBtn">+ เพิ่มค่าใช้จ่าย</button>
+    <div id="panelExpenseBody">
+      <div id="expenseContainer"></div>
+      <button class="add-btn" id="expenseAddBtn">+ เพิ่มค่าใช้จ่าย</button>
+    </div>
   </div>
 
-  <div class="panel">
+  <div class="panel reorder-card" id="panelSaving">
     <div class="panel-title" id="savingPanelTitle">เงินออม</div>
-    <div id="savingContainer"></div>
-    <button class="add-btn" id="savingAddBtn">+ เพิ่มเงินออม</button>
+    <div id="panelSavingBody">
+      <div id="savingContainer"></div>
+      <button class="add-btn" id="savingAddBtn">+ เพิ่มเงินออม</button>
+    </div>
   </div>
 
-  <div class="results" id="resultsContainer"></div>
+  <div class="panel reorder-card" id="panelRemaining">
+    <div class="panel-title" id="lblRemainingTitle">
+      <span id="txtRemainingTitle">📊 สรุปผลและเงินคงเหลือ (Remaining Summary)</span>
+    </div>
+    <div id="panelRemainingBody">
+      <div class="results" id="resultsContainer"></div>
 
-  <div class="remaining-box" id="remainingBox">
-    <div class="rlabel" id="remainingLabel">เงินคงเหลือสำหรับลงทุน</div>
-    <div class="rvalue zero" id="remainingValue">0 บาท</div>
-    <div class="rnote" id="remainingNote">&nbsp;</div>
-    <button class="rebalance-bridge-btn" id="bridgeToRebalanceBtn" style="display:none;" onclick="sendToRebalance()">
-      📊 <span id="lblBridgeBtn">นำเงินเหลือลงทุนไปคำนวณ Rebalance</span>
-    </button>
+      <div class="remaining-box" id="remainingBox">
+        <div class="rlabel" id="remainingLabel">เงินคงเหลือสำหรับลงทุน</div>
+        <div class="rvalue zero" id="remainingValue">0 บาท</div>
+        <div class="rnote" id="remainingNote">&nbsp;</div>
+        <button class="rebalance-bridge-btn" id="bridgeToRebalanceBtn" style="display:none;" onclick="sendToRebalance()">
+          📊 <span id="lblBridgeBtn">นำเงินเหลือลงทุนไปคำนวณ Rebalance</span>
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Emergency Fund Runway Card -->
-  <div class="panel" id="runwayCard" style="margin-top:16px;">
-    <div style="display:flex; align-items:center; justify-content:space-between; user-select:none;">
+  <div class="panel reorder-card" id="runwayCard" style="margin-top:16px;">
+    <div class="panel-title" style="display:flex; align-items:center; justify-content:space-between; user-select:none;">
       <label for="chkShowRunway" style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; font-weight:700; color:var(--ink); margin:0;">
         <input type="checkbox" id="chkShowRunway" style="width:17px; height:17px; accent-color:var(--brand, #059669); cursor:pointer; margin:0;" onchange="onToggleRunway(this.checked)">
         <span id="runwayTitle">🛡️ คำนวณเงินสำรองฉุกเฉิน (Emergency Runway)</span>
       </label>
     </div>
 
-    <div id="runwayContent" style="display:none; margin-top:14px; border-top:1px solid var(--line); padding-top:14px;">
-      <!-- Reserve input -->
-      <div style="margin-bottom:14px;">
-        <label for="txtCurrentReserve" id="lblCurrentReserve" style="display:block; font-size:12px; font-weight:600; color:var(--ink-dim); margin-bottom:6px;">
-          เงินสำรองฉุกเฉินสะสมที่มีอยู่ปัจจุบัน (บาท)
-        </label>
-        <div style="display:flex; align-items:center; gap:8px; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:8px 12px;">
-          <span style="font-size:15px;">💰</span>
-          <input type="number" id="txtCurrentReserve" min="0" step="1000" placeholder="เช่น 100,000"
-                 style="flex:1; border:none; background:transparent; font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; color:var(--ink); outline:none;"
-                 oninput="onCurrentReserveChange(this.value)">
-          <span style="font-size:12px; color:var(--ink-faint);" id="lblReserveUnit">บาท</span>
+    <div id="runwayCardBody">
+      <div id="runwayContent" style="display:none; margin-top:14px; border-top:1px solid var(--line); padding-top:14px;">
+        <!-- Reserve input -->
+        <div style="margin-bottom:14px;">
+          <label for="txtCurrentReserve" id="lblCurrentReserve" style="display:block; font-size:12px; font-weight:600; color:var(--ink-dim); margin-bottom:6px;">
+            เงินสำรองฉุกเฉินสะสมที่มีอยู่ปัจจุบัน (บาท)
+          </label>
+          <div style="display:flex; align-items:center; gap:8px; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:8px 12px;">
+            <span style="font-size:15px;">💰</span>
+            <input type="number" id="txtCurrentReserve" min="0" step="1000" placeholder="เช่น 100,000"
+                   style="flex:1; border:none; background:transparent; font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; color:var(--ink); outline:none;"
+                   oninput="onCurrentReserveChange(this.value)">
+            <span style="font-size:12px; color:var(--ink-faint);" id="lblReserveUnit">บาท</span>
+          </div>
         </div>
-      </div>
 
-      <!-- Indicator & Gauge Box -->
-      <div id="runwayIndicatorBox" style="text-align:center; padding:14px; background:var(--panel-2); border:1px solid var(--line); border-radius:12px;">
-        <div style="display:flex; align-items:center; justify-content:center; gap:14px; margin:4px 0 8px;">
-          <div style="font-size:34px; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-0.02em;" id="runwayMonths">—</div>
-          <div style="font-size:13px; color:var(--ink-dim); text-align:left;" id="runwayUnit">เดือน<br><span style="font-size:11px;" id="runwayFormula"></span></div>
+        <!-- Indicator & Gauge Box -->
+        <div id="runwayIndicatorBox" style="text-align:center; padding:14px; background:var(--panel-2); border:1px solid var(--line); border-radius:12px;">
+          <div style="display:flex; align-items:center; justify-content:center; gap:14px; margin:4px 0 8px;">
+            <div style="font-size:34px; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-0.02em;" id="runwayMonths">—</div>
+            <div style="font-size:13px; color:var(--ink-dim); text-align:left;" id="runwayUnit">เดือน<br><span style="font-size:11px;" id="runwayFormula"></span></div>
+          </div>
+          <div id="runwayBar" style="height:8px; border-radius:5px; overflow:hidden; background:var(--panel-3, rgba(0,0,0,0.06)); margin:8px 0;">
+            <div id="runwayBarFill" style="height:100%; border-radius:5px; transition:width 0.3s, background 0.3s;"></div>
+          </div>
+          <div id="runwayBadge" style="display:inline-block; font-size:12px; font-weight:700; padding:3px 10px; border-radius:999px; margin-top:4px;"></div>
+          
+          <!-- Target comparison & pace note -->
+          <div id="runwayTargetNote" style="margin-top:12px; font-size:12px; color:var(--ink-dim); line-height:1.6; text-align:left; border-top:1px dashed var(--line); padding-top:10px;"></div>
         </div>
-        <div id="runwayBar" style="height:8px; border-radius:5px; overflow:hidden; background:var(--panel-3, rgba(0,0,0,0.06)); margin:8px 0;">
-          <div id="runwayBarFill" style="height:100%; border-radius:5px; transition:width 0.3s, background 0.3s;"></div>
-        </div>
-        <div id="runwayBadge" style="display:inline-block; font-size:12px; font-weight:700; padding:3px 10px; border-radius:999px; margin-top:4px;"></div>
-        
-        <!-- Target comparison & pace note -->
-        <div id="runwayTargetNote" style="margin-top:12px; font-size:12px; color:var(--ink-dim); line-height:1.6; text-align:left; border-top:1px dashed var(--line); padding-top:10px;"></div>
       </div>
     </div>
   </div>
@@ -608,10 +625,11 @@
       <button class="reset-btn" id="exportJsonBtn" onclick="exportJSON()">💾 <span id="lblExportJson">ดาวน์โหลด JSON</span></button>
       <button class="reset-btn" id="printBtn" onclick="window.print()">🖨️ <span id="lblPrint">พิมพ์ / บันทึก PDF</span></button>
       <button class="reset-btn" id="btnUndoBottom" onclick="undoRemainingChange()" style="display:none; color:var(--brand); font-weight:700;">↩ <span id="lblUndoBottom">เลิกทำ (Undo)</span></button>
+      <button class="reset-btn" id="btnResetLayout" onclick="resetRemainingLayout()">🔄 <span id="lblResetLayout">จัดลำดับเดิม</span></button>
       <button class="reset-btn" id="resetBtn" style="color:var(--ink-faint);">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v2.4.8</p>
+  <p class="version-tag">v2.4.9</p>
 
   <!-- Import Preview Modal -->
   <div id="importModal" role="dialog" aria-modal="true" aria-labelledby="importModalTitle" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; display:none; align-items:center; justify-content:center; backdrop-filter:blur(2px);" onclick="if(event.target===this)closeImportModal()">

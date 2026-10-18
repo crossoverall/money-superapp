@@ -97,6 +97,11 @@ const EN = {
   lblCardGlideSat: 'Recommended Satellite %',
   lblApplyGlidepath: 'Apply to Portfolio Split',
   txtGlidepathSyncNote: '💡 Selected allocation split automatically syncs to Core / Ballast / Satellite targets above.',
+  lblBudgetHeading: 'Investment Budget This Month',
+  lblBucketsTitle: '💼 Portfolio Buckets & Investment Assets',
+  lblBucketsSubtitle: 'Core (Growth) / Ballast (Stability) / Satellite (Thematic) Allocations & Top-up',
+  lblHowtoTitle: '📖 How it Works & Tips',
+  lblResetLayout: 'Reset Card Order',
 };
 if (LANG === 'en') {
   document.title = 'Monthly Top-up Calculator';
@@ -105,6 +110,11 @@ if (LANG === 'en') {
     'pageTitle',
     'subtitle',
     'budgetPanelTitle',
+    'lblBudgetHeading',
+    'lblBucketsTitle',
+    'lblBucketsSubtitle',
+    'lblHowtoTitle',
+    'lblResetLayout',
     'budgetUnit',
     'lblDonutTitle',
     'lblMinTrade',
@@ -3453,6 +3463,20 @@ if (typeof window !== 'undefined') {
   window.setGlidepathCohortPreset = setGlidepathCohortPreset;
   window.updateGlidepathUI = updateGlidepathUI;
   window.applyGlidepathSplitToPortfolio = applyGlidepathSplitToPortfolio;
+  window.resetRebalanceLayout = resetRebalanceLayout;
+}
+
+let rebalanceLayoutManager = null;
+
+function resetRebalanceLayout() {
+  if (rebalanceLayoutManager) {
+    rebalanceLayoutManager.resetLayout();
+  } else {
+    try {
+      localStorage.removeItem('moneySuperapp.layout.rebalance.v1');
+    } catch (_e) {}
+    window.location.reload();
+  }
 }
 
 renderSplit();
@@ -3464,3 +3488,11 @@ initAutoRefresh();
 initGoldCalculator();
 initForeignTaxAdvisor();
 initTargetDateGlidepath();
+
+if (typeof MoneyApp !== 'undefined' && MoneyApp.initCardLayoutManager) {
+  rebalanceLayoutManager = MoneyApp.initCardLayoutManager({
+    container: document.querySelector('.content') || document.body,
+    cardSelector: '.reorder-card',
+    storageKey: 'moneySuperapp.layout.rebalance.v1',
+  });
+}

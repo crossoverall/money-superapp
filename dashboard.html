@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.4.8">
+  <meta name="version" content="2.4.9">
   <title>ภาพรวมการเงิน</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -192,60 +192,66 @@
   <h1>
     <span id="txt-title">ภาพรวมการเงิน</span>
     <div style="display:flex; gap:6px; align-items:center;" class="no-print">
+      <button onclick="resetDashboardLayout()" class="action-btn" style="padding:6px 10px; margin:0; border-radius:12px; font-size:12px;" id="btnResetDashboardLayout" title="คืนค่าลำดับกล่องเริ่มต้น / Reset Card Layout" aria-label="Reset Card Layout">🔄 <span id="lblResetDashboardLayout">จัดลำดับเดิม</span></button>
       <button onclick="printDashboardReport()" class="action-btn" style="padding:6px 10px; margin:0; border-radius:12px; font-size:12px;" id="btn-print" title="พิมพ์รายงานภาพรวมการเงิน" aria-label="Print Financial Summary Report">🖨️ <span id="lbl-btn-print">พิมพ์</span></button>
       <button onclick="refreshDashboard()" class="action-btn" style="padding:6px; margin:0; border-radius:12px;" id="btn-refresh" title="รีเฟรชข้อมูล" aria-label="Refresh financial data">🔄</button>
     </div>
   </h1>
   <div class="sub" id="lbl-subtitle">สรุปความมั่งคั่งและประวัติการเติบโต</div>
 
-  <div class="panel" role="region" aria-label="Key Financial Indicators">
-    <div class="summary-grid" aria-live="polite">
-      <div class="summary-card blue" id="kpi-networth">
-        <div class="sc-label" id="lbl-kpi-networth">ความมั่งคั่งสุทธิ (Net Worth)</div>
-        <div class="sc-value" id="kpi-networth-val">0</div>
-        <div class="sc-sub" id="lbl-kpi-nw-sub">สินทรัพย์ - หนี้สิน</div>
-      </div>
-      <div class="summary-card ok" id="kpi-savings">
-        <div class="sc-label" id="lbl-kpi-savings">เงินออมต่อเดือน (Cash Flow)</div>
-        <div class="sc-value" id="kpi-monthly-savings-val">0</div>
-        <div class="sc-sub" id="kpi-savings-rate-val"><span id="kpi-savings-rate">0%</span></div>
-      </div>
-      <div class="summary-card purple" id="kpi-runway">
-        <div class="sc-label" id="lbl-kpi-runway">สายป่าน (Runway)</div>
-        <div class="sc-value" id="kpi-runway-months">0</div>
-        <div class="sc-sub" id="lbl-kpi-rw-sub">ฉุกเฉินอยู่รอด</div>
-      </div>
-      <div class="summary-card warn" id="kpi-total-debt">
-        <div class="sc-label" id="lbl-kpi-debt">ยอดหนี้รวม (Debt)</div>
-        <div class="sc-value" id="kpi-debt-val">0</div>
-        <div class="sc-sub" id="kpi-debtfree-date">วันปลดหนี้ -</div>
-      </div>
+  <div class="panel reorder-card" id="panelKPIs" role="region" aria-label="Key Financial Indicators">
+    <div class="panel-title" id="lbl-kpi-panel-title">
+      <span id="lbl-kpis-title">📊 สรุปภาพรวมทางการเงิน (Key Financial Indicators)</span>
     </div>
-    
-    <div style="margin-top:16px; border-top:1px dashed var(--line); padding-top:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-      <div>
-        <div style="font-size:11px; color:var(--ink-faint); font-weight:600;" id="lbl-tax-bracket">ฐานภาษีปัจจุบัน</div>
-        <div style="font-size:14px; font-weight:700; color:var(--warn);" id="kpi-tax-bracket-val">0%</div>
+    <div id="panelKPIsBody">
+      <div class="summary-grid" aria-live="polite">
+        <div class="summary-card blue" id="kpi-networth">
+          <div class="sc-label" id="lbl-kpi-networth">ความมั่งคั่งสุทธิ (Net Worth)</div>
+          <div class="sc-value" id="kpi-networth-val">0</div>
+          <div class="sc-sub" id="lbl-kpi-nw-sub">สินทรัพย์ - หนี้สิน</div>
+        </div>
+        <div class="summary-card ok" id="kpi-savings">
+          <div class="sc-label" id="lbl-kpi-savings">เงินออมต่อเดือน (Cash Flow)</div>
+          <div class="sc-value" id="kpi-monthly-savings-val">0</div>
+          <div class="sc-sub" id="kpi-savings-rate-val"><span id="kpi-savings-rate">0%</span></div>
+        </div>
+        <div class="summary-card purple" id="kpi-runway">
+          <div class="sc-label" id="lbl-kpi-runway">สายป่าน (Runway)</div>
+          <div class="sc-value" id="kpi-runway-months">0</div>
+          <div class="sc-sub" id="lbl-kpi-rw-sub">ฉุกเฉินอยู่รอด</div>
+        </div>
+        <div class="summary-card warn" id="kpi-total-debt">
+          <div class="sc-label" id="lbl-kpi-debt">ยอดหนี้รวม (Debt)</div>
+          <div class="sc-value" id="kpi-debt-val">0</div>
+          <div class="sc-sub" id="kpi-debtfree-date">วันปลดหนี้ -</div>
+        </div>
       </div>
-      <a href="tax-calculator-base.html" id="kpi-tax-deadline-link" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:var(--panel-2); border:1px solid var(--line); font-size:11px; color:var(--ink); transition:all 0.15s ease;" title="ดูปฏิทินภาษี / View Tax Calendar">
-        <span>🗓️</span>
-        <span id="kpi-tax-deadline-text">-</span>
-      </a>
-      <div style="text-align:right;">
-        <div style="font-size:11px; color:var(--ink-faint); font-weight:600;" id="lbl-tax-pay-label">ประมาณการภาษีที่ต้องจ่าย</div>
-        <div style="font-size:14px; font-weight:700; color:var(--danger);" id="kpi-tax-amount">0 บาท</div>
+      
+      <div style="margin-top:16px; border-top:1px dashed var(--line); padding-top:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <div>
+          <div style="font-size:11px; color:var(--ink-faint); font-weight:600;" id="lbl-tax-bracket">ฐานภาษีปัจจุบัน</div>
+          <div style="font-size:14px; font-weight:700; color:var(--warn);" id="kpi-tax-bracket-val">0%</div>
+        </div>
+        <a href="tax-calculator-base.html" id="kpi-tax-deadline-link" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:var(--panel-2); border:1px solid var(--line); font-size:11px; color:var(--ink); transition:all 0.15s ease;" title="ดูปฏิทินภาษี / View Tax Calendar">
+          <span>🗓️</span>
+          <span id="kpi-tax-deadline-text">-</span>
+        </a>
+        <div style="text-align:right;">
+          <div style="font-size:11px; color:var(--ink-faint); font-weight:600;" id="lbl-tax-pay-label">ประมาณการภาษีที่ต้องจ่าย</div>
+          <div style="font-size:14px; font-weight:700; color:var(--danger);" id="kpi-tax-amount">0 บาท</div>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- 360° Financial Health Scorecard & 5-Axis Spider/Radar Chart -->
-  <div class="panel" role="region" aria-label="360 Financial Health Scorecard" id="panelFinancialHealthScore">
+  <div class="panel reorder-card" role="region" aria-label="360 Financial Health Scorecard" id="panelFinancialHealthScore">
     <div class="panel-title" id="lbl-health-score-title-bar">
       <span id="lbl-health-score-title">🎯 สุขภาพทางการเงินรอบด้าน 360° (Financial Health Score)</span>
       <span id="badge-health-score" style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--ok-dim); color:var(--ok); border:1px solid var(--ok);">0/100</span>
     </div>
 
-    <div style="display:flex; flex-direction:column; gap:14px;">
+    <div id="panelFinancialHealthScoreBody" style="display:flex; flex-direction:column; gap:14px;">
       <div style="display:flex; align-items:center; justify-content:space-around; flex-wrap:wrap; gap:16px;">
         <!-- SVG Spider/Radar Chart -->
         <div style="position:relative; width:280px; height:250px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
@@ -318,11 +324,12 @@
     </div>
   </div>
 
-  <div class="panel" role="region" aria-label="Financial Goals & Milestones">
+  <div class="panel reorder-card" id="panelGoals" role="region" aria-label="Financial Goals & Milestones">
     <div class="panel-title" id="lbl-goals-panel-title">
       <span id="lbl-goals-title">🎯 เป้าหมายทางการเงิน (Goals & Milestones)</span>
       <button onclick="openGoalsModal()" class="action-btn" style="padding:4px 8px; font-size:10px;" aria-label="Configure financial goals"><span id="lbl-btn-edit-goals">⚙️ ตั้งค่าเป้าหมาย</span></button>
     </div>
+    <div id="panelGoalsBody">
 
     <!-- Emergency Fund Goal -->
     <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px;">
@@ -458,15 +465,17 @@
         </div>
       </div>
     </div>
+    </div>
   </div>
 
   <!-- Life Insurance Adequacy & Family Protection Gap Calculator -->
-  <div class="panel" role="region" aria-label="Life Insurance Adequacy &amp; Family Protection Gap" id="panelInsuranceAdequacy">
+  <div class="panel reorder-card" role="region" aria-label="Life Insurance Adequacy &amp; Family Protection Gap" id="panelInsuranceAdequacy">
     <div class="panel-title" id="lbl-ins-panel-title">
       <span id="lbl-ins-title">🛡️ ความคุ้มครองและการประกันชีวิต (Life Insurance Adequacy)</span>
       <span id="badge-ins-status" style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--ok-dim); color:var(--ok); border:1px solid var(--ok);">ครอบคลุม 100%</span>
     </div>
 
+    <div id="panelInsuranceAdequacyBody">
     <!-- Inputs & Assumptions Container -->
     <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:12px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-size:11px;">
@@ -599,15 +608,17 @@
         <span id="btn-ins-goto-tax">วางแผนภาษี ➔</span>
       </button>
     </div>
+    </div>
   </div>
 
   <!-- Retirement 3-Bucket Cash Flow & SSO Drawdown Simulator (Roadmap Phase 59) -->
-  <div class="panel" role="region" aria-label="Retirement 3-Bucket Cash Flow &amp; SSO Drawdown Simulator" id="panelRetirementThreeBuckets">
+  <div class="panel reorder-card" role="region" aria-label="Retirement 3-Bucket Cash Flow &amp; SSO Drawdown Simulator" id="panelRetirementThreeBuckets">
     <div class="panel-title" id="lbl-three-bucket-panel-title">
       <span id="lbl-three-bucket-title">📦 กลยุทธ์ 3 ถังเกษียณสุข &amp; บำนาญประกันสังคม (Retirement 3-Bucket Strategy)</span>
       <span id="badge-three-bucket-runway" style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--ok-dim); color:var(--ok); border:1px solid var(--ok);">🛡️ เกราะกันตลาดหมี 7 ปี</span>
     </div>
 
+    <div id="panelRetirementThreeBucketsBody">
     <!-- Inputs & Assumptions Container -->
     <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:12px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-size:11px;">
@@ -721,15 +732,17 @@
       💡 <strong id="lbl-bucket-advice-title">กลไกป้องกัน Sequence of Returns:</strong>
       <span id="txt-bucket-advice-desc">ถังที่ 1 และ 2 รวมกันสร้างกันชนสภาพคล่อง 7 ปี ทำให้คุณมีกระแสเงินสดใช้จ่ายต่อเนื่องโดยไม่ต้องเทขายหุ้นในยามตลาดหุ้นตกต่ำหรือเกิดวิกฤตเศรษฐกิจ เมื่อตลาดฟื้นตัวจึงค่อยขายทำกำไรจากถังที่ 3 มาเติมถังที่ 1 และ 2 ตามรอบ</span>
     </div>
+    </div>
   </div>
 
   <!-- Net Worth Real-Value Inflation Deflator & Purchasing Power Projection Engine -->
-  <div class="panel" role="region" aria-label="Inflation Deflator &amp; Real Purchasing Power Engine" id="panelInflationDeflator">
+  <div class="panel reorder-card" role="region" aria-label="Inflation Deflator &amp; Real Purchasing Power Engine" id="panelInflationDeflator">
     <div class="panel-title" id="lbl-deflator-panel-title">
       <span id="lbl-deflator-title">📉 ปรับลดเงินเฟ้อ &amp; อำนาจซื้อที่แท้จริง (Inflation Deflator &amp; Real Purchasing Power)</span>
       <span id="badge-deflator-loss" style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--warn-dim, #fef3c7); color:var(--warn, #d97706); border:1px solid var(--warn, #d97706);">อำนาจซื้อลดลง -21.9%</span>
     </div>
 
+    <div id="panelInflationDeflatorBody">
     <!-- Controls Bar -->
     <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:12px;">
       <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; font-size:11px;">
@@ -797,15 +810,16 @@
         <!-- Dynamic discount cards -->
       </div>
     </div>
+    </div>
   </div>
 
-  <div class="panel" role="region" aria-label="Asset Allocation & Net Worth Composition">
+  <div class="panel reorder-card" id="panelComposition" role="region" aria-label="Asset Allocation & Net Worth Composition">
     <div class="panel-title" id="lbl-composition-panel-title">
       <span id="lbl-composition-title">⚖️ โครงสร้างความมั่งคั่งและสินทรัพย์ (Net Worth Composition)</span>
       <span id="badge-solvency-status" style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--ok-dim); color:var(--ok); border:1px solid var(--ok);">มั่นคงสูง</span>
     </div>
 
-    <div style="display:flex; flex-direction:column; gap:12px;">
+    <div id="panelCompositionBody" style="display:flex; flex-direction:column; gap:12px;">
       <!-- Donut Chart & Breakdown Details -->
       <div style="display:flex; align-items:center; justify-content:space-around; flex-wrap:wrap; gap:16px;">
         <!-- SVG Donut Chart with central Net Worth text -->
@@ -882,66 +896,72 @@
     </div>
   </div>
 
-  <div class="panel" role="region" aria-label="Growth Trends">
+  <div class="panel reorder-card" id="panelGrowthTrends" role="region" aria-label="Growth Trends">
     <div class="panel-title" id="lbl-chart-title">
       <span id="lbl-chart-title-txt">แนวโน้มการเติบโต (Trends)</span>
       <button onclick="takeSnapshot()" class="action-btn" style="padding:4px 8px; font-size:10px;" aria-label="Save current monthly snapshot"><span id="lbl-btn-snapshot">+ บันทึกเดือนนี้</span></button>
     </div>
-    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;" role="tablist" aria-label="Chart display mode">
-      <button id="btn-chart-nw" class="chart-mode-pill active mode-nw" onclick="setChartMode('networth')" role="tab" aria-selected="true">💰 Net Worth</button>
-      <button id="btn-chart-sav" class="chart-mode-pill" onclick="setChartMode('savings')" role="tab" aria-selected="false">📈 อัตราการออม</button>
-      <button id="btn-chart-emg" class="chart-mode-pill" onclick="setChartMode('emergency')" role="tab" aria-selected="false">🛡️ เงินสำรอง</button>
-      <button id="btn-chart-debt" class="chart-mode-pill" onclick="setChartMode('debt')" role="tab" aria-selected="false">📉 หนี้คงค้าง</button>
-    </div>
-    <!-- Trajectory & Growth KPI Banner -->
-    <div id="chartTrajectoryBanner" style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:8px 12px; font-size:11px; margin-bottom:10px;">
-      <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-        <span style="color:var(--ink-faint);" id="lbl-trajectory-growth-txt">เติบโตทั้งหมด:</span>
-        <span id="txt-trajectory-total" style="font-weight:700; color:var(--ok);">+0 บาท (+0.0%)</span>
-        <span style="color:var(--ink-faint); font-size:10px;" id="lbl-trajectory-vs-start">(เทียบจุดเริ่มต้น)</span>
+    <div id="panelGrowthTrendsBody">
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;" role="tablist" aria-label="Chart display mode">
+        <button id="btn-chart-nw" class="chart-mode-pill active mode-nw" onclick="setChartMode('networth')" role="tab" aria-selected="true">💰 Net Worth</button>
+        <button id="btn-chart-sav" class="chart-mode-pill" onclick="setChartMode('savings')" role="tab" aria-selected="false">📈 อัตราการออม</button>
+        <button id="btn-chart-emg" class="chart-mode-pill" onclick="setChartMode('emergency')" role="tab" aria-selected="false">🛡️ เงินสำรอง</button>
+        <button id="btn-chart-debt" class="chart-mode-pill" onclick="setChartMode('debt')" role="tab" aria-selected="false">📉 หนี้คงค้าง</button>
       </div>
-      <div style="display:flex; align-items:center; gap:4px;">
-        <span style="color:var(--ink-faint);" id="lbl-trajectory-mom-txt">MoM:</span>
-        <span id="txt-trajectory-mom" style="font-weight:600; color:var(--ink);">+0 บาท</span>
+      <!-- Trajectory & Growth KPI Banner -->
+      <div id="chartTrajectoryBanner" style="display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:8px 12px; font-size:11px; margin-bottom:10px;">
+        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+          <span style="color:var(--ink-faint);" id="lbl-trajectory-growth-txt">เติบโตทั้งหมด:</span>
+          <span id="txt-trajectory-total" style="font-weight:700; color:var(--ok);">+0 บาท (+0.0%)</span>
+          <span style="color:var(--ink-faint); font-size:10px;" id="lbl-trajectory-vs-start">(เทียบจุดเริ่มต้น)</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:4px;">
+          <span style="color:var(--ink-faint);" id="lbl-trajectory-mom-txt">MoM:</span>
+          <span id="txt-trajectory-mom" style="font-weight:600; color:var(--ink);">+0 บาท</span>
+        </div>
       </div>
-    </div>
-    <div class="chart-container">
-      <svg id="svgChart" viewBox="0 0 600 220" preserveAspectRatio="none" role="img" aria-label="Financial growth trends line chart"><title id="svgChartTitle">Trends Chart</title></svg>
-      <div id="chartLegend" class="tooltip" style="position:static; opacity:1; box-shadow:none; margin-top:8px; font-size:11px;"></div>
-      <div id="chartTooltip" class="tooltip" role="tooltip"></div>
-    </div>
-    <div id="snapshotAlertBanner" style="display:none; margin-top:12px; padding:10px 14px; background:var(--ok-dim); border:1px solid var(--ok); border-radius:8px; color:var(--ok); font-size:12px; font-weight:600; align-items:center; justify-content:space-between;" role="alert">
-      <span id="snapshotAlertText"></span>
-      <button onclick="this.parentElement.style.display='none'" style="background:none; border:none; color:inherit; font-size:16px; cursor:pointer; padding:0 4px;" aria-label="Dismiss">&times;</button>
+      <div class="chart-container">
+        <svg id="svgChart" viewBox="0 0 600 220" preserveAspectRatio="none" role="img" aria-label="Financial growth trends line chart"><title id="svgChartTitle">Trends Chart</title></svg>
+        <div id="chartLegend" class="tooltip" style="position:static; opacity:1; box-shadow:none; margin-top:8px; font-size:11px;"></div>
+        <div id="chartTooltip" class="tooltip" role="tooltip"></div>
+      </div>
+      <div id="snapshotAlertBanner" style="display:none; margin-top:12px; padding:10px 14px; background:var(--ok-dim); border:1px solid var(--ok); border-radius:8px; color:var(--ok); font-size:12px; font-weight:600; align-items:center; justify-content:space-between;" role="alert">
+        <span id="snapshotAlertText"></span>
+        <button onclick="this.parentElement.style.display='none'" style="background:none; border:none; color:inherit; font-size:16px; cursor:pointer; padding:0 4px;" aria-label="Dismiss">&times;</button>
+      </div>
     </div>
   </div>
 
-  <div class="panel" role="region" aria-label="Historical Records">
-  <div class="panel-title" id="lbl-history-title">ประวัติที่บันทึกไว้ (History)</div>
-  <div id="lbl-snapshot-count" style="margin-bottom:8px; font-size:12px; color:var(--ink-dim);"></div>
-  <!-- Storage Engine & Archival Status (Roadmap Item 4.3) -->
-  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px; font-size:11px; background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:6px 10px;">
-    <div style="display:flex; align-items:center; gap:6px;">
-      <span id="badgeStorageStatus" style="background:var(--ok-dim); color:var(--ok); border-radius:9999px; padding:2px 8px; font-size:10px; font-weight:700;">💾 IndexedDB</span>
-      <span id="txtStorageQuota" style="color:var(--ink-dim);">ความจุ: กำลังคำนวณ...</span>
+  <div class="panel reorder-card" id="panelHistory" role="region" aria-label="Historical Records">
+    <div class="panel-title" id="lbl-history-title">ประวัติที่บันทึกไว้ (History)</div>
+    <div id="panelHistoryBody">
+      <div id="lbl-snapshot-count" style="margin-bottom:8px; font-size:12px; color:var(--ink-dim);"></div>
+      <!-- Storage Engine & Archival Status (Roadmap Item 4.3) -->
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px; font-size:11px; background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:6px 10px;">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span id="badgeStorageStatus" style="background:var(--ok-dim); color:var(--ok); border-radius:9999px; padding:2px 8px; font-size:10px; font-weight:700;">💾 IndexedDB</span>
+          <span id="txtStorageQuota" style="color:var(--ink-dim);">ความจุ: กำลังคำนวณ...</span>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button id="btnArchiveSnapshots" onclick="archiveOldSnapshots()" class="action-btn" style="padding:3px 8px; font-size:10px; display:none;">📦 <span id="lblArchiveSnapshots">ย้ายข้อมูลเก่าไปคลัง (>1 ปี)</span></button>
+          <button id="btnRestoreArchive" onclick="restoreArchivedSnapshots()" class="action-btn" style="padding:3px 8px; font-size:10px; display:none; background:transparent; border:1px solid var(--line); color:var(--ink);">📂 <span id="lblRestoreArchive">กู้คืนคลัง</span></button>
+        </div>
+      </div>
+      <div id="historyListContainer" style="margin-bottom:12px;"></div>
+      <button onclick="clearAllSnapshots()" class="reset-btn" style="width:100%; text-align:center;"><span id="btn-clear-history">ลบประวัติทั้งหมด</span></button>
     </div>
-    <div style="display:flex; gap:6px;">
-      <button id="btnArchiveSnapshots" onclick="archiveOldSnapshots()" class="action-btn" style="padding:3px 8px; font-size:10px; display:none;">📦 <span id="lblArchiveSnapshots">ย้ายข้อมูลเก่าไปคลัง (>1 ปี)</span></button>
-      <button id="btnRestoreArchive" onclick="restoreArchivedSnapshots()" class="action-btn" style="padding:3px 8px; font-size:10px; display:none; background:transparent; border:1px solid var(--line); color:var(--ink);">📂 <span id="lblRestoreArchive">กู้คืนคลัง</span></button>
-    </div>
-  </div>
-  <div id="historyListContainer" style="margin-bottom:12px;"></div>
-  <button onclick="clearAllSnapshots()" class="reset-btn" style="width:100%; text-align:center;"><span id="btn-clear-history">ลบประวัติทั้งหมด</span></button>
   </div>
 
-  <div class="panel" role="navigation" aria-label="Tools Navigation">
+  <div class="panel reorder-card" id="panelQuickLinks" role="navigation" aria-label="Tools Navigation">
     <div class="panel-title" id="lbl-quick-links">ไปหน้าเครื่องมือ (Tools)</div>
-    <div onclick="window.parent.postMessage({action:'switchToTab', target:'remaining-money'},'*')" class="quick-link"><span id="qc-rem-title">💰 คำนวณเงินคงเหลือ (Remaining)</span> <span>Alt+6</span></div>
-    <div onclick="window.parent.postMessage({action:'switchToTab', target:'rebalance'},'*')" class="quick-link"><span id="qc-rebal-title">📊 Rebalance พอร์ต</span> <span>Alt+2</span><span id="qc-rebal-sub" style="display:none;"></span></div>
-    <div onclick="window.parent.postMessage({action:'switchToTab', target:'months-slips'},'*')" class="quick-link"><span id="qc-slip-title">📄 จำลองสลิปเงินเดือน</span> <span>Alt+3</span></div>
-    <div onclick="window.parent.postMessage({action:'switchToTab', target:'tax-calculator-base'},'*')" class="quick-link"><span id="qc-tax-title">🧾 คำนวณภาษีประจำปี</span> <span>Alt+4</span></div>
-    <div onclick="window.parent.postMessage({action:'switchToTab', target:'tax-calculator'},'*')" class="quick-link"><span id="qc-pvd-title">📈 ตารางบันทึก PVD</span> <span>Alt+5</span></div>
-    <div onclick="window.parent.postMessage({action:'switchToTab', target:'debt-calculator'},'*')" class="quick-link"><span id="qc-debt-title">📉 วางแผนปลดหนี้ (Debt)</span> <span>Alt+7</span><span id="qc-debt-sub" style="display:none;"></span></div>
+    <div id="panelQuickLinksBody">
+      <div onclick="window.parent.postMessage({action:'switchToTab', target:'remaining-money'},'*')" class="quick-link"><span id="qc-rem-title">💰 คำนวณเงินคงเหลือ (Remaining)</span> <span>Alt+6</span></div>
+      <div onclick="window.parent.postMessage({action:'switchToTab', target:'rebalance'},'*')" class="quick-link"><span id="qc-rebal-title">📊 Rebalance พอร์ต</span> <span>Alt+2</span><span id="qc-rebal-sub" style="display:none;"></span></div>
+      <div onclick="window.parent.postMessage({action:'switchToTab', target:'months-slips'},'*')" class="quick-link"><span id="qc-slip-title">📄 จำลองสลิปเงินเดือน</span> <span>Alt+3</span></div>
+      <div onclick="window.parent.postMessage({action:'switchToTab', target:'tax-calculator-base'},'*')" class="quick-link"><span id="qc-tax-title">🧾 คำนวณภาษีประจำปี</span> <span>Alt+4</span></div>
+      <div onclick="window.parent.postMessage({action:'switchToTab', target:'tax-calculator'},'*')" class="quick-link"><span id="qc-pvd-title">📈 ตารางบันทึก PVD</span> <span>Alt+5</span></div>
+      <div onclick="window.parent.postMessage({action:'switchToTab', target:'debt-calculator'},'*')" class="quick-link"><span id="qc-debt-title">📉 วางแผนปลดหนี้ (Debt)</span> <span>Alt+7</span><span id="qc-debt-sub" style="display:none;"></span></div>
+    </div>
   </div>
 
   <!-- Financial Goals Configuration Modal -->
@@ -1017,7 +1037,7 @@
     </div>
   </div>
 
-  <p class="version-tag">Money Superapp v2.4.8</p>
+  <p class="version-tag">Money Superapp v2.4.9</p>
 
 <script src="js/shared.js"></script>
 <script src="js/dashboard.js"></script>

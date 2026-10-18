@@ -1982,6 +1982,272 @@
     };
   }
 
+  function calculateReorderLayout(orderList, idToMove, direction) {
+    if (!Array.isArray(orderList)) return [];
+    const list = orderList.slice();
+    const idx = list.indexOf(idToMove);
+    if (idx === -1) return list;
+    if (direction === 'up' && idx > 0) {
+      const prev = list[idx - 1];
+      list[idx - 1] = list[idx];
+      list[idx] = prev;
+    } else if (direction === 'down' && idx < list.length - 1) {
+      const next = list[idx + 1];
+      list[idx + 1] = list[idx];
+      list[idx] = next;
+    }
+    return list;
+  }
+
+  function initCardLayoutManager(options) {
+    if (typeof document === 'undefined' || !options || !options.storageKey) return null;
+    const container =
+      typeof options.container === 'string'
+        ? document.querySelector(options.container)
+        : options.container || document.querySelector('.content') || document.body;
+    if (!container) return null;
+
+    const cardSelector = options.cardSelector || '.reorder-card, .card[id], .panel[id]';
+    const storageKey = options.storageKey;
+    const onReorder = typeof options.onReorder === 'function' ? options.onReorder : null;
+    const onToggle = typeof options.onToggle === 'function' ? options.onToggle : null;
+
+    function getStorageData() {
+      try {
+        const raw = localStorage.getItem(storageKey);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object') {
+            return {
+              order: Array.isArray(parsed.order) ? parsed.order : [],
+              collapsed: parsed.collapsed && typeof parsed.collapsed === 'object' ? parsed.collapsed : {},
+            };
+          }
+        }
+      } catch (_e) {}
+      return { order: [], collapsed: {} };
+    }
+
+    function saveStorageData(data) {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(data));
+      } catch (_e) {}
+    }
+
+    function getCardId(el) {
+      return el.getAttribute('data-card-id') || el.id;
+    }
+
+    function getCards() {
+      const all = Array.prototype.slice.call(container.querySelectorAll(cardSelector));
+      return all.filter((el) => {
+        return (el.id || el.getAttribute('data-card-id')) && el.parentNode === container;
+      });
+    }
+
+    function getCardBody(card) {
+      return (
+        card.querySelector('.card-body, .panel-body, [data-card-body]') ||
+        document.getElementById(`${getCardId(card)}Body`) ||
+        document.getElementById(
+          `${getCardId(card)
+            .replace(/^panel/, '')
+            .toLowerCase()}PanelBody`,
+        ) ||
+        (card.children.length > 1 ? card.children[1] : null)
+      );
+    }
+
+    function updateControlStates() {
+      const currentCards = getCards();
+      const data = getStorageData();
+      const order = [];
+
+      currentCards.forEach((card, index) => {
+        const id = getCardId(card);
+        order.push(id);
+        const upBtn = card.querySelector('.btn-card-up');
+        const downBtn = card.querySelector('.btn-card-down');
+        const toggleBtn = card.querySelector('.btn-card-toggle');
+        if (upBtn) upBtn.disabled = index === 0;
+        if (downBtn) downBtn.disabled = index === currentCards.length - 1;
+
+        const isCollapsed = Boolean(data.collapsed[id]);
+        if (toggleBtn) {
+          toggleBtn.textContent = isCollapsed ? '▼' : '▲';
+          toggleBtn.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+        }
+        const body = getCardBody(card);
+        if (body) {
+          if (isCollapsed) {
+            body.classList.add('card-collapsed-hidden');
+          } else {
+            body.classList.remove('card-collapsed-hidden');
+          }
+        }
+      });
+
+      return order;
+    }
+
+    function moveCard(cardEl, direction) {
+      const currentCards = getCards();
+      const idx = currentCards.indexOf(cardEl);
+      if (idx === -1) return;
+
+      if (direction === 'up' && idx > 0) {
+        const prevCard = currentCards[idx - 1];
+        container.insertBefore(cardEl, prevCard);
+      } else if (direction === 'down' && idx < currentCards.length - 1) {
+        const nextCard = currentCards[idx + 1];
+        container.insertBefore(cardEl, nextCard.nextSibling);
+      }
+
+      const newOrder = updateControlStates();
+      const data = getStorageData();
+      data.order = newOrder;
+      saveStorageData(data);
+      if (onReorder) onReorder(newOrder);
+    }
+
+    function toggleCard(cardEl) {
+      const id = getCardId(cardEl);
+      const data = getStorageData();
+      const isNowCollapsed = !data.collapsed[id];
+      data.collapsed[id] = isNowCollapsed;
+      saveStorageData(data);
+      updateControlStates();
+      if (onToggle) onToggle(id, isNowCollapsed);
+    }
+
+    // Apply saved order on initialization
+    const initialData = getStorageData();
+    const initialCards = getCards();
+    if (initialData.order && initialData.order.length > 0) {
+      const cardMap = {};
+      initialCards.forEach((c) => {
+        cardMap[getCardId(c)] = c;
+      });
+      initialData.order.forEach((id) => {
+        if (cardMap[id]) {
+          container.appendChild(cardMap[id]);
+        }
+      });
+      initialCards.forEach((c) => {
+        if (initialData.order.indexOf(getCardId(c)) === -1) {
+          container.appendChild(c);
+        }
+      });
+    }
+
+    // Attach control clusters
+    const currentCards = getCards();
+    currentCards.forEach((card) => {
+      card.classList.add('reorder-card');
+      const cluster = card.querySelector('.card-reorder-controls');
+      if (!cluster) {
+        const newCluster = document.createElement('div');
+        newCluster.className = 'card-reorder-controls';
+        newCluster.setAttribute('role', 'group');
+        newCluster.setAttribute('aria-label', 'Card order and toggle actions');
+
+        const upBtn = document.createElement('button');
+        upBtn.type = 'button';
+        upBtn.className = 'btn-card-ctrl btn-card-up';
+        upBtn.title = LANG === 'en' ? 'Move Up' : 'เลื่อนขึ้น';
+        upBtn.setAttribute('aria-label', upBtn.title);
+        upBtn.textContent = '↑';
+        upBtn.onclick = (e) => {
+          e.stopPropagation();
+          moveCard(card, 'up');
+        };
+
+        const downBtn = document.createElement('button');
+        downBtn.type = 'button';
+        downBtn.className = 'btn-card-ctrl btn-card-down';
+        downBtn.title = LANG === 'en' ? 'Move Down' : 'เลื่อนลง';
+        downBtn.setAttribute('aria-label', downBtn.title);
+        downBtn.textContent = '↓';
+        downBtn.onclick = (e) => {
+          e.stopPropagation();
+          moveCard(card, 'down');
+        };
+
+        const toggleBtn = document.createElement('button');
+        toggleBtn.type = 'button';
+        toggleBtn.className = 'btn-card-ctrl btn-card-toggle';
+        toggleBtn.title = LANG === 'en' ? 'Fold / Expand' : 'ย่อ / ขยาย';
+        toggleBtn.setAttribute('aria-label', toggleBtn.title);
+        toggleBtn.textContent = '▲';
+        toggleBtn.onclick = (e) => {
+          e.stopPropagation();
+          toggleCard(card);
+        };
+
+        newCluster.appendChild(upBtn);
+        newCluster.appendChild(downBtn);
+        newCluster.appendChild(toggleBtn);
+
+        const header = card.querySelector('.card-header, .panel-title, [data-card-header]') || card.firstElementChild;
+        if (header) {
+          if (typeof window !== 'undefined' && window.getComputedStyle) {
+            const disp = window.getComputedStyle(header).display;
+            if (disp.indexOf('flex') === -1) {
+              header.style.display = 'flex';
+              header.style.justifyContent = 'space-between';
+              header.style.alignItems = 'center';
+            }
+          }
+          header.appendChild(newCluster);
+        } else {
+          card.insertBefore(newCluster, card.firstChild);
+        }
+      } else {
+        const upBtn2 = cluster.querySelector('.btn-card-up');
+        const downBtn2 = cluster.querySelector('.btn-card-down');
+        const toggleBtn2 = cluster.querySelector('.btn-card-toggle');
+        if (upBtn2) {
+          upBtn2.onclick = (e) => {
+            e.stopPropagation();
+            moveCard(card, 'up');
+          };
+        }
+        if (downBtn2) {
+          downBtn2.onclick = (e) => {
+            e.stopPropagation();
+            moveCard(card, 'down');
+          };
+        }
+        if (toggleBtn2) {
+          toggleBtn2.onclick = (e) => {
+            e.stopPropagation();
+            toggleCard(card);
+          };
+        }
+      }
+    });
+
+    updateControlStates();
+
+    return {
+      getOrder: () => getCards().map(getCardId),
+      moveCard: (id, direction) => {
+        const card = getCards().find((c) => getCardId(c) === id);
+        if (card) moveCard(card, direction);
+      },
+      toggleCard: (id) => {
+        const card = getCards().find((c) => getCardId(c) === id);
+        if (card) toggleCard(card);
+      },
+      resetLayout: () => {
+        try {
+          localStorage.removeItem(storageKey);
+        } catch (_e) {}
+        if (typeof window !== 'undefined') window.location.reload();
+      },
+    };
+  }
+
   // Auto-initialize document theme, shortcuts, and swipe navigation when running in browser
   initTheme();
   initShortcutForwarding();
@@ -2018,6 +2284,8 @@
     detectAndParseThaiBankStatement: detectAndParseThaiBankStatement,
     calculateForeignRepatriationTax: calculateForeignRepatriationTax,
     calculateTargetDateGlidepath: calculateTargetDateGlidepath,
+    calculateReorderLayout: calculateReorderLayout,
+    initCardLayoutManager: initCardLayoutManager,
   };
 
   // Expose on global window object

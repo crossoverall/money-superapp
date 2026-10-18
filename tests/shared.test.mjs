@@ -512,4 +512,41 @@ describe('MoneyApp Shared Core Module', () => {
       });
     });
   });
+
+  describe('MoneyApp.calculateReorderLayout (Card Layout Reordering Engine)', () => {
+    const { MoneyApp } = createEnvironment();
+
+    it('moves an element up in the array', () => {
+      const initial = ['cardA', 'cardB', 'cardC', 'cardD'];
+      const res = MoneyApp.calculateReorderLayout(initial, 'cardC', 'up');
+      assert.deepEqual(res, ['cardA', 'cardC', 'cardB', 'cardD']);
+    });
+
+    it('does not move an element up if it is already first', () => {
+      const initial = ['cardA', 'cardB', 'cardC'];
+      const res = MoneyApp.calculateReorderLayout(initial, 'cardA', 'up');
+      assert.deepEqual(res, ['cardA', 'cardB', 'cardC']);
+    });
+
+    it('moves an element down in the array', () => {
+      const initial = ['cardA', 'cardB', 'cardC', 'cardD'];
+      const res = MoneyApp.calculateReorderLayout(initial, 'cardB', 'down');
+      assert.deepEqual(res, ['cardA', 'cardC', 'cardB', 'cardD']);
+    });
+
+    it('does not move an element down if it is already last', () => {
+      const initial = ['cardA', 'cardB', 'cardC'];
+      const res = MoneyApp.calculateReorderLayout(initial, 'cardC', 'down');
+      assert.deepEqual(res, ['cardA', 'cardB', 'cardC']);
+    });
+
+    it('gracefully handles missing item or non-array input', () => {
+      assert.deepEqual(MoneyApp.calculateReorderLayout(null, 'cardA', 'up'), []);
+      assert.deepEqual(MoneyApp.calculateReorderLayout(['cardA'], 'unknown', 'up'), ['cardA']);
+    });
+
+    it('exports initCardLayoutManager on MoneyApp', () => {
+      assert.equal(typeof MoneyApp.initCardLayoutManager, 'function');
+    });
+  });
 });

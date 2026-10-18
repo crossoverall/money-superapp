@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.4.8">
+  <meta name="version" content="2.4.9">
   <title>วางแผนปลดหนี้ (Debt Payoff)</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
@@ -245,348 +245,366 @@
     </div>
   </div>
 
-  <div class="panel" role="region" aria-label="Payoff Strategy">
+  <div class="panel reorder-card" id="panelStrategy" role="region" aria-label="Payoff Strategy">
     <div class="panel-title" id="lbl-strategy-title">กลยุทธ์ (Strategy)</div>
-    <div class="strategy-toggle" role="tablist" aria-label="Payoff Strategy">
-      <div class="strategy-btn active" id="btn-strat-avalanche" onclick="setStrategy('avalanche')" role="tab" tabindex="0" aria-selected="true">Avalanche<br><span id="strat-av-sub" style="font-size:10px; font-weight:400;">ดอกสูงสุดก่อน</span></div>
-      <div class="strategy-btn" id="btn-strat-snowball" onclick="setStrategy('snowball')" role="tab" tabindex="0" aria-selected="false">Snowball<br><span id="strat-sn-sub" style="font-size:10px; font-weight:400;">ยอดน้อยสุดก่อน</span></div>
-    </div>
-    
-    <div style="margin-top:16px;">
-      <div class="panel-title" id="lbl-extra-pay">เงินจ่ายเพิ่มต่อเดือน (Extra)</div>
-      <div style="display:flex; align-items:center; gap:10px;">
-        <input type="number" id="txtExtraPayment" value="5000" min="0" step="500" inputmode="decimal" aria-label="Extra Monthly Payment" class="value-input" style="flex:1; font-size:16px; padding:8px 12px;" oninput="onExtraPaymentChange(this.value)">
-        <span class="unit" id="lbl-unit-monthly">บาท/เดือน</span>
+    <div id="panelStrategyBody">
+      <div class="strategy-toggle" role="tablist" aria-label="Payoff Strategy">
+        <div class="strategy-btn active" id="btn-strat-avalanche" onclick="setStrategy('avalanche')" role="tab" tabindex="0" aria-selected="true">Avalanche<br><span id="strat-av-sub" style="font-size:10px; font-weight:400;">ดอกสูงสุดก่อน</span></div>
+        <div class="strategy-btn" id="btn-strat-snowball" onclick="setStrategy('snowball')" role="tab" tabindex="0" aria-selected="false">Snowball<br><span id="strat-sn-sub" style="font-size:10px; font-weight:400;">ยอดน้อยสุดก่อน</span></div>
       </div>
-    </div>
-
-    <!-- Lump-Sum / Bonus Windfall Injection -->
-    <div style="margin-top:16px; padding-top:14px; border-top:1px dashed var(--line);">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <div class="panel-title" style="margin-bottom:0;" id="lbl-windfall-title">🎁 เงินก้อนโปะหนี้ครั้งเดียว (Lump-Sum / Bonus)</div>
-        <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; font-weight:600; color:var(--ink);">
-          <input type="checkbox" id="chkEnableWindfall" onchange="onToggleWindfall(this.checked)" style="cursor:pointer;">
-          <span id="lbl-enable-windfall">เปิดใช้งาน</span>
-        </label>
-      </div>
-      <div id="windfallInputsContainer" style="display:none; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:12px; margin-top:8px;">
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-          <div>
-            <label for="txtWindfallAmount" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-windfall-amt">จำนวนเงินก้อน (บาท)</label>
-            <input type="number" id="txtWindfallAmount" value="50000" min="0" step="1000" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onWindfallChange()">
-          </div>
-          <div>
-            <label for="txtWindfallMonth" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-windfall-month">โปะในเดือนที่</label>
-            <input type="number" id="txtWindfallMonth" value="1" min="1" max="120" step="1" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onWindfallChange()">
-          </div>
+      
+      <div style="margin-top:16px;">
+        <div class="panel-title" id="lbl-extra-pay">เงินจ่ายเพิ่มต่อเดือน (Extra)</div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <input type="number" id="txtExtraPayment" value="5000" min="0" step="500" inputmode="decimal" aria-label="Extra Monthly Payment" class="value-input" style="flex:1; font-size:16px; padding:8px 12px;" oninput="onExtraPaymentChange(this.value)">
+          <span class="unit" id="lbl-unit-monthly">บาท/เดือน</span>
         </div>
-        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;">
-          <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setWindfallPreset(20000, 1)" id="btn-wf-preset-1">20K (ด.1)</button>
-          <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setWindfallPreset(50000, 3)" id="btn-wf-preset-2">50K (ด.3)</button>
-          <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setWindfallPreset(100000, 6)" id="btn-wf-preset-3">100K (ด.6)</button>
-          <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setWindfallPreset(200000, 12)" id="btn-wf-preset-4">200K (ด.12)</button>
-        </div>
-        <div id="windfallImpactBadge" style="display:none; margin-top:10px; padding:8px 10px; border-radius:8px; font-size:11px; font-weight:600; background:var(--ok-dim); border:1px solid var(--ok); color:var(--ok);"></div>
       </div>
-    </div>
 
-    <div style="font-size:11px; color:var(--ink-faint); margin-top:12px; line-height:1.4;" id="strategy-explanation">
-      <strong>Avalanche Method:</strong> นำเงินส่วนเกินโปะหนี้ดอกเบี้ยสูงสุด ประหยัดเงินมากที่สุด
+      <!-- Lump-Sum / Bonus Windfall Injection -->
+      <div style="margin-top:16px; padding-top:14px; border-top:1px dashed var(--line);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div class="panel-title" style="margin-bottom:0;" id="lbl-windfall-title">🎁 เงินก้อนโปะหนี้ครั้งเดียว (Lump-Sum / Bonus)</div>
+          <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; font-weight:600; color:var(--ink);">
+            <input type="checkbox" id="chkEnableWindfall" onchange="onToggleWindfall(this.checked)" style="cursor:pointer;">
+            <span id="lbl-enable-windfall">เปิดใช้งาน</span>
+          </label>
+        </div>
+        <div id="windfallInputsContainer" style="display:none; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:12px; margin-top:8px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label for="txtWindfallAmount" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-windfall-amt">จำนวนเงินก้อน (บาท)</label>
+              <input type="number" id="txtWindfallAmount" value="50000" min="0" step="1000" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onWindfallChange()">
+            </div>
+            <div>
+              <label for="txtWindfallMonth" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-windfall-month">โปะในเดือนที่</label>
+              <input type="number" id="txtWindfallMonth" value="1" min="1" max="120" step="1" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onWindfallChange()">
+            </div>
+          </div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;">
+            <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setWindfallPreset(20000, 1)" id="btn-wf-preset-1">20K (ด.1)</button>
+            <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setWindfallPreset(50000, 3)" id="btn-wf-preset-2">50K (ด.3)</button>
+            <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setWindfallPreset(100000, 6)" id="btn-wf-preset-3">100K (ด.6)</button>
+            <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setWindfallPreset(200000, 12)" id="btn-wf-preset-4">200K (ด.12)</button>
+          </div>
+          <div id="windfallImpactBadge" style="display:none; margin-top:10px; padding:8px 10px; border-radius:8px; font-size:11px; font-weight:600; background:var(--ok-dim); border:1px solid var(--ok); color:var(--ok);"></div>
+        </div>
+      </div>
+
+      <div style="font-size:11px; color:var(--ink-faint); margin-top:12px; line-height:1.4;" id="strategy-explanation">
+        <strong>Avalanche Method:</strong> นำเงินส่วนเกินโปะหนี้ดอกเบี้ยสูงสุด ประหยัดเงินมากที่สุด
+      </div>
     </div>
   </div>
 
-  <div class="panel">
+  <div class="panel reorder-card" id="panelDebts">
     <div class="panel-title" id="lbl-debt-list-title">รายการหนี้สิน (Debts)</div>
-    <div id="debtTableBody">
-      <!-- Injected JS -->
-    </div>
-    <button class="add-btn" onclick="addDebtRow()" id="lbl-btn-add-debt">+ เพิ่มรายการหนี้</button>
-    
-    <div style="margin-top:16px; padding-top:12px; border-top:1px dashed var(--line);">
-      <div class="result-row">
-        <span id="td-total-label">รวมทุกรายการ</span>
-        <span class="val" id="footTotalBalance" style="font-size:15px; color:var(--ink);">0</span>
+    <div id="panelDebtsBody">
+      <div id="debtTableBody">
+        <!-- Injected JS -->
       </div>
-      <div class="result-row">
-        <span id="lbl-avg-rate" style="color:var(--ink-dim); font-size:11px;">ดอกเบี้ยเฉลี่ย</span>
-        <span class="val" id="footAvgRate" style="color:var(--ink-dim); font-size:11px;">-</span>
-      </div>
-      <div class="result-row">
-        <span id="lbl-min-pay" style="color:var(--ink-dim); font-size:11px;">ขั้นต่ำรวมต่อเดือน</span>
-        <span class="val" id="footTotalMin" style="color:var(--ink-dim); font-size:11px;">0</span>
+      <button class="add-btn" onclick="addDebtRow()" id="lbl-btn-add-debt">+ เพิ่มรายการหนี้</button>
+      
+      <div style="margin-top:16px; padding-top:12px; border-top:1px dashed var(--line);">
+        <div class="result-row">
+          <span id="td-total-label">รวมทุกรายการ</span>
+          <span class="val" id="footTotalBalance" style="font-size:15px; color:var(--ink);">0</span>
+        </div>
+        <div class="result-row">
+          <span id="lbl-avg-rate" style="color:var(--ink-dim); font-size:11px;">ดอกเบี้ยเฉลี่ย</span>
+          <span class="val" id="footAvgRate" style="color:var(--ink-dim); font-size:11px;">-</span>
+        </div>
+        <div class="result-row">
+          <span id="lbl-min-pay" style="color:var(--ink-dim); font-size:11px;">ขั้นต่ำรวมต่อเดือน</span>
+          <span class="val" id="footTotalMin" style="color:var(--ink-dim); font-size:11px;">0</span>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="panel">
+  <div class="panel reorder-card" id="panelCompare">
     <div class="panel-title" id="lbl-compare-title">เปรียบเทียบผลลัพธ์ (Compare)</div>
-    
-    <div style="margin-bottom:16px; border:1px solid var(--line); border-radius:12px; padding:12px; background:var(--panel-2);" id="card-compare-avalanche">
-      <div style="font-weight:700; font-size:14px; margin-bottom:8px; display:flex; justify-content:space-between;">
-        <span>⚡ Avalanche</span>
-        <span id="cmp-av-sub" style="font-size:10px; background:var(--ok-dim); color:var(--ok); padding:2px 6px; border-radius:4px;">คุ้มค่าเงินที่สุด</span>
+    <div id="panelCompareBody">
+      <div style="margin-bottom:16px; border:1px solid var(--line); border-radius:12px; padding:12px; background:var(--panel-2);" id="card-compare-avalanche">
+        <div style="font-weight:700; font-size:14px; margin-bottom:8px; display:flex; justify-content:space-between;">
+          <span>⚡ Avalanche</span>
+          <span id="cmp-av-sub" style="font-size:10px; background:var(--ok-dim); color:var(--ok); padding:2px 6px; border-radius:4px;">คุ้มค่าเงินที่สุด</span>
+        </div>
+        <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-av-months" style="font-weight:400;">ระยะเวลา:</span> <span class="val" id="cmp-av-months">-</span></div>
+        <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-av-interest" style="font-weight:400;">ดอกเบี้ยรวม:</span> <span class="val warn" id="cmp-av-interest">-</span></div>
+        <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-av-saved" style="font-weight:400;">ประหยัด vs ขั้นต่ำ:</span> <span class="val ok" id="cmp-av-saved">-</span></div>
       </div>
-      <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-av-months" style="font-weight:400;">ระยะเวลา:</span> <span class="val" id="cmp-av-months">-</span></div>
-      <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-av-interest" style="font-weight:400;">ดอกเบี้ยรวม:</span> <span class="val warn" id="cmp-av-interest">-</span></div>
-      <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-av-saved" style="font-weight:400;">ประหยัด vs ขั้นต่ำ:</span> <span class="val ok" id="cmp-av-saved">-</span></div>
-    </div>
 
-    <div style="border:1px solid var(--line); border-radius:12px; padding:12px; background:var(--panel-2);" id="card-compare-snowball">
-      <div style="font-weight:700; font-size:14px; margin-bottom:8px; display:flex; justify-content:space-between;">
-        <span>⛄ Snowball</span>
-        <span id="cmp-sn-sub" style="font-size:10px; background:var(--blue-dim); color:var(--blue); padding:2px 6px; border-radius:4px;">สร้างกำลังใจ</span>
+      <div style="border:1px solid var(--line); border-radius:12px; padding:12px; background:var(--panel-2);" id="card-compare-snowball">
+        <div style="font-weight:700; font-size:14px; margin-bottom:8px; display:flex; justify-content:space-between;">
+          <span>⛄ Snowball</span>
+          <span id="cmp-sn-sub" style="font-size:10px; background:var(--blue-dim); color:var(--blue); padding:2px 6px; border-radius:4px;">สร้างกำลังใจ</span>
+        </div>
+        <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-sn-months" style="font-weight:400;">ระยะเวลา:</span> <span class="val" id="cmp-sn-months">-</span></div>
+        <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-sn-interest" style="font-weight:400;">ดอกเบี้ยรวม:</span> <span class="val warn" id="cmp-sn-interest">-</span></div>
+        <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-sn-saved" style="font-weight:400;">ประหยัด vs ขั้นต่ำ:</span> <span class="val ok" id="cmp-sn-saved">-</span></div>
       </div>
-      <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-sn-months" style="font-weight:400;">ระยะเวลา:</span> <span class="val" id="cmp-sn-months">-</span></div>
-      <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-sn-interest" style="font-weight:400;">ดอกเบี้ยรวม:</span> <span class="val warn" id="cmp-sn-interest">-</span></div>
-      <div class="result-row" style="border:none; padding:4px 0;"><span id="lbl-cmp-sn-saved" style="font-weight:400;">ประหยัด vs ขั้นต่ำ:</span> <span class="val ok" id="cmp-sn-saved">-</span></div>
     </div>
   </div>
 
   <!-- Debt Consolidation & Refinance Simulator -->
-  <div class="panel" id="panelDebtRefinance">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-      <div class="panel-title" style="margin-bottom:0;" id="lbl-refinance-title">🔄 จำลองรวมหนี้ &amp; รีไฟแนนซ์ (Refinance Simulator)</div>
+  <div class="panel reorder-card" id="panelDebtRefinance">
+    <div class="panel-title" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <div style="margin-bottom:0;" id="lbl-refinance-title">🔄 จำลองรวมหนี้ &amp; รีไฟแนนซ์ (Refinance Simulator)</div>
       <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; font-weight:600; color:var(--ink);">
         <input type="checkbox" id="chkEnableRefinance" onchange="onToggleRefinance(this.checked)" style="cursor:pointer;">
         <span id="lbl-enable-refinance">เปิดใช้งาน</span>
       </label>
     </div>
     
-    <div id="refinanceInputsContainer" style="display:none; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:12px; margin-top:8px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:4px 8px; background:var(--panel); border:1px solid var(--line); border-radius:6px; margin-bottom:10px;">
-        <span style="color:var(--ink-faint);" id="lbl-current-rate-refinance">อัตราดอกเบี้ยเดิมเฉลี่ย:</span>
-        <b style="color:var(--warn);" id="valCurrentWeightedRate">0.0%</b>
-      </div>
+    <div id="panelDebtRefinanceBody">
+      <div id="refinanceInputsContainer" style="display:none; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:12px; margin-top:8px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:4px 8px; background:var(--panel); border:1px solid var(--line); border-radius:6px; margin-bottom:10px;">
+          <span style="color:var(--ink-faint);" id="lbl-current-rate-refinance">อัตราดอกเบี้ยเดิมเฉลี่ย:</span>
+          <b style="color:var(--warn);" id="valCurrentWeightedRate">0.0%</b>
+        </div>
 
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-        <div>
-          <label for="txtRefinanceRate" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-refinance-rate">ดอกเบี้ยใหม่ (% ต่อปี)</label>
-          <input type="number" id="txtRefinanceRate" value="9.9" min="0" max="36" step="0.1" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onRefinanceChange()">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div>
+            <label for="txtRefinanceRate" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-refinance-rate">ดอกเบี้ยใหม่ (% ต่อปี)</label>
+            <input type="number" id="txtRefinanceRate" value="9.9" min="0" max="36" step="0.1" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onRefinanceChange()">
+          </div>
+          <div>
+            <label for="txtRefinanceTerm" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-refinance-term">ระยะเวลาผ่อน (เดือน)</label>
+            <input type="number" id="txtRefinanceTerm" value="36" min="1" max="120" step="1" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onRefinanceChange()">
+          </div>
         </div>
-        <div>
-          <label for="txtRefinanceTerm" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-refinance-term">ระยะเวลาผ่อน (เดือน)</label>
-          <input type="number" id="txtRefinanceTerm" value="36" min="1" max="120" step="1" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onRefinanceChange()">
-        </div>
-      </div>
 
-      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;">
-        <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(12)" id="btn-refi-12">12 ด. (1 ปี)</button>
-        <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(24)" id="btn-refi-24">24 ด. (2 ปี)</button>
-        <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(36)" id="btn-refi-36">36 ด. (3 ปี)</button>
-        <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(48)" id="btn-refi-48">48 ด. (4 ปี)</button>
-        <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(60)" id="btn-refi-60">60 ด. (5 ปี)</button>
-      </div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;">
+          <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(12)" id="btn-refi-12">12 ด. (1 ปี)</button>
+          <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(24)" id="btn-refi-24">24 ด. (2 ปี)</button>
+          <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(36)" id="btn-refi-36">36 ด. (3 ปี)</button>
+          <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(48)" id="btn-refi-48">48 ด. (4 ปี)</button>
+          <button type="button" class="action-btn" style="padding:2px 8px; font-size:10px;" onclick="setRefinanceTerm(60)" id="btn-refi-60">60 ด. (5 ปี)</button>
+        </div>
 
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; margin-top:12px;">
-        <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
-          <div style="font-size:10px; color:var(--ink-faint);" id="lbl-refinance-pmt">ค่างวดใหม่/เดือน</div>
-          <div style="font-size:13px; font-weight:700; color:var(--ink); margin-top:2px;" id="valRefinancePmt">0</div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; margin-top:12px;">
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
+            <div style="font-size:10px; color:var(--ink-faint);" id="lbl-refinance-pmt">ค่างวดใหม่/เดือน</div>
+            <div style="font-size:13px; font-weight:700; color:var(--ink); margin-top:2px;" id="valRefinancePmt">0</div>
+          </div>
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
+            <div style="font-size:10px; color:var(--ink-faint);" id="lbl-refinance-interest-saved">ประหยัดดอกเบี้ย</div>
+            <div style="font-size:13px; font-weight:700; color:var(--ok); margin-top:2px;" id="valRefinanceInterestSaved">0</div>
+          </div>
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
+            <div style="font-size:10px; color:var(--ink-faint);" id="lbl-refinance-cashflow-relief">ภาระผ่อน/เดือน</div>
+            <div style="font-size:13px; font-weight:700; margin-top:2px;" id="valRefinanceCashflowRelief">0</div>
+          </div>
         </div>
-        <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
-          <div style="font-size:10px; color:var(--ink-faint);" id="lbl-refinance-interest-saved">ประหยัดดอกเบี้ย</div>
-          <div style="font-size:13px; font-weight:700; color:var(--ok); margin-top:2px;" id="valRefinanceInterestSaved">0</div>
-        </div>
-        <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
-          <div style="font-size:10px; color:var(--ink-faint);" id="lbl-refinance-cashflow-relief">ภาระผ่อน/เดือน</div>
-          <div style="font-size:13px; font-weight:700; margin-top:2px;" id="valRefinanceCashflowRelief">0</div>
-        </div>
-      </div>
 
-      <div id="refinanceVerdictBadge" style="margin-top:10px; padding:8px 10px; border-radius:8px; font-size:11px; font-weight:600; line-height:1.4;"></div>
+        <div id="refinanceVerdictBadge" style="margin-top:10px; padding:8px 10px; border-radius:8px; font-size:11px; font-weight:600; line-height:1.4;"></div>
+      </div>
     </div>
   </div>
 
   <!-- Mortgage & Loan Prepayment Engine (Roadmap Phase 47) -->
-  <div class="panel" id="panelLoanPrepayment">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-      <div class="panel-title" style="margin-bottom:0;" id="lbl-prepay-title">🏡 จำลองโปะหนี้บ้าน &amp; สินเชื่อ (Mortgage &amp; Loan Prepayment)</div>
+  <div class="panel reorder-card" id="panelLoanPrepayment">
+    <div class="panel-title" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <div style="margin-bottom:0;" id="lbl-prepay-title">🏡 จำลองโปะหนี้บ้าน &amp; สินเชื่อ (Mortgage &amp; Loan Prepayment)</div>
       <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; font-weight:600; color:var(--ink);">
         <input type="checkbox" id="chkEnablePrepay" onchange="onTogglePrepay(this.checked)" style="cursor:pointer;">
         <span id="lbl-enable-prepay">เปิดใช้งาน</span>
       </label>
     </div>
     
-    <div id="prepayInputsContainer" style="display:none; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:12px; margin-top:8px;">
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:10px;">
-        <div>
-          <label for="txtPrepayPrincipal" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-prepay-principal">ยอดเงินกู้คงเหลือ (บาท)</label>
-          <input type="number" id="txtPrepayPrincipal" value="3000000" min="0" step="50000" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onPrepayChange()">
+    <div id="panelLoanPrepaymentBody">
+      <div id="prepayInputsContainer" style="display:none; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:12px; margin-top:8px;">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:10px;">
+          <div>
+            <label for="txtPrepayPrincipal" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-prepay-principal">ยอดเงินกู้คงเหลือ (บาท)</label>
+            <input type="number" id="txtPrepayPrincipal" value="3000000" min="0" step="50000" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onPrepayChange()">
+          </div>
+          <div>
+            <label for="txtPrepayRate" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-prepay-rate">อัตราดอกเบี้ย (% ต่อปี)</label>
+            <input type="number" id="txtPrepayRate" value="5.0" min="0" max="36" step="0.1" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onPrepayChange()">
+          </div>
+          <div>
+            <label for="txtPrepayTerm" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-prepay-term">ระยะเวลาผ่อนที่เหลือ (เดือน)</label>
+            <input type="number" id="txtPrepayTerm" value="360" min="1" max="480" step="12" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onPrepayChange()">
+          </div>
         </div>
-        <div>
-          <label for="txtPrepayRate" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-prepay-rate">อัตราดอกเบี้ย (% ต่อปี)</label>
-          <input type="number" id="txtPrepayRate" value="5.0" min="0" max="36" step="0.1" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onPrepayChange()">
-        </div>
-        <div>
-          <label for="txtPrepayTerm" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-prepay-term">ระยะเวลาผ่อนที่เหลือ (เดือน)</label>
-          <input type="number" id="txtPrepayTerm" value="360" min="1" max="480" step="12" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onPrepayChange()">
-        </div>
-      </div>
 
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
-        <div>
-          <label for="txtPrepayExtraMonthly" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-prepay-extra">โปะเพิ่มต่อเดือน (บาท)</label>
-          <input type="number" id="txtPrepayExtraMonthly" value="5000" min="0" step="1000" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onPrepayChange()">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+          <div>
+            <label for="txtPrepayExtraMonthly" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-prepay-extra">โปะเพิ่มต่อเดือน (บาท)</label>
+            <input type="number" id="txtPrepayExtraMonthly" value="5000" min="0" step="1000" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onPrepayChange()">
+          </div>
+          <div>
+            <label for="txtPrepayLumpSum" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-prepay-lump">โปะเงินก้อนพิเศษ (บาท)</label>
+            <input type="number" id="txtPrepayLumpSum" value="0" min="0" step="10000" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onPrepayChange()">
+          </div>
         </div>
-        <div>
-          <label for="txtPrepayLumpSum" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-prepay-lump">โปะเงินก้อนพิเศษ (บาท)</label>
-          <input type="number" id="txtPrepayLumpSum" value="0" min="0" step="10000" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onPrepayChange()">
-        </div>
-      </div>
 
-      <!-- Strategy Radio Selector -->
-      <div style="margin-top:10px; padding:8px 10px; background:var(--panel); border:1px solid var(--line); border-radius:8px;">
-        <div style="font-size:11px; font-weight:700; color:var(--ink); margin-bottom:6px;" id="lbl-prepay-strategy-title">🎯 เลือกกลยุทธ์การโปะ (Prepayment Strategy):</div>
-        <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:11.5px;">
-          <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; color:var(--ink);">
-            <input type="radio" name="prepayStrategy" id="stratReduceTerm" value="reduce_term" checked onchange="onPrepayChange()">
-            <span id="lbl-strat-reduce-term">ย่นระยะเวลาผ่อน (Reduce Term — ประหยัดดอกเบี้ยสูงสุด)</span>
-          </label>
-          <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; color:var(--ink);">
-            <input type="radio" name="prepayStrategy" id="stratReducePmt" value="reduce_payment" onchange="onPrepayChange()">
-            <span id="lbl-strat-reduce-pmt">ลดค่างวดรายเดือน (Reduce Payment — ผ่อนเบาลง)</span>
-          </label>
+        <!-- Strategy Radio Selector -->
+        <div style="margin-top:10px; padding:8px 10px; background:var(--panel); border:1px solid var(--line); border-radius:8px;">
+          <div style="font-size:11px; font-weight:700; color:var(--ink); margin-bottom:6px;" id="lbl-prepay-strategy-title">🎯 เลือกกลยุทธ์การโปะ (Prepayment Strategy):</div>
+          <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:11.5px;">
+            <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; color:var(--ink);">
+              <input type="radio" name="prepayStrategy" id="stratReduceTerm" value="reduce_term" checked onchange="onPrepayChange()">
+              <span id="lbl-strat-reduce-term">ย่นระยะเวลาผ่อน (Reduce Term — ประหยัดดอกเบี้ยสูงสุด)</span>
+            </label>
+            <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; color:var(--ink);">
+              <input type="radio" name="prepayStrategy" id="stratReducePmt" value="reduce_payment" onchange="onPrepayChange()">
+              <span id="lbl-strat-reduce-pmt">ลดค่างวดรายเดือน (Reduce Payment — ผ่อนเบาลง)</span>
+            </label>
+          </div>
         </div>
-      </div>
 
-      <!-- Comparison Metrics Cards -->
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; margin-top:12px;">
-        <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
-          <div style="font-size:10px; color:var(--ink-faint);" id="lbl-res-prepay-horizon">ระยะเวลาผ่อนใหม่</div>
-          <div style="font-size:13px; font-weight:700; color:var(--ink); margin-top:2px;" id="valPrepayHorizon">-</div>
+        <!-- Comparison Metrics Cards -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; margin-top:12px;">
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
+            <div style="font-size:10px; color:var(--ink-faint);" id="lbl-res-prepay-horizon">ระยะเวลาผ่อนใหม่</div>
+            <div style="font-size:13px; font-weight:700; color:var(--ink); margin-top:2px;" id="valPrepayHorizon">-</div>
+          </div>
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
+            <div style="font-size:10px; color:var(--ink-faint);" id="lbl-res-prepay-saved">ประหยัดดอกเบี้ย</div>
+            <div style="font-size:13px; font-weight:700; color:var(--ok); margin-top:2px;" id="valPrepayInterestSaved">-</div>
+          </div>
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
+            <div style="font-size:10px; color:var(--ink-faint);" id="lbl-res-prepay-pmt">ค่างวดต่อเดือน</div>
+            <div style="font-size:13px; font-weight:700; color:var(--core); margin-top:2px;" id="valPrepayPayment">-</div>
+          </div>
         </div>
-        <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
-          <div style="font-size:10px; color:var(--ink-faint);" id="lbl-res-prepay-saved">ประหยัดดอกเบี้ย</div>
-          <div style="font-size:13px; font-weight:700; color:var(--ok); margin-top:2px;" id="valPrepayInterestSaved">-</div>
-        </div>
-        <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
-          <div style="font-size:10px; color:var(--ink-faint);" id="lbl-res-prepay-pmt">ค่างวดต่อเดือน</div>
-          <div style="font-size:13px; font-weight:700; color:var(--core); margin-top:2px;" id="valPrepayPayment">-</div>
-        </div>
-      </div>
 
-      <!-- Thai Mortgage Tax Deduction Callout (Section 47(1)(h)) -->
-      <div id="mortgageTaxDeductionBadge" style="margin-top:10px; padding:10px 12px; border-radius:8px; font-size:11px; background:rgba(59, 130, 246, 0.1); border:1px solid var(--core); color:var(--ink); line-height:1.45;"></div>
+        <!-- Thai Mortgage Tax Deduction Callout (Section 47(1)(h)) -->
+        <div id="mortgageTaxDeductionBadge" style="margin-top:10px; padding:10px 12px; border-radius:8px; font-size:11px; background:rgba(59, 130, 246, 0.1); border:1px solid var(--core); color:var(--ink); line-height:1.45;"></div>
+      </div>
     </div>
   </div>
 
   <!-- Car Loan Flat vs Effective Rate Comparator (Roadmap Phase 51) -->
-  <div class="panel" id="panelCarLoanComparator">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-      <div class="panel-title" style="margin-bottom:0;" id="lbl-car-loan-title">🚗 เปรียบเทียบดอกเบี้ยคงที่ vs ลดต้นลดดอก สินเชื่อรถยนต์ (Car Loan Flat vs Effective Rate)</div>
+  <div class="panel reorder-card" id="panelCarLoanComparator">
+    <div class="panel-title" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <div style="margin-bottom:0;" id="lbl-car-loan-title">🚗 เปรียบเทียบดอกเบี้ยคงที่ vs ลดต้นลดดอก สินเชื่อรถยนต์ (Car Loan Flat vs Effective Rate)</div>
       <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; font-weight:600; color:var(--ink);">
         <input type="checkbox" id="chkEnableCarLoan" onchange="onToggleCarLoan(this.checked)" style="cursor:pointer;">
         <span id="lbl-enable-car-loan">เปิดใช้งาน</span>
       </label>
     </div>
 
-    <div id="carLoanInputsContainer" style="display:none; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:12px; margin-top:8px;">
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:10px;">
-        <div>
-          <label for="txtCarLoanAmount" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-car-amount">ยอดจัดสินเชื่อรถยนต์ (บาท)</label>
-          <input type="number" id="txtCarLoanAmount" value="600000" min="0" step="50000" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onCarLoanChange()">
+    <div id="panelCarLoanComparatorBody">
+      <div id="carLoanInputsContainer" style="display:none; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:12px; margin-top:8px;">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:10px;">
+          <div>
+            <label for="txtCarLoanAmount" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-car-amount">ยอดจัดสินเชื่อรถยนต์ (บาท)</label>
+            <input type="number" id="txtCarLoanAmount" value="600000" min="0" step="50000" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onCarLoanChange()">
+          </div>
+          <div>
+            <label for="txtCarFlatRate" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-car-flat-rate">ดอกเบี้ยคงที่ Flat Rate (% ต่อปี)</label>
+            <input type="number" id="txtCarFlatRate" value="2.5" min="0" max="20" step="0.1" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onCarLoanChange()">
+          </div>
+          <div>
+            <label for="txtCarLoanTerm" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-car-term">ระยะเวลาผ่อน (เดือน)</label>
+            <input type="number" id="txtCarLoanTerm" value="48" min="12" max="96" step="12" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onCarLoanChange()">
+          </div>
         </div>
-        <div>
-          <label for="txtCarFlatRate" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-car-flat-rate">ดอกเบี้ยคงที่ Flat Rate (% ต่อปี)</label>
-          <input type="number" id="txtCarFlatRate" value="2.5" min="0" max="20" step="0.1" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onCarLoanChange()">
-        </div>
-        <div>
-          <label for="txtCarLoanTerm" style="display:block; font-size:11px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-car-term">ระยะเวลาผ่อน (เดือน)</label>
-          <input type="number" id="txtCarLoanTerm" value="48" min="12" max="96" step="12" inputmode="decimal" class="value-input" style="width:100%; font-size:14px; padding:6px 10px;" oninput="onCarLoanChange()">
-        </div>
-      </div>
 
-      <!-- Comparison Metrics Cards -->
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; margin-top:12px;">
-        <div style="background:var(--panel); border:1px solid var(--warn); border-radius:8px; padding:8px 10px;">
-          <div style="font-size:10px; color:var(--ink-faint);" id="lbl-res-car-apr">อัตราดอกเบี้ยแท้จริง (Effective APR)</div>
-          <div style="font-size:14px; font-weight:700; color:var(--warn); margin-top:2px;" id="valCarEffectiveApr">-</div>
-          <div style="font-size:10px; color:var(--ink-dim); margin-top:2px;" id="valCarMultiplier">สูงกว่า Flat Rate ~1.9 เท่า</div>
+        <!-- Comparison Metrics Cards -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px; margin-top:12px;">
+          <div style="background:var(--panel); border:1px solid var(--warn); border-radius:8px; padding:8px 10px;">
+            <div style="font-size:10px; color:var(--ink-faint);" id="lbl-res-car-apr">อัตราดอกเบี้ยแท้จริง (Effective APR)</div>
+            <div style="font-size:14px; font-weight:700; color:var(--warn); margin-top:2px;" id="valCarEffectiveApr">-</div>
+            <div style="font-size:10px; color:var(--ink-dim); margin-top:2px;" id="valCarMultiplier">สูงกว่า Flat Rate ~1.9 เท่า</div>
+          </div>
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
+            <div style="font-size:10px; color:var(--ink-faint);" id="lbl-res-car-pmt">ค่างวดต่อเดือน (รวม VAT 7%)</div>
+            <div style="font-size:14px; font-weight:700; color:var(--core); margin-top:2px;" id="valCarPayment">-</div>
+          </div>
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
+            <div style="font-size:10px; color:var(--ink-faint);" id="lbl-res-car-interest">ดอกเบี้ยรวมตลอดสัญญา</div>
+            <div style="font-size:14px; font-weight:700; color:var(--ink); margin-top:2px;" id="valCarTotalInterest">-</div>
+          </div>
         </div>
-        <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
-          <div style="font-size:10px; color:var(--ink-faint);" id="lbl-res-car-pmt">ค่างวดต่อเดือน (รวม VAT 7%)</div>
-          <div style="font-size:14px; font-weight:700; color:var(--core); margin-top:2px;" id="valCarPayment">-</div>
-        </div>
-        <div style="background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px;">
-          <div style="font-size:10px; color:var(--ink-faint);" id="lbl-res-car-interest">ดอกเบี้ยรวมตลอดสัญญา</div>
-          <div style="font-size:14px; font-weight:700; color:var(--ink); margin-top:2px;" id="valCarTotalInterest">-</div>
-        </div>
-      </div>
 
-      <!-- Consumer Protection Callout (สคบ. ปิดยอดก่อนกำหนด) -->
-      <div id="carLoanConsumerNote" style="margin-top:10px; padding:10px 12px; border-radius:8px; font-size:11px; background:rgba(16, 185, 129, 0.08); border:1px solid var(--ok); color:var(--ink); line-height:1.45;"></div>
+        <!-- Consumer Protection Callout (สคบ. ปิดยอดก่อนกำหนด) -->
+        <div id="carLoanConsumerNote" style="margin-top:10px; padding:10px 12px; border-radius:8px; font-size:11px; background:rgba(16, 185, 129, 0.08); border:1px solid var(--ok); color:var(--ink); line-height:1.45;"></div>
+      </div>
     </div>
   </div>
 
-  <div class="panel" id="debtChartPanel">
+  <div class="panel reorder-card" id="debtChartPanel">
     <div class="panel-title" id="lbl-chart-title">กราฟการลดลงของหนี้สิน (Payoff Trajectory)</div>
-    <div id="debtStrategyDeltaBadge" style="display:none; margin-bottom:12px; padding:8px 12px; border-radius:10px; font-size:12px; line-height:1.4; background:var(--panel-2); border:1px solid var(--line); color:var(--ink);"></div>
-    <div style="position:relative; width:100%; height:200px; margin-top:8px;">
-      <svg id="svgDebtChart" viewBox="0 0 600 220" preserveAspectRatio="none" role="img" aria-label="Debt payoff trajectory chart">
-        <title id="svgDebtChartTitle">Debt Payoff Trajectory</title>
-      </svg>
-    </div>
-    <div class="debt-chart-legend" id="debtChartLegend">
-      <div class="debt-chart-legend-item">
-        <span style="display:inline-block; width:14px; height:4px; border-radius:2px; background:#10b981;"></span>
-        <span id="lbl-leg-avalanche">Avalanche (ดอกสูงสุดก่อน)</span>
+    <div id="debtChartPanelBody">
+      <div id="debtStrategyDeltaBadge" style="display:none; margin-bottom:12px; padding:8px 12px; border-radius:10px; font-size:12px; line-height:1.4; background:var(--panel-2); border:1px solid var(--line); color:var(--ink);"></div>
+      <div style="position:relative; width:100%; height:200px; margin-top:8px;">
+        <svg id="svgDebtChart" viewBox="0 0 600 220" preserveAspectRatio="none" role="img" aria-label="Debt payoff trajectory chart">
+          <title id="svgDebtChartTitle">Debt Payoff Trajectory</title>
+        </svg>
       </div>
-      <div class="debt-chart-legend-item">
-        <span style="display:inline-block; width:14px; height:4px; border-radius:2px; background:#3b82f6;"></span>
-        <span id="lbl-leg-snowball">Snowball (ยอดน้อยสุดก่อน)</span>
-      </div>
-      <div class="debt-chart-legend-item">
-        <span style="display:inline-block; width:14px; height:2px; border-top:2px dashed #f59e0b;"></span>
-        <span id="lbl-leg-min">จ่ายขั้นต่ำเท่านั้น (Minimum Only)</span>
-      </div>
-      <div class="debt-chart-legend-item">
-        <span id="milestoneLegendDot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; border:2px solid #fff; box-shadow:0 0 2px rgba(0,0,0,0.3);"></span>
-        <span id="lbl-leg-milestone">จุดปลดหนี้ (Milestone)</span>
-      </div>
-      <div class="debt-chart-legend-item" id="leg-windfall" style="display:none;">
-        <span style="display:inline-block; width:14px; height:4px; border-radius:2px; background:#8b5cf6;"></span>
-        <span id="lbl-leg-windfall">โปะเงินก้อน (Windfall)</span>
+      <div class="debt-chart-legend" id="debtChartLegend">
+        <div class="debt-chart-legend-item">
+          <span style="display:inline-block; width:14px; height:4px; border-radius:2px; background:#10b981;"></span>
+          <span id="lbl-leg-avalanche">Avalanche (ดอกสูงสุดก่อน)</span>
+        </div>
+        <div class="debt-chart-legend-item">
+          <span style="display:inline-block; width:14px; height:4px; border-radius:2px; background:#3b82f6;"></span>
+          <span id="lbl-leg-snowball">Snowball (ยอดน้อยสุดก่อน)</span>
+        </div>
+        <div class="debt-chart-legend-item">
+          <span style="display:inline-block; width:14px; height:2px; border-top:2px dashed #f59e0b;"></span>
+          <span id="lbl-leg-min">จ่ายขั้นต่ำเท่านั้น (Minimum Only)</span>
+        </div>
+        <div class="debt-chart-legend-item">
+          <span id="milestoneLegendDot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; border:2px solid #fff; box-shadow:0 0 2px rgba(0,0,0,0.3);"></span>
+          <span id="lbl-leg-milestone">จุดปลดหนี้ (Milestone)</span>
+        </div>
+        <div class="debt-chart-legend-item" id="leg-windfall" style="display:none;">
+          <span style="display:inline-block; width:14px; height:4px; border-radius:2px; background:#8b5cf6;"></span>
+          <span id="lbl-leg-windfall">โปะเงินก้อน (Windfall)</span>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Debt Payoff Visual Milestone Road & Interest Velocity Panel -->
-  <div class="panel" id="debtMilestoneRoadPanel" style="display:none;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
-      <div class="panel-title" style="margin:0;" id="lbl-milestone-road-title">🛣️ แผนที่สู่เสรีภาพทางการเงิน (Payoff Milestone Road)</div>
+  <div class="panel reorder-card" id="debtMilestoneRoadPanel" style="display:none;">
+    <div class="panel-title" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+      <div style="margin:0;" id="lbl-milestone-road-title">🛣️ แผนที่สู่เสรีภาพทางการเงิน (Payoff Milestone Road)</div>
       <span id="badge-velocity-drop" style="font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; background:rgba(16,185,129,0.12); color:#059669;"></span>
     </div>
     
-    <div id="milestoneRoadCheckpoints" style="display:flex; flex-direction:column; gap:8px; margin-top:8px;"></div>
-    
-    <div id="interestVelocityBox" style="margin-top:12px; padding:10px 12px; border-radius:10px; background:var(--panel-2); border:1px solid var(--line); font-size:11px;"></div>
+    <div id="debtMilestoneRoadPanelBody">
+      <div id="milestoneRoadCheckpoints" style="display:flex; flex-direction:column; gap:8px; margin-top:8px;"></div>
+      <div id="interestVelocityBox" style="margin-top:12px; padding:10px 12px; border-radius:10px; background:var(--panel-2); border:1px solid var(--line); font-size:11px;"></div>
+    </div>
   </div>
 
-  <div class="panel">
-    <details>
-      <summary id="lbl-schedule-title">📅 ดูตารางกำหนดการปลดหนี้</summary>
-      <div id="payoffMilestones" style="margin-top:12px; font-size:11px; color:var(--ok); display:flex; flex-direction:column; gap:6px;"></div>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th id="th-sch-month">ด.</th>
-              <th id="th-sch-payment">จ่ายรวม</th>
-              <th id="th-sch-principal" style="color:var(--ok);">ต้น</th>
-              <th id="th-sch-interest" style="color:var(--warn);">ดอก</th>
-              <th id="th-sch-remaining">เหลือ</th>
-            </tr>
-          </thead>
-          <tbody id="scheduleTableBody"></tbody>
-        </table>
-      </div>
-    </details>
+  <div class="panel reorder-card" id="panelSchedule">
+    <div class="panel-title" id="lblSchedulePanelTitle"><span id="txtScheduleTitle">📅 ตารางกำหนดการปลดหนี้ (Payoff Schedule)</span></div>
+    <div id="panelScheduleBody">
+      <details>
+        <summary id="lbl-schedule-title">📅 ดูตารางกำหนดการปลดหนี้</summary>
+        <div id="payoffMilestones" style="margin-top:12px; font-size:11px; color:var(--ok); display:flex; flex-direction:column; gap:6px;"></div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th id="th-sch-month">ด.</th>
+                <th id="th-sch-payment">จ่ายรวม</th>
+                <th id="th-sch-principal" style="color:var(--ok);">ต้น</th>
+                <th id="th-sch-interest" style="color:var(--warn);">ดอก</th>
+                <th id="th-sch-remaining">เหลือ</th>
+              </tr>
+            </thead>
+            <tbody id="scheduleTableBody"></tbody>
+          </table>
+        </div>
+      </details>
+    </div>
   </div>
 
   <div class="save-status">
     <span id="saveStatus">&nbsp;</span>
+    <button class="reset-btn" id="btnResetDebtLayout" onclick="resetDebtLayout()">🔄 <span id="lblResetDebtLayout">จัดลำดับเดิม</span></button>
     <button class="reset-btn" id="btn-reset-debts" onclick="resetDefaults()">รีเซ็ตค่าเริ่มต้น</button>
   </div>
-  <p class="version-tag">v2.4.8</p>
+  <p class="version-tag">v2.4.9</p>
 
 <script src="js/shared.js"></script>
 <script src="js/debt-calculator.js"></script>

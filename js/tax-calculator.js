@@ -42,6 +42,9 @@ if (LANG === 'en') {
     'lbl-rmf-opt-title': '🔄 Compare: Cash Lump-Sum vs Transfer to RMF',
     'lbl-rmf-opt-subtitle': 'Tax optimization for PVD members ≥ 5 yrs and age < 55',
     'lbl-opt-lump-title': 'Option A: Take Full Lump Sum',
+    'lbl-reset-tax-layout': 'Reset Layout',
+    'lbl-panel-sev-inputs': '1. Severance & PVD Inputs',
+    'lbl-panel-sev-results': '2. Tax Results & RMF Rollover',
     'lbl-opt-lump-tax-lbl': 'Tax payable (Sec. 48(5)):',
     'lbl-opt-lump-net-lbl': 'Immediate net cash:',
     'lbl-opt-rmf-title': 'Option B: Transfer PVD to RMF',
@@ -1115,3 +1118,26 @@ window.updateLandTaxUI = updateLandTaxUI;
 loadState();
 initInheritanceTaxCard();
 initLandTaxCard();
+
+// Universal Card Layout Manager
+const taxLayoutManager =
+  typeof MoneyApp !== 'undefined' && MoneyApp.initCardLayoutManager
+    ? MoneyApp.initCardLayoutManager({
+        container: document.getElementById('taxPanelsContainer'),
+        cardSelector: '.reorder-card',
+        storageKey: 'moneySuperapp.layout.taxcalc.v1',
+        defaultOrder: [
+          'panelSeveranceInputs',
+          'panelSeveranceResults',
+          'sso-simulator-card',
+          'inheritance-tax-card',
+          'land-building-tax-card',
+        ],
+      })
+    : null;
+
+window.resetTaxLayout = function () {
+  if (taxLayoutManager) {
+    taxLayoutManager.resetLayout();
+  }
+};

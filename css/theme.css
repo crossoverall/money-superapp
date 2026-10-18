@@ -361,3 +361,57 @@ html { line-height: 1.5; -webkit-text-size-adjust: 100%; }
 .skeleton-card { height: 72px; border-radius: 12px; }
 .skeleton-main-panel { height: 220px; border-radius: 14px; margin-top: 6px; }
 
+/* Universal Card Reorder & Fold Controls */
+.card-reorder-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 2px 4px;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.btn-card-ctrl {
+  background: none;
+  border: none;
+  color: var(--ink-dim);
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 700;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-card-ctrl:hover:not(:disabled) {
+  background: var(--line);
+  color: var(--ink);
+}
+
+.btn-card-ctrl:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.btn-card-ctrl.btn-card-toggle {
+  color: var(--core);
+  padding: 2px 6px;
+  border-left: 1px solid var(--line);
+  margin-left: 2px;
+}
+
+.card-collapsed-hidden {
+  display: none !important;
+}
+
+.reorder-card {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+

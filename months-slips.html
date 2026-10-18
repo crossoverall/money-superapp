@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="2.4.8">
+    <meta name="version" content="2.4.9">
     <meta name="description" content="จำลองสลิปเงินเดือนรวมโบนัส — คำนวณรายได้ ภาษี เงินสมทบประกันสังคม และกองทุนสำรองเลี้ยงชีพ per เดือน">
     <title>จำลองสลิปเงินเดือน (รวมโบนัส)</title>
     <link rel="stylesheet" href="css/tailwind-lite.css">
@@ -116,15 +116,22 @@
 <body class="min-h-screen flex flex-col items-center justify-start p-4 md:py-8">
 
     <div class="w-full max-w-4xl flex flex-col gap-6">
+        <div class="flex items-center justify-between no-print px-1">
+            <span class="text-xs" style="color:var(--ink-dim);" id="lbl-slips-subtitle">สามารถจัดเรียงหรือพับย่อการ์ดแต่ละส่วนได้ตามต้องการ</span>
+            <button type="button" id="btnResetSlipsLayout" onclick="resetSlipsLayout()" class="py-1 px-2.5 text-xs font-semibold rounded-lg no-print" style="color:var(--ink-dim); background:var(--panel-2); border:1px solid var(--line); cursor:pointer;" title="รีเซ็ตลำดับการแสดงผล / Reset Layout">
+                ↺ <span id="lbl-reset-slips-layout">รีเซ็ตลำดับ</span>
+            </button>
+        </div>
         
-        <!-- Main Payslip Grid (Input + Slip) -->
-        <div class="w-full grid grid-cols-1 md:grid-cols-12 gap-6">
+        <!-- Main Payslip Grid (All Reorder Cards) -->
+        <div id="slipsContainer" class="w-full grid grid-cols-1 md:grid-cols-12 gap-6">
         
-        <!-- Input Section -->
-        <div class="bg-white p-6 rounded-2xl shadow-md md:col-span-5 h-fit border-t-4" style="border-top-color: var(--core);" role="region" aria-labelledby="lbl-setup">
-            <h2 class="text-xl font-semibold text-gray-800 mb-5" id="lbl-setup">ตั้งค่าข้อมูลรายได้</h2>
-
-            <div class="space-y-4">
+        <!-- 1. Input Section -->
+        <div id="panelPayslipSetup" class="reorder-card bg-white p-6 rounded-2xl shadow-md md:col-span-5 h-fit border-t-4" style="border-top-color: var(--core);" role="region" aria-labelledby="lbl-setup">
+            <div class="panel-header flex items-center justify-between mb-5">
+                <h2 class="text-xl font-semibold text-gray-800 panel-title" id="lbl-setup">ตั้งค่าข้อมูลรายได้</h2>
+            </div>
+            <div id="panelPayslipSetupBody" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1" id="lbl-salary" for="salary">เงินเดือนพื้นฐาน (บาท/เดือน)</label>
                     <input type="number" id="salary" placeholder="เช่น 50000" inputmode="decimal" aria-labelledby="lbl-salary" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none transition-all font-medium" oninput="calculateSlip()">
@@ -163,21 +170,21 @@
                         <option value="1150" id="opt-sso-1150">1,150 บาท (เพดานใหม่ 23,000)</option>
                     </select>
                 </div>
-            </div>
 
-            <div class="mt-6 p-4 rounded-lg text-sm" style="background:var(--panel-2); border:1px solid var(--line); color:var(--ink-dim);">
-                <p id="lbl-taxnote"><strong>หลักการคำนวณภาษี:</strong> ระบบจะนำ โบนัส ไปรวมกับรายได้ทั้งปี เพื่อหาฐานภาษีรวม จากนั้นจะหาร 12 เพื่อเฉลี่ยเป็นยอดหักภาษีต่อเดือน (วิธี Annualized)</p>
+                <div class="mt-6 p-4 rounded-lg text-sm" style="background:var(--panel-2); border:1px solid var(--line); color:var(--ink-dim);">
+                    <p id="lbl-taxnote"><strong>หลักการคำนวณภาษี:</strong> ระบบจะนำ โบนัส ไปรวมกับรายได้ทั้งปี เพื่อหาฐานภาษีรวม จากนั้นจะหาร 12 เพื่อเฉลี่ยเป็นยอดหักภาษีต่อเดือน (วิธี Annualized)</p>
+                </div>
             </div>
         </div>
 
-        <!-- Slip Section -->
-        <div class="bg-white rounded-xl shadow-lg md:col-span-7 overflow-hidden border border-gray-200" role="region" aria-labelledby="lbl-payslip">
-            <div class="bg-gray-800 text-white text-center py-4 px-6 relative overflow-hidden">
-                <h2 class="text-xl font-semibold tracking-wide" id="lbl-payslip">สลิปเงินเดือน</h2>
+        <!-- 2. Slip Section -->
+        <div id="panelPayslipCard" class="reorder-card bg-white rounded-xl shadow-lg md:col-span-7 overflow-hidden border border-gray-200" role="region" aria-labelledby="lbl-payslip">
+            <div class="panel-header bg-gray-800 text-white text-center py-4 px-6 relative overflow-hidden flex items-center justify-between">
+                <h2 class="text-xl font-semibold tracking-wide panel-title" id="lbl-payslip">สลิปเงินเดือน</h2>
                 <div class="absolute top-0 right-0 w-16 h-16 bg-white opacity-5 transform rotate-45 translate-x-4 -translate-y-4"></div>
             </div>
             
-            <div class="p-6 slip-bg">
+            <div id="panelPayslipCardBody" class="p-6 slip-bg">
                 <div class="grid grid-cols-2 gap-x-8 gap-y-4 border-b border-gray-300 pb-4 mb-4">
                     <!-- Earnings -->
                     <div>
@@ -251,161 +258,168 @@
                         <button onclick="window.print()" id="btn-print-slip" class="py-1.5 px-3 text-white text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-xs" style="background:var(--core);" aria-label="พิมพ์ / บันทึก PDF / Print or Save PDF">
                             <span id="lbl-print-slip">🖨️ พิมพ์ / บันทึก PDF</span>
                         </button>
-                        <p class="text-xs ml-auto" style="color:var(--ink-faint);">v2.4.8</p>
+                        <p class="text-xs ml-auto" style="color:var(--ink-faint);">v2.4.9</p>
                     </div>
                 </div>
             </div>
         </div>
 
-    </div>
-
-    <!-- 12-Month Cashflow Trajectory & Distribution Stream -->
-    <div class="w-full bg-white rounded-xl shadow-lg p-5 border border-gray-200 mt-6 mb-6 no-print" role="region" aria-labelledby="lbl-stream-title">
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-            <div>
-                <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5" id="lbl-stream-title">
-                    📅 กราฟการกระจายรายรับสุทธิ 12 เดือน (Annual Net Cashflow Stream)
-                </h3>
-                <p class="text-xs text-gray-500 mt-0.5" id="lbl-stream-sub">
-                    แสดงสัดส่วนเงินได้สุทธิ, ภาษี, ประกันสังคม, กองทุนสำรองเลี้ยงชีพ และโบนัสในแต่ละเดือน
-                </p>
-            </div>
-            <div class="flex items-center gap-2">
-                <span id="badge-total-annual-net" role="status" aria-live="polite" class="py-1 px-3 bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold rounded-lg">
-                    รับสุทธิทั้งปี: 0 บาท
-                </span>
-            </div>
-        </div>
-
-        <!-- SVG Column Stream Chart -->
-        <div style="position:relative; width:100%; overflow-x:auto;">
-            <svg id="svgStreamChart" viewBox="0 0 600 180" style="width:100%; min-width:480px; height:180px;" role="img" aria-label="12-Month Net Pay Distribution Chart">
-                <title id="svgStreamTitle">12-Month Payroll Distribution</title>
-            </svg>
-            <div id="streamTooltip" role="tooltip" aria-hidden="true" class="absolute pointer-events-none opacity-0 bg-gray-900 text-white text-xs rounded-lg py-1.5 px-3 transition-opacity shadow-lg z-10" style="white-space:nowrap; display:none;"></div>
-        </div>
-
-        <!-- Chart Legend -->
-        <div class="flex flex-wrap items-center justify-center gap-4 mt-3 pt-3 border-t border-gray-100 text-xs text-gray-600">
-            <div class="flex items-center gap-1.5">
-                <span style="width:10px; height:10px; border-radius:2px; background:var(--ok, #10b981);" class="inline-block"></span>
-                <span id="leg-stream-net">เงินได้สุทธิ (Net Pay)</span>
-            </div>
-            <div class="flex items-center gap-1.5">
-                <span style="width:10px; height:10px; border-radius:2px; background:var(--purple, #8b5cf6);" class="inline-block"></span>
-                <span id="leg-stream-bonus">โบนัสพิเศษ (Bonus)</span>
-            </div>
-            <div class="flex items-center gap-1.5">
-                <span style="width:10px; height:10px; border-radius:2px; background:var(--core, #3b82f6);" class="inline-block"></span>
-                <span id="leg-stream-pvd">PVD</span>
-            </div>
-            <div class="flex items-center gap-1.5">
-                <span style="width:10px; height:10px; border-radius:2px; background:var(--warn, #f59e0b);" class="inline-block"></span>
-                <span id="leg-stream-sso">ประกันสังคม (SSO)</span>
-            </div>
-            <div class="flex items-center gap-1.5">
-                <span style="width:10px; height:10px; border-radius:2px; background:var(--danger, #ef4444);" class="inline-block"></span>
-                <span id="leg-stream-tax">ภาษี (Tax)</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Annual Cumulative Payslip Withholding vs PIT Reconciliation Bridge & Refund Direct Deposit Tracker -->
-    <!-- Annual Cumulative Payslip Withholding vs PIT Reconciliation Bridge & Refund Direct Deposit Tracker -->
-    <div class="w-full rounded-xl shadow-lg p-5 mt-6 mb-6 no-print" id="pitReconciliationCard" role="region" aria-labelledby="lbl-reconcile-title" style="background:var(--panel); border:1px solid var(--line);">
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-            <div>
-                <h3 class="text-sm font-bold uppercase tracking-wider flex items-center gap-1.5" style="color:var(--ink);" id="lbl-reconcile-title">
-                    🔄 การกระทบยอดภาษีสิ้นปี ภ.ง.ด.91 &amp; ขอคืนเงินภาษี (Year-End PIT Reconciliation &amp; Refund Tracker)
-                </h3>
-                <p class="text-xs mt-0.5" style="color:var(--ink-dim);" id="lbl-reconcile-sub">
-                    เปรียบเทียบภาษีหัก ณ ที่จ่ายสะสมทั้งปี (50 ทวิ) กับภาษีที่ต้องจ่ายจริงหลังหักลดหย่อนเพิ่มเติม พร้อมจำลองสิทธิ์ขอคืนภาษีผ่านพร้อมเพย์
-                </p>
-            </div>
-            <div id="badgeReconcileStatus" role="status" aria-live="polite">
-                <!-- Status badge dynamically injected -->
-            </div>
-        </div>
-
-        <!-- Input controls grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-3.5 rounded-lg text-xs mb-4" style="background:var(--panel-2); border:1px solid var(--line);">
-            <div>
-                <div class="flex justify-between items-center mb-1">
-                    <label class="font-semibold" style="color:var(--ink);" id="lbl-recon-withheld" for="reconWithheldInput">
-                        ภาษีหัก ณ ที่จ่ายสะสมทั้งปี (50 ทวิ):
-                    </label>
-                    <button type="button" onclick="syncWithholdingFromStream()" class="text-[11px] font-medium hover:underline" style="color:var(--core); background:none; border:none; cursor:pointer;" id="btn-recon-sync">
-                        🔄 ใช้ยอดจากสลิป 12 เดือน
-                    </button>
+        <!-- 3. 12-Month Cashflow Trajectory & Distribution Stream -->
+        <div id="panelCashflowStream" class="reorder-card w-full md:col-span-12 bg-white rounded-xl shadow-lg p-5 border border-gray-200 no-print" role="region" aria-labelledby="lbl-stream-title">
+            <div class="panel-header flex flex-wrap items-center justify-between gap-2 mb-4">
+                <div>
+                    <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5 panel-title" id="lbl-stream-title">
+                        📅 กราฟการกระจายรายรับสุทธิ 12 เดือน (Annual Net Cashflow Stream)
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-0.5" id="lbl-stream-sub">
+                        แสดงสัดส่วนเงินได้สุทธิ, ภาษี, ประกันสังคม, กองทุนสำรองเลี้ยงชีพ และโบนัสในแต่ละเดือน
+                    </p>
                 </div>
-                <div class="relative">
-                    <input type="number" id="reconWithheldInput" min="0" step="100" aria-labelledby="lbl-recon-withheld" aria-describedby="lbl-recon-withheld-hint" class="w-full px-3 py-2 rounded-lg text-sm font-semibold" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="onWithheldManualInput()">
-                    <span class="absolute right-3 top-2.5 text-xs font-medium" style="color:var(--ink-faint);" id="lbl-recon-unit1">บาท</span>
+                <div class="flex items-center gap-2">
+                    <span id="badge-total-annual-net" role="status" aria-live="polite" class="py-1 px-3 bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold rounded-lg">
+                        รับสุทธิทั้งปี: 0 บาท
+                    </span>
                 </div>
-                <p class="text-[11px] mt-1" style="color:var(--ink-faint);" id="lbl-recon-withheld-hint">ยอดภาษีสะสมที่นายจ้างหักส่งกรมสรรพากรตลอดทั้งปี</p>
             </div>
 
-            <div>
-                <div class="flex justify-between items-center mb-1">
-                    <label class="font-semibold" style="color:var(--ink);" id="lbl-recon-extraded" for="reconExtraDeductionsInput">
-                        ค่าลดหย่อนภาษีเพิ่มเติมสิ้นปี (Extra Deductions):
-                    </label>
-                    <span class="text-[11px] font-semibold" style="color:var(--ok);" id="lbl-recon-ded-save">ประหยัดภาษีได้: 0.00 บาท</span>
+            <div id="panelCashflowStreamBody">
+                <!-- SVG Column Stream Chart -->
+                <div style="position:relative; width:100%; overflow-x:auto;">
+                    <svg id="svgStreamChart" viewBox="0 0 600 180" style="width:100%; min-width:480px; height:180px;" role="img" aria-label="12-Month Net Pay Distribution Chart">
+                        <title id="svgStreamTitle">12-Month Payroll Distribution</title>
+                    </svg>
+                    <div id="streamTooltip" role="tooltip" aria-hidden="true" class="absolute pointer-events-none opacity-0 bg-gray-900 text-white text-xs rounded-lg py-1.5 px-3 transition-opacity shadow-lg z-10" style="white-space:nowrap; display:none;"></div>
                 </div>
-                <div class="relative">
-                    <input type="number" id="reconExtraDeductionsInput" min="0" step="1000" value="0" placeholder="0" aria-labelledby="lbl-recon-extraded" aria-describedby="lbl-recon-extraded-hint" class="w-full px-3 py-2 rounded-lg text-sm font-semibold" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="runReconciliation()">
-                    <span class="absolute right-3 top-2.5 text-xs font-medium" style="color:var(--ink-faint);" id="lbl-recon-unit2">บาท</span>
+
+                <!-- Chart Legend -->
+                <div class="flex flex-wrap items-center justify-center gap-4 mt-3 pt-3 border-t border-gray-100 text-xs text-gray-600">
+                    <div class="flex items-center gap-1.5">
+                        <span style="width:10px; height:10px; border-radius:2px; background:var(--ok, #10b981);" class="inline-block"></span>
+                        <span id="leg-stream-net">เงินได้สุทธิ (Net Pay)</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span style="width:10px; height:10px; border-radius:2px; background:var(--purple, #8b5cf6);" class="inline-block"></span>
+                        <span id="leg-stream-bonus">โบนัสพิเศษ (Bonus)</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span style="width:10px; height:10px; border-radius:2px; background:var(--core, #3b82f6);" class="inline-block"></span>
+                        <span id="leg-stream-pvd">PVD</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span style="width:10px; height:10px; border-radius:2px; background:var(--warn, #f59e0b);" class="inline-block"></span>
+                        <span id="leg-stream-sso">ประกันสังคม (SSO)</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span style="width:10px; height:10px; border-radius:2px; background:var(--danger, #ef4444);" class="inline-block"></span>
+                        <span id="leg-stream-tax">ภาษี (Tax)</span>
+                    </div>
                 </div>
-                <p class="text-[11px] mt-1" style="color:var(--ink-faint);" id="lbl-recon-extraded-hint">เช่น ประกันชีวิต/สุขภาพ, กองทุนลดหย่อน ThaiESG/SSF/RMF, ดอกเบี้ยบ้าน, บริจาค</p>
             </div>
         </div>
 
-        <!-- Metric Cards Result -->
-        <div id="reconResultPanel" role="region" aria-label="Reconciliation Results" class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs mb-3">
-            <div class="p-3 rounded-lg shadow-sm" style="background:var(--panel); border:1px solid var(--line);">
-                <span class="block mb-0.5" style="color:var(--ink-faint);" id="lbl-recon-card-withheld">ภาษีที่ถูกหักไว้แล้ว (50 ทวิ)</span>
-                <span id="reconCardWithheld" class="text-sm font-bold" style="color:var(--ink);">0.00 บาท</span>
+        <!-- 4. Annual Cumulative Payslip Withholding vs PIT Reconciliation Bridge & Refund Direct Deposit Tracker -->
+        <div id="pitReconciliationCard" class="reorder-card w-full md:col-span-12 rounded-xl shadow-lg p-5 no-print" role="region" aria-labelledby="lbl-reconcile-title" style="background:var(--panel); border:1px solid var(--line);">
+            <div class="panel-header flex flex-wrap items-center justify-between gap-2 mb-3">
+                <div>
+                    <h3 class="text-sm font-bold uppercase tracking-wider flex items-center gap-1.5 panel-title" style="color:var(--ink);" id="lbl-reconcile-title">
+                        🔄 การกระทบยอดภาษีสิ้นปี ภ.ง.ด.91 &amp; ขอคืนเงินภาษี (Year-End PIT Reconciliation &amp; Refund Tracker)
+                    </h3>
+                    <p class="text-xs mt-0.5" style="color:var(--ink-dim);" id="lbl-reconcile-sub">
+                        เปรียบเทียบภาษีหัก ณ ที่จ่ายสะสมทั้งปี (50 ทวิ) กับภาษีที่ต้องจ่ายจริงหลังหักลดหย่อนเพิ่มเติม พร้อมจำลองสิทธิ์ขอคืนภาษีผ่านพร้อมเพย์
+                    </p>
+                </div>
+                <div id="badgeReconcileStatus" role="status" aria-live="polite">
+                    <!-- Status badge dynamically injected -->
+                </div>
             </div>
-            <div class="p-3 rounded-lg shadow-sm" style="background:var(--panel); border:1px solid var(--line);">
-                <span class="block mb-0.5" style="color:var(--ink-faint);" id="lbl-recon-card-liability">ภาษีที่ต้องจ่ายจริงสิ้นปี</span>
-                <span id="reconCardLiability" class="text-sm font-bold" style="color:var(--ink);">0.00 บาท</span>
-            </div>
-            <div class="p-3 rounded-lg border shadow-sm transition-colors" id="reconCardSettlementBox" style="background:var(--panel-2); border-color:var(--line);">
-                <span class="block mb-0.5" style="color:var(--ink-faint);" id="lbl-recon-card-settlement">ผลลัพธ์การกระทบยอด</span>
-                <span id="reconCardSettlement" class="text-sm font-black" style="color:var(--ink);">0.00 บาท</span>
+
+            <div id="pitReconciliationCardBody">
+                <!-- Input controls grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-3.5 rounded-lg text-xs mb-4" style="background:var(--panel-2); border:1px solid var(--line);">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="font-semibold" style="color:var(--ink);" id="lbl-recon-withheld" for="reconWithheldInput">
+                                ภาษีหัก ณ ที่จ่ายสะสมทั้งปี (50 ทวิ):
+                            </label>
+                            <button type="button" onclick="syncWithholdingFromStream()" class="text-[11px] font-medium hover:underline" style="color:var(--core); background:none; border:none; cursor:pointer;" id="btn-recon-sync">
+                                🔄 ใช้ยอดจากสลิป 12 เดือน
+                            </button>
+                        </div>
+                        <div class="relative">
+                            <input type="number" id="reconWithheldInput" min="0" step="100" aria-labelledby="lbl-recon-withheld" aria-describedby="lbl-recon-withheld-hint" class="w-full px-3 py-2 rounded-lg text-sm font-semibold" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="onWithheldManualInput()">
+                            <span class="absolute right-3 top-2.5 text-xs font-medium" style="color:var(--ink-faint);" id="lbl-recon-unit1">บาท</span>
+                        </div>
+                        <p class="text-[11px] mt-1" style="color:var(--ink-faint);" id="lbl-recon-withheld-hint">ยอดภาษีสะสมที่นายจ้างหักส่งกรมสรรพากรตลอดทั้งปี</p>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="font-semibold" style="color:var(--ink);" id="lbl-recon-extraded" for="reconExtraDeductionsInput">
+                                ค่าลดหย่อนภาษีเพิ่มเติมสิ้นปี (Extra Deductions):
+                            </label>
+                            <span class="text-[11px] font-semibold" style="color:var(--ok);" id="lbl-recon-ded-save">ประหยัดภาษีได้: 0.00 บาท</span>
+                        </div>
+                        <div class="relative">
+                            <input type="number" id="reconExtraDeductionsInput" min="0" step="1000" value="0" placeholder="0" aria-labelledby="lbl-recon-extraded" aria-describedby="lbl-recon-extraded-hint" class="w-full px-3 py-2 rounded-lg text-sm font-semibold" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="runReconciliation()">
+                            <span class="absolute right-3 top-2.5 text-xs font-medium" style="color:var(--ink-faint);" id="lbl-recon-unit2">บาท</span>
+                        </div>
+                        <p class="text-[11px] mt-1" style="color:var(--ink-faint);" id="lbl-recon-extraded-hint">เช่น ประกันชีวิต/สุขภาพ, กองทุนลดหย่อน ThaiESG/SSF/RMF, ดอกเบี้ยบ้าน, บริจาค</p>
+                    </div>
+                </div>
+
+                <!-- Metric Cards Result -->
+                <div id="reconResultPanel" role="region" aria-label="Reconciliation Results" class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs mb-3">
+                    <div class="p-3 rounded-lg shadow-sm" style="background:var(--panel); border:1px solid var(--line);">
+                        <span class="block mb-0.5" style="color:var(--ink-faint);" id="lbl-recon-card-withheld">ภาษีที่ถูกหักไว้แล้ว (50 ทวิ)</span>
+                        <span id="reconCardWithheld" class="text-sm font-bold" style="color:var(--ink);">0.00 บาท</span>
+                    </div>
+                    <div class="p-3 rounded-lg shadow-sm" style="background:var(--panel); border:1px solid var(--line);">
+                        <span class="block mb-0.5" style="color:var(--ink-faint);" id="lbl-recon-card-liability">ภาษีที่ต้องจ่ายจริงสิ้นปี</span>
+                        <span id="reconCardLiability" class="text-sm font-bold" style="color:var(--ink);">0.00 บาท</span>
+                    </div>
+                    <div class="p-3 rounded-lg border shadow-sm transition-colors" id="reconCardSettlementBox" style="background:var(--panel-2); border-color:var(--line);">
+                        <span class="block mb-0.5" style="color:var(--ink-faint);" id="lbl-recon-card-settlement">ผลลัพธ์การกระทบยอด</span>
+                        <span id="reconCardSettlement" class="text-sm font-black" style="color:var(--ink);">0.00 บาท</span>
+                    </div>
+                </div>
+
+                <!-- PromptPay Direct Deposit / Settlement Detail Banner -->
+                <div id="reconSettlementBanner" role="status" aria-live="polite" class="p-3.5 rounded-lg border text-xs leading-relaxed transition-all" style="background:var(--panel-2); border-color:var(--line); color:var(--ink);">
+                    <!-- Dynamic promptpay or installment info -->
+                </div>
             </div>
         </div>
 
-        <!-- PromptPay Direct Deposit / Settlement Detail Banner -->
-        <div id="reconSettlementBanner" role="status" aria-live="polite" class="p-3.5 rounded-lg border text-xs leading-relaxed transition-all" style="background:var(--panel-2); border-color:var(--line); color:var(--ink);">
-            <!-- Dynamic promptpay or installment info -->
+        <!-- 5. Job Scenario Comparison Panel (At Bottom) -->
+        <div id="panelJobCompare" class="reorder-card w-full md:col-span-12 no-print p-4 rounded-xl shadow-md border" style="background:var(--panel); border:1px solid var(--line);">
+            <div class="panel-header flex items-center justify-between mb-2">
+                <h3 class="font-bold text-sm panel-title" style="color:var(--ink);" id="lblCompareTitle">📊 เปรียบเทียบ Scenario A vs B</h3>
+            </div>
+            <div id="panelJobCompareBody">
+                <button id="compareToggleBtn" onclick="toggleCompare()" aria-expanded="false" aria-controls="comparePanel" class="w-full py-2.5 px-4 text-white text-sm font-semibold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 mb-3" style="background:var(--core);">
+                    <span id="lblCompareToggle">⚖️ เปรียบเทียบข้อเสนองาน</span>
+                </button>
+                <div id="comparePanel" role="region" aria-labelledby="lblCompareTitle" style="display:none; background:var(--panel-2); border:1px solid var(--line);" class="rounded-xl p-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        <div>
+                            <label class="font-semibold block mb-1" style="color:var(--ink);" id="lblScenarioA">Scenario A</label>
+                            <input type="number" id="cmpSalaryA" placeholder="เงินเดือน" class="w-full px-3 py-2 rounded-lg text-sm mb-2 font-medium" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="runCompare()">
+                            <input type="number" id="cmpBonusA" placeholder="โบนัส (เดือน)" value="0" class="w-full px-3 py-2 rounded-lg text-sm mb-2 font-medium" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="runCompare()">
+                            <input type="number" id="cmpPvdA" placeholder="PVD %" value="0" class="w-full px-3 py-2 rounded-lg text-sm font-medium" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="runCompare()">
+                        </div>
+                        <div>
+                            <label class="font-semibold block mb-1" style="color:var(--ink);" id="lblScenarioB">Scenario B</label>
+                            <input type="number" id="cmpSalaryB" placeholder="เงินเดือน" class="w-full px-3 py-2 rounded-lg text-sm mb-2 font-medium" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="runCompare()">
+                            <input type="number" id="cmpBonusB" placeholder="โบนัส (เดือน)" value="0" class="w-full px-3 py-2 rounded-lg text-sm mb-2 font-medium" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="runCompare()">
+                            <input type="number" id="cmpPvdB" placeholder="PVD %" value="0" class="w-full px-3 py-2 rounded-lg text-sm font-medium" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="runCompare()">
+                        </div>
+                    </div>
+                    <div id="compareResult" class="mt-3 p-3 rounded-lg text-xs" style="display:none; background:var(--panel); border:1px solid var(--line); color:var(--ink);"></div>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <!-- Job Scenario Comparison Panel (At Bottom) -->
-    <div class="w-full no-print">
-      <button id="compareToggleBtn" onclick="toggleCompare()" aria-expanded="false" aria-controls="comparePanel" class="w-full py-2.5 px-4 text-white text-sm font-semibold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2" style="background:var(--core);">
-        <span id="lblCompareToggle">⚖️ เปรียบเทียบข้อเสนองาน</span>
-      </button>
-      <div id="comparePanel" role="region" aria-labelledby="lblCompareTitle" style="display:none; background:var(--panel); border:1px solid var(--line);" class="mt-3 rounded-xl shadow-lg p-5">
-        <h3 class="font-bold text-sm mb-3" style="color:var(--ink);" id="lblCompareTitle">📊 เปรียบเทียบ Scenario A vs B</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-          <div>
-            <label class="font-semibold block mb-1" style="color:var(--ink);" id="lblScenarioA">Scenario A</label>
-            <input type="number" id="cmpSalaryA" placeholder="เงินเดือน" class="w-full px-3 py-2 rounded-lg text-sm mb-2 font-medium" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="runCompare()">
-            <input type="number" id="cmpBonusA" placeholder="โบนัส (เดือน)" value="0" class="w-full px-3 py-2 rounded-lg text-sm mb-2 font-medium" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="runCompare()">
-            <input type="number" id="cmpPvdA" placeholder="PVD %" value="0" class="w-full px-3 py-2 rounded-lg text-sm font-medium" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="runCompare()">
-          </div>
-          <div>
-            <label class="font-semibold block mb-1" style="color:var(--ink);" id="lblScenarioB">Scenario B</label>
-            <input type="number" id="cmpSalaryB" placeholder="เงินเดือน" class="w-full px-3 py-2 rounded-lg text-sm mb-2 font-medium" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="runCompare()">
-            <input type="number" id="cmpBonusB" placeholder="โบนัส (เดือน)" value="0" class="w-full px-3 py-2 rounded-lg text-sm mb-2 font-medium" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="runCompare()">
-            <input type="number" id="cmpPvdB" placeholder="PVD %" value="0" class="w-full px-3 py-2 rounded-lg text-sm font-medium" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="runCompare()">
-          </div>
-        </div>
-        <div id="compareResult" class="mt-3 p-3 rounded-lg text-xs" style="display:none; background:var(--panel-2); border:1px solid var(--line); color:var(--ink);"></div>
-      </div>
-    </div>
+    </div> <!-- end #slipsContainer -->
 
     </div>
 

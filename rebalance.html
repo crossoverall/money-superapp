@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="2.4.8">
+<meta name="version" content="2.4.9">
 <title>คำนวณการเติมเงินรายเดือน</title>
 <link rel="stylesheet" href="css/theme.css">
 <style>
@@ -316,13 +316,16 @@
     </div>
   </div>
 
-  <div class="panel" role="region" aria-labelledby="budgetPanelTitle">
+  <div class="panel reorder-card" id="panelBudget" role="region" aria-labelledby="budgetPanelTitle">
     <div id="pendingBudgetAlert" role="alert" aria-live="polite" style="display:none;background:var(--core-dim);border:1px solid var(--core);color:var(--core);padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:14px;align-items:center;justify-content:space-between;">
       <span id="pendingBudgetText"></span>
       <button onclick="dismissPendingBudget()" style="background:none;border:none;cursor:pointer;font-size:16px;color:inherit;padding:0 4px;" aria-label="Dismiss budget alert">&times;</button>
     </div>
-    <div class="panel-title" id="budgetPanelTitle">งบที่จะลงทุนเดือนนี้</div>
-    <div class="budget-row">
+    <div class="panel-title" id="budgetPanelTitle" style="display:flex; justify-content:space-between; align-items:center;">
+      <span id="lblBudgetHeading">งบที่จะลงทุนเดือนนี้</span>
+    </div>
+    <div id="panelBudgetBody">
+      <div class="budget-row">
       <label id="budgetUnit">บาท</label>
       <input type="text" inputmode="decimal" id="totalBudget" value="200000" aria-labelledby="budgetPanelTitle" aria-describedby="budgetUnit">
     </div>
@@ -446,12 +449,27 @@
         </div>
       </div>
     </div>
+    </div>
   </div>
 
-  <div id="bucketsContainer" role="region" aria-label="Investment Buckets and Assets"></div>
+  <div class="card reorder-card" id="panelBuckets" role="region" aria-label="Investment Buckets and Assets" style="margin-bottom:16px;">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <div>
+        <div style="font-size:14px; font-weight:700; color:var(--ink);" id="lblBucketsTitle">
+          💼 กลุ่มสินทรัพย์และการจัดพอร์ต (Investment Buckets &amp; Portfolio Assets)
+        </div>
+        <div style="font-size:11px; color:var(--ink-dim);" id="lblBucketsSubtitle">
+          Core (หลัก) / Ballast (พยุง) / Satellite (ดาวเทียม) พร้อมสัดส่วนและการเติมเงิน
+        </div>
+      </div>
+    </div>
+    <div id="panelBucketsBody">
+      <div id="bucketsContainer" role="region" aria-label="Investment Buckets and Assets"></div>
+    </div>
+  </div>
 
   <!-- Target Date Fund Glidepath Model (Roadmap Phase 64) -->
-  <div class="card" id="panelTargetDateGlidepath" role="region" aria-label="Target Date Retirement Glidepath Calculator" style="margin-bottom:16px;">
+  <div class="card reorder-card" id="panelTargetDateGlidepath" role="region" aria-label="Target Date Retirement Glidepath Calculator" style="margin-bottom:16px;">
     <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleTargetDateGlidepath()" id="btnToggleGlidepath" role="button" tabindex="0" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTargetDateGlidepath();}">
       <div>
         <div style="font-size:14px; font-weight:700; color:var(--ink);" id="lblGlidepathTitle">
@@ -562,7 +580,7 @@
   </div>
 
   <!-- Thai Gold Bar & Jewelry DCA P/L & Baht Weight Calculator -->
-  <div class="card" id="panelThaiGold" role="region" aria-label="Thai Gold DCA &amp; Baht Weight Calculator" style="margin-bottom:16px;">
+  <div class="card reorder-card" id="panelThaiGold" role="region" aria-label="Thai Gold DCA &amp; Baht Weight Calculator" style="margin-bottom:16px;">
     <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleThaiGoldCalculator()" id="btnToggleThaiGold" role="button" tabindex="0" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleThaiGoldCalculator();}">
       <div>
         <div style="font-size:14px; font-weight:700; color:var(--ink);" id="lbl-gold-panel-title">
@@ -719,7 +737,7 @@
   </div>
 
   <!-- Foreign Investment & Crypto Repatriation Tax Advisor (Roadmap Phase 63) -->
-  <div class="card" id="panelForeignTaxAdvisor" role="region" aria-label="Foreign Investment &amp; Crypto Repatriation Tax Advisor" style="margin-bottom:16px;">
+  <div class="card reorder-card" id="panelForeignTaxAdvisor" role="region" aria-label="Foreign Investment &amp; Crypto Repatriation Tax Advisor" style="margin-bottom:16px;">
     <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleForeignTaxAdvisor()" id="btnToggleForeignTax" role="button" tabindex="0" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleForeignTaxAdvisor();}">
       <div>
         <div style="font-size:14px; font-weight:700; color:var(--ink);" id="lblForeignTaxTitle">
@@ -824,10 +842,15 @@
     </div>
   </div>
 
-  <div class="howto" id="howto">
-    <b>วิธีทำงาน</b> — งบรวมถูกแบ่งตามสัดส่วน Core/Ballast/Satellite ก่อน จากนั้นในแต่ละกลุ่ม ระบบจะเติมเงินให้สินทรัพย์ที่ "ตามหลัง" สัดส่วนเป้าหมายมากที่สุดก่อน ถ้าตัวไหนมูลค่าเกินเป้าหมายอยู่แล้วจะไม่เติมเดือนนี้ (ค่า = 0) แล้วนำงบไปให้ตัวที่ตามหลังแทน — ไม่มีการขายสินทรัพย์ใดๆ ทั้งสิ้น<br><br>
-    <b>ใช้ทุกเดือนยังไง</b> — ก่อนซื้อแต่ละเดือน อัปเดต "มูลค่าปัจจุบัน" ของทุกตัวตามราคาจริง แล้วดูผลลัพธ์ใหม่<br><br>
-    <b>เคล็ดลับ</b> — ในช่อง "มูลค่าปัจจุบัน" หรืองบรวม พิมพ์ <code>+10000</code> หรือ <code>-5000</code> แล้วกด Enter/คลิกออกนอกช่อง เพื่อบวก/ลบจากค่าเดิมโดยไม่ต้องคำนวณเอง
+  <div class="howto reorder-card" id="howto">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <div style="font-weight:700; color:var(--ink);" id="lblHowtoTitle">📖 วิธีทำงานและคำแนะนำ (Guide &amp; Tips)</div>
+    </div>
+    <div id="howtoBody">
+      <b>วิธีทำงาน</b> — งบรวมถูกแบ่งตามสัดส่วน Core/Ballast/Satellite ก่อน จากนั้นในแต่ละกลุ่ม ระบบจะเติมเงินให้สินทรัพย์ที่ "ตามหลัง" สัดส่วนเป้าหมายมากที่สุดก่อน ถ้าตัวไหนมูลค่าเกินเป้าหมายอยู่แล้วจะไม่เติมเดือนนี้ (ค่า = 0) แล้วนำงบไปให้ตัวที่ตามหลังแทน — ไม่มีการขายสินทรัพย์ใดๆ ทั้งสิ้น<br><br>
+      <b>ใช้ทุกเดือนยังไง</b> — ก่อนซื้อแต่ละเดือน อัปเดต "มูลค่าปัจจุบัน" ของทุกตัวตามราคาจริง แล้วดูผลลัพธ์ใหม่<br><br>
+      <b>เคล็ดลับ</b> — ในช่อง "มูลค่าปัจจุบัน" หรืองบรวม พิมพ์ <code>+10000</code> หรือ <code>-5000</code> แล้วกด Enter/คลิกออกนอกช่อง เพื่อบวก/ลบจากค่าเดิมโดยไม่ต้องคำนวณเอง
+    </div>
   </div>
 
   <div class="save-status">
@@ -838,10 +861,11 @@
       <button class="reset-btn" id="exportCsvBtn" onclick="exportCSV()">📥 <span id="lblExportCsv">ดาวน์โหลด CSV</span></button>
       <button class="reset-btn" id="printRebalanceBtn" onclick="window.print()">🖨️ <span id="lblPrintRebalance">พิมพ์ / บันทึก PDF</span></button>
       <button class="reset-btn" id="btnUndoBottom" onclick="undoRebalanceChange()" style="display:none; color:var(--core); font-weight:700;">↩ <span id="lblUndoBottom">เลิกทำ (Undo)</span></button>
+      <button class="reset-btn" id="btnResetLayout" onclick="resetRebalanceLayout()" title="รีเซ็ตลำดับการแสดงผล / Reset Card Order">↺ <span id="lblResetLayout">รีเซ็ตลำดับ</span></button>
       <button class="reset-btn" id="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v2.4.8</p>
+  <p class="version-tag">v2.4.9</p>
 
 <script src="js/shared.js"></script>
 <script src="js/rebalance.js"></script>

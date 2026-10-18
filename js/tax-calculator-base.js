@@ -66,6 +66,12 @@ if (LANG === 'en') {
     'lbl-undo-tax': 'Undo',
     'lbl-undo-tax-top': 'Undo',
     'lbl-reset-tax': 'Clear Form',
+    'lbl-reset-taxbase-layout': 'Reset Layout',
+    'lbl-panel-income': '1. Income Details',
+    'lbl-panel-deductions': '2. Deductions & Withholding',
+    'lbl-panel-results': '3. Tax Summary & Refund',
+    'lbl-panel-scenario': '4. Tax Scenario & Inflation',
+    'lbl-panel-calendar': '5. Statutory Tax Calendar',
     'print-doc-sub': 'Tax Return Estimate & Allowances Statement for Annual Filing',
     'print-lbl-sec1': 'Part 1: Assessable Income',
     'print-lbl-income-main': 'Salary & Wages (Section 40(1))',
@@ -2174,3 +2180,28 @@ window.renderTaxCalendar = renderTaxCalendar;
 
 loadState();
 renderTaxCalendar();
+
+// Universal Card Layout Manager
+const taxBaseLayoutManager =
+  typeof MoneyApp !== 'undefined' && MoneyApp.initCardLayoutManager
+    ? MoneyApp.initCardLayoutManager({
+        container: document.getElementById('taxCardsContainer'),
+        cardSelector: '.reorder-card',
+        storageKey: 'moneySuperapp.layout.taxbase.v1',
+        defaultOrder: [
+          'panelTaxIncome',
+          'panelTaxDeductions',
+          'dividendTaxCreditCard',
+          'panelTaxResults',
+          'taxAdvisorCard',
+          'panelTaxScenario',
+          'panelTaxCalendar',
+        ],
+      })
+    : null;
+
+window.resetTaxBaseLayout = function () {
+  if (taxBaseLayoutManager) {
+    taxBaseLayoutManager.resetLayout();
+  }
+};

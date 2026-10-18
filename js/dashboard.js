@@ -3,6 +3,8 @@ const translations = {
     title: 'ภาพรวมการเงิน',
     subtitle: 'สรุปความมั่งคั่งและประวัติการเติบโต',
     refreshTitle: 'รีเฟรชข้อมูล',
+    resetLayout: 'จัดลำดับเดิม',
+    kpisTitle: '📊 สรุปภาพรวมทางการเงิน (Key Financial Indicators)',
     kpiNetworth: 'ความมั่งคั่งสุทธิ (Net Worth)',
     networthSub: 'สินทรัพย์ - หนี้สิน',
     kpiSavings: 'เงินออมต่อเดือน (Cash Flow)',
@@ -154,6 +156,8 @@ const translations = {
     title: 'Financial Dashboard',
     subtitle: 'Overview of Net Worth and Historical Growth',
     refreshTitle: 'Refresh Data',
+    resetLayout: 'Reset Layout',
+    kpisTitle: '📊 Key Financial Indicators',
     kpiNetworth: 'Net Worth',
     networthSub: 'Assets - Liabilities',
     kpiSavings: 'Monthly Cash Flow',
@@ -311,6 +315,8 @@ function applyLocalization() {
     'lbl-eyebrow': t.eyebrow,
     'txt-title': t.title,
     'lbl-subtitle': t.subtitle,
+    lblResetDashboardLayout: t.resetLayout,
+    'lbl-kpis-title': t.kpisTitle,
     'lbl-kpi-networth': t.kpiNetworth,
     'lbl-kpi-nw-sub': t.networthSub,
     'lbl-kpi-savings': t.kpiSavings,
@@ -2985,6 +2991,28 @@ initThreeBucketsCalculator();
 renderSnapshotsTable();
 renderChart();
 updateStorageQuotaDisplay();
+initDashboardLayout();
+
+let dashboardLayoutManager = null;
+function initDashboardLayout() {
+  if (typeof MoneyApp !== 'undefined' && MoneyApp.initCardLayoutManager) {
+    dashboardLayoutManager = MoneyApp.initCardLayoutManager({
+      container: document.body,
+      cardSelector: '.reorder-card',
+      storageKey: 'moneySuperapp.layout.dashboard.v1',
+    });
+  }
+}
+
+function resetDashboardLayout() {
+  if (dashboardLayoutManager && dashboardLayoutManager.reset) {
+    dashboardLayoutManager.reset();
+  } else {
+    localStorage.removeItem('moneySuperapp.layout.dashboard.v1');
+    window.location.reload();
+  }
+}
+window.resetDashboardLayout = resetDashboardLayout;
 
 function refreshDashboard() {
   applyLocalization();

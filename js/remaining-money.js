@@ -16,6 +16,8 @@ const EN = {
   addIncome: '+ Add income',
   addExpense: '+ Add expense',
   addSaving: '+ Add savings',
+  txtRemainingTitle: 'Remaining Summary',
+  lblResetLayout: 'Reset Layout',
   remainingLabel: 'Remaining for Investment',
   remainingNote: 'Income minus expenses and savings',
   remainingPositive: 'You have money left over for investment this month.',
@@ -226,6 +228,8 @@ if (LANG === 'en') {
     'lblTarget50',
     'lblTarget30',
     'lblTarget20',
+    'txtRemainingTitle',
+    'lblResetLayout',
   ].forEach((id) => {
     const el = document.getElementById(id);
     if (el && EN[id]) el.textContent = EN[id];
@@ -3793,6 +3797,28 @@ if (txtCurrentReserve && state.currentEmergencyReserve > 0) txtCurrentReserve.va
 
 compute();
 renderQuickPresetsBar();
+initRemainingLayout();
+
+let remainingLayoutManager = null;
+function initRemainingLayout() {
+  if (typeof MoneyApp !== 'undefined' && MoneyApp.initCardLayoutManager) {
+    remainingLayoutManager = MoneyApp.initCardLayoutManager({
+      container: document.body,
+      cardSelector: '.reorder-card',
+      storageKey: 'moneySuperapp.layout.remaining.v1',
+    });
+  }
+}
+
+function resetRemainingLayout() {
+  if (remainingLayoutManager && remainingLayoutManager.reset) {
+    remainingLayoutManager.reset();
+  } else {
+    localStorage.removeItem('moneySuperapp.layout.remaining.v1');
+    window.location.reload();
+  }
+}
+window.resetRemainingLayout = resetRemainingLayout;
 
 window.addEventListener('storage', (e) => {
   if (e.key === 'moneySuperapp.pendingLumpSum') {

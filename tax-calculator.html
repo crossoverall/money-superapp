@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="version" content="2.4.8">
+  <meta name="version" content="2.4.9">
   <meta name="description" content="คำนวณภาษีเงินชดเชยและเงินสะสมกองทุนสำรองเลี้ยงชีพ (PVD) — ครอบคลุมสมาชิกไม่เกิน 5 ปี, 5 ปีขึ้นไปอายุไม่ถึง 55, และ 5 ปีขึ้นไปอายุ 55 ปีขึ้นไป">
   <title>คำนวณภาษีเงินชดเชย + PVD</title>
   <link rel="stylesheet" href="css/theme.css">
@@ -240,6 +240,7 @@
     }
 
     .results.show { display: block; }
+    .results.show ~ #resultsEmptyHint { display: none; }
 
     .result-row {
       display: flex;
@@ -352,10 +353,26 @@
 </head>
 <body>
   <div class="card">
-    <h1 id="lbl-h1">คำนวณภาษีเงินชดเชย + PVD</h1>
-    <p class="subtitle" id="lbl-subtitle">เลือกเงื่อนไขที่ตรงกับสถานการณ์ของคุณ</p>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+      <div>
+        <h1 id="lbl-h1" style="margin:0;">คำนวณภาษีเงินชดเชย + PVD</h1>
+        <p class="subtitle" id="lbl-subtitle" style="margin:4px 0 0;">เลือกเงื่อนไขที่ตรงกับสถานการณ์ของคุณ</p>
+      </div>
+      <button type="button" id="btnResetTaxLayout" onclick="resetTaxLayout()" class="reset-btn" style="width:auto; padding:5px 12px; font-size:0.75rem; margin-top:0;" title="รีเซ็ตลำดับการแสดงผล / Reset Layout">
+        ↺ <span id="lbl-reset-tax-layout">รีเซ็ตลำดับ</span>
+      </button>
+    </div>
 
-    <div class="tabs" role="tablist" aria-label="เงื่อนไขอายุสมาชิก PVD">
+    <div id="taxPanelsContainer" style="display:flex; flex-direction:column; gap:16px;">
+      <!-- 1. Severance & PVD Inputs Panel -->
+      <div id="panelSeveranceInputs" class="reorder-card" style="background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:16px;">
+        <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h2 class="panel-title" style="font-size:0.95rem; font-weight:700; color:var(--ink); margin:0;" id="lbl-panel-sev-inputs">
+            1. ข้อมูลเงินชดเชยและกองทุนสำรองเลี้ยงชีพ
+          </h2>
+        </div>
+        <div id="panelSeveranceInputsBody">
+          <div class="tabs" role="tablist" aria-label="เงื่อนไขอายุสมาชิก PVD">
       <button type="button" role="tab" class="tab active" onclick="setTab(0)" id="tab0" aria-selected="true">สมาชิก<br>&lt; 5 ปี</button>
       <button type="button" role="tab" class="tab" onclick="setTab(1)" id="tab1" aria-selected="false">≥ 5 ปี<br>อายุ &lt; 55</button>
       <button type="button" role="tab" class="tab" onclick="setTab(2)" id="tab2" aria-selected="false">≥ 5 ปี<br>อายุ ≥ 55</button>
@@ -460,8 +477,18 @@
 
     <button class="calc-btn" onclick="calculate()" id="btn-calc">คำนวณภาษี</button>
     <div class="error" id="errorMsg"></div>
+        </div>
+      </div>
 
-    <div class="results" id="results">
+      <!-- 2. Severance Results Panel -->
+      <div id="panelSeveranceResults" class="reorder-card" style="background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:16px;">
+        <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h2 class="panel-title" style="font-size:0.95rem; font-weight:700; color:var(--ink); margin:0;" id="lbl-panel-sev-results">
+            2. ผลการคำนวณภาษี &amp; สิทธิโอนย้าย RMF
+          </h2>
+        </div>
+        <div id="panelSeveranceResultsBody">
+          <div class="results" id="results">
       <div class="result-row">
         <span class="result-label">
           <span id="lbl-res-legal-excess">เงินชดเชยตามกฎหมาย (ส่วนเกิน)</span>
@@ -555,19 +582,30 @@
         </div>
       </div>
 
-      <!-- Social Security Benefits & Pension Simulator (Roadmap Phase 50) -->
-      <div id="sso-simulator-card" style="margin-top: 14px; padding: 14px; background: var(--surface-2); border: 1px solid var(--accent); border-radius: 10px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleSsoSimulator()" id="btn-toggle-sso" role="button" tabindex="0" aria-expanded="false">
-          <div>
-            <div style="font-size: 0.88rem; font-weight: 700; color: var(--ink);" id="lbl-sso-title">
-              🏥 จำลองสิทธิประโยชน์ &amp; บำนาญชราภาพ ประกันสังคม (Social Security Benefits &amp; Pension)
-            </div>
-            <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-sso-subtitle">
-              มาตรา 33 (พนักงานประจำ), มาตรา 39 (ภาคสมัครใจ), มาตรา 40 (อิสระ)
-            </div>
-          </div>
-          <span id="sso-toggle-arrow" style="font-size: 14px; color: var(--accent); font-weight: 700;">▼</span>
+          <button type="button" class="calc-btn" id="btn-export-to-remaining" onclick="exportPayoutToRemaining()" style="background: var(--core); margin-top: 14px; width: 100%;">
+            📤 <span id="lbl-export-remaining">ส่งยอดสุทธินี้ไปยัง เงินคงเหลือ (Remaining Money)</span>
+          </button>
+          <button class="reset-btn" onclick="reset()" id="btn-reset">ล้างข้อมูล</button>
         </div>
+        <div id="resultsEmptyHint" style="font-size:0.8rem; color:var(--ink-faint); text-align:center; padding:12px 0;">
+          💡 กรอกข้อมูลในส่วนที่ 1 แล้วกด "คำนวณภาษี" เพื่อแสดงผลลัพธ์
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Social Security Benefits & Pension Simulator (Roadmap Phase 50) -->
+    <div id="sso-simulator-card" class="reorder-card" style="margin-top: 0; padding: 14px; background: var(--surface-2); border: 1px solid var(--accent); border-radius: 10px;">
+      <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleSsoSimulator()" id="btn-toggle-sso" role="button" tabindex="0" aria-expanded="false">
+        <div>
+          <div style="font-size: 0.88rem; font-weight: 700; color: var(--ink);" class="panel-title" id="lbl-sso-title">
+            🏥 จำลองสิทธิประโยชน์ &amp; บำนาญชราภาพ ประกันสังคม (Social Security Benefits &amp; Pension)
+          </div>
+          <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-sso-subtitle">
+            มาตรา 33 (พนักงานประจำ), มาตรา 39 (ภาคสมัครใจ), มาตรา 40 (อิสระ)
+          </div>
+        </div>
+        <span id="sso-toggle-arrow" style="font-size: 14px; color: var(--accent); font-weight: 700;">▼</span>
+      </div>
 
         <div id="sso-panel-body" style="display: none; margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px;">
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 6px;">
@@ -608,11 +646,11 @@
         </div>
       </div>
 
-      <!-- Thai Inheritance & Annual Gift Tax Simulator (Roadmap Phase 58) -->
-      <div id="inheritance-tax-card" style="margin-top: 14px; padding: 14px; background: var(--surface-2); border: 1px solid var(--accent); border-radius: 10px;" role="region" aria-label="Thai Inheritance & Gift Tax Simulator">
-        <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleInheritanceTaxCard()" id="btn-toggle-inher" role="button" tabindex="0" aria-expanded="false">
+      <!-- 4. Thai Inheritance & Annual Gift Tax Simulator (Roadmap Phase 58) -->
+      <div id="inheritance-tax-card" class="reorder-card" style="margin-top: 0; padding: 14px; background: var(--surface-2); border: 1px solid var(--accent); border-radius: 10px;" role="region" aria-label="Thai Inheritance & Gift Tax Simulator">
+        <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleInheritanceTaxCard()" id="btn-toggle-inher" role="button" tabindex="0" aria-expanded="false">
           <div>
-            <div style="font-size: 0.88rem; font-weight: 700; color: var(--ink);" id="lbl-inher-title">
+            <div style="font-size: 0.88rem; font-weight: 700; color: var(--ink);" class="panel-title" id="lbl-inher-title">
               🏛️ จำลองภาษีการรับมรดก &amp; ภาษีการรับการให้ (Thai Inheritance &amp; Gift Tax)
             </div>
             <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-inher-subtitle">
@@ -766,11 +804,11 @@
         </div>
       </div>
 
-      <!-- Thai Land & Building Tax Calculator (Roadmap Phase 61) -->
-      <div id="land-building-tax-card" style="margin-top: 14px; padding: 14px; background: var(--surface-2); border: 1px solid var(--accent); border-radius: 10px;" role="region" aria-label="Thai Land & Building Tax Calculator">
-        <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleLandTaxCard()" id="btn-toggle-land" role="button" tabindex="0" aria-expanded="false">
+      <!-- 5. Thai Land & Building Tax Calculator (Roadmap Phase 61) -->
+      <div id="land-building-tax-card" class="reorder-card" style="margin-top: 0; padding: 14px; background: var(--surface-2); border: 1px solid var(--accent); border-radius: 10px;" role="region" aria-label="Thai Land & Building Tax Calculator">
+        <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleLandTaxCard()" id="btn-toggle-land" role="button" tabindex="0" aria-expanded="false">
           <div>
-            <div style="font-size: 0.88rem; font-weight: 700; color: var(--ink);" id="lbl-land-title">
+            <div style="font-size: 0.88rem; font-weight: 700; color: var(--ink);" class="panel-title" id="lbl-land-title">
               🏡 จำลองภาษีที่ดินและสิ่งปลูกสร้าง (Land &amp; Building Tax)
             </div>
             <div style="font-size: 0.72rem; color: var(--ink-dim);" id="lbl-land-subtitle">
@@ -878,13 +916,8 @@
           </div>
         </div>
       </div>
-
-      <button type="button" class="calc-btn" id="btn-export-to-remaining" onclick="exportPayoutToRemaining()" style="background: var(--core); margin-top: 10px; width: 100%;">
-        📤 <span id="lbl-export-remaining">ส่งยอดสุทธินี้ไปยัง เงินคงเหลือ (Remaining Money)</span>
-      </button>
-      <button class="reset-btn" onclick="reset()" id="btn-reset">ล้างข้อมูล</button>
-    </div>
-    <p style="text-align:center;font-size:0.72rem;color:#94a3b8;margin-top:16px;">v2.4.8</p>
+    </div> <!-- end #taxPanelsContainer -->
+    <p style="text-align:center;font-size:0.72rem;color:#94a3b8;margin-top:16px;">v2.4.9</p>
   </div>
 
   <script src="js/shared.js"></script>
