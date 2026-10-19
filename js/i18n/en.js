@@ -154,6 +154,13 @@
     driveGuide:
       '💡 Tip: When exporting as CSV, the file is ready for Google Sheets. On mobile devices, you can tap to upload directly to Google Drive via native share.',
 
+    // Debt Visual SVG Comparison Timeline (Phase 126)
+    chartModeDual: 'Compare Both',
+    chartModeAvalanche: '⚡ Avalanche',
+    chartModeSnowball: '⛄ Snowball',
+    chartTooltipBalance: 'Balance',
+    chartTooltipSaved: 'Interest Saved',
+
     // Confirmations & Prompts
     confirmResetDefaults: 'Clear form data and reset to defaults?',
     confirmDeleteRecord: 'Are you sure you want to delete this record?',

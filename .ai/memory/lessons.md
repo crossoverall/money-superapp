@@ -15,6 +15,26 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-19: Interactive Debt Payoff SVG Timeline, SVG `<title>` XSS Defense & Dynamic Coordinate Cleanup (v2.5.67)
+- **Date & Context:** 2026-10-19, Phase 126 Interactive Debt Payoff Timeline & SVG Security (`v2.5.67`).
+- **Problem:**
+  1. The debt reduction comparison in `debt-calculator.html` rendered a static trajectory comparison chart without interactive month-by-month scrubbing, strategy delta crosshairs, or view mode filters (Both Strategies vs Active Strategy vs Payoff Delta).
+  2. In zero-dependency SVG visualization builders, inserting user-controlled strings (e.g., custom debt or loan names like `Personal Loan <script>alert(1)</script>`) into SVG `<title>` tooltip nodes poses an XSS vulnerability if unescaped: when the SVG string is injected into the DOM via `innerHTML`, the browser's HTML parser closes the `<title>` tag on unescaped child tags and evaluates malicious markup immediately.
+  3. When users cleared debts or achieved debt-free status, residual coordinate contexts (`window._debtChartContext`) remained populated, causing dangling event listener calculations or stale crosshair snap math if subsequent pointer events fired before the next calculation.
+- **Root Cause:**
+  - Common misconception that SVG `<title>` elements treat their inner contents purely as plaintext during DOM `innerHTML` string parsing.
+  - Absence of explicit lifecycle context invalidation when debt simulation results yielded zero active obligations.
+- **Solution & Rule:**
+  1. **Strict SVG `<title>` XSS Defense:**
+     - Always sanitize all user-controlled text inserted into SVG elements with `escapeHtml()`, including within `<title>`, `<text>`, and `data-*` attributes.
+  2. **Dynamic Chart Coordinate Cleanup:**
+     - In `renderPayoffChart()`, when active debts are empty or simulation indicates immediate freedom, explicitly reset `window._debtChartContext = null` and clear crosshair overlays.
+  3. **Interactive Multi-Mode Payoff SVG Timeline:**
+     - Implemented interactive SVG timeline featuring smooth quadratic Bézier curves, monthly cursor snapping, strategy difference visual fill, and interactive view mode selector (Both / Active Only / Savings Delta).
+     - Full keyboard accessibility and bilingual localization support across Thai and English.
+  4. **Quality Gates & Smoke Test:**
+     - Added 5 dedicated contract and invariant assertions in `tests/smoke.test.mjs`; 95 smoke tests passing with 0 Biome linter errors.
+
 ### 2026-10-19: Universal Cloud Export for Debt & Portfolio Rebalance Tools & Full Suite CWE-1236 Defense (v2.5.66)
 - **Date & Context:** 2026-10-19, Phase 125 Universal Cloud Export & Defense-in-Depth Completion (`v2.5.66`).
 - **Problem:**

@@ -108,6 +108,11 @@ const translations = {
     btnOpenSheets: 'เปิด Google Sheets',
     driveGuide:
       '💡 เคล็ดลับ: เมื่อเลือก CSV ระบบจะเตรียมไฟล์ที่พร้อมเปิดด้วย Google Sheets ได้ทันที หากเปิดบนมือถือสามารถกดบันทึกลง Google Drive ได้โดยตรง',
+    chartModeDual: 'เปรียบเทียบทั้งคู่',
+    chartModeAvalanche: '⚡ Avalanche',
+    chartModeSnowball: '⛄ Snowball',
+    chartTooltipBalance: 'คงเหลือ',
+    chartTooltipSaved: 'ประหยัดดอกเบี้ย',
   },
   en: {
     title: 'Debt Payoff Calculator',
@@ -220,6 +225,11 @@ const translations = {
     btnOpenSheets: 'Open Google Sheets',
     driveGuide:
       '💡 Tip: When exporting as CSV, the file is ready for Google Sheets. On mobile devices, you can tap to upload directly to Google Drive via native share.',
+    chartModeDual: 'Compare Both',
+    chartModeAvalanche: '⚡ Avalanche',
+    chartModeSnowball: '⛄ Snowball',
+    chartTooltipBalance: 'Balance',
+    chartTooltipSaved: 'Interest Saved',
   },
 };
 
@@ -335,6 +345,9 @@ if (LANG === 'en') {
     lblBridgeRefinanceToRebalance: '📈 Send payment savings to DCA Portfolio',
     lblBridgeRefinanceExpenseToBudget: '⚠️ Send increased payment to Budget',
     valCarMultiplier: '~1.9x higher than Flat Rate',
+    btnChartModeDual: t.chartModeDual,
+    btnChartModeAvalanche: t.chartModeAvalanche,
+    btnChartModeSnowball: t.chartModeSnowball,
   };
   for (let id in map) {
     const el = document.getElementById(id);
@@ -346,6 +359,7 @@ const STORAGE_KEY = 'moneySuperapp.debtCalculator.state.v1';
 
 const defaultState = {
   strategy: 'avalanche',
+  chartMode: 'dual',
   extraPayment: 5000,
   windfallEnabled: false,
   windfallAmount: 50000,
@@ -548,6 +562,23 @@ function setStrategy(strat) {
   computePayoff();
   saveState();
 }
+
+function setDebtChartMode(mode) {
+  const validModes = ['dual', 'avalanche', 'snowball'];
+  const newMode = validModes.includes(mode) ? mode : 'dual';
+  state.chartMode = newMode;
+  saveState();
+
+  const btnDual = document.getElementById('btnChartModeDual');
+  const btnAv = document.getElementById('btnChartModeAvalanche');
+  const btnSn = document.getElementById('btnChartModeSnowball');
+  if (btnDual) btnDual.classList.toggle('active', newMode === 'dual');
+  if (btnAv) btnAv.classList.toggle('active', newMode === 'avalanche');
+  if (btnSn) btnSn.classList.toggle('active', newMode === 'snowball');
+
+  computePayoff();
+}
+window.setDebtChartMode = setDebtChartMode;
 
 function onExtraPaymentChange(val) {
   state.extraPayment = Math.max(0, parseNum(val));
@@ -1427,6 +1458,7 @@ function renderPayoffChart(
   if (legWf) legWf.style.display = windfall ? 'inline-flex' : 'none';
 
   if (!totalDebt || totalDebt <= 0 || !simCurrent || simCurrent.months === 0) {
+    window._debtChartContext = null;
     if (deltaBadge) deltaBadge.style.display = 'none';
     const emptyMsg =
       LANG === 'en' ? 'No debt balance to display — You are debt-free! 🎉' : 'ไม่มีภาระหนี้คงค้าง — ปลอดหนี้แล้ว! 🎉';
@@ -1487,36 +1519,38 @@ function renderPayoffChart(
   const mapY = (b) => padding.top + plotHeight - (Math.max(0, b) / maxBalance) * plotHeight;
   const xBaseY = padding.top + plotHeight;
 
+  const chartMode = state.chartMode || 'dual';
+
+  // Synchronize view mode buttons if present in DOM
+  const btnDual = document.getElementById('btnChartModeDual');
+  const btnAv = document.getElementById('btnChartModeAvalanche');
+  const btnSn = document.getElementById('btnChartModeSnowball');
+  if (btnDual) btnDual.classList.toggle('active', chartMode === 'dual');
+  if (btnAv) btnAv.classList.toggle('active', chartMode === 'avalanche');
+  if (btnSn) btnSn.classList.toggle('active', chartMode === 'snowball');
+
   const isSnowball = state.strategy === 'snowball';
   const primaryColor = isSnowball ? '#3b82f6' : '#10b981';
-  const secondaryColor = isSnowball ? '#10b981' : '#3b82f6';
-  const secondarySim = isSnowball ? simAvalanche : simSnowball;
-  const secondaryName = isSnowball
-    ? LANG === 'en'
-      ? 'Avalanche'
-      : 'Avalanche (ดอกสูงสุดก่อน)'
-    : LANG === 'en'
-      ? 'Snowball'
-      : 'Snowball (ยอดน้อยสุดก่อน)';
-  const primaryName = isSnowball
-    ? LANG === 'en'
-      ? 'Snowball (Active)'
-      : 'Snowball (กำลังเลือก)'
-    : LANG === 'en'
-      ? 'Avalanche (Active)'
-      : 'Avalanche (กำลังเลือก)';
 
   let svgHtml = '';
 
   // Gradients
   svgHtml += `
-          <defs>
-            <linearGradient id="debtCurrentGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="${primaryColor}" stop-opacity="0.22" />
-              <stop offset="100%" stop-color="${primaryColor}" stop-opacity="0.01" />
-            </linearGradient>
-          </defs>
-        `;
+    <defs>
+      <linearGradient id="debtAvalancheGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#10b981" stop-opacity="0.22" />
+        <stop offset="100%" stop-color="#10b981" stop-opacity="0.01" />
+      </linearGradient>
+      <linearGradient id="debtSnowballGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.22" />
+        <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.01" />
+      </linearGradient>
+      <linearGradient id="debtCurrentGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${primaryColor}" stop-opacity="0.22" />
+        <stop offset="100%" stop-color="${primaryColor}" stop-opacity="0.01" />
+      </linearGradient>
+    </defs>
+  `;
 
   // Horizontal Grid Lines & Y-axis balance labels (4 steps: 0%, 33%, 66%, 100%)
   const ySteps = 3;
@@ -1561,8 +1595,8 @@ function renderPayoffChart(
       .map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${mapX(p.month).toFixed(1)} ${mapY(p.balance).toFixed(1)}`)
       .join(' ');
     svgHtml += `<path d="${minPathD}" fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-dasharray="4,4" opacity="0.8">
-              <title>${LANG === 'en' ? `Minimum Payments Only: ${simMinOnly.months} months` : `จ่ายขั้นต่ำเท่านั้น: ${simMinOnly.months} เดือน`}</title>
-            </path>`;
+      <title>${LANG === 'en' ? `Minimum Payments Only: ${simMinOnly.months} months` : `จ่ายขั้นต่ำเท่านั้น: ${simMinOnly.months} เดือน`}</title>
+    </path>`;
   }
 
   // 1.5. Plot Baseline Trajectory (Dashed slate line when windfall is active)
@@ -1571,90 +1605,300 @@ function renderPayoffChart(
       .map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${mapX(p.month).toFixed(1)} ${mapY(p.balance).toFixed(1)}`)
       .join(' ');
     svgHtml += `<path d="${baseLinePathD}" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="3,3" opacity="0.75">
-              <title>${LANG === 'en' ? `Baseline without windfall: ${simBaseline.months} months` : `เส้นทางปกติก่อนโปะเงินก้อน: ${simBaseline.months} เดือน`}</title>
-            </path>`;
+      <title>${LANG === 'en' ? `Baseline without windfall: ${simBaseline.months} months` : `เส้นทางปกติก่อนโปะเงินก้อน: ${simBaseline.months} เดือน`}</title>
+    </path>`;
   }
 
-  // 2. Plot Secondary Strategy Trajectory (Alternative comparative line)
-  if (secondarySim && Array.isArray(secondarySim.trajectory) && secondarySim.trajectory.length > 0) {
-    const secPathD = secondarySim.trajectory
+  // 2. Plot Avalanche Strategy Trajectory
+  if (simAvalanche && Array.isArray(simAvalanche.trajectory) && simAvalanche.trajectory.length > 0) {
+    const trajAv = simAvalanche.trajectory;
+    const avPathD = trajAv
       .map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${mapX(p.month).toFixed(1)} ${mapY(p.balance).toFixed(1)}`)
       .join(' ');
-    svgHtml += `<path d="${secPathD}" fill="none" stroke="${secondaryColor}" stroke-width="1.8" stroke-dasharray="5,3" opacity="0.85">
-              <title>${secondaryName}: ${secondarySim.months} ${LANG === 'en' ? 'months' : 'เดือน'}</title>
-            </path>`;
-  }
+    const isAvDimmed = chartMode === 'snowball';
+    const isAvHighlighted = chartMode === 'avalanche' || (chartMode === 'dual' && state.strategy === 'avalanche');
+    const avStrokeWidth = isAvDimmed ? 1.2 : isAvHighlighted ? 2.6 : 2.0;
+    const avOpacity = isAvDimmed ? 0.15 : 1.0;
 
-  // 3. Plot Primary (Active) Strategy Trajectory (Solid line with shaded area)
-  if (simCurrent && Array.isArray(simCurrent.trajectory) && simCurrent.trajectory.length > 0) {
-    const traj = simCurrent.trajectory;
-    const linePathD = traj
-      .map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${mapX(p.month).toFixed(1)} ${mapY(p.balance).toFixed(1)}`)
-      .join(' ');
+    if (isAvHighlighted && !isAvDimmed) {
+      const firstX = mapX(trajAv[0].month).toFixed(1);
+      const lastX = mapX(trajAv[trajAv.length - 1].month).toFixed(1);
+      const areaPathD = `${avPathD} L ${lastX} ${xBaseY} L ${firstX} ${xBaseY} Z`;
+      svgHtml += `<path d="${areaPathD}" fill="url(#debtAvalancheGrad)" />`;
+    }
 
-    const firstX = mapX(traj[0].month).toFixed(1);
-    const lastX = mapX(traj[traj.length - 1].month).toFixed(1);
-    const areaPathD = `${linePathD} L ${lastX} ${xBaseY} L ${firstX} ${xBaseY} Z`;
+    svgHtml += `<path d="${avPathD}" fill="none" stroke="#10b981" stroke-width="${avStrokeWidth}" stroke-linecap="round" stroke-linejoin="round" opacity="${avOpacity}">
+      <title>${LANG === 'en' ? 'Avalanche' : 'Avalanche (ดอกสูงสุดก่อน)'}: ${simAvalanche.months} ${LANG === 'en' ? 'months' : 'เดือน'}</title>
+    </path>`;
 
-    svgHtml += `<path d="${areaPathD}" fill="url(#debtCurrentGrad)" />`;
-    svgHtml += `<path d="${linePathD}" fill="none" stroke="${primaryColor}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-              <title>${primaryName}: ${simCurrent.months} ${LANG === 'en' ? 'months' : 'เดือน'}</title>
-            </path>`;
-
-    // 4. Milestone dots for paid-off loans along the active curve
-    if (Array.isArray(simCurrent.payoffOrder) && simCurrent.payoffOrder.length > 0) {
-      simCurrent.payoffOrder.forEach((po) => {
-        const pt = traj.find((p) => p.month === po.month) || { month: po.month, balance: 0 };
+    // Avalanche milestone markers
+    if (!isAvDimmed && Array.isArray(simAvalanche.payoffOrder)) {
+      simAvalanche.payoffOrder.forEach((po) => {
+        const pt = trajAv.find((p) => p.month === po.month) || { month: po.month, balance: 0 };
         const cx = mapX(pt.month);
         const cy = mapY(pt.balance);
         const tipText =
           LANG === 'en'
-            ? `🎉 ${po.name} paid off in month ${po.month}!`
-            : `🎉 ปลดหนี้ ${po.name} สำเร็จในเดือนที่ ${po.month}!`;
-        svgHtml += `
-                      <g class="milestone-marker">
-                        <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="5" fill="${primaryColor}" stroke="#ffffff" stroke-width="2" style="cursor:pointer;">
-                          <title>${tipText}</title>
-                        </circle>
-                      </g>
-                    `;
+            ? `🎉 Avalanche: ${escapeHtml(po.name)} paid off in month ${po.month}!`
+            : `🎉 Avalanche: ปลดหนี้ ${escapeHtml(po.name)} ในเดือนที่ ${po.month}!`;
+        svgHtml += `<g class="milestone-marker">
+          <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="4.5" fill="#10b981" stroke="#ffffff" stroke-width="1.8" style="cursor:pointer;">
+            <title>${tipText}</title>
+          </circle>
+        </g>`;
       });
-    }
-
-    // 5. Windfall Injection Marker along the active trajectory
-    if (windfall && Array.isArray(simCurrent.trajectory) && simCurrent.trajectory.length > 0) {
-      const wfPt =
-        simCurrent.trajectory.find((p) => p.month === windfall.month) ||
-        simCurrent.trajectory.reduce(
-          (prev, curr) => (Math.abs(curr.month - windfall.month) < Math.abs(prev.month - windfall.month) ? curr : prev),
-          simCurrent.trajectory[0],
-        );
-      if (wfPt) {
-        const cx = mapX(wfPt.month);
-        const cy = mapY(wfPt.balance);
-        const tipText =
-          LANG === 'en'
-            ? `🎁 Lump-sum windfall +${formatMoney(windfall.amount)} ${unit} injected in month ${windfall.month}`
-            : `🎁 โปะเงินก้อน +${formatMoney(windfall.amount)} ${unit} ในเดือนที่ ${windfall.month}`;
-        const labelY = cy - 10 < padding.top ? cy + 18 : cy - 10;
-        svgHtml += `
-                      <g class="windfall-marker">
-                        <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="7" fill="#8b5cf6" stroke="#ffffff" stroke-width="2.5" style="cursor:pointer;">
-                          <title>${tipText}</title>
-                        </circle>
-                        <text x="${cx.toFixed(1)}" y="${labelY.toFixed(1)}" fill="#8b5cf6" font-size="11" font-weight="bold" text-anchor="middle" font-family="inherit">🎁 +${formatMoney(windfall.amount)}</text>
-                      </g>
-                    `;
-      }
     }
   }
 
+  // 3. Plot Snowball Strategy Trajectory
+  if (simSnowball && Array.isArray(simSnowball.trajectory) && simSnowball.trajectory.length > 0) {
+    const trajSn = simSnowball.trajectory;
+    const snPathD = trajSn
+      .map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${mapX(p.month).toFixed(1)} ${mapY(p.balance).toFixed(1)}`)
+      .join(' ');
+    const isSnDimmed = chartMode === 'avalanche';
+    const isSnHighlighted = chartMode === 'snowball' || (chartMode === 'dual' && state.strategy === 'snowball');
+    const snStrokeWidth = isSnDimmed ? 1.2 : isSnHighlighted ? 2.6 : 2.0;
+    const snOpacity = isSnDimmed ? 0.15 : 1.0;
+
+    if (isSnHighlighted && !isSnDimmed) {
+      const firstX = mapX(trajSn[0].month).toFixed(1);
+      const lastX = mapX(trajSn[trajSn.length - 1].month).toFixed(1);
+      const areaPathD = `${snPathD} L ${lastX} ${xBaseY} L ${firstX} ${xBaseY} Z`;
+      svgHtml += `<path d="${areaPathD}" fill="url(#debtSnowballGrad)" />`;
+    }
+
+    svgHtml += `<path d="${snPathD}" fill="none" stroke="#3b82f6" stroke-width="${snStrokeWidth}" stroke-linecap="round" stroke-linejoin="round" opacity="${snOpacity}">
+      <title>${LANG === 'en' ? 'Snowball' : 'Snowball (ยอดน้อยสุดก่อน)'}: ${simSnowball.months} ${LANG === 'en' ? 'months' : 'เดือน'}</title>
+    </path>`;
+
+    // Snowball milestone markers
+    if (!isSnDimmed && Array.isArray(simSnowball.payoffOrder)) {
+      simSnowball.payoffOrder.forEach((po) => {
+        const pt = trajSn.find((p) => p.month === po.month) || { month: po.month, balance: 0 };
+        const cx = mapX(pt.month);
+        const cy = mapY(pt.balance);
+        const tipText =
+          LANG === 'en'
+            ? `🎉 Snowball: ${escapeHtml(po.name)} paid off in month ${po.month}!`
+            : `🎉 Snowball: ปลดหนี้ ${escapeHtml(po.name)} ในเดือนที่ ${po.month}!`;
+        svgHtml += `<g class="milestone-marker">
+          <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="4.5" fill="#3b82f6" stroke="#ffffff" stroke-width="1.8" style="cursor:pointer;">
+            <title>${tipText}</title>
+          </circle>
+        </g>`;
+      });
+    }
+  }
+
+  // 4. Windfall Injection Marker along the active trajectory
+  if (windfall && simCurrent && Array.isArray(simCurrent.trajectory) && simCurrent.trajectory.length > 0) {
+    const wfPt =
+      simCurrent.trajectory.find((p) => p.month === windfall.month) ||
+      simCurrent.trajectory.reduce(
+        (prev, curr) => (Math.abs(curr.month - windfall.month) < Math.abs(prev.month - windfall.month) ? curr : prev),
+        simCurrent.trajectory[0],
+      );
+    if (wfPt) {
+      const cx = mapX(wfPt.month);
+      const cy = mapY(wfPt.balance);
+      const tipText =
+        LANG === 'en'
+          ? `🎁 Lump-sum windfall +${formatMoney(windfall.amount)} ${unit} injected in month ${windfall.month}`
+          : `🎁 โปะเงินก้อน +${formatMoney(windfall.amount)} ${unit} ในเดือนที่ ${windfall.month}`;
+      const labelY = cy - 10 < padding.top ? cy + 18 : cy - 10;
+      svgHtml += `
+        <g class="windfall-marker">
+          <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="7" fill="#8b5cf6" stroke="#ffffff" stroke-width="2.5" style="cursor:pointer;">
+            <title>${tipText}</title>
+          </circle>
+          <text x="${cx.toFixed(1)}" y="${labelY.toFixed(1)}" fill="#8b5cf6" font-size="11" font-weight="bold" text-anchor="middle" font-family="inherit">🎁 +${formatMoney(windfall.amount)}</text>
+        </g>
+      `;
+    }
+  }
+
+  // 5. Interactive SVG Crosshair & Indicator Dots
+  svgHtml += `
+    <line id="svgChartCrosshair" x1="0" y1="${padding.top}" x2="0" y2="${xBaseY}" stroke="var(--ink-dim, #94a3b8)" stroke-width="1.5" stroke-dasharray="2,2" style="display:none; pointer-events:none;" />
+    <circle id="dotHoverAvalanche" r="4.5" fill="#10b981" stroke="#ffffff" stroke-width="2" style="display:none; pointer-events:none;" />
+    <circle id="dotHoverSnowball" r="4.5" fill="#3b82f6" stroke="#ffffff" stroke-width="2" style="display:none; pointer-events:none;" />
+  `;
+
   svg.innerHTML = svgHtml;
+
+  // Save mapping context for pointer scrubbing
+  window._debtChartContext = {
+    mapX,
+    mapY,
+    plotWidth,
+    plotHeight,
+    padding,
+    maxMonths,
+    maxBalance,
+    simAvalanche,
+    simSnowball,
+    simMinOnly,
+    totalDebt,
+    chartMode,
+    simCurrent,
+    windfall,
+  };
 
   // Update milestone legend dot color to match active strategy
   const mDot = document.getElementById('milestoneLegendDot');
-  if (mDot) mDot.style.background = primaryColor;
+  if (mDot) mDot.style.background = chartMode === 'snowball' ? '#3b82f6' : '#10b981';
 }
+
+window.renderDebtChart = renderPayoffChart;
+window.renderPayoffChart = renderPayoffChart;
+
+let _debtChartInteractionsBound = false;
+function setupDebtChartInteractions() {
+  const wrapper = document.getElementById('debtChartWrapper');
+  if (!wrapper || _debtChartInteractionsBound) return;
+  _debtChartInteractionsBound = true;
+
+  const handlePointer = (e) => {
+    const ctx = window._debtChartContext;
+    if (!ctx || ctx.maxMonths <= 0 || !ctx.totalDebt || ctx.totalDebt <= 0) return;
+    const tooltip = document.getElementById('debtChartTooltip');
+    const crosshair = document.getElementById('svgChartCrosshair');
+    const dotAv = document.getElementById('dotHoverAvalanche');
+    const dotSn = document.getElementById('dotHoverSnowball');
+    if (!tooltip || !crosshair) return;
+
+    const rect = wrapper.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const clientX = e.clientX;
+    const relX = clientX - rect.left;
+    if (relX < 0 || relX > rect.width) {
+      crosshair.style.display = 'none';
+      if (dotAv) dotAv.style.display = 'none';
+      if (dotSn) dotSn.style.display = 'none';
+      tooltip.style.display = 'none';
+      return;
+    }
+
+    const scaleX = 600 / rect.width;
+    const svgX = relX * scaleX;
+    const clampedSvgX = Math.max(ctx.padding.left, Math.min(ctx.padding.left + ctx.plotWidth, svgX));
+    const ratio = (clampedSvgX - ctx.padding.left) / ctx.plotWidth;
+    const month = Math.round(Math.max(0, Math.min(ctx.maxMonths, ratio * ctx.maxMonths)));
+    const snapSvgX = ctx.mapX(month);
+
+    crosshair.setAttribute('x1', snapSvgX.toFixed(1));
+    crosshair.setAttribute('x2', snapSvgX.toFixed(1));
+    crosshair.setAttribute('y1', String(ctx.padding.top));
+    crosshair.setAttribute('y2', String(ctx.padding.top + ctx.plotHeight));
+    crosshair.style.display = 'block';
+
+    const simAv = ctx.simAvalanche;
+    const simSn = ctx.simSnowball;
+
+    let ptAv = simAv?.trajectory?.find((p) => p.month === month);
+    if (!ptAv && month >= (simAv?.months || 0)) ptAv = { month, balance: 0 };
+    const balAv = ptAv ? ptAv.balance : 0;
+
+    let ptSn = simSn?.trajectory?.find((p) => p.month === month);
+    if (!ptSn && month >= (simSn?.months || 0)) ptSn = { month, balance: 0 };
+    const balSn = ptSn ? ptSn.balance : 0;
+
+    const showAv = ctx.chartMode === 'dual' || ctx.chartMode === 'avalanche';
+    const showSn = ctx.chartMode === 'dual' || ctx.chartMode === 'snowball';
+
+    if (dotAv && ptAv && showAv) {
+      dotAv.setAttribute('cx', snapSvgX.toFixed(1));
+      dotAv.setAttribute('cy', ctx.mapY(balAv).toFixed(1));
+      dotAv.style.display = 'block';
+    } else if (dotAv) {
+      dotAv.style.display = 'none';
+    }
+
+    if (dotSn && ptSn && showSn) {
+      dotSn.setAttribute('cx', snapSvgX.toFixed(1));
+      dotSn.setAttribute('cy', ctx.mapY(balSn).toFixed(1));
+      dotSn.style.display = 'block';
+    } else if (dotSn) {
+      dotSn.style.display = 'none';
+    }
+
+    const isEn = LANG === 'en';
+    const now = new Date();
+    const date = new Date(now.getFullYear(), now.getMonth() + month, 1);
+    const dateStr = isEn
+      ? `${MONTH_NAMES_EN[date.getMonth()]} ${date.getFullYear()}`
+      : `${MONTH_NAMES_TH[date.getMonth()]} ${date.getFullYear() + 543}`;
+
+    let tip = `<div style="font-weight:700; font-size:11px; margin-bottom:4px; border-bottom:1px solid var(--line); padding-bottom:3px; color:var(--ink);">${isEn ? 'Month ' : 'เดือนที่ '}${month} • ${dateStr}</div>`;
+
+    if (showAv) {
+      tip += `<div style="display:flex; justify-content:space-between; gap:12px; font-size:11px; line-height:1.4;">
+        <span style="color:#10b981; font-weight:600;">⚡ Avalanche:</span>
+        <span class="font-mono font-bold" style="color:var(--ink);">${formatMoney(balAv)} ${unit}</span>
+      </div>`;
+    }
+
+    if (showSn) {
+      tip += `<div style="display:flex; justify-content:space-between; gap:12px; font-size:11px; line-height:1.4;">
+        <span style="color:#3b82f6; font-weight:600;">⛄ Snowball:</span>
+        <span class="font-mono font-bold" style="color:var(--ink);">${formatMoney(balSn)} ${unit}</span>
+      </div>`;
+    }
+
+    if (ctx.chartMode === 'dual' && Math.abs(balSn - balAv) > 1) {
+      const diff = balSn - balAv;
+      if (diff > 0) {
+        tip += `<div style="font-size:10px; color:#10b981; margin-top:3px; font-weight:600;">⚡ Avalanche ${isEn ? 'ahead by' : 'ยอดหนี้น้อยกว่า'} -${formatMoney(diff)} ${unit}</div>`;
+      } else {
+        tip += `<div style="font-size:10px; color:#3b82f6; margin-top:3px; font-weight:600;">⛄ Snowball ${isEn ? 'ahead by' : 'ยอดหนี้น้อยกว่า'} -${formatMoney(Math.abs(diff))} ${unit}</div>`;
+      }
+    }
+
+    const avPaid = simAv?.payoffOrder?.filter((p) => p.month === month) || [];
+    const snPaid = simSn?.payoffOrder?.filter((p) => p.month === month) || [];
+
+    if (avPaid.length > 0 && showAv) {
+      avPaid.forEach((p) => {
+        tip += `<div style="color:#10b981; font-size:10px; font-weight:700; margin-top:2px;">🎉 ${isEn ? `Avalanche paid off ${escapeHtml(p.name)}!` : `Avalanche ปลดหนี้ ${escapeHtml(p.name)}!`}</div>`;
+      });
+    }
+    if (snPaid.length > 0 && showSn) {
+      snPaid.forEach((p) => {
+        tip += `<div style="color:#3b82f6; font-size:10px; font-weight:700; margin-top:2px;">🎉 ${isEn ? `Snowball paid off ${escapeHtml(p.name)}!` : `Snowball ปลดหนี้ ${escapeHtml(p.name)}!`}</div>`;
+      });
+    }
+
+    tooltip.innerHTML = tip;
+    tooltip.style.display = 'block';
+
+    const tipWidth = tooltip.offsetWidth || 170;
+    let tipLeft = relX + 12;
+    if (tipLeft + tipWidth > rect.width - 8) {
+      tipLeft = relX - tipWidth - 12;
+    }
+    if (tipLeft < 8) tipLeft = 8;
+    tooltip.style.left = `${tipLeft}px`;
+    tooltip.style.top = '10px';
+  };
+
+  const handleLeave = () => {
+    const tooltip = document.getElementById('debtChartTooltip');
+    const crosshair = document.getElementById('svgChartCrosshair');
+    const dotAv = document.getElementById('dotHoverAvalanche');
+    const dotSn = document.getElementById('dotHoverSnowball');
+    if (crosshair) crosshair.style.display = 'none';
+    if (dotAv) dotAv.style.display = 'none';
+    if (dotSn) dotSn.style.display = 'none';
+    if (tooltip) tooltip.style.display = 'none';
+  };
+
+  wrapper.addEventListener('pointermove', handlePointer);
+  wrapper.addEventListener('pointerdown', handlePointer);
+  wrapper.addEventListener('pointerleave', handleLeave);
+}
+
+window.setupDebtChartInteractions = setupDebtChartInteractions;
 
 function importFromRemainingMoney() {
   try {
@@ -2200,6 +2444,8 @@ syncPrepayInputs();
 syncCarLoanInputs();
 renderTable();
 setStrategy(state.strategy);
+setDebtChartMode(state.chartMode || 'dual');
+setupDebtChartInteractions();
 computePrepay();
 computeCarLoan();
 let debtLayoutManager = null;

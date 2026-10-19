@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.5.66">
+  <meta name="version" content="2.5.67">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self';">
   <script>
     try {
@@ -124,9 +124,17 @@
 
     #bridgeAlertBanner { display: none; margin-bottom: 16px; padding: 12px 16px; border-radius: 10px; background: var(--ok-dim); border: 1px solid var(--ok); color: var(--ok); font-size: 13px; font-weight: 600; align-items: center; justify-content: space-between; }
     #debtChartPanel { margin-bottom: 16px; }
+    #debtChartModeGroup { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+    #debtChartModeGroup .action-btn.active {
+      background: var(--panel);
+      border-color: var(--ink);
+      color: var(--ink);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+      font-weight: 700;
+    }
     #svgDebtChart { width:100%; height:200px; overflow:visible; display:block; }
     .debt-chart-legend { display:flex; justify-content:center; align-items:center; gap:14px; margin-top:10px; font-size:11px; flex-wrap:wrap; color:var(--ink-dim); }
-    .debt-chart-legend-item { display:inline-flex; align-items:center; gap:5px; }
+    .debt-chart-legend-item { display:inline-flex; align-items:center; gap:5px; cursor:pointer; user-select:none; }
 
     @media screen {
       .print-only { display: none !important; }
@@ -138,7 +146,7 @@
         padding: 10px 16px !important;
         max-width: 100% !important;
       }
-      .no-print, button, .action-btn, .btn-row, .add-btn, .remove-btn, .reset-btn, #bridgeAlertBanner, .save-status {
+      .no-print, button, .action-btn, .btn-row, .add-btn, .remove-btn, .reset-btn, #bridgeAlertBanner, .save-status, #debtChartTooltip, #debtChartModeGroup {
         display: none !important;
       }
       .print-only {
@@ -624,25 +632,31 @@
     <div class="panel-title" id="lbl-chart-title" data-i18n="chartTitle">กราฟการลดลงของหนี้สิน (Payoff Trajectory)</div>
     <div id="debtChartPanelBody">
       <div id="debtStrategyDeltaBadge" style="display:none; margin-bottom:12px; padding:8px 12px; border-radius:10px; font-size:12px; line-height:1.4; background:var(--panel-2); border:1px solid var(--line); color:var(--ink);"></div>
-      <div style="position:relative; width:100%; height:200px; margin-top:8px;">
+      <div id="debtChartModeGroup" role="group" aria-label="Debt Chart View Mode" style="display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap;">
+        <button type="button" class="action-btn active" id="btnChartModeDual" onclick="setDebtChartMode('dual')" style="flex:1; padding:5px 8px; font-size:11px;" data-i18n="chartModeDual">เปรียบเทียบทั้งคู่</button>
+        <button type="button" class="action-btn" id="btnChartModeAvalanche" onclick="setDebtChartMode('avalanche')" style="flex:1; padding:5px 8px; font-size:11px;" data-i18n="chartModeAvalanche">⚡ Avalanche</button>
+        <button type="button" class="action-btn" id="btnChartModeSnowball" onclick="setDebtChartMode('snowball')" style="flex:1; padding:5px 8px; font-size:11px;" data-i18n="chartModeSnowball">⛄ Snowball</button>
+      </div>
+      <div id="debtChartWrapper" style="position:relative; width:100%; height:200px; margin-top:8px; cursor:crosshair; touch-action:none;">
         <svg id="svgDebtChart" viewBox="0 0 600 220" preserveAspectRatio="none" role="img" aria-label="Debt payoff trajectory chart">
           <title id="svgDebtChartTitle">Debt Payoff Trajectory</title>
         </svg>
+        <div id="debtChartTooltip" style="position:absolute; display:none; pointer-events:none; z-index:10; background:var(--panel-2, #1e293b); border:1px solid var(--line, #334155); border-radius:8px; padding:6px 10px; font-size:11px; box-shadow:0 4px 12px rgba(0,0,0,0.25); white-space:nowrap; color:var(--ink);"></div>
       </div>
       <div class="debt-chart-legend" id="debtChartLegend">
-        <div class="debt-chart-legend-item">
+        <div class="debt-chart-legend-item" id="legItemAvalanche" onclick="setDebtChartMode(state.chartMode === 'avalanche' ? 'dual' : 'avalanche')" title="คลิกเพื่อสลับโหมด / Click to toggle">
           <span style="display:inline-block; width:14px; height:4px; border-radius:2px; background:#10b981;"></span>
           <span id="lbl-leg-avalanche" data-i18n="legAvalanche">Avalanche (ดอกสูงสุดก่อน)</span>
         </div>
-        <div class="debt-chart-legend-item">
+        <div class="debt-chart-legend-item" id="legItemSnowball" onclick="setDebtChartMode(state.chartMode === 'snowball' ? 'dual' : 'snowball')" title="คลิกเพื่อสลับโหมด / Click to toggle">
           <span style="display:inline-block; width:14px; height:4px; border-radius:2px; background:#3b82f6;"></span>
           <span id="lbl-leg-snowball" data-i18n="legSnowball">Snowball (ยอดน้อยสุดก่อน)</span>
         </div>
-        <div class="debt-chart-legend-item">
+        <div class="debt-chart-legend-item" id="legItemMin">
           <span style="display:inline-block; width:14px; height:2px; border-top:2px dashed #f59e0b;"></span>
           <span id="lbl-leg-min" data-i18n="legMinOnly">จ่ายขั้นต่ำเท่านั้น (Minimum Only)</span>
         </div>
-        <div class="debt-chart-legend-item">
+        <div class="debt-chart-legend-item" id="legItemMilestone">
           <span id="milestoneLegendDot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; border:2px solid #fff; box-shadow:0 0 2px rgba(0,0,0,0.3);"></span>
           <span id="lbl-leg-milestone" data-i18n="legMilestone">จุดปลดหนี้ (Milestone)</span>
         </div>
@@ -696,7 +710,7 @@
     <button class="reset-btn" id="btnResetDebtLayout" onclick="resetDebtLayout()">🔄 <span id="lblResetDebtLayout" data-i18n="resetLayout">จัดลำดับเดิม</span></button>
     <button class="reset-btn" id="btn-reset-debts" onclick="resetDefaults()" data-i18n="btnResetDebts">รีเซ็ตค่าเริ่มต้น</button>
   </div>
-  <p class="version-tag">v2.5.66</p>
+  <p class="version-tag">v2.5.67</p>
 
   <!-- Google Drive Export Modal -->
   <div id="driveExportModal" role="dialog" aria-modal="true" aria-labelledby="driveModalTitle" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; display:none; align-items:center; justify-content:center; backdrop-filter:blur(2px);" onclick="if(event.target===this)closeDriveModal()">

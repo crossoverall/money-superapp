@@ -153,6 +153,13 @@
     driveGuide:
       '💡 เคล็ดลับ: เมื่อเลือก CSV ระบบจะเตรียมไฟล์ที่พร้อมเปิดด้วย Google Sheets ได้ทันที หากเปิดบนมือถือสามารถกดบันทึกลง Google Drive ได้โดยตรง',
 
+    // Debt Visual SVG Comparison Timeline (Phase 126)
+    chartModeDual: 'เปรียบเทียบทั้งคู่',
+    chartModeAvalanche: '⚡ Avalanche',
+    chartModeSnowball: '⛄ Snowball',
+    chartTooltipBalance: 'คงเหลือ',
+    chartTooltipSaved: 'ประหยัดดอกเบี้ย',
+
     // Confirmations & Prompts
     confirmResetDefaults: 'ต้องการล้างข้อมูลและคืนค่าเริ่มต้นหรือไม่?',
     confirmDeleteRecord: 'คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?',

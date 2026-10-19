@@ -2802,4 +2802,132 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.equal(testVm.result, "'@SUM");
     });
   });
+
+  describe('Phase 126: Interactive Debt Payoff Visual SVG Comparison Timeline Contracts', () => {
+    const debtHtmlPath = path.join(ROOT_DIR, 'debt-calculator.html');
+    const debtJsPath = path.join(ROOT_DIR, 'js', 'debt-calculator.js');
+    const thPath = path.join(ROOT_DIR, 'js', 'i18n', 'th.js');
+    const enPath = path.join(ROOT_DIR, 'js', 'i18n', 'en.js');
+
+    const debtHtml = fs.readFileSync(debtHtmlPath, 'utf8');
+    const debtJs = fs.readFileSync(debtJsPath, 'utf8');
+    const thJs = fs.readFileSync(thPath, 'utf8');
+    const enJs = fs.readFileSync(enPath, 'utf8');
+
+    it('verifies HTML markup defines mode buttons, chart wrapper, and tooltip', () => {
+      assert.ok(debtHtml.includes('id="debtChartModeGroup"'), 'debt-calculator.html must define #debtChartModeGroup');
+      assert.ok(debtHtml.includes('id="btnChartModeDual"'), 'debt-calculator.html must define #btnChartModeDual');
+      assert.ok(
+        debtHtml.includes('id="btnChartModeAvalanche"'),
+        'debt-calculator.html must define #btnChartModeAvalanche',
+      );
+      assert.ok(
+        debtHtml.includes('id="btnChartModeSnowball"'),
+        'debt-calculator.html must define #btnChartModeSnowball',
+      );
+      assert.ok(debtHtml.includes('id="debtChartWrapper"'), 'debt-calculator.html must define #debtChartWrapper');
+      assert.ok(debtHtml.includes('id="debtChartTooltip"'), 'debt-calculator.html must define #debtChartTooltip');
+      assert.ok(debtHtml.includes('id="svgDebtChart"'), 'debt-calculator.html must define #svgDebtChart');
+      assert.ok(debtHtml.includes('id="legItemAvalanche"'), 'debt-calculator.html must define #legItemAvalanche');
+      assert.ok(debtHtml.includes('id="legItemSnowball"'), 'debt-calculator.html must define #legItemSnowball');
+    });
+
+    it('verifies js/debt-calculator.js implements crosshair, hover dots, and interactive controls', () => {
+      assert.ok(debtJs.includes("chartMode: 'dual'"), 'debt-calculator.js defaultState must declare chartMode: dual');
+      assert.ok(debtJs.includes('function setDebtChartMode('), 'debt-calculator.js must define setDebtChartMode');
+      assert.ok(
+        debtJs.includes('window.setDebtChartMode = setDebtChartMode'),
+        'debt-calculator.js must export setDebtChartMode',
+      );
+      assert.ok(
+        debtJs.includes('function setupDebtChartInteractions('),
+        'debt-calculator.js must define setupDebtChartInteractions',
+      );
+      assert.ok(
+        debtJs.includes('window.setupDebtChartInteractions = setupDebtChartInteractions'),
+        'debt-calculator.js must export setupDebtChartInteractions',
+      );
+      assert.ok(
+        debtJs.includes('window.renderDebtChart = renderPayoffChart'),
+        'debt-calculator.js must export renderDebtChart',
+      );
+      assert.ok(debtJs.includes('id="svgChartCrosshair"'), 'debt-calculator.js must render #svgChartCrosshair');
+      assert.ok(debtJs.includes('id="dotHoverAvalanche"'), 'debt-calculator.js must render #dotHoverAvalanche');
+      assert.ok(debtJs.includes('id="dotHoverSnowball"'), 'debt-calculator.js must render #dotHoverSnowball');
+      assert.ok(
+        debtJs.includes('window._debtChartContext ='),
+        'debt-calculator.js must populate window._debtChartContext',
+      );
+    });
+
+    it('verifies i18n dictionaries include Phase 126 chart mode and tooltip keys', () => {
+      const keys = [
+        'chartModeDual',
+        'chartModeAvalanche',
+        'chartModeSnowball',
+        'chartTooltipBalance',
+        'chartTooltipSaved',
+      ];
+      for (const k of keys) {
+        assert.ok(thJs.includes(`${k}:`), `th.js must define ${k}`);
+        assert.ok(enJs.includes(`${k}:`), `en.js must define ${k}`);
+        assert.ok(debtJs.includes(`${k}:`), `debt-calculator.js must define ${k}`);
+      }
+    });
+
+    it('validates setDebtChartMode switching and fallback in sandbox VM', () => {
+      const classes = {
+        btnChartModeDual: new Set(['active']),
+        btnChartModeAvalanche: new Set(),
+        btnChartModeSnowball: new Set(),
+      };
+      const mockElement = (id) => ({
+        classList: {
+          toggle: (cls, condition) => {
+            if (condition) classes[id]?.add(cls);
+            else classes[id]?.delete(cls);
+          },
+        },
+      });
+
+      let payoffComputed = false;
+      const sandbox = {
+        console,
+        state: { chartMode: 'dual' },
+        saveState: () => {},
+        computePayoff: () => {
+          payoffComputed = true;
+        },
+        document: {
+          getElementById: (id) => mockElement(id),
+        },
+        window: {},
+      };
+      const vm = createContext(sandbox);
+      const setModeMatch = debtJs.match(/function setDebtChartMode\([\s\S]*?\n\}/);
+      assert.ok(setModeMatch, 'setDebtChartMode must be present');
+
+      new Script(`${setModeMatch[0]}\nsetDebtChartMode('avalanche');`).runInContext(vm);
+      assert.equal(sandbox.state.chartMode, 'avalanche');
+      assert.equal(classes.btnChartModeAvalanche.has('active'), true);
+      assert.equal(classes.btnChartModeDual.has('active'), false);
+      assert.equal(payoffComputed, true);
+
+      new Script(`setDebtChartMode('unsupported');`).runInContext(vm);
+      assert.equal(sandbox.state.chartMode, 'dual');
+      assert.equal(classes.btnChartModeDual.has('active'), true);
+      assert.equal(classes.btnChartModeAvalanche.has('active'), false);
+    });
+
+    it('verifies security sanitization and context cleanup in renderPayoffChart', () => {
+      assert.ok(
+        debtJs.includes('escapeHtml(po.name)'),
+        'debt-calculator.js must escape debt name in milestone markers to prevent stored XSS',
+      );
+      assert.ok(
+        debtJs.includes('window._debtChartContext = null;'),
+        'debt-calculator.js must reset window._debtChartContext on zero debt balance',
+      );
+    });
+  });
 });
