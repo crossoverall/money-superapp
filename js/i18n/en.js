@@ -129,6 +129,18 @@
     slipsTitle: '12-Month Payslip Simulator & Tax Withholding Tracker',
     slipsSubtitle: 'Simulate cumulative gross wages, 50 Tawi withholding tax, and Social Security / PVD deductions',
 
+    // Storage Quota & Offline Cache Lifecycle Domain (Roadmap Phase 112)
+    cacheQuotaTitle: 'Storage Quota & Offline Cache',
+    cacheQuotaDesc: 'Monitor device storage quota usage and offline cache health',
+    cacheVersionLabel: 'Active Cache Version:',
+    cacheUsageLabel: 'Used Storage / Total Quota:',
+    btnRefreshCache: '🔄 Refresh Cache',
+    btnPurgeStale: '🧹 Purge Stale Caches',
+    cacheStatusReady: 'Offline cache ready',
+    cacheRefreshing: 'Refreshing cache assets...',
+    cacheRefreshed: 'Offline cache refreshed successfully',
+    cachePurged: 'Stale caches purged successfully',
+
     // Confirmations & Prompts
     confirmResetDefaults: 'Clear form data and reset to defaults?',
     confirmDeleteRecord: 'Are you sure you want to delete this record?',

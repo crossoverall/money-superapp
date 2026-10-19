@@ -1,5 +1,5 @@
 ---
-task_id: "SDLC-PHASE-111-SIMULATION-WORKER"
+task_id: "SDLC-PHASE-112-SW-CACHE-LIFECYCLE-QUOTA"
 status: "completed"
 current_stage: "release"
 complexity: "level_2"
@@ -7,182 +7,135 @@ iteration_count: 0
 pipeline: ["orchestrator", "planner", "coder", "debugger", "reviewer", "release"]
 ---
 
-# Implementation Plan — Phase 111: Zero-Dependency Web Worker for Heavy Simulations
+### Feature / Task Specification: Phase 112 — Advanced Service Worker Cache Lifecycle & Storage Quota Management
 
-## 1. Executive Summary & Problem Diagnosis
-Currently, `js/dashboard.js` runs a 500-trial Monte Carlo retirement longevity simulation (`simulateMonteCarloRetirement`) synchronously on the main thread during initial dashboard load and whenever the user toggles Safe Withdrawal Rate (SWR) or return scenario pills.
-Running stochastic simulations synchronously with Box-Muller normal transforms and sorting passes blocks the browser UI rendering thread, causing frame drops and input lag on mobile devices.
-
-### Architectural Goals:
-1. **Dedicated Web Worker Offloading**: Move stochastic trials to a dedicated background Web Worker (`js/workers/simulation-worker.js`).
-2. **Single Source of Truth Engine**: Extract the pure simulation math from `js/dashboard.js` into `js/engines/monte-carlo.js`, adhering to the modular engine design established across `js/engines/`.
-3. **ADR-001 & `file://` Invariant Compatibility**: Browsers restrict Web Worker instantiation under `file://` protocol (`SecurityError`). The application must feature transparent, seamless synchronous fallback so the app works identically whether opened from static HTTP servers or via local `file://` double-click.
-4. **Zero NPM Dependencies & Zero-Build**: Keep 100% vanilla JavaScript with strict CSP compliance (`script-src 'self' 'unsafe-inline'`), zero `eval()`, zero `new Function()`, and zero CDN calls.
-5. **Offline PWA Precache**: Register both the new engine and worker in `sw.js` `ASSETS_TO_CACHE`.
-
----
-
-## 2. Invariants & Constraints Checklist
-
-| Invariant | Requirement | Verification Method |
-|---|---|---|
-| **ADR-001 Privacy & Client-Side Execution** | 100% client-side calculation; zero network requests or telemetry. | CSP tests in `tests/security.test.mjs` |
-| **ADR-001 Dual-Protocol Compatibility** | Must function seamlessly on both `http(s)://` and `file://`. If worker fails or is blocked, synchronous fallback immediately computes results. | Automated fallback tests in `tests/simulation-worker.test.mjs` |
-| **CSP Compliance** | Worker loaded strictly from `'self'`; no `blob:` or `data:` URLs for workers; no forbidden execution primitives. | `tests/security.test.mjs` assertions |
-| **Zero Runtime Dependencies** | Vanilla JS only; no npm runtime packages. | Repository dependency inspection |
-| **Idempotent UI & Race Condition Defense** | Asynchronous worker responses must not overwrite newer user interactions (e.g. rapid slider changes). | Request sequence tagging (`_latestSimulationSeq`) |
-| **Offline-First PWA** | All new assets cached in Service Worker. | `sw.js` cache array + `tests/pwa-manifest.test.mjs` |
+#### 1. Goal & Scope Limits
+- **Objective:**
+  Implement offline-first Service Worker cache lifecycle management and client-side storage quota visibility for Money Superapp. Users can inspect local storage and cache consumption, view the active Service Worker version and asset count, trigger safe offline cache refreshes, and purge stale caches without risking personal financial data or violating client-side privacy.
+- **Target Files (Vertical Slices <= 3 files each):**
+  - **Slice 1 (SW Lifecycle & i18n Dictionaries):** `sw.js`, `js/i18n/th.js`, `js/i18n/en.js`
+  - **Slice 2 (App Shell Controller & UI):** `index.html`, `js/app-shell.js`
+  - **Slice 3 (Testing & Smoke Suite):** `tests/sw-cache-quota.test.mjs` (New), `tests/smoke.test.mjs`
+- **Explicit Out of Scope:**
+  - No remote server sync or telemetry (ADR-001 invariant).
+  - No alteration of existing financial calculators, tax engines, or localStorage bridge mechanisms.
+  - No external npm dependencies or bundlers (Vanilla ES6+ offline standard).
+  - No deletion of the active cache or `money-superapp-shared-payload` Web Share Target cache.
 
 ---
 
-## 3. Risk Assessment & Mitigations
-
-| Risk | Impact | Likelihood | Mitigation Strategy |
-|---|---|---|---|
-| **SecurityError on `file://`** | Worker creation throws error when opening standalone HTML without HTTP server. | High | Wrap worker instantiation in `try/catch`. On error, set `_workerFailed = true` and transparently route through `MoneyApp.simulateMonteCarloRetirement` returning a resolved Promise. |
-| **Worker Script Load Failure (404/Offline)** | Worker throws `onerror` if asset is missing or corrupted. | Low | Listen to `worker.onerror`; immediately flush any pending requests through the synchronous engine fallback and terminate the failing worker instance. |
-| **Race Conditions on Rapid UI Changes** | User clicks SWR pill 3.5% then 4.0%; slow trial 1 finishes after trial 2, displaying wrong scenario. | Medium | Use monotonically increasing sequence IDs (`_latestSimulationSeq`). UI callback discards any response whose sequence does not match the latest request. |
-| **Worker Hang / Unresponsive Thread** | Worker hangs or takes too long under heavy system load. | Low | 5,000ms timeout guard on pending requests. If timer fires, request falls back to synchronous execution. |
-| **Worker Math Discrepancy** | Worker computes different percentiles than synchronous engine. | Low | Worker uses `importScripts('../engines/monte-carlo.js')` so both paths execute the exact same mathematical code. Tests assert bit-for-bit parity with fixed PRNG seed. |
-
----
-
-## 4. Vertical Slices & Step-by-Step Implementation
-
-### Slice 1: Pure Monte Carlo Engine (`js/engines/monte-carlo.js`)
-- **Action**: Create new file `js/engines/monte-carlo.js`.
-- **Contents**:
-  - Pure simulation engine encapsulated in standard IIFE `((global) => { ... })(typeof window !== 'undefined' ? window : (typeof self !== 'undefined' ? self : globalThis));`.
-  - Linear Congruential Generator (LCG) PRNG with seed support (`seed = 42` default) for deterministic runs.
-  - Box-Muller transform for Gaussian normal distribution: `meanReturn + volatility * z`.
-  - Annual inflation compounding: `withdrawal *= (1 + inflation)`.
-  - Full JSDoc type contracts:
-    - `@typedef {Object} MonteCarloSimulationParams`
-    - `@typedef {Object} TrajectoryPercentilePoint`
-    - `@typedef {Object} MonteCarloSimulationResult`
-  - Input sanitizer/validator `validateMonteCarloParams(params)`:
-    - Clamps `years` between 1 and 50.
-    - Clamps `trials` between 10 and 2000 (safe ceiling).
-    - Ensures non-negative `initialPortfolio`, `annualWithdrawal`, and `volatility`.
-  - Output validator `validateMonteCarloResult(result)`.
-  - Risk tier classifier: `< 50%` (`critical`), `< 75%` (`fragile`), `< 90%` (`moderate`), `≥ 90%` (`safe`).
-  - Namespace export: `MoneyApp.simulateMonteCarloRetirement`, `MoneyApp.validateMonteCarloParams`, `MoneyApp.validateMonteCarloResult`.
-  - Global backwards-compatible fallback: `global.simulateMonteCarloRetirement`.
-
-### Slice 2: Dedicated Web Worker (`js/workers/simulation-worker.js`)
-- **Action**: Create new file `js/workers/simulation-worker.js`.
-- **Contents**:
-  - Guarded engine import:
-    ```javascript
-    if (typeof importScripts === 'function' && (!self.MoneyApp || !self.MoneyApp.simulateMonteCarloRetirement)) {
-      try {
-        importScripts('../engines/monte-carlo.js');
-      } catch (e) {
-        // Handled via message error if simulator missing
-      }
-    }
-    ```
-  - Standard message protocol listener `self.onmessage`:
-    - Handles `{ id, type: 'PING' }` $\to$ `{ id, type: 'PONG' }`.
-    - Handles `{ id, type: 'SIMULATE_MONTE_CARLO', payload }`:
-      - Resolves engine from `self.MoneyApp.simulateMonteCarloRetirement` or `self.simulateMonteCarloRetirement`.
-      - Computes simulation result.
-      - Responds with `{ id, type: 'SIMULATE_MONTE_CARLO_SUCCESS', payload: result }`.
-      - Catches errors and responds with `{ id, type: 'SIMULATE_MONTE_CARLO_ERROR', error: message }`.
-    - Handles unknown types with `{ id, type: 'UNKNOWN_TYPE_ERROR', error: '...' }`.
-
-### Slice 3: Dashboard Client Orchestration & Asynchronous UI (`js/dashboard.js`, `dashboard.html`)
-- **Action 3.1 (`js/dashboard.js`)**:
-  - Implement `MoneyApp.simulateMonteCarloAsync(params)`:
-    - Lazy singleton worker instantiation.
-    - Protocol check: if `window.location.protocol === 'file:'` or `typeof Worker === 'undefined'`, immediately invoke synchronous engine and return `Promise.resolve(result)`.
-    - Worker pool error handler: if worker encounters error, mark `_workerFailed = true`, drain pending queue via synchronous fallback, and terminate worker.
-    - 5,000ms timeout per request with synchronous fallback.
-    - Map of pending requests `_pendingRequests.set(id, { resolve, reject, timeoutTimer, params })`.
-  - Implement `updateMonteCarloUI(mcRes)`:
-    - Updates `badge-mc-survival` with survival probability and color coding (green $\ge 85\%$, amber $\ge 65\%$, red $< 65\%$).
-    - Updates `val-mc-p10`, `val-mc-p50`, `val-mc-p90`.
-    - Renders confidence fan chart `renderMonteCarloFanChart(mcRes.trajectoryPercentiles)`.
-  - Refactor `renderFinancialGoals()`:
-    - Calculate `p.netWorth`, `annualExp`, `fireMetrics`.
-    - Increment `_latestSimulationSeq`.
-    - Dispatch `MoneyApp.simulateMonteCarloAsync(params)`.
-    - In Promise `.then(mcRes)`: check sequence ID, call `updateMonteCarloUI(mcRes)`.
-  - Refactor existing inline `simulateMonteCarloRetirement`:
-    - Delegate body to `(MoneyApp.simulateMonteCarloRetirement || ...)` for complete backward compatibility.
-- **Action 3.2 (`dashboard.html`)**:
-  - Add `<script src="js/engines/monte-carlo.js"></script>` before `js/shared.js` and `js/dashboard.js`.
-
-### Slice 4: Service Worker & Smoke Precache Alignment (`sw.js`, `tests/smoke.test.mjs`)
-- **Action 4.1 (`sw.js`)**:
-  - Add `'./js/engines/monte-carlo.js'` and `'./js/workers/simulation-worker.js'` to `ASSETS_TO_CACHE`.
-- **Action 4.2 (`tests/smoke.test.mjs`)**:
-  - Add `'js/engines/monte-carlo.js'` to `CORE_JS_SCRIPTS`.
-
-### Slice 5: Automated Test Suite (`tests/simulation-worker.test.mjs`)
-- **Action**: Create new automated test suite `tests/simulation-worker.test.mjs` covering:
-  1. **Engine Math & Determinism**:
-     - Reproducibility test: identical results with same seed across runs.
-     - Parity test: verify output against legacy inline simulator.
-     - Percentile monotonicity: $p10 \le p50 \le p90$ across all years.
-     - Parameter boundary clamping (negative numbers, extreme years, trial bounds).
-     - Financial edge cases (0 net worth, 0 withdrawal, market boom, inflation shock).
-  2. **Worker Protocol & Dispatch**:
-     - PING / PONG protocol response.
-     - SIMULATE_MONTE_CARLO protocol response format and payload schema.
-     - Error response on unknown message type or invalid payload.
-  3. **ADR-001 Invariant & Fallback**:
-     - Verify `MoneyApp.simulateMonteCarloAsync` completes successfully when `Worker` is undefined or throws `SecurityError` (simulating `file://`).
-     - Verify mock worker execution resolves correctly.
-     - Verify timeout and worker crash error recovery triggers fallback.
-  4. **PWA & CSP Integrity**:
-     - Verify files exist on disk, are precached in `sw.js`, and contain zero `eval` or `new Function`.
+#### 2. Architecture & Decision Alignment
+- **Affected Components:**
+  - `sw.js` (Offline Cache & PWA Service Worker): Add message dispatch for `GET_CACHE_STATUS`, `PURGE_STALE_CACHES`, and `REFRESH_CACHE`. Add error resilience during `activate` cache eviction.
+  - `index.html` (App Shell): Add Storage & Cache Quota card to `#settingsModal`.
+  - `js/app-shell.js` (App Shell Controller): Implement `updateStorageQuotaDisplay()`, `refreshAppCache()`, `purgeStaleCaches()`, `formatStorageBytes()`, and bilingual binding in `applyLang()`.
+  - `js/i18n/th.js` & `js/i18n/en.js`: Centralized bilingual dictionaries preserving 100% key symmetry.
+  - `tests/`: Automated unit and integration test coverage.
+- **Relevant ADRs:**
+  - **ADR-001 (Zero-Build Static PWA & 100% Client-Side Privacy):** Storage estimation and cache management must execute 100% on-device using native `navigator.storage.estimate()` and `Cache` API.
+  - **ADR-003 (Tailwind-Lite CSS & Offline Independence):** Reuse existing CSS custom properties and theme tokens without external CDN styles.
+  - **ADR-005 (Automated Semantic Version Bumping & SW Invalidation):** Seamlessly align with `scripts/bump.mjs` versioning conventions (`money-superapp-vX.Y.Z`).
 
 ---
 
-## 5. Verification Commands
+#### 3. Step-by-Step Implementation Plan
 
-1. **Test Execution**:
-   ```bash
-   node --test tests/simulation-worker.test.mjs
-   npm test
-   ```
-2. **Linting & Formatting**:
-   ```bash
-   npm run lint
-   npm run format
-   ```
-3. **Security Audit**:
-   ```bash
-   node --test tests/security.test.mjs
-   ```
-4. **PWA Precache Verification**:
-   ```bash
-   node --test tests/pwa-manifest.test.mjs
-   ```
+##### Slice 1: Service Worker Message Handlers & Bilingual Dictionaries
+1. **Enhance Activation Resilience (`sw.js`)**:
+   - In `self.addEventListener('activate')`, wrap each `caches.delete(key)` in a resilient try/catch / `.catch(() => false)` handler so any filesystem or cache lock failure does not abort activation or prevent `self.clients.claim()`.
+   - Preserve `CACHE_NAME` and `'money-superapp-shared-payload'`.
+2. **Add Service Worker Message Handlers (`sw.js`)**:
+   - Add listener logic inside `self.addEventListener('message')` to support:
+     - `GET_CACHE_STATUS`: Responds with `{ type: 'CACHE_STATUS_RESPONSE', cacheName: CACHE_NAME, version, assetCount, allCaches, staleCaches, timestamp }`.
+     - `PURGE_STALE_CACHES`: Deletes all caches except `CACHE_NAME` and `'money-superapp-shared-payload'`. Responds with `{ type: 'PURGE_STALE_CACHES_RESPONSE', success: true, purgedCaches, activeCache: CACHE_NAME }`.
+     - `REFRESH_CACHE`: Iterates through `ASSETS_TO_CACHE` using `fetch(url, { cache: 'reload' })` and updates `CACHE_NAME`. Responds with `{ type: 'REFRESH_CACHE_RESPONSE', success: true, updatedCount, totalAssets }`.
+   - Reply via `event.ports[0].postMessage(...)` (if `MessageChannel` port is supplied) with fallback to `event.source.postMessage(...)`.
+3. **Register Bilingual Dictionary Keys (`js/i18n/th.js` & `js/i18n/en.js`)**:
+   - Add symmetric keys to both dictionaries:
+     - `cacheQuotaTitle`: TH "โควต้าพื้นที่และแคชออฟไลน์ (Storage & Cache Quota)" / EN "Storage Quota & Offline Cache"
+     - `cacheQuotaDesc`: TH "ตรวจสอบขนาดพื้นที่จัดเก็บในอุปกรณ์และสถานะแคชออฟไลน์ของระบบ" / EN "Monitor device storage quota usage and offline cache health"
+     - `cacheVersionLabel`: TH "เวอร์ชันแคชที่ใช้งาน:" / EN "Active Cache Version:"
+     - `cacheUsageLabel`: TH "พื้นที่ใช้งาน / โควต้าทั้งหมด:" / EN "Used Storage / Total Quota:"
+     - `btnRefreshCache`: TH "🔄 อัปเดตแคช" / EN "🔄 Refresh Cache"
+     - `btnPurgeStale`: TH "🧹 ล้างแคชเก่า" / EN "🧹 Purge Stale Caches"
+     - `cacheStatusReady`: TH "พร้อมใช้งานออฟไลน์สมบูรณ์" / EN "Offline cache ready"
+     - `cacheRefreshing`: TH "กำลังอัปเดตไฟล์แคช..." / EN "Refreshing cache assets..."
+     - `cacheRefreshed`: TH "อัปเดตแคชออฟไลน์เรียบร้อยแล้ว" / EN "Offline cache refreshed successfully"
+     - `cachePurged`: TH "ล้างแคชเก่าที่ตกค้างเรียบร้อยแล้ว" / EN "Stale caches purged successfully"
+   - Validate 100% key symmetry with `tests/i18n-dictionaries.test.mjs`.
+
+##### Slice 2: Storage Quota UI & App Shell Controller
+4. **Add Storage & Cache Quota Card in `#settingsModal` (`index.html`)**:
+   - Insert dedicated section before the Reset section in `#settingsModal`.
+   - Elements:
+     - Header with title (`lbl-cache-quota-title`), description (`lbl-cache-quota-desc`), Refresh button (`btn-refresh-cache`), and Purge Stale button (`btn-purge-stale`).
+     - Active Cache Version readout: `#cache-version-badge`.
+     - Storage Quota Readout (`#lbl-cache-quota-readout`) and animated progress bar (`#cache-quota-bar`).
+     - Status readout line (`#lbl-cache-status-text`) and stale cache counter badge (`#cache-stale-badge`).
+5. **Implement Storage & Cache Controller (`js/app-shell.js`)**:
+   - Add helper `formatStorageBytes(bytes)`: Formats numbers into B, KB, MB, GB with boundary precision and graceful fallback on non-numbers/negatives.
+   - Add `updateStorageQuotaDisplay()`:
+     - Invokes `navigator.storage?.estimate()`. Computes `usage`, `quota`, and `percentUsed`.
+     - Updates `#cache-quota-bar` style width and `#lbl-cache-quota-readout`.
+     - Sends `GET_CACHE_STATUS` to Service Worker controller via `MessageChannel` (with fallback to `window.caches` direct access).
+     - Updates `#cache-version-badge` and `#cache-stale-badge`.
+     - Returns Promise resolving to quota status details.
+   - Add `refreshAppCache()`:
+     - Sets loading state in `#lbl-cache-status-text`.
+     - Calls SW `REFRESH_CACHE` (or falls back to `caches.open()`) and `registration.update()`.
+     - Re-invokes `updateStorageQuotaDisplay()` and alerts user of completion.
+   - Add `purgeStaleCaches()`:
+     - Sends `PURGE_STALE_CACHES` to SW or deletes stale caches directly via `caches.delete`.
+     - Re-invokes `updateStorageQuotaDisplay()` and alerts user of purged cache count.
+   - Update `openSettingsModal()` to invoke `updateStorageQuotaDisplay()`.
+   - Update `applyLang()`: Wire new dictionary keys to DOM elements and copy keys into `translations.th` and `translations.en`.
+   - Expose `formatStorageBytes`, `updateStorageQuotaDisplay`, `refreshAppCache`, and `purgeStaleCaches` on `window.MoneyApp` and `window`.
+
+##### Slice 3: Automated Test Suite & Smoke Verification
+6. **Author Test Suite (`tests/sw-cache-quota.test.mjs`)**:
+   - Test 1: Byte formatting logic (`formatStorageBytes` across 0 B, KB, MB, GB, invalid/null).
+   - Test 2: `sw.js` static contract inspection (`CACHE_NAME`, message types, activation delete guard).
+   - Test 3: `sw.js` message execution simulation in Node VM with mock Cache API (verifying `GET_CACHE_STATUS` response contract and `PURGE_STALE_CACHES` preserving active cache + share payload).
+   - Test 4: App Shell DOM structure and bilingual attributes in `index.html`.
+   - Test 5: Bilingual symmetry between `th.js` and `en.js` for all cache quota keys.
+   - Test 6: App Shell controller API exports and functions in `js/app-shell.js`.
+7. **Update Smoke Assertions (`tests/smoke.test.mjs`)**:
+   - Add Phase 112 validation block verifying test suite disk existence, Service Worker contracts, and App Shell integration.
+8. **Execute Full Test & Lint Verification**:
+   - Run `npm test` (all tests passing).
+   - Run `npm run lint` (Biome clean, zero errors).
 
 ---
 
-## 6. Rollback & Contingency Plan
-If any breaking issue occurs during implementation:
-- Target files are isolated to `js/engines/monte-carlo.js`, `js/workers/simulation-worker.js`, `js/dashboard.js`, `dashboard.html`, `sw.js`, and `tests/simulation-worker.test.mjs`.
-- Targeted rollback command:
+#### 4. Acceptance Criteria
+- [x] `sw.js` activation handles cache deletion errors gracefully and preserves `CACHE_NAME` and `money-superapp-shared-payload`.
+- [x] `sw.js` handles `GET_CACHE_STATUS`, `PURGE_STALE_CACHES`, and `REFRESH_CACHE` message types returning structured response contracts.
+- [x] `index.html` displays the Storage & Cache Quota card inside `#settingsModal` with progress bar, readout, active version badge, and action buttons.
+- [x] `js/app-shell.js` implements `updateStorageQuotaDisplay()`, `refreshAppCache()`, `purgeStaleCaches()`, and `formatStorageBytes()`.
+- [x] `js/i18n/th.js` and `js/i18n/en.js` contain all quota keys with 100% symmetry verified by `tests/i18n-dictionaries.test.mjs`.
+- [x] `applyLang()` updates all cache quota UI labels dynamically when switching TH/EN.
+- [x] `tests/sw-cache-quota.test.mjs` runs in `npm test` and passes 100%.
+- [x] `tests/smoke.test.mjs` validates Phase 112 components.
+- [x] `npm run lint` passes without formatting or syntax errors.
+
+---
+
+#### 5. Verification Strategy
+- **Automated Tests:**
   ```bash
-  git checkout -- js/dashboard.js dashboard.html sw.js tests/smoke.test.mjs
-  rm -f js/engines/monte-carlo.js js/workers/simulation-worker.js tests/simulation-worker.test.mjs
+  # Run full automated test suite
+  npm test
+
+  # Run specific Phase 112 test suite
+  node --test tests/sw-cache-quota.test.mjs
+
+  # Verify i18n symmetry
+  node --test tests/i18n-dictionaries.test.mjs
+
+  # Code quality and formatting
+  npm run lint
   ```
-- No user data or database migration is involved; state remains 100% in browser `localStorage`.
-
----
-
-## 7. Implementation Execution Log
-- **Slice 1**: Created [`js/engines/monte-carlo.js`](file:///home/l2okii/Document/money-superapp/js/engines/monte-carlo.js) pure simulation engine with full JSDoc annotations, deterministic LCG PRNG, Box-Muller Gaussian transforms, and parameter/result schema validators.
-- **Slice 2**: Created [`js/workers/simulation-worker.js`](file:///home/l2okii/Document/money-superapp/js/workers/simulation-worker.js) zero-dependency dedicated Web Worker supporting PING and SIMULATE_MONTE_CARLO protocol with error capture.
-- **Slice 3**: Refactored [`js/dashboard.js`](file:///home/l2okii/Document/money-superapp/js/dashboard.js) to dispatch simulations through `MoneyApp.simulateMonteCarloAsync()` with singleton worker creation, 5s timeout, sequence tagging (`_latestSimulationSeq`), and immediate synchronous fallback on `file://` or Worker SecurityError. Added script tag to [`dashboard.html`](file:///home/l2okii/Document/money-superapp/dashboard.html).
-- **Slice 4**: Updated [`sw.js`](file:///home/l2okii/Document/money-superapp/sw.js) precache list (`ASSETS_TO_CACHE`) and aligned [`tests/smoke.test.mjs`](file:///home/l2okii/Document/money-superapp/tests/smoke.test.mjs).
-- **Slice 5**: Created comprehensive automated test suite [`tests/simulation-worker.test.mjs`](file:///home/l2okii/Document/money-superapp/tests/simulation-worker.test.mjs) (19/19 tests passing).
-- **Quality Gates**:
-  - `npm run lint`: Biome check passed across 66 files (0 errors, 0 warnings).
-  - `npm test`: Full test suite passed (610/610 tests across 154 suites).
-  - `node --test tests/security.test.mjs`: Security & CSP audit passed (20/20 tests).
-  - Ready for QA & Debugger verification.
+- **Circuit Breaker Guardrails:**
+  - Maximum 2 feedback loops between Coder and QA. If any contract fails, halt and inspect root cause.
+  - Zero external npm packages installed.
+  - Invariant protection: Active cache `CACHE_NAME` and `money-superapp-shared-payload` must never be purged.

@@ -102,6 +102,16 @@ const translations = {
     badgeOnboardDrive: '☁️ ซิงค์ Google Drive ได้',
     badgeOnboardKeys: '⌨️ คีย์ลัด Alt+1..7',
     qrCameraFallback: '📷 กล้องไม่พร้อมใช้งาน หรือเบราว์เซอร์ไม่รองรับ BarcodeDetector คุณสามารถวางโค้ด JSON ชิ้นส่วนด้านล่าง',
+    cacheQuotaTitle: 'โควต้าพื้นที่และแคชออฟไลน์ (Storage & Cache Quota)',
+    cacheQuotaDesc: 'ตรวจสอบขนาดพื้นที่จัดเก็บในอุปกรณ์และสถานะแคชออฟไลน์ของระบบ',
+    cacheVersionLabel: 'เวอร์ชันแคชที่ใช้งาน:',
+    cacheUsageLabel: 'พื้นที่ใช้งาน / โควต้าทั้งหมด:',
+    btnRefreshCache: '🔄 อัปเดตแคช',
+    btnPurgeStale: '🧹 ล้างแคชเก่า',
+    cacheStatusReady: 'พร้อมใช้งานออฟไลน์สมบูรณ์',
+    cacheRefreshing: 'กำลังอัปเดตไฟล์แคช...',
+    cacheRefreshed: 'อัปเดตแคชออฟไลน์เรียบร้อยแล้ว',
+    cachePurged: 'ล้างแคชเก่าที่ตกค้างเรียบร้อยแล้ว',
   },
   en: {
     skipLink: 'Skip to main content',
@@ -200,6 +210,16 @@ const translations = {
     badgeOnboardDrive: '☁️ Optional Google Drive Sync',
     badgeOnboardKeys: '⌨️ Shortcuts Alt+1..7',
     qrCameraFallback: '📷 Camera unavailable or BarcodeDetector not supported. You can paste slice JSON below.',
+    cacheQuotaTitle: 'Storage Quota & Offline Cache',
+    cacheQuotaDesc: 'Monitor device storage quota usage and offline cache health',
+    cacheVersionLabel: 'Active Cache Version:',
+    cacheUsageLabel: 'Used Storage / Total Quota:',
+    btnRefreshCache: '🔄 Refresh Cache',
+    btnPurgeStale: '🧹 Purge Stale Caches',
+    cacheStatusReady: 'Offline cache ready',
+    cacheRefreshing: 'Refreshing cache assets...',
+    cacheRefreshed: 'Offline cache refreshed successfully',
+    cachePurged: 'Stale caches purged successfully',
   },
 };
 
@@ -301,6 +321,22 @@ function applyLang(lang) {
     document.getElementById('lbl-storage-details-summary').textContent = t.storageDetailsSummary;
   if (document.getElementById('lbl-btn-repair-storage'))
     document.getElementById('lbl-btn-repair-storage').textContent = t.btnRepairStorage;
+
+  if (document.getElementById('lbl-cache-quota-title'))
+    document.getElementById('lbl-cache-quota-title').textContent = t.cacheQuotaTitle;
+  if (document.getElementById('lbl-cache-quota-desc'))
+    document.getElementById('lbl-cache-quota-desc').textContent = t.cacheQuotaDesc;
+  if (document.getElementById('lbl-btn-refresh-cache'))
+    document.getElementById('lbl-btn-refresh-cache').textContent = t.btnRefreshCache;
+  if (document.getElementById('lbl-btn-purge-stale'))
+    document.getElementById('lbl-btn-purge-stale').textContent = t.btnPurgeStale;
+  if (document.getElementById('lbl-cache-version-label'))
+    document.getElementById('lbl-cache-version-label').textContent = t.cacheVersionLabel;
+  if (document.getElementById('lbl-cache-usage-label'))
+    document.getElementById('lbl-cache-usage-label').textContent = t.cacheUsageLabel;
+  if (document.getElementById('lbl-cache-status-text') && !cacheOperationInProgress) {
+    document.getElementById('lbl-cache-status-text').textContent = t.cacheStatusReady;
+  }
 
   if (document.getElementById('lbl-gdrive-title'))
     document.getElementById('lbl-gdrive-title').textContent = t.gdriveTitle;
@@ -1077,10 +1113,253 @@ window.runStorageHealthCheck = runStorageHealthCheck;
 window.repairCorruptedStorage = repairCorruptedStorage;
 window.inspectStorageHealth = inspectStorageHealth;
 
+// Phase 112: Advanced Service Worker Cache Lifecycle & Storage Quota Management
+let cacheOperationInProgress = false;
+
+function formatStorageBytes(bytes) {
+  if (typeof bytes !== 'number' || Number.isNaN(bytes) || bytes < 0) return '0 B';
+  if (bytes === 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const k = 1024;
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  const unitIndex = Math.min(Math.max(0, i), units.length - 1);
+  const val = (bytes / k ** unitIndex).toFixed(unitIndex === 0 ? 0 : 1);
+  return `${val} ${units[unitIndex]}`;
+}
+
+async function updateStorageQuotaDisplay() {
+  const lang = typeof getLang === 'function' ? getLang() : 'th';
+  const t = translations[lang] || translations.th;
+
+  let usage = 0;
+  let quota = 0;
+  let percent = 0;
+
+  // 1. Storage quota estimation via StorageManager API
+  if (typeof navigator !== 'undefined' && navigator.storage && typeof navigator.storage.estimate === 'function') {
+    try {
+      const estimate = await navigator.storage.estimate();
+      usage = typeof estimate.usage === 'number' ? estimate.usage : 0;
+      quota = typeof estimate.quota === 'number' ? estimate.quota : 0;
+      if (quota > 0) {
+        percent = Math.min(100, Math.max(0, (usage / quota) * 100));
+      }
+    } catch (_err) {
+      // Fallback
+    }
+  }
+
+  // Update DOM readouts for quota
+  const readoutEl = document.getElementById('lbl-cache-quota-readout');
+  if (readoutEl) {
+    const formattedUsage = formatStorageBytes(usage);
+    const formattedQuota = formatStorageBytes(quota);
+    const pctStr = percent.toFixed(1);
+    readoutEl.textContent = `${formattedUsage} / ${formattedQuota} (${pctStr}%)`;
+  }
+  const barEl = document.getElementById('cache-quota-bar');
+  if (barEl) {
+    barEl.style.width = `${percent.toFixed(1)}%`;
+  }
+
+  // 2. Query Service Worker for active cache status & stale cache count
+  let cacheStatus = null;
+  if (typeof navigator !== 'undefined' && navigator.serviceWorker && navigator.serviceWorker.controller) {
+    try {
+      cacheStatus = await new Promise((resolve) => {
+        const channel = new MessageChannel();
+        const timer = setTimeout(() => resolve(null), 1500);
+        channel.port1.onmessage = (event) => {
+          clearTimeout(timer);
+          resolve(event.data);
+        };
+        navigator.serviceWorker.controller.postMessage({ type: 'GET_CACHE_STATUS' }, [channel.port2]);
+      });
+    } catch (_err) {}
+  }
+
+  // Fallback to direct caches API if no SW controller response
+  if (!cacheStatus && typeof window !== 'undefined' && window.caches && typeof window.caches.keys === 'function') {
+    try {
+      const metaVer = document.querySelector?.('meta[name="version"]')?.content;
+      const defaultActive = metaVer ? `money-superapp-v${metaVer}` : 'money-superapp-v2.5.55';
+      const keys = await window.caches.keys();
+      const activeName = keys.find((k) => k.startsWith('money-superapp-v')) || defaultActive;
+      const versionMatch = activeName.match(/v(\d+\.\d+\.\d+)/);
+      const stale = keys.filter((k) => k !== activeName && k !== 'money-superapp-shared-payload');
+      cacheStatus = {
+        cacheName: activeName,
+        version: versionMatch ? versionMatch[1] : metaVer || activeName,
+        allCaches: keys,
+        staleCaches: stale,
+      };
+    } catch (_err) {}
+  }
+
+  const versionBadge = document.getElementById('cache-version-badge');
+  if (versionBadge && cacheStatus) {
+    const metaVer = document.querySelector?.('meta[name="version"]')?.content;
+    const defaultVer = metaVer ? `v${metaVer}` : 'v2.5.55';
+    const vStr = cacheStatus.version
+      ? cacheStatus.version.startsWith('v')
+        ? cacheStatus.version
+        : `v${cacheStatus.version}`
+      : defaultVer;
+    versionBadge.textContent = vStr;
+  }
+
+  const staleBadge = document.getElementById('cache-stale-badge');
+  const staleCount = cacheStatus?.staleCaches?.length || 0;
+  if (staleBadge) {
+    if (staleCount > 0) {
+      staleBadge.style.display = 'inline-block';
+      staleBadge.textContent = `${staleCount} Stale`;
+    } else {
+      staleBadge.style.display = 'none';
+    }
+  }
+
+  const statusText = document.getElementById('lbl-cache-status-text');
+  if (statusText && !cacheOperationInProgress) {
+    statusText.textContent = t.cacheStatusReady;
+  }
+
+  return {
+    usage,
+    quota,
+    percent,
+    version: cacheStatus?.version || '2.5.54',
+    staleCount,
+  };
+}
+
+async function refreshAppCache() {
+  const lang = typeof getLang === 'function' ? getLang() : 'th';
+  const t = translations[lang] || translations.th;
+  const statusEl = document.getElementById('lbl-cache-status-text');
+  const btn = document.getElementById('btn-refresh-cache');
+
+  cacheOperationInProgress = true;
+  if (statusEl) statusEl.textContent = t.cacheRefreshing;
+  if (btn) btn.disabled = true;
+
+  try {
+    // 1. SW message contract
+    if (typeof navigator !== 'undefined' && navigator.serviceWorker?.controller) {
+      try {
+        await new Promise((resolve) => {
+          const channel = new MessageChannel();
+          const timer = setTimeout(() => resolve(null), 3000);
+          channel.port1.onmessage = (event) => {
+            clearTimeout(timer);
+            resolve(event.data);
+          };
+          navigator.serviceWorker.controller.postMessage({ type: 'REFRESH_CACHE' }, [channel.port2]);
+        });
+      } catch (_e) {}
+    }
+
+    // 2. SW registration update
+    if (typeof navigator !== 'undefined' && navigator.serviceWorker?.getRegistration) {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) {
+        await reg.update();
+      }
+    }
+
+    await updateStorageQuotaDisplay();
+    if (statusEl) statusEl.textContent = t.cacheRefreshed;
+    setTimeout(() => {
+      cacheOperationInProgress = false;
+      if (statusEl) statusEl.textContent = t.cacheStatusReady;
+    }, 2500);
+
+    return { success: true };
+  } catch (err) {
+    cacheOperationInProgress = false;
+    if (statusEl) statusEl.textContent = t.cacheStatusReady;
+    return { success: false, error: err.message };
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function purgeStaleCaches() {
+  const lang = typeof getLang === 'function' ? getLang() : 'th';
+  const t = translations[lang] || translations.th;
+  const statusEl = document.getElementById('lbl-cache-status-text');
+  const btn = document.getElementById('btn-purge-stale');
+
+  cacheOperationInProgress = true;
+  if (btn) btn.disabled = true;
+
+  try {
+    let purgedCount = 0;
+    // 1. Send PURGE_STALE_CACHES to SW controller
+    if (typeof navigator !== 'undefined' && navigator.serviceWorker?.controller) {
+      try {
+        const result = await new Promise((resolve) => {
+          const channel = new MessageChannel();
+          const timer = setTimeout(() => resolve(null), 3000);
+          channel.port1.onmessage = (event) => {
+            clearTimeout(timer);
+            resolve(event.data);
+          };
+          navigator.serviceWorker.controller.postMessage({ type: 'PURGE_STALE_CACHES' }, [channel.port2]);
+        });
+        if (result?.purgedCaches) {
+          purgedCount = result.purgedCaches.length;
+        }
+      } catch (_e) {}
+    } else if (typeof window !== 'undefined' && window.caches && typeof window.caches.keys === 'function') {
+      // Direct caches API fallback
+      const keys = await window.caches.keys();
+      const activeName = keys.find((k) => k.startsWith('money-superapp-v')) || '';
+      for (const key of keys) {
+        if (key !== activeName && key !== 'money-superapp-shared-payload') {
+          try {
+            const deleted = await window.caches.delete(key);
+            if (deleted) purgedCount++;
+          } catch (_e) {}
+        }
+      }
+    }
+
+    await updateStorageQuotaDisplay();
+    if (statusEl) statusEl.textContent = t.cachePurged;
+    setTimeout(() => {
+      cacheOperationInProgress = false;
+      if (statusEl) statusEl.textContent = t.cacheStatusReady;
+    }, 2500);
+
+    return { success: true, purgedCount };
+  } catch (err) {
+    cacheOperationInProgress = false;
+    if (statusEl) statusEl.textContent = t.cacheStatusReady;
+    return { success: false, error: err.message };
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.formatStorageBytes = formatStorageBytes;
+  window.updateStorageQuotaDisplay = updateStorageQuotaDisplay;
+  window.refreshAppCache = refreshAppCache;
+  window.purgeStaleCaches = purgeStaleCaches;
+
+  window.MoneyApp = window.MoneyApp || {};
+  window.MoneyApp.formatStorageBytes = formatStorageBytes;
+  window.MoneyApp.updateStorageQuotaDisplay = updateStorageQuotaDisplay;
+  window.MoneyApp.refreshAppCache = refreshAppCache;
+  window.MoneyApp.purgeStaleCaches = purgeStaleCaches;
+}
+
 function openSettingsModal() {
   updateGoogleUI();
   if (typeof updateAppLockSettingsUI === 'function') updateAppLockSettingsUI();
   runStorageHealthCheck(false);
+  if (typeof updateStorageQuotaDisplay === 'function') updateStorageQuotaDisplay();
   document.getElementById('settingsModal').style.display = 'flex';
 }
 function closeSettingsModal() {

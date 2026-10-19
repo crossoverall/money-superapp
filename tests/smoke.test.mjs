@@ -2043,5 +2043,37 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       const appShellJs = fs.readFileSync(path.join(ROOT_DIR, 'js/app-shell.js'), 'utf8');
       assert.ok(appShellJs.includes('prefetchTabUrl'));
     });
+
+    it('verifies Phase 112 Advanced Service Worker Cache Lifecycle & Storage Quota Management', () => {
+      const swQuotaTestPath = path.join(ROOT_DIR, 'tests/sw-cache-quota.test.mjs');
+      assert.ok(fs.existsSync(swQuotaTestPath), 'tests/sw-cache-quota.test.mjs must exist');
+
+      // Verify Service Worker message contracts and activate resilience
+      const swContent = fs.readFileSync(path.join(ROOT_DIR, 'sw.js'), 'utf8');
+      assert.ok(swContent.includes('GET_CACHE_STATUS'), 'sw.js must handle GET_CACHE_STATUS');
+      assert.ok(swContent.includes('PURGE_STALE_CACHES'), 'sw.js must handle PURGE_STALE_CACHES');
+      assert.ok(swContent.includes('REFRESH_CACHE'), 'sw.js must handle REFRESH_CACHE');
+      assert.ok(swContent.includes('caches.delete(key).catch('), 'sw.js activate cleanup must handle errors');
+
+      // Verify App Shell UI elements
+      const indexHtml = fs.readFileSync(path.join(ROOT_DIR, 'index.html'), 'utf8');
+      assert.ok(indexHtml.includes('id="lbl-cache-quota-title"'), 'index.html must have #lbl-cache-quota-title');
+      assert.ok(indexHtml.includes('id="btn-refresh-cache"'), 'index.html must have #btn-refresh-cache');
+      assert.ok(indexHtml.includes('id="btn-purge-stale"'), 'index.html must have #btn-purge-stale');
+      assert.ok(indexHtml.includes('id="cache-version-badge"'), 'index.html must have #cache-version-badge');
+      assert.ok(indexHtml.includes('id="cache-quota-bar"'), 'index.html must have #cache-quota-bar');
+      assert.ok(indexHtml.includes('id="lbl-cache-quota-readout"'), 'index.html must have #lbl-cache-quota-readout');
+
+      // Verify App Shell controller exports
+      const appShellJs = fs.readFileSync(path.join(ROOT_DIR, 'js/app-shell.js'), 'utf8');
+      assert.ok(appShellJs.includes('formatStorageBytes'), 'app-shell.js must define formatStorageBytes');
+      assert.ok(appShellJs.includes('updateStorageQuotaDisplay'), 'app-shell.js must define updateStorageQuotaDisplay');
+      assert.ok(appShellJs.includes('refreshAppCache'), 'app-shell.js must define refreshAppCache');
+      assert.ok(appShellJs.includes('purgeStaleCaches'), 'app-shell.js must define purgeStaleCaches');
+      assert.ok(
+        appShellJs.includes('window.MoneyApp.updateStorageQuotaDisplay'),
+        'app-shell.js must export updateStorageQuotaDisplay to MoneyApp',
+      );
+    });
   });
 });

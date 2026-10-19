@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="2.5.54">
+<meta name="version" content="2.5.55">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://accounts.google.com/ https://www.googleapis.com/; frame-src 'self' https://accounts.google.com/; object-src 'none'; base-uri 'self';">
 <script>
   try {
@@ -550,7 +550,7 @@
       <span>⬇️</span>
       <span id="lbl-pwa-install" data-i18n="pwaInstallBtn">ติดตั้งแอป</span>
     </button>
-    <span class="version-badge">v2.5.54</span>
+    <span class="version-badge">v2.5.55</span>
     <button id="btn-help-modal" onclick="openOnboardingModal()" title="คู่มือการใช้งาน (Quick Tour)" aria-label="Open Quick Tour and Guide">
       <span class="help-icon">❓</span>
     </button>
@@ -587,7 +587,7 @@
       <span class="pwa-status-dot online" id="pwaStatusDot"></span>
       <span id="lbl-pwa-offline-badge" data-i18n="pwaOfflineReady">พร้อมใช้งานออฟไลน์</span>
     </span>
-    <span class="privacy-ver-badge">Money Superapp v2.5.54</span>
+    <span class="privacy-ver-badge">Money Superapp v2.5.55</span>
   </div>
 </div>
 
@@ -849,6 +849,52 @@
             </button>
           </div>
         </details>
+      </div>
+
+      <!-- Phase 112: Advanced Service Worker Cache Lifecycle & Storage Quota Management -->
+      <div style="background: #0E1512; padding: 12px 14px; border-radius: 10px; border: 1px solid #24352C;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+          <div>
+            <div style="font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+              <span>💾</span>
+              <span id="lbl-cache-quota-title" data-i18n="cacheQuotaTitle">โควต้าพื้นที่และแคชออฟไลน์ (Storage & Cache Quota)</span>
+            </div>
+            <div style="font-size: 11px; color: #8FA69C; margin-top: 2px;" id="lbl-cache-quota-desc" data-i18n="cacheQuotaDesc">
+              ตรวจสอบขนาดพื้นที่จัดเก็บในอุปกรณ์และสถานะแคชออฟไลน์ของระบบ
+            </div>
+          </div>
+          <div style="display: flex; gap: 6px; flex-shrink: 0; margin-left: 8px;">
+            <button onclick="refreshAppCache()" id="btn-refresh-cache" style="background: rgba(47, 139, 118, 0.15); border: 1px solid #2F8B76; color: #4FA894; padding: 5px 9px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap;">
+              <span id="lbl-btn-refresh-cache" data-i18n="btnRefreshCache">🔄 อัปเดตแคช</span>
+            </button>
+            <button onclick="purgeStaleCaches()" id="btn-purge-stale" style="background: rgba(201, 125, 90, 0.15); border: 1px solid #C97D5A; color: #E09F7D; padding: 5px 9px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap;">
+              <span id="lbl-btn-purge-stale" data-i18n="btnPurgeStale">🧹 ล้างแคชเก่า</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Storage & Cache Status Container -->
+        <div style="background: rgba(0,0,0,0.25); padding: 8px 10px; border-radius: 6px; border: 1px solid #24352C; font-size: 11px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="color: #8FA69C;" id="lbl-cache-version-label" data-i18n="cacheVersionLabel">เวอร์ชันแคชที่ใช้งาน:</span>
+              <span id="cache-version-badge" style="font-weight: 700; color: #4FA894; font-family: monospace; background: rgba(47,139,118,0.15); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(47,139,118,0.3);">v2.5.54</span>
+            </div>
+            <span id="cache-stale-badge" style="display: none; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; background: rgba(201, 125, 90, 0.2); color: #E09F7D; border: 1px solid rgba(201,125,90,0.3);">0 Stale</span>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span style="color: #8FA69C;" id="lbl-cache-usage-label" data-i18n="cacheUsageLabel">พื้นที่ใช้งาน / โควต้าทั้งหมด:</span>
+            <span id="lbl-cache-quota-readout" style="font-weight: 700; color: #4FA894; font-family: monospace;">0 B / 0 B (0.0%)</span>
+          </div>
+          <div style="width: 100%; height: 6px; background: #1a2721; border-radius: 3px; overflow: hidden; margin-bottom: 6px;">
+            <div id="cache-quota-bar" style="width: 0%; height: 100%; background: #2F8B76; transition: width 0.3s ease;"></div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; color: #8FA69C; font-size: 10.5px;">
+            <span id="lbl-cache-status-text" data-i18n="cacheStatusReady">พร้อมใช้งานออฟไลน์สมบูรณ์</span>
+          </div>
+        </div>
       </div>
 
       <!-- Reset -->

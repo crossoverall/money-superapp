@@ -128,6 +128,18 @@
     slipsTitle: 'จำลองและบันทึกสลิปเงินเดือน 12 เดือน',
     slipsSubtitle: 'วิเคราะห์รายได้สะสมทั้งปี ภาษีหัก ณ ที่จ่าย และเงินสมทบ ปกส. / กองทุนสำรองเลี้ยงชีพ',
 
+    // Storage Quota & Offline Cache Lifecycle Domain (Roadmap Phase 112)
+    cacheQuotaTitle: 'โควต้าพื้นที่และแคชออฟไลน์ (Storage & Cache Quota)',
+    cacheQuotaDesc: 'ตรวจสอบขนาดพื้นที่จัดเก็บในอุปกรณ์และสถานะแคชออฟไลน์ของระบบ',
+    cacheVersionLabel: 'เวอร์ชันแคชที่ใช้งาน:',
+    cacheUsageLabel: 'พื้นที่ใช้งาน / โควต้าทั้งหมด:',
+    btnRefreshCache: '🔄 อัปเดตแคช',
+    btnPurgeStale: '🧹 ล้างแคชเก่า',
+    cacheStatusReady: 'พร้อมใช้งานออฟไลน์สมบูรณ์',
+    cacheRefreshing: 'กำลังอัปเดตไฟล์แคช...',
+    cacheRefreshed: 'อัปเดตแคชออฟไลน์เรียบร้อยแล้ว',
+    cachePurged: 'ล้างแคชเก่าที่ตกค้างเรียบร้อยแล้ว',
+
     // Confirmations & Prompts
     confirmResetDefaults: 'ต้องการล้างข้อมูลและคืนค่าเริ่มต้นหรือไม่?',
     confirmDeleteRecord: 'คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?',

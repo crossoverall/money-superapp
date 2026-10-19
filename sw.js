@@ -1,4 +1,4 @@
-const CACHE_NAME = 'money-superapp-v2.5.54';
+const CACHE_NAME = 'money-superapp-v2.5.55';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -66,10 +66,146 @@ self.addEventListener('install', event => {
   );
 });
 
-// Phase 73: Listen for SKIP_WAITING message from App Shell update toast
+// Phase 73 & Phase 112: Listen for messages from App Shell (SKIP_WAITING, GET_CACHE_STATUS, PURGE_STALE_CACHES, REFRESH_CACHE)
 self.addEventListener('message', event => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
+  if (!event.data) return;
+
+  if (event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+    return;
+  }
+
+  if (event.data.type === 'GET_CACHE_STATUS') {
+    const respond = payload => {
+      if (event.ports && event.ports[0]) {
+        event.ports[0].postMessage(payload);
+      } else if (event.source && typeof event.source.postMessage === 'function') {
+        event.source.postMessage(payload);
+      }
+    };
+
+    const promise = (async () => {
+      try {
+        const cache = await caches.open(CACHE_NAME);
+        const keys = await cache.keys();
+        const allCaches = await caches.keys();
+        const staleCaches = allCaches.filter(k => k !== CACHE_NAME && k !== 'money-superapp-shared-payload');
+        const versionMatch = CACHE_NAME.match(/v(\d+\.\d+\.\d+)/);
+        const version = versionMatch ? versionMatch[1] : CACHE_NAME;
+
+        respond({
+          type: 'CACHE_STATUS_RESPONSE',
+          cacheName: CACHE_NAME,
+          version: version,
+          assetCount: keys.length,
+          allCaches: allCaches,
+          staleCaches: staleCaches,
+          timestamp: Date.now()
+        });
+      } catch (err) {
+        respond({
+          type: 'CACHE_STATUS_RESPONSE',
+          error: err.message,
+          cacheName: CACHE_NAME,
+          timestamp: Date.now()
+        });
+      }
+    })();
+
+    if (typeof event.waitUntil === 'function') {
+      event.waitUntil(promise);
+    }
+    return;
+  }
+
+  if (event.data.type === 'PURGE_STALE_CACHES') {
+    const respond = payload => {
+      if (event.ports && event.ports[0]) {
+        event.ports[0].postMessage(payload);
+      } else if (event.source && typeof event.source.postMessage === 'function') {
+        event.source.postMessage(payload);
+      }
+    };
+
+    const promise = (async () => {
+      try {
+        const allCaches = await caches.keys();
+        const purgedCaches = [];
+        for (const key of allCaches) {
+          if (key !== CACHE_NAME && key !== 'money-superapp-shared-payload') {
+            try {
+              const deleted = await caches.delete(key);
+              if (deleted) purgedCaches.push(key);
+            } catch (_e) {}
+          }
+        }
+
+        respond({
+          type: 'PURGE_STALE_CACHES_RESPONSE',
+          success: true,
+          purgedCaches: purgedCaches,
+          activeCache: CACHE_NAME
+        });
+      } catch (err) {
+        respond({
+          type: 'PURGE_STALE_CACHES_RESPONSE',
+          success: false,
+          error: err.message,
+          activeCache: CACHE_NAME
+        });
+      }
+    })();
+
+    if (typeof event.waitUntil === 'function') {
+      event.waitUntil(promise);
+    }
+    return;
+  }
+
+  if (event.data.type === 'REFRESH_CACHE') {
+    const respond = payload => {
+      if (event.ports && event.ports[0]) {
+        event.ports[0].postMessage(payload);
+      } else if (event.source && typeof event.source.postMessage === 'function') {
+        event.source.postMessage(payload);
+      }
+    };
+
+    const promise = (async () => {
+      try {
+        const cache = await caches.open(CACHE_NAME);
+        let updatedCount = 0;
+        await Promise.all(
+          ASSETS_TO_CACHE.map(async url => {
+            try {
+              const response = await fetch(url, { cache: 'reload' });
+              if (response && response.ok) {
+                await cache.put(url, response);
+                updatedCount++;
+              }
+            } catch (_err) {}
+          })
+        );
+
+        respond({
+          type: 'REFRESH_CACHE_RESPONSE',
+          success: true,
+          updatedCount: updatedCount,
+          totalAssets: ASSETS_TO_CACHE.length
+        });
+      } catch (err) {
+        respond({
+          type: 'REFRESH_CACHE_RESPONSE',
+          success: false,
+          error: err.message
+        });
+      }
+    })();
+
+    if (typeof event.waitUntil === 'function') {
+      event.waitUntil(promise);
+    }
+    return;
   }
 });
 
@@ -79,10 +215,13 @@ self.addEventListener('activate', event => {
       return Promise.all(
         keys.map(key => {
           if (key !== CACHE_NAME && key !== 'money-superapp-shared-payload') {
-            return caches.delete(key);
+            return caches.delete(key).catch(() => false);
           }
+          return Promise.resolve(false);
         })
       );
+    }).catch(() => {
+      // Graceful fallback for cache inspection error
     }).then(() => self.clients.claim())
   );
 });
