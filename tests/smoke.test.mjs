@@ -2394,5 +2394,212 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(generatedCsv.includes('5000'), 'CSV summary must include Total Savings');
       assert.ok(generatedCsv.includes('30000'), 'CSV summary must include 30000 net remaining');
     });
+
+    it('verifies Phase 124 Universal Cloud Export (Dashboard & Tax Dossier to Google Drive) contracts and controls', () => {
+      const dashHtml = fs.readFileSync(path.join(ROOT_DIR, 'dashboard.html'), 'utf8');
+      const dashJs = fs.readFileSync(path.join(ROOT_DIR, 'js/dashboard.js'), 'utf8');
+      const taxHtml = fs.readFileSync(path.join(ROOT_DIR, 'tax-calculator-base.html'), 'utf8');
+      const taxJs = fs.readFileSync(path.join(ROOT_DIR, 'js/tax-calculator-base.js'), 'utf8');
+
+      // 1. Verify UI controls and modal in dashboard.html
+      assert.ok(dashHtml.includes('id="btnSaveToDrive"'), 'dashboard.html must define #btnSaveToDrive');
+      assert.ok(dashHtml.includes('id="driveExportModal"'), 'dashboard.html must define #driveExportModal');
+      assert.ok(dashHtml.includes('id="driveModalTitle"'), 'dashboard.html must define #driveModalTitle');
+      assert.ok(dashHtml.includes('id="driveModalSub"'), 'dashboard.html must define #driveModalSub');
+      assert.ok(dashHtml.includes('id="driveFormatCsv"'), 'dashboard.html must define #driveFormatCsv');
+      assert.ok(dashHtml.includes('id="driveFormatPdf"'), 'dashboard.html must define #driveFormatPdf');
+      assert.ok(dashHtml.includes('id="btnDriveShareOrSave"'), 'dashboard.html must define #btnDriveShareOrSave');
+      assert.ok(dashHtml.includes('id="btnOpenDrive"'), 'dashboard.html must define #btnOpenDrive');
+      assert.ok(dashHtml.includes('id="btnOpenSheets"'), 'dashboard.html must define #btnOpenSheets');
+      assert.ok(dashHtml.includes('data-i18n="driveGuide"'), 'dashboard.html must declare driveGuide');
+
+      // 2. Verify functions and exports in js/dashboard.js
+      assert.ok(dashJs.includes('function openDriveModal()'), 'dashboard.js must define openDriveModal');
+      assert.ok(dashJs.includes('function closeDriveModal()'), 'dashboard.js must define closeDriveModal');
+      assert.ok(dashJs.includes('async function saveToGoogleDrive()'), 'dashboard.js must define saveToGoogleDrive');
+      assert.ok(
+        dashJs.includes('function generateDashboardDossierCSV()'),
+        'dashboard.js must define generateDashboardDossierCSV',
+      );
+      assert.ok(
+        dashJs.includes('window.generateDashboardDossierCSV = generateDashboardDossierCSV'),
+        'dashboard.js must export generateDashboardDossierCSV',
+      );
+      assert.ok(dashJs.includes('window.openDriveModal = openDriveModal'), 'dashboard.js must export openDriveModal');
+      assert.ok(
+        dashJs.includes('window.closeDriveModal = closeDriveModal'),
+        'dashboard.js must export closeDriveModal',
+      );
+      assert.ok(
+        dashJs.includes('window.saveToGoogleDrive = saveToGoogleDrive'),
+        'dashboard.js must export saveToGoogleDrive',
+      );
+      assert.ok(
+        dashJs.includes('financial_dossier_'),
+        'dashboard.js saveToGoogleDrive must generate financial_dossier_ filename',
+      );
+
+      // 3. Test generateDashboardDossierCSV execution in VM context
+      const dashSandbox = {
+        console,
+        Math,
+        Date,
+        LANG: 'th',
+        gatherFinancialProfile: () => ({
+          netWorth: 1250000,
+          emergencyReserve: 300000,
+          portfolioVal: 950000,
+          goldVal: 0,
+          totalDebt: 0,
+          savingsRate: 25.5,
+          runwayMonths: 6.2,
+          grossAssets: 1250000,
+          monthlyExpense: 35000,
+          topMarginalRate: 10,
+          estimatedTax: 15000,
+          debtFreeText: '=HYPERLINK("http://evil.com")',
+        }),
+        calculateFinancialHealthScore: () => ({ compositeScore: 82, tier: 'strong' }),
+        getFinancialGoals: () => ({ netWorthTarget: 2000000 }),
+      };
+      const dashVmContext = createContext(dashSandbox);
+      const dashCsvMatch = dashJs.match(/function generateDashboardDossierCSV\(\) \{[\s\S]*?\n\}/);
+      assert.ok(dashCsvMatch, 'Must match generateDashboardDossierCSV implementation');
+      new Script(`${dashCsvMatch[0]}\nresult = generateDashboardDossierCSV();`).runInContext(dashVmContext);
+      const generatedDashCsv = dashSandbox.result;
+
+      assert.ok(
+        generatedDashCsv.startsWith('\uFEFF'),
+        'Dashboard CSV must prepend \\uFEFF BOM for Excel/Google Sheets compatibility',
+      );
+      assert.ok(
+        generatedDashCsv.includes('Date,Category,Metric,Value,Unit,Note'),
+        'Dashboard CSV must define standard dossier columns',
+      );
+      assert.ok(generatedDashCsv.includes('1250000'), 'Dashboard CSV must include Net Worth amount');
+      assert.ok(generatedDashCsv.includes('300000'), 'Dashboard CSV must include Cash reserve amount');
+      assert.ok(generatedDashCsv.includes('950000'), 'Dashboard CSV must include Investments amount');
+      assert.ok(generatedDashCsv.includes('25.5'), 'Dashboard CSV must include Savings Rate');
+      assert.ok(generatedDashCsv.includes('6.2'), 'Dashboard CSV must include Runway months');
+      assert.ok(
+        generatedDashCsv.includes('"\'=HYPERLINK(""http://evil.com"")"'),
+        'Dashboard CSV must sanitize formula strings with leading single quote',
+      );
+
+      // 4. Verify UI controls and modal in tax-calculator-base.html
+      assert.ok(taxHtml.includes('id="btnSaveToDrive"'), 'tax-calculator-base.html must define #btnSaveToDrive');
+      assert.ok(taxHtml.includes('id="driveExportModal"'), 'tax-calculator-base.html must define #driveExportModal');
+      assert.ok(taxHtml.includes('id="driveModalTitle"'), 'tax-calculator-base.html must define #driveModalTitle');
+      assert.ok(taxHtml.includes('id="driveModalSub"'), 'tax-calculator-base.html must define #driveModalSub');
+      assert.ok(taxHtml.includes('id="driveFormatCsv"'), 'tax-calculator-base.html must define #driveFormatCsv');
+      assert.ok(taxHtml.includes('id="driveFormatPdf"'), 'tax-calculator-base.html must define #driveFormatPdf');
+      assert.ok(
+        taxHtml.includes('id="btnDriveShareOrSave"'),
+        'tax-calculator-base.html must define #btnDriveShareOrSave',
+      );
+      assert.ok(taxHtml.includes('id="btnOpenDrive"'), 'tax-calculator-base.html must define #btnOpenDrive');
+      assert.ok(taxHtml.includes('id="btnOpenSheets"'), 'tax-calculator-base.html must define #btnOpenSheets');
+      assert.ok(taxHtml.includes('data-i18n="driveGuide"'), 'tax-calculator-base.html must declare driveGuide');
+
+      // 5. Verify functions and exports in js/tax-calculator-base.js
+      assert.ok(taxJs.includes('function openDriveModal()'), 'tax-calculator-base.js must define openDriveModal');
+      assert.ok(taxJs.includes('function closeDriveModal()'), 'tax-calculator-base.js must define closeDriveModal');
+      assert.ok(
+        taxJs.includes('async function saveToGoogleDrive()'),
+        'tax-calculator-base.js must define saveToGoogleDrive',
+      );
+      assert.ok(
+        taxJs.includes('function generateTaxDossierCSV()'),
+        'tax-calculator-base.js must define generateTaxDossierCSV',
+      );
+      assert.ok(
+        taxJs.includes('window.generateTaxDossierCSV = generateTaxDossierCSV'),
+        'tax-calculator-base.js must export generateTaxDossierCSV',
+      );
+      assert.ok(
+        taxJs.includes('window.openDriveModal = openDriveModal'),
+        'tax-calculator-base.js must export openDriveModal',
+      );
+      assert.ok(
+        taxJs.includes('window.closeDriveModal = closeDriveModal'),
+        'tax-calculator-base.js must export closeDriveModal',
+      );
+      assert.ok(
+        taxJs.includes('window.saveToGoogleDrive = saveToGoogleDrive'),
+        'tax-calculator-base.js must export saveToGoogleDrive',
+      );
+      assert.ok(
+        taxJs.includes('tax_dossier_'),
+        'tax-calculator-base.js saveToGoogleDrive must generate tax_dossier_ filename',
+      );
+
+      // 6. Test generateTaxDossierCSV execution in VM context
+      const taxSandbox = {
+        console,
+        Math,
+        Date,
+        LANG: 'th',
+        calculateTax: () => {},
+        lastTaxCalculationData: {
+          totalIncome: 1200000,
+          expenseDeduction: 100000,
+          personalDeduction: 60000,
+          pvdDeduction: 120000,
+          ssoDeduction: 9000,
+          effectiveFund: 100000,
+          effectiveThaiEsg: 50000,
+          effectiveInsurance: 25000,
+          effectiveMortgage: 40000,
+          effectiveEasyReceipt: 0,
+          otherDeduct: 0,
+          totalDeductions: 504000,
+          netIncome: 596000,
+          tax: 41900,
+        },
+      };
+      const taxVmContext = createContext(taxSandbox);
+      const taxCsvMatch = taxJs.match(/function generateTaxDossierCSV\(\) \{[\s\S]*?\n\}/);
+      assert.ok(taxCsvMatch, 'Must match generateTaxDossierCSV implementation');
+      new Script(`${taxCsvMatch[0]}\nresult = generateTaxDossierCSV();`).runInContext(taxVmContext);
+      const generatedTaxCsv = taxSandbox.result;
+
+      assert.ok(
+        generatedTaxCsv.startsWith('\uFEFF'),
+        'Tax CSV must prepend \\uFEFF BOM for Excel/Google Sheets compatibility',
+      );
+      assert.ok(
+        generatedTaxCsv.includes('Section,Category,Item,Amount,MaxCap,Note'),
+        'Tax CSV must define standard dossier columns',
+      );
+      assert.ok(generatedTaxCsv.includes('1200000'), 'Tax CSV must include Gross Income');
+      assert.ok(generatedTaxCsv.includes('100000'), 'Tax CSV must include Expense deduction');
+      assert.ok(generatedTaxCsv.includes('60000'), 'Tax CSV must include Personal allowance');
+      assert.ok(generatedTaxCsv.includes('9000'), 'Tax CSV must include SSO deduction');
+      assert.ok(generatedTaxCsv.includes('120000'), 'Tax CSV must include PVD deduction');
+      assert.ok(generatedTaxCsv.includes('50000'), 'Tax CSV must include ThaiESG deduction');
+      assert.ok(generatedTaxCsv.includes('25000'), 'Tax CSV must include Insurance deduction');
+      assert.ok(generatedTaxCsv.includes('40000'), 'Tax CSV must include Mortgage deduction');
+      assert.ok(generatedTaxCsv.includes('596000'), 'Tax CSV must include Taxable Net Income');
+      assert.ok(generatedTaxCsv.includes('41900'), 'Tax CSV must include Tax Payable');
+
+      // 7. Verify CWE-1236 Formula Injection Sanitization across both CSV engines
+      const csvSafeRegex = /function csvSafe\(val\) \{[\s\S]*?return str;\s*\}/;
+      const dashCsvSafeMatch = dashJs.match(csvSafeRegex);
+      assert.ok(dashCsvSafeMatch, 'Dashboard must define csvSafe');
+      const testVm = createContext({ result: null });
+      new Script(`${dashCsvSafeMatch[0]}\nresult = csvSafe('=HYPERLINK("http://evil.com")');`).runInContext(testVm);
+      assert.equal(testVm.result, '"\'=HYPERLINK(""http://evil.com"")"');
+
+      new Script(`${dashCsvSafeMatch[0]}\nresult = csvSafe('@SUM');`).runInContext(testVm);
+      assert.equal(testVm.result, "'@SUM");
+
+      const taxCsvSafeMatch = taxJs.match(csvSafeRegex);
+      assert.ok(taxCsvSafeMatch, 'Tax dossier must define csvSafe');
+      new Script(`${taxCsvSafeMatch[0]}\nresult = csvSafe('=HYPERLINK("http://evil.com")');`).runInContext(testVm);
+      assert.equal(testVm.result, '"\'=HYPERLINK(""http://evil.com"")"');
+
+      new Script(`${taxCsvSafeMatch[0]}\nresult = csvSafe('@SUM');`).runInContext(testVm);
+      assert.equal(testVm.result, "'@SUM");
+    });
   });
 });

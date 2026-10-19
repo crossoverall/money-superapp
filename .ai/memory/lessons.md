@@ -15,6 +15,25 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-19: Universal Cloud Export (Google Drive/Sheets/PDF) & CWE-1236 CSV Formula Neutralization (v2.5.65)
+- **Date & Context:** 2026-10-19, Phase 124 Universal Cloud Export & Security Hardening (`v2.5.65`).
+- **Problem:**
+  1. While `remaining-money.html` had a Google Drive / Sheets / PDF export modal (Phase 120), `dashboard.html` (Executive Financial Dossier) and `tax-calculator-base.html` (ภ.ง.ด. 90/91 Tax Dossier) lacked equivalent cloud export capabilities, forcing users to rely only on raw prints or copy-pasting.
+  2. Exporting structured tabular data to CSV formats opens a vector for CSV Formula Injection (CWE-1236) if user-provided strings (such as debt names, custom expense items, or tax notes) begin with formula characters (`=`, `+`, `-`, `@`), which could execute unintended commands when opened in Microsoft Excel or Google Sheets.
+- **Root Cause:**
+  - Fragmented export interfaces across sub-tools without a standardized client-side cloud export workflow.
+  - Naive CSV string serialization that enclosed values in quotes but failed to escape initial spreadsheet formula trigger prefixes.
+- **Solution & Rule:**
+  1. **Universal Cloud Export Integration (`dashboard.html`, `tax-calculator-base.html`):**
+     - Unified modal (`#driveExportModal`) with format toggle (CSV / PDF), native Web Share API (`navigator.share({ files: [...] })`) with fallback to direct download, and 1-click links to Google Drive (`drive.google.com`) and Google Sheets (`sheets.new`).
+     - Added UTF-8 BOM (`\uFEFF`) to exported CSVs for seamless Thai character rendering in Google Sheets and Excel.
+     - Implemented `generateDashboardDossierCSV` and `generateTaxDossierCSV` emitting clean, standardized tabular financial ledgers.
+  2. **Standardized CSV Formula Injection (CWE-1236) Neutralization:**
+     - Standardized `csvSafe(val)` helper across all CSV generators: for any string starting with `=`, `+`, `-`, or `@` that is not a pure negative number, prepend a single quote `'` before standard CSV quote-escaping.
+  3. **Quality Gates & Smoke Test:**
+     - Verified in `tests/smoke.test.mjs` with DOM invariants and Node.js VM execution tests for both CSV generators and injection sanitization.
+     - 0 Biome linter errors/warnings.
+
 ### 2026-10-19: ThaiESG 2024–2026 Statutory Rules Calibration & Dynamic SSO Annual Ceiling (v2.5.64)
 - **Date & Context:** 2026-10-19, Phase 123 ThaiESG 2024–2026 Statutory Calibration & Dynamic SSO Ceiling (`v2.5.64`).
 - **Problem:**

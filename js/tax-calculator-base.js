@@ -193,6 +193,17 @@ const translations = {
     lblPoolExcessTitle: 'มียอดเงินสะสม/ลงทุนเกินเพดานที่กฎหมายกำหนด',
     lblPoolExcessDesc:
       'คุณมียอดรวม PVD + SSF + RMF เกินเพดาน 500,000 บาท ตาม ม.47 อยู่เป็นจำนวน <strong id="valPoolExcessAmount" class="font-mono">0</strong> บาท สรรพากรจะตัดส่วนเกินนี้ออกอัตโนมัติในการยื่นแบบ ภ.ง.ด. 90/91',
+    btnSaveToDrive: 'บันทึกไปยัง Google Drive',
+    driveModalTitle: 'บันทึกข้อมูลไปยัง Google Drive',
+    driveModalSub: 'ส่งออกข้อมูลไปยัง Google Drive เพื่อเปิดใน Google Sheets หรือเก็บบันทึกประวัติ',
+    driveFormatLabel: 'เลือกรูปแบบไฟล์ที่ต้องการส่งออก:',
+    driveFormatCsv: 'CSV (เหมาะสำหรับ Google Sheets / วิเคราะห์ข้อมูล)',
+    driveFormatPdf: 'PDF (เหมาะสำหรับพิมพ์ / บันทึกเอกสารสรุป)',
+    btnDriveShareOrSave: 'แชร์ / บันทึกไฟล์',
+    btnOpenDrive: 'เปิด Google Drive',
+    btnOpenSheets: 'เปิด Google Sheets',
+    driveGuide:
+      '💡 เคล็ดลับ: เมื่อเลือก CSV ระบบจะเตรียมไฟล์ที่พร้อมเปิดด้วย Google Sheets ได้ทันที หากเปิดบนมือถือสามารถกดบันทึกลง Google Drive ได้โดยตรง',
   },
   en: {
     'lbl-title': 'Tax Estimate 📊',
@@ -387,6 +398,17 @@ const translations = {
     lblPoolExcessTitle: 'Retirement Fund Contributions Exceed Statutory 500k Ceiling',
     lblPoolExcessDesc:
       'Your combined PVD + SSF + RMF contributions exceed the 500,000 THB Section 47 ceiling by <strong id="valPoolExcessAmount" class="font-mono">0</strong> THB. The Revenue Department will automatically cap your deduction at 500,000 THB.',
+    btnSaveToDrive: 'Save to Google Drive',
+    driveModalTitle: 'Save to Google Drive',
+    driveModalSub: 'Export dossier records to Google Drive for Google Sheets or archival',
+    driveFormatLabel: 'Select Export Format:',
+    driveFormatCsv: 'CSV (Best for Google Sheets / spreadsheet analysis)',
+    driveFormatPdf: 'PDF (Best for print / dossier statement summary)',
+    btnDriveShareOrSave: 'Share / Save File',
+    btnOpenDrive: 'Open Google Drive',
+    btnOpenSheets: 'Open Google Sheets',
+    driveGuide:
+      '💡 Tip: When exporting as CSV, the file is ready for Google Sheets. On mobile devices, you can tap to upload directly to Google Drive via native share.',
   },
 };
 
@@ -1550,11 +1572,29 @@ function calculateTax() {
     other: otherDeduct,
   };
 
+  lastTaxCalculationData = {
+    totalIncome,
+    expenseDeduction,
+    personalDeduction,
+    pvdDeduction,
+    ssoDeduction,
+    effectiveFund,
+    effectiveThaiEsg,
+    effectiveInsurance,
+    effectiveMortgage,
+    effectiveEasyReceipt,
+    otherDeduct,
+    totalDeductions,
+    netIncome,
+    tax,
+  };
+
   updateEFilingWorksheetView(lastCalculatedDeductions);
 }
 
 // Phase 74: Statutory Pre-Flight Checklist State
 let lastCalculatedDeductions = null;
+let lastTaxCalculationData = null;
 let preflightState = {
   doc50Tawi: false,
   pool500k: false,
@@ -2726,3 +2766,253 @@ window.resetTaxBaseLayout = () => {
     taxBaseLayoutManager.resetLayout();
   }
 };
+
+function openDriveModal() {
+  const modal = document.getElementById('driveExportModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeDriveModal() {
+  const modal = document.getElementById('driveExportModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function generateTaxDossierCSV() {
+  if (!lastTaxCalculationData && typeof calculateTax === 'function') {
+    calculateTax();
+  }
+  const isEN = typeof LANG !== 'undefined' ? LANG === 'en' : false;
+  const data = lastTaxCalculationData || {};
+
+  const header = 'Section,Category,Item,Amount,MaxCap,Note';
+  const rows = [header];
+
+  function csvSafe(val) {
+    let str = String(val == null ? '' : val);
+    if (/^\s*[\t\r=+\-@]/.test(str)) {
+      if (Number.isNaN(Number(str))) {
+        str = `'${str}`;
+      }
+    }
+    if (/[",\r\n]/.test(str)) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  }
+
+  function addRow(section, cat, item, amt, maxCap, note) {
+    rows.push(
+      [
+        csvSafe(section),
+        csvSafe(cat),
+        csvSafe(item),
+        typeof amt === 'number' ? amt : csvSafe(amt),
+        typeof maxCap === 'number' ? maxCap : csvSafe(maxCap),
+        csvSafe(note),
+      ].join(','),
+    );
+  }
+
+  // 1. Gross Income
+  addRow(
+    isEN ? 'Income' : 'รายได้',
+    isEN ? 'Assessable Income' : 'เงินได้พึงประเมิน',
+    isEN ? 'Gross Income' : 'เงินได้พึงประเมินรวม (มาตรา 40(1), 40(2))',
+    Math.round(data.totalIncome || 0),
+    'N/A',
+    isEN ? 'Annual salary, bonus, and variable income' : 'เงินเดือน โบนัส และเงินได้พิเศษรวมทั้งปี',
+  );
+
+  // 2. Standard Expenses
+  addRow(
+    isEN ? 'Expenses' : 'ค่าใช้จ่าย',
+    isEN ? 'Statutory Expense Deduction' : 'หักค่าใช้จ่ายตามกฎหมาย',
+    isEN ? 'Standard Expenses' : 'ค่าใช้จ่ายตามกฎหมาย (50%)',
+    Math.round(data.expenseDeduction || 0),
+    100000,
+    isEN ? '50% of income, capped at 100,000 THB' : '50% ของเงินได้ แต่ไม่เกิน 100,000 บาท',
+  );
+
+  // 3. Personal Allowance
+  addRow(
+    isEN ? 'Allowances' : 'ค่าลดหย่อน',
+    isEN ? 'Personal & Family' : 'ค่าลดหย่อนส่วนตัวและครอบครัว',
+    isEN ? 'Personal Allowance' : 'ค่าลดหย่อนส่วนตัวผู้มีเงินได้',
+    Math.round(data.personalDeduction || 60000),
+    60000,
+    isEN ? 'Taxpayer standard allowance' : 'สิทธิ์ลดหย่อนส่วนตัวตามประมวลรัษฎากร',
+  );
+
+  // 4. Social Security Fund (SSO)
+  addRow(
+    isEN ? 'Deductions' : 'ค่าลดหย่อน',
+    isEN ? 'Statutory Contributions' : 'เงินสมทบตามกฎหมาย',
+    isEN ? 'Social Security Fund (SSO)' : 'เงินสมทบกองทุนประกันสังคม (SSO)',
+    Math.round(data.ssoDeduction || 0),
+    13800,
+    isEN ? 'Statutory social security contribution' : 'เงินสมทบตามเพดานค่าจ้างที่กฎหมายกำหนด',
+  );
+
+  // 5. Provident Fund (PVD)
+  addRow(
+    isEN ? 'Deductions' : 'ค่าลดหย่อน',
+    isEN ? 'Retirement Savings' : 'เงินสะสมเพื่อการเกษียณ',
+    isEN ? 'Provident Fund (PVD)' : 'เงินสะสมกองทุนสำรองเลี้ยงชีพ (PVD)',
+    Math.round(data.pvdDeduction || 0),
+    500000,
+    isEN ? 'Up to 15% of salary, capped in 500k pool' : 'ไม่เกิน 15% ของค่าจ้าง รวมในกลุ่มเกษียณ 500,000 บาท',
+  );
+
+  // 6. ThaiESG
+  addRow(
+    isEN ? 'Deductions' : 'ค่าลดหย่อน',
+    isEN ? 'Sustainable Investments' : 'การลงทุนเพื่อความยั่งยืน',
+    isEN ? 'Thailand ESG Fund (ThaiESG)' : 'กองทุนรวมไทยเพื่อความยั่งยืน (ThaiESG)',
+    Math.round(data.effectiveThaiEsg || 0),
+    300000,
+    isEN ? 'Up to 30% of income, max 300,000 THB' : 'ไม่เกิน 30% ของเงินได้ สูงสุดไม่เกิน 300,000 บาท',
+  );
+
+  // 7. SSF / RMF
+  addRow(
+    isEN ? 'Deductions' : 'ค่าลดหย่อน',
+    isEN ? 'Retirement Savings' : 'เงินสะสมเพื่อการเกษียณ',
+    isEN ? 'Retirement Mutual Funds (SSF/RMF)' : 'กองทุนเพื่อการเกษียณ (SSF / RMF)',
+    Math.round(data.effectiveFund || 0),
+    500000,
+    isEN ? 'Subject to 500k statutory retirement pool limit' : 'รวมกลุ่มเกษียณ (PVD+SSF+RMF) ไม่เกิน 500,000 บาท',
+  );
+
+  // 8. Life & Health Insurance
+  addRow(
+    isEN ? 'Deductions' : 'ค่าลดหย่อน',
+    isEN ? 'Insurance Protection' : 'การประกันชีวิตและสุขภาพ',
+    isEN ? 'Life & Health Insurance' : 'เบี้ยประกันชีวิตและสุขภาพ',
+    Math.round(data.effectiveInsurance || 0),
+    100000,
+    isEN ? 'Combined insurance deduction max 100,000 THB' : 'เบี้ยประกันชีวิตและสุขภาพ รวมสูงสุด 100,000 บาท',
+  );
+
+  // 9. Mortgage Interest
+  addRow(
+    isEN ? 'Deductions' : 'ค่าลดหย่อน',
+    isEN ? 'Real Estate' : 'อสังหาริมทรัพย์',
+    isEN ? 'Mortgage Interest Deduction' : 'ดอกเบี้ยเงินกู้ยืมเพื่อที่อยู่อาศัย',
+    Math.round(data.effectiveMortgage || 0),
+    100000,
+    isEN ? 'Home loan interest max 100,000 THB' : 'ดอกเบี้ยกู้ซื้อบ้านสูงสุด 100,000 บาท',
+  );
+
+  // Optional: Easy E-Receipt
+  if (data.effectiveEasyReceipt) {
+    addRow(
+      isEN ? 'Deductions' : 'ค่าลดหย่อน',
+      isEN ? 'Government Stimulus' : 'มาตรการกระตุ้นเศรษฐกิจ',
+      isEN ? 'Easy E-Receipt' : 'โครงการ Easy E-Receipt',
+      Math.round(data.effectiveEasyReceipt),
+      50000,
+      isEN ? 'E-Tax invoice purchases' : 'ใบกำกับภาษีอิเล็กทรอนิกส์ สูงสุด 50,000 บาท',
+    );
+  }
+
+  // Optional: Other Deductions
+  if (data.otherDeduct) {
+    addRow(
+      isEN ? 'Deductions' : 'ค่าลดหย่อน',
+      isEN ? 'Other Allowances' : 'ลดหย่อนอื่นๆ',
+      isEN ? 'Other Deductions & Donations' : 'ลดหย่อนอื่นๆ และเงินบริจาค',
+      Math.round(data.otherDeduct),
+      'N/A',
+      isEN ? 'Family allowances and eligible donations' : 'บิดามารดา บุตร เงินบริจาค',
+    );
+  }
+
+  // 10. Taxable Net Income
+  addRow(
+    isEN ? 'Summary' : 'สรุปผล',
+    isEN ? 'Net Taxable Base' : 'ฐานภาษีสุทธิ',
+    isEN ? 'Taxable Net Income' : 'เงินได้สุทธิ',
+    Math.round(data.netIncome || 0),
+    'N/A',
+    isEN ? 'Assessable Income - Expenses - Deductions' : 'เงินได้พึงประเมิน หัก ค่าใช้จ่ายและค่าลดหย่อนทั้งหมด',
+  );
+
+  // 11. Tax Payable
+  addRow(
+    isEN ? 'Summary' : 'สรุปผล',
+    isEN ? 'Tax Liability' : 'ภาระภาษี',
+    isEN ? 'Tax Payable' : 'ภาษีที่ต้องชำระ',
+    Math.round(data.tax || 0),
+    'N/A',
+    isEN ? 'Progressive PIT bracket calculation (P.N.D. 90/91)' : 'ภาษีคำนวณตามอัตราก้าวหน้า ภ.ง.ด. 90/91',
+  );
+
+  const bom = '\uFEFF';
+  return bom + rows.join('\r\n');
+}
+
+async function saveToGoogleDrive() {
+  const isEN = typeof LANG !== 'undefined' ? LANG === 'en' : false;
+  const formatInput = document.querySelector('input[name="driveFormat"]:checked');
+  const format = formatInput ? formatInput.value : 'csv';
+
+  if (format === 'pdf') {
+    closeDriveModal();
+    if (typeof printTaxReport === 'function') {
+      printTaxReport();
+    } else {
+      window.print();
+    }
+    return;
+  }
+
+  const csvContent = generateTaxDossierCSV();
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const fileName = `tax_dossier_${dateStr}.csv`;
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+  // Web Share API with file payload
+  if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+    try {
+      const file = typeof File !== 'undefined' ? new File([blob], fileName, { type: 'text/csv' }) : null;
+      if (file && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: isEN ? 'Tax Dossier for Google Drive' : 'แฟ้มสรุปภาษีสำหรับ Google Drive',
+          text: isEN
+            ? 'Personal Income Tax Dossier & Deductions (CSV)'
+            : 'แฟ้มสรุปภาษีเงินได้บุคคลธรรมดาและรายการลดหย่อน (CSV)',
+        });
+        closeDriveModal();
+        return;
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        return;
+      }
+    }
+  }
+
+  // Fallback anchor download
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  closeDriveModal();
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeDriveModal();
+  }
+});
+
+// Window exports
+window.generateTaxDossierCSV = generateTaxDossierCSV;
+window.openDriveModal = openDriveModal;
+window.closeDriveModal = closeDriveModal;
+window.saveToGoogleDrive = saveToGoogleDrive;

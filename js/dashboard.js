@@ -205,6 +205,17 @@ const translations = {
     dossierSubInsGap: 'ส่วนต่าง:',
     dossierSubTaxAnn: 'ภาษีทั้งปี:',
     dossierSubTaxWith: 'หักแล้ว:',
+    btnSaveToDrive: 'บันทึกไปยัง Google Drive',
+    driveModalTitle: 'บันทึกข้อมูลไปยัง Google Drive',
+    driveModalSub: 'ส่งออกข้อมูลไปยัง Google Drive เพื่อเปิดใน Google Sheets หรือเก็บบันทึกประวัติ',
+    driveFormatLabel: 'เลือกรูปแบบไฟล์ที่ต้องการส่งออก:',
+    driveFormatCsv: 'CSV (เหมาะสำหรับ Google Sheets / วิเคราะห์ข้อมูล)',
+    driveFormatPdf: 'PDF (เหมาะสำหรับพิมพ์ / บันทึกเอกสารสรุป)',
+    btnDriveShareOrSave: 'แชร์ / บันทึกไฟล์',
+    btnOpenDrive: 'เปิด Google Drive',
+    btnOpenSheets: 'เปิด Google Sheets',
+    driveGuide:
+      '💡 เคล็ดลับ: เมื่อเลือก CSV ระบบจะเตรียมไฟล์ที่พร้อมเปิดด้วย Google Sheets ได้ทันที หากเปิดบนมือถือสามารถกดบันทึกลง Google Drive ได้โดยตรง',
   },
   en: {
     title: 'Financial Dashboard',
@@ -412,6 +423,17 @@ const translations = {
     dossierSubInsGap: 'Coverage Gap:',
     dossierSubTaxAnn: 'Annual Tax:',
     dossierSubTaxWith: 'Tax Withheld:',
+    btnSaveToDrive: 'Save to Google Drive',
+    driveModalTitle: 'Save to Google Drive',
+    driveModalSub: 'Export dossier records to Google Drive for Google Sheets or archival',
+    driveFormatLabel: 'Select Export Format:',
+    driveFormatCsv: 'CSV (Best for Google Sheets / spreadsheet analysis)',
+    driveFormatPdf: 'PDF (Best for print / dossier statement summary)',
+    btnDriveShareOrSave: 'Share / Save File',
+    btnOpenDrive: 'Open Google Drive',
+    btnOpenSheets: 'Open Google Sheets',
+    driveGuide:
+      '💡 Tip: When exporting as CSV, the file is ready for Google Sheets. On mobile devices, you can tap to upload directly to Google Drive via native share.',
   },
 };
 
@@ -3907,8 +3929,222 @@ function formatReportDate(d, lang) {
   return `${day} ${m} ${y} ${hh}:${mm}`;
 }
 
+function openDriveModal() {
+  const modal = document.getElementById('driveExportModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeDriveModal() {
+  const modal = document.getElementById('driveExportModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function generateDashboardDossierCSV() {
+  const isEN = typeof LANG !== 'undefined' ? LANG === 'en' : false;
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const p = typeof gatherFinancialProfile === 'function' ? gatherFinancialProfile() : {};
+
+  const netWorth = Math.round(p.netWorth || 0);
+  const cash = Math.round(p.emergencyReserve || 0);
+  const investments = Math.round((p.portfolioVal || 0) + (p.goldVal || 0));
+  const debts = Math.round(p.totalDebt || 0);
+  const savingsRate = Math.round((p.savingsRate || 0) * 10) / 10;
+  const runway = Math.round((p.runwayMonths || 0) * 10) / 10;
+
+  let healthScore = 50;
+  let healthTier = 'moderate';
+  try {
+    if (typeof calculateFinancialHealthScore === 'function') {
+      const goals = typeof getFinancialGoals === 'function' ? getFinancialGoals() : { netWorthTarget: 0 };
+      const grossAssets = p.grossAssets !== undefined ? p.grossAssets : cash + investments;
+      const annualExp = (p.monthlyExpense || 0) * 12;
+      const h = calculateFinancialHealthScore({
+        runwayMonths: p.runwayMonths || 0,
+        savingsRatePct: p.savingsRate || 0,
+        debt: p.totalDebt || 0,
+        assets: grossAssets,
+        netWorth: p.netWorth || 0,
+        fireTarget: 0,
+        targetNetWorth: goals.netWorthTarget || 0,
+        annualExpenses: annualExp,
+        taxDeductionsUtilizedPct: p.topMarginalRate === 0 && p.estimatedTax === 0 ? 100 : 75,
+      });
+      if (h && typeof h.compositeScore === 'number') {
+        healthScore = h.compositeScore;
+        healthTier = h.tier || 'moderate';
+      }
+    }
+  } catch (_e) {}
+
+  const header = 'Date,Category,Metric,Value,Unit,Note';
+  const rows = [header];
+
+  function csvSafe(val) {
+    let str = String(val == null ? '' : val);
+    if (/^\s*[\t\r=+\-@]/.test(str)) {
+      if (Number.isNaN(Number(str))) {
+        str = `'${str}`;
+      }
+    }
+    if (/[",\r\n]/.test(str)) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  }
+
+  function addRow(cat, metric, val, un, note) {
+    rows.push(
+      [
+        csvSafe(dateStr),
+        csvSafe(cat),
+        csvSafe(metric),
+        typeof val === 'number' ? val : csvSafe(val),
+        csvSafe(un),
+        csvSafe(note),
+      ].join(','),
+    );
+  }
+
+  // 1. Net Worth
+  addRow(
+    isEN ? 'Wealth' : 'ความมั่งคั่ง',
+    isEN ? 'Net Worth' : 'ความมั่งคั่งสุทธิ',
+    netWorth,
+    'THB',
+    netWorth >= 0 ? (isEN ? 'Positive' : 'บวก') : isEN ? 'Deficit' : 'ติดลบ',
+  );
+
+  // 2. Cash / Liquid Emergency Reserve
+  addRow(
+    isEN ? 'Assets' : 'สินทรัพย์',
+    isEN ? 'Cash & Liquid Reserves' : 'เงินสดและเงินสำรองฉุกเฉิน',
+    cash,
+    'THB',
+    isEN ? 'Liquid' : 'สภาพคล่อง',
+  );
+
+  // 3. Investments (Portfolio + Gold)
+  addRow(
+    isEN ? 'Assets' : 'สินทรัพย์',
+    isEN ? 'Investments & Portfolio' : 'เงินลงทุนและพอร์ตการลงทุน',
+    investments,
+    'THB',
+    (p.goldVal || 0) > 0
+      ? isEN
+        ? `Includes Gold ${Math.round(p.goldVal)} THB`
+        : `รวมทองคำ ${Math.round(p.goldVal)} บาท`
+      : '',
+  );
+
+  // 4. Debts
+  addRow(
+    isEN ? 'Liabilities' : 'หนี้สิน',
+    isEN ? 'Total Outstanding Debts' : 'ภาระหนี้สินคงค้างรวม',
+    debts,
+    'THB',
+    p.debtFreeText ? p.debtFreeText : debts === 0 ? (isEN ? 'Debt Free' : 'ปลอดหนี้') : '',
+  );
+
+  // 5. Savings Rate
+  addRow(
+    isEN ? 'Cash Flow' : 'กระแสเงินสด',
+    isEN ? 'Savings Rate' : 'อัตราการออม',
+    savingsRate,
+    '%',
+    savingsRate >= 20 ? (isEN ? 'Strong' : 'แข็งแกร่ง') : isEN ? 'Needs Improvement' : 'ควรปรับปรุง',
+  );
+
+  // 6. Emergency Runway
+  addRow(
+    isEN ? 'Resilience' : 'ความมั่นคง',
+    isEN ? 'Emergency Runway' : 'เงินสำรองฉุกเฉิน',
+    runway,
+    isEN ? 'Months' : 'เดือน',
+    runway >= 6
+      ? isEN
+        ? 'Robust buffer (6+ mos)'
+        : 'สำรองเพียงพอ (6+ เดือน)'
+      : isEN
+        ? 'Caution (< 6 mos)'
+        : 'ควรสะสมเพิ่ม (< 6 เดือน)',
+  );
+
+  // 7. Financial Health Score
+  addRow(
+    isEN ? 'Scorecard' : 'คะแนนสุขภาพ',
+    isEN ? 'Financial Health Score' : 'คะแนนสุขภาพทางการเงิน 360°',
+    healthScore,
+    'Points (0-100)',
+    healthTier,
+  );
+
+  const bom = '\uFEFF';
+  return bom + rows.join('\r\n');
+}
+
+async function saveToGoogleDrive() {
+  const isEN = typeof LANG !== 'undefined' ? LANG === 'en' : false;
+  const formatInput = document.querySelector('input[name="driveFormat"]:checked');
+  const format = formatInput ? formatInput.value : 'csv';
+
+  if (format === 'pdf') {
+    closeDriveModal();
+    if (typeof printDossierExecutiveReport === 'function') {
+      printDossierExecutiveReport();
+    } else {
+      window.print();
+    }
+    return;
+  }
+
+  const csvContent = generateDashboardDossierCSV();
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const fileName = `financial_dossier_${dateStr}.csv`;
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+  // Web Share API with file payload
+  if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+    try {
+      const file = typeof File !== 'undefined' ? new File([blob], fileName, { type: 'text/csv' }) : null;
+      if (file && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: isEN ? 'Financial Dossier for Google Drive' : 'แฟ้มสรุปการเงินสำหรับ Google Drive',
+          text: isEN
+            ? 'Executive Net Worth & Financial Health Dossier (CSV)'
+            : 'แฟ้มสรุปความมั่งคั่งและสุขภาพการเงินฉบับผู้บริหาร (CSV)',
+        });
+        closeDriveModal();
+        return;
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        return;
+      }
+    }
+  }
+
+  // Fallback anchor download
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  closeDriveModal();
+}
+
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     closeGoalsModal();
+    closeDriveModal();
   }
 });
+
+// Window exports
+window.generateDashboardDossierCSV = generateDashboardDossierCSV;
+window.openDriveModal = openDriveModal;
+window.closeDriveModal = closeDriveModal;
+window.saveToGoogleDrive = saveToGoogleDrive;
