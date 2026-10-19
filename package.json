@@ -1,10 +1,11 @@
 {
   "name": "money-superapp",
-  "version": "2.5.55",
+  "version": "2.5.56",
   "description": "Zero-build, offline-first personal finance toolkit for Thailand",
   "type": "module",
   "scripts": {
     "test": "node --test tests/**/*.test.mjs",
+    "test:e2e": "node --test tests/e2e-browser-journeys.test.mjs",
     "dev": "node scripts/dev.mjs",
     "lint": "biome check js/ scripts/ tests/",
     "format": "biome format --write js/ scripts/ tests/",

@@ -2075,5 +2075,34 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'app-shell.js must export updateStorageQuotaDisplay to MoneyApp',
       );
     });
+
+    it('verifies Phase 113 End-to-End Multi-Journey Browser Flow Test Suite presence and contracts', () => {
+      const e2eTestPath = path.join(ROOT_DIR, 'tests/e2e-browser-journeys.test.mjs');
+      assert.ok(fs.existsSync(e2eTestPath), 'tests/e2e-browser-journeys.test.mjs must exist');
+
+      const pkgJson = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8'));
+      assert.ok(pkgJson.scripts['test:e2e'], 'package.json must declare test:e2e script');
+      assert.strictEqual(
+        pkgJson.scripts['test:e2e'],
+        'node --test tests/e2e-browser-journeys.test.mjs',
+        'test:e2e script must target tests/e2e-browser-journeys.test.mjs',
+      );
+
+      const e2eContent = fs.readFileSync(e2eTestPath, 'utf8');
+      const requiredJourneys = [
+        'Journey 1: Tab Navigation & Iframe URL Hash Sync',
+        'Journey 2: Theme and Language Reload Persistence',
+        'Journey 3: Cross-Tool Bridge Protocol End-to-End Hand-off',
+        'Journey 4: JSON Backup Export, Master Reset & Restore Round-Trip',
+        'Journey 5: Settings Modal Storage Diagnostics & Cache Controls',
+      ];
+
+      for (const journey of requiredJourneys) {
+        assert.ok(e2eContent.includes(journey), `tests/e2e-browser-journeys.test.mjs must declare ${journey}`);
+      }
+
+      assert.ok(e2eContent.includes('resolveChromeBinary'), 'Must declare headless Chrome binary discovery');
+      assert.ok(e2eContent.includes('CdpClient'), 'Must declare native CDP WebSocket client');
+    });
   });
 });

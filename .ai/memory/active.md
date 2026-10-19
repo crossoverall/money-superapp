@@ -1,5 +1,5 @@
 ---
-task_id: "SDLC-PHASE-112-SW-CACHE-LIFECYCLE-QUOTA"
+task_id: "SDLC-PHASE-113-E2E-BROWSER-JOURNEYS"
 status: "completed"
 current_stage: "release"
 complexity: "level_2"
@@ -7,135 +7,144 @@ iteration_count: 0
 pipeline: ["orchestrator", "planner", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Feature / Task Specification: Phase 112 — Advanced Service Worker Cache Lifecycle & Storage Quota Management
+### Feature / Task Specification: Phase 113 - End-to-End Multi-Journey Browser Flow Test Suite
 
 #### 1. Goal & Scope Limits
-- **Objective:**
-  Implement offline-first Service Worker cache lifecycle management and client-side storage quota visibility for Money Superapp. Users can inspect local storage and cache consumption, view the active Service Worker version and asset count, trigger safe offline cache refreshes, and purge stale caches without risking personal financial data or violating client-side privacy.
-- **Target Files (Vertical Slices <= 3 files each):**
-  - **Slice 1 (SW Lifecycle & i18n Dictionaries):** `sw.js`, `js/i18n/th.js`, `js/i18n/en.js`
-  - **Slice 2 (App Shell Controller & UI):** `index.html`, `js/app-shell.js`
-  - **Slice 3 (Testing & Smoke Suite):** `tests/sw-cache-quota.test.mjs` (New), `tests/smoke.test.mjs`
+- **Objective:** Establish an automated, zero-dependency end-to-end (E2E) browser journey test suite using native Node.js HTTP server and Chrome DevTools Protocol (CDP) WebSocket driver, verifying 5 critical user workflows across the App Shell and iframe calculators.
+- **Target Files (<= 5 files):**
+  1. `tests/e2e-browser-journeys.test.mjs` (New file — CDP driver and 5 complete E2E journeys)
+  2. `package.json` (Update — add `"test:e2e"` script for direct journey test execution)
+  3. `tests/smoke.test.mjs` (Update — assert presence and contracts of Phase 113 test suite)
+  4. `.ai/memory/active.md` (Update — state bus tracking)
 - **Explicit Out of Scope:**
-  - No remote server sync or telemetry (ADR-001 invariant).
-  - No alteration of existing financial calculators, tax engines, or localStorage bridge mechanisms.
-  - No external npm dependencies or bundlers (Vanilla ES6+ offline standard).
-  - No deletion of the active cache or `money-superapp-shared-payload` Web Share Target cache.
+  - Zero external NPM runtime or testing dependencies (No Playwright, Puppeteer, Cypress, Selenium) adhering to ADR-001.
+  - No alteration of financial calculation formulas or business logic in `js/engines/` or calculator tools.
+  - No modifications to CSS design tokens or shared styling (`css/tailwind-lite.css`, `css/theme.css`).
 
 ---
 
 #### 2. Architecture & Decision Alignment
 - **Affected Components:**
-  - `sw.js` (Offline Cache & PWA Service Worker): Add message dispatch for `GET_CACHE_STATUS`, `PURGE_STALE_CACHES`, and `REFRESH_CACHE`. Add error resilience during `activate` cache eviction.
-  - `index.html` (App Shell): Add Storage & Cache Quota card to `#settingsModal`.
-  - `js/app-shell.js` (App Shell Controller): Implement `updateStorageQuotaDisplay()`, `refreshAppCache()`, `purgeStaleCaches()`, `formatStorageBytes()`, and bilingual binding in `applyLang()`.
-  - `js/i18n/th.js` & `js/i18n/en.js`: Centralized bilingual dictionaries preserving 100% key symmetry.
-  - `tests/`: Automated unit and integration test coverage.
+  - App Shell Host (`index.html`, `js/app-shell.js`): Top and bottom navigation bars, iframe routing container (`#appFrame`), hash change listener, theme/language toggles, settings/backup modal, and storage diagnostics.
+  - Calculator Iframe Pages (`remaining-money.html`, `rebalance.html`, `tax-calculator-base.html`, `dashboard.html`): Cross-frame postMessage listeners, ephemeral bridge consumer hooks (`checkPendingBudget()`), and isolated localStorage keys.
+  - Shared Infrastructure (`js/shared.js`, `js/engines/bridge.js`): Theme/language DOM initialization and Bridge protocol envelopes.
 - **Relevant ADRs:**
-  - **ADR-001 (Zero-Build Static PWA & 100% Client-Side Privacy):** Storage estimation and cache management must execute 100% on-device using native `navigator.storage.estimate()` and `Cache` API.
-  - **ADR-003 (Tailwind-Lite CSS & Offline Independence):** Reuse existing CSS custom properties and theme tokens without external CDN styles.
-  - **ADR-005 (Automated Semantic Version Bumping & SW Invalidation):** Seamlessly align with `scripts/bump.mjs` versioning conventions (`money-superapp-vX.Y.Z`).
+  - **ADR-001 (Zero NPM Runtime Dependencies):** E2E test harness leverages built-in Node.js `child_process.spawn`, `node:http`, and native `WebSocket` (Node 22+).
+  - **ADR-002 (100% Client-Side Privacy):** All tests execute against an isolated local ephemeral HTTP server and disposable Chrome profile; zero external telemetry or cloud communication.
+  - **ADR-005 (Decoupled State & Ephemeral Bridge Architecture):** Verification of consume-once semantics for cross-tool data hand-offs via `moneySuperapp.pendingBudget`.
+  - **ADR-006 (Headless Chrome CDP WebSocket Driver):** Standardized CDP harness pattern established in `tests/bilingual-parity.test.mjs`.
 
 ---
 
 #### 3. Step-by-Step Implementation Plan
 
-##### Slice 1: Service Worker Message Handlers & Bilingual Dictionaries
-1. **Enhance Activation Resilience (`sw.js`)**:
-   - In `self.addEventListener('activate')`, wrap each `caches.delete(key)` in a resilient try/catch / `.catch(() => false)` handler so any filesystem or cache lock failure does not abort activation or prevent `self.clients.claim()`.
-   - Preserve `CACHE_NAME` and `'money-superapp-shared-payload'`.
-2. **Add Service Worker Message Handlers (`sw.js`)**:
-   - Add listener logic inside `self.addEventListener('message')` to support:
-     - `GET_CACHE_STATUS`: Responds with `{ type: 'CACHE_STATUS_RESPONSE', cacheName: CACHE_NAME, version, assetCount, allCaches, staleCaches, timestamp }`.
-     - `PURGE_STALE_CACHES`: Deletes all caches except `CACHE_NAME` and `'money-superapp-shared-payload'`. Responds with `{ type: 'PURGE_STALE_CACHES_RESPONSE', success: true, purgedCaches, activeCache: CACHE_NAME }`.
-     - `REFRESH_CACHE`: Iterates through `ASSETS_TO_CACHE` using `fetch(url, { cache: 'reload' })` and updates `CACHE_NAME`. Responds with `{ type: 'REFRESH_CACHE_RESPONSE', success: true, updatedCount, totalAssets }`.
-   - Reply via `event.ports[0].postMessage(...)` (if `MessageChannel` port is supplied) with fallback to `event.source.postMessage(...)`.
-3. **Register Bilingual Dictionary Keys (`js/i18n/th.js` & `js/i18n/en.js`)**:
-   - Add symmetric keys to both dictionaries:
-     - `cacheQuotaTitle`: TH "โควต้าพื้นที่และแคชออฟไลน์ (Storage & Cache Quota)" / EN "Storage Quota & Offline Cache"
-     - `cacheQuotaDesc`: TH "ตรวจสอบขนาดพื้นที่จัดเก็บในอุปกรณ์และสถานะแคชออฟไลน์ของระบบ" / EN "Monitor device storage quota usage and offline cache health"
-     - `cacheVersionLabel`: TH "เวอร์ชันแคชที่ใช้งาน:" / EN "Active Cache Version:"
-     - `cacheUsageLabel`: TH "พื้นที่ใช้งาน / โควต้าทั้งหมด:" / EN "Used Storage / Total Quota:"
-     - `btnRefreshCache`: TH "🔄 อัปเดตแคช" / EN "🔄 Refresh Cache"
-     - `btnPurgeStale`: TH "🧹 ล้างแคชเก่า" / EN "🧹 Purge Stale Caches"
-     - `cacheStatusReady`: TH "พร้อมใช้งานออฟไลน์สมบูรณ์" / EN "Offline cache ready"
-     - `cacheRefreshing`: TH "กำลังอัปเดตไฟล์แคช..." / EN "Refreshing cache assets..."
-     - `cacheRefreshed`: TH "อัปเดตแคชออฟไลน์เรียบร้อยแล้ว" / EN "Offline cache refreshed successfully"
-     - `cachePurged`: TH "ล้างแคชเก่าที่ตกค้างเรียบร้อยแล้ว" / EN "Stale caches purged successfully"
-   - Validate 100% key symmetry with `tests/i18n-dictionaries.test.mjs`.
+##### Step 1: Create `tests/e2e-browser-journeys.test.mjs`
+- **Action:**
+  - Implement a self-contained test file importing `node:test`, `node:assert/strict`, `node:child_process`, `node:http`, `node:fs`, and `node:path`.
+  - Implement modular CDP helper routines:
+    1. `resolveChromeBinary()`: Checks `google-chrome`, `chromium`, `chromium-browser` via `which`. Returns binary path or null with graceful test skip if unavailable.
+    2. `startStaticServer(rootDir)`: Creates Node.js HTTP server on port 0 (dynamic port) serving static assets with proper MIME types (`.html`, `.js`, `.css`, `.svg`, `.json`).
+    3. `launchHeadlessChrome(chromeBin, serverPort)`: Spawns Chrome with `--headless=new`, `--no-sandbox`, `--disable-gpu`, `--disable-dev-shm-usage`, `--remote-debugging-port=<random>`, and `--user-data-dir=/tmp/chrome-e2e-<timestamp>`.
+    4. `connectCdp(cdpPort)`: Queries `http://127.0.0.1:${cdpPort}/json/list`, acquires `webSocketDebuggerUrl`, and establishes native `WebSocket` connection with request/response correlation (`msgId`).
+    5. `sendCdp(method, params)`: Sends CDP command and returns Promise resolving to result or rejecting on error.
+    6. Teardown hook in `after()`: Closes WebSocket connection, kills Chrome process tree (`SIGKILL`), cleans up temp directory, and shuts down HTTP server.
+  - Implement the 5 distinct Journey test suites:
+    - **Journey 1: Tab Navigation & Iframe URL Hash Synchronization:**
+      - Navigate to `index.html`.
+      - Test clicking `#nav-remaining` / `button[data-tab="remaining-money"]`: verify URL hash updates to `#remaining-money`, `#appFrame` src updates to `remaining-money.html?v=...`, and active class reflects selection.
+      - Test direct URL hash navigation: set `location.hash = '#tax-calculator-base'`, dispatch hashchange, verify `#appFrame` src switches to `tax-calculator-base.html?v=...`.
+      - Test global shortcut / programmatic tab switch: evaluate `window.switchToTab('rebalance')`, verify hash updates to `#rebalance` and `#appFrame` updates accordingly.
+    - **Journey 2: Theme and Language Reload Persistence:**
+      - Test initial state.
+      - Click `button[data-lang="en"]`: verify `document.documentElement.lang === 'en'`, `localStorage.getItem('moneySuperapp.lang') === 'en'`, and `.active` class on EN button.
+      - Click `#btn-theme-dark` / `button[data-theme-btn="dark"]`: verify `document.documentElement.dataset.theme === 'dark'`, `localStorage.getItem('moneySuperapp.theme') === 'dark'`, and `.active` class on dark button.
+      - Trigger page reload (`location.reload()`) and wait for DOM readiness.
+      - Verify that after full reload, `document.documentElement.lang` remains `'en'`, `document.documentElement.dataset.theme` remains `'dark'`, and UI buttons retain active styling.
+      - Toggle back to 'th' / 'light' and verify symmetric persistence.
+    - **Journey 3: Cross-Tool Bridge Protocol End-to-End Hand-off:**
+      - Navigate to `index.html#remaining-money`.
+      - Simulate positive disposable cash flow in `remaining-money.html` and trigger `sendToRebalance()`.
+      - Verify `localStorage.getItem('moneySuperapp.pendingBudget')` is populated with the surplus amount.
+      - Verify App Shell responds to child `switchToTab` event and transitions `#appFrame` to `rebalance.html`.
+      - Wait for `rebalance.html` initialization and verify `checkPendingBudget()` execution:
+        - `state.totalBudget` and `#totalBudget` input field reflect the transferred amount.
+        - `moneySuperapp.pendingBudget` is purged from `localStorage` (consume-once guarantee).
+        - `#pendingBudgetAlert` banner is visible with confirmation message.
+    - **Journey 4: JSON Backup Export, Master Reset & Restore Round-Trip:**
+      - Navigate to `index.html`.
+      - Seed known test keys in `localStorage`:
+        - `moneySuperapp.activeTab = 'dashboard'`
+        - `moneySuperapp.testUserData = JSON.stringify({ salary: 85000, profile: 'senior' })`
+        - `remainingMoneyCalculator.budget = JSON.stringify({ income: 85000, fixed: 25000 })`
+        - `rebalanceCalculator.portfolio = JSON.stringify([{ asset: 'VOO', ratio: 70 }])`
+      - Invoke `exportBackupData()` and verify exported JSON object conforms to Money Superapp backup schema (`appName`, `version`, `exportedAt`, `data`).
+      - Invoke `resetAllData()` with stubbed dialog confirmation (`window.confirm = () => true`, `window.alert = () => {}`).
+      - Verify all calculator state keys starting with `moneySuperapp.`, `remainingMoneyCalculator.`, `rebalanceCalculator.` are purged.
+      - Restore data from the backup payload (simulating `handleImportFile` / restoration parser).
+      - Verify 100% of the seeded keys are restored into `localStorage` with matching contents.
+    - **Journey 5: Settings Modal Storage Diagnostics & Cache Controls:**
+      - Navigate to `index.html`.
+      - Click `#btn-settings-modal` to open settings modal.
+      - Verify `#settingsModal` becomes visible (`style.display !== 'none'`).
+      - Verify `#cache-version-badge` is populated with current semantic version.
+      - Verify `#lbl-cache-quota-readout` displays formatted storage metrics.
+      - Verify `#cache-quota-bar` has a computed width.
+      - Verify `#btn-refresh-cache` and `#btn-purge-stale` are active and responsive.
+      - Click `#btn-close-settings` and verify `#settingsModal` closes (`style.display === 'none'`).
+- **Rationale:** Proves live browser DOM integration, cross-frame boundaries, storage reactivity, and user journeys without third-party frameworks.
 
-##### Slice 2: Storage Quota UI & App Shell Controller
-4. **Add Storage & Cache Quota Card in `#settingsModal` (`index.html`)**:
-   - Insert dedicated section before the Reset section in `#settingsModal`.
-   - Elements:
-     - Header with title (`lbl-cache-quota-title`), description (`lbl-cache-quota-desc`), Refresh button (`btn-refresh-cache`), and Purge Stale button (`btn-purge-stale`).
-     - Active Cache Version readout: `#cache-version-badge`.
-     - Storage Quota Readout (`#lbl-cache-quota-readout`) and animated progress bar (`#cache-quota-bar`).
-     - Status readout line (`#lbl-cache-status-text`) and stale cache counter badge (`#cache-stale-badge`).
-5. **Implement Storage & Cache Controller (`js/app-shell.js`)**:
-   - Add helper `formatStorageBytes(bytes)`: Formats numbers into B, KB, MB, GB with boundary precision and graceful fallback on non-numbers/negatives.
-   - Add `updateStorageQuotaDisplay()`:
-     - Invokes `navigator.storage?.estimate()`. Computes `usage`, `quota`, and `percentUsed`.
-     - Updates `#cache-quota-bar` style width and `#lbl-cache-quota-readout`.
-     - Sends `GET_CACHE_STATUS` to Service Worker controller via `MessageChannel` (with fallback to `window.caches` direct access).
-     - Updates `#cache-version-badge` and `#cache-stale-badge`.
-     - Returns Promise resolving to quota status details.
-   - Add `refreshAppCache()`:
-     - Sets loading state in `#lbl-cache-status-text`.
-     - Calls SW `REFRESH_CACHE` (or falls back to `caches.open()`) and `registration.update()`.
-     - Re-invokes `updateStorageQuotaDisplay()` and alerts user of completion.
-   - Add `purgeStaleCaches()`:
-     - Sends `PURGE_STALE_CACHES` to SW or deletes stale caches directly via `caches.delete`.
-     - Re-invokes `updateStorageQuotaDisplay()` and alerts user of purged cache count.
-   - Update `openSettingsModal()` to invoke `updateStorageQuotaDisplay()`.
-   - Update `applyLang()`: Wire new dictionary keys to DOM elements and copy keys into `translations.th` and `translations.en`.
-   - Expose `formatStorageBytes`, `updateStorageQuotaDisplay`, `refreshAppCache`, and `purgeStaleCaches` on `window.MoneyApp` and `window`.
+##### Step 2: Update `package.json`
+- **Action:**
+  - Add `"test:e2e": "node --test tests/e2e-browser-journeys.test.mjs"` to `scripts`.
+- **Rationale:** Enables direct targeted execution for developers and CI pipelines while preserving `"test": "node --test tests/**/*.test.mjs"` glob discovery.
 
-##### Slice 3: Automated Test Suite & Smoke Verification
-6. **Author Test Suite (`tests/sw-cache-quota.test.mjs`)**:
-   - Test 1: Byte formatting logic (`formatStorageBytes` across 0 B, KB, MB, GB, invalid/null).
-   - Test 2: `sw.js` static contract inspection (`CACHE_NAME`, message types, activation delete guard).
-   - Test 3: `sw.js` message execution simulation in Node VM with mock Cache API (verifying `GET_CACHE_STATUS` response contract and `PURGE_STALE_CACHES` preserving active cache + share payload).
-   - Test 4: App Shell DOM structure and bilingual attributes in `index.html`.
-   - Test 5: Bilingual symmetry between `th.js` and `en.js` for all cache quota keys.
-   - Test 6: App Shell controller API exports and functions in `js/app-shell.js`.
-7. **Update Smoke Assertions (`tests/smoke.test.mjs`)**:
-   - Add Phase 112 validation block verifying test suite disk existence, Service Worker contracts, and App Shell integration.
-8. **Execute Full Test & Lint Verification**:
-   - Run `npm test` (all tests passing).
-   - Run `npm run lint` (Biome clean, zero errors).
+##### Step 3: Update `tests/smoke.test.mjs`
+- **Action:**
+  - Append a new verification block: `verifies Phase 113 End-to-End Multi-Journey Browser Flow Test Suite presence and contracts`.
+  - Assert that `tests/e2e-browser-journeys.test.mjs` exists.
+  - Assert that `package.json` declares `"test:e2e"`.
+  - Assert that `tests/e2e-browser-journeys.test.mjs` declares all 5 journeys:
+    1. Tab Navigation & Iframe URL Hash Sync
+    2. Theme and Language Reload Persistence
+    3. Cross-Tool Bridge Protocol End-to-End Hand-off
+    4. JSON Backup Export, Master Reset & Restore Round-Trip
+    5. Settings Modal Storage Diagnostics & Cache Controls
+- **Rationale:** Maintains our zero-regression smoke invariant and guarantees structural test file integrity.
 
 ---
 
 #### 4. Acceptance Criteria
-- [x] `sw.js` activation handles cache deletion errors gracefully and preserves `CACHE_NAME` and `money-superapp-shared-payload`.
-- [x] `sw.js` handles `GET_CACHE_STATUS`, `PURGE_STALE_CACHES`, and `REFRESH_CACHE` message types returning structured response contracts.
-- [x] `index.html` displays the Storage & Cache Quota card inside `#settingsModal` with progress bar, readout, active version badge, and action buttons.
-- [x] `js/app-shell.js` implements `updateStorageQuotaDisplay()`, `refreshAppCache()`, `purgeStaleCaches()`, and `formatStorageBytes()`.
-- [x] `js/i18n/th.js` and `js/i18n/en.js` contain all quota keys with 100% symmetry verified by `tests/i18n-dictionaries.test.mjs`.
-- [x] `applyLang()` updates all cache quota UI labels dynamically when switching TH/EN.
-- [x] `tests/sw-cache-quota.test.mjs` runs in `npm test` and passes 100%.
-- [x] `tests/smoke.test.mjs` validates Phase 112 components.
-- [x] `npm run lint` passes without formatting or syntax errors.
+- [x] `tests/e2e-browser-journeys.test.mjs` executes cleanly with Node.js native test runner (`node --test tests/e2e-browser-journeys.test.mjs`).
+- [x] Headless Chrome CDP WebSocket driver launches and tears down cleanly without orphaned processes or leaked ports.
+- [x] Gracefully skips when Chrome/Chromium binary is not available.
+- [x] Journey 1 passes: Tab navigation correctly switches `#appFrame` src and synchronizes URL hash (`#dashboard`, `#remaining-money`, `#rebalance`, `#tax-calculator-base`).
+- [x] Journey 2 passes: Theme (dark/light) and language (th/en) toggles persist across full browser reload.
+- [x] Journey 3 passes: Cross-tool budget bridge from Remaining Money smoothly transfers data to Rebalance, updates input value, clears pending key, and shows notification alert.
+- [x] Journey 4 passes: Exported JSON backup captures all calculator keys, master reset wipes them cleanly, and restore reconstitutes the exact state.
+- [x] Journey 5 passes: Settings modal correctly opens, displays storage quota & version diagnostics, handles cache controls, and closes cleanly.
+- [x] Smoke test suite in `tests/smoke.test.mjs` validates Phase 113 presence and contracts.
+- [x] `npm test` passes 100% of tests (all existing 625+ unit/integration tests + new E2E suite).
+- [x] `npm run lint` passes with 0 errors across `js/`, `scripts/`, `tests/`.
 
 ---
 
-#### 5. Verification Strategy
-- **Automated Tests:**
+#### 5. Verification Strategy & Guardrails
+- **Pre-flight Check:**
+  - Working tree status checked: clean.
+  - Baseline tests: 625/625 passing.
+  - Linting: 67/67 files clean.
+- **Verification Commands:**
   ```bash
-  # Run full automated test suite
+  # 1. Targeted E2E test verification
+  npm run test:e2e
+
+  # 2. Smoke test verification
+  node --test tests/smoke.test.mjs
+
+  # 3. Complete regression suite
   npm test
 
-  # Run specific Phase 112 test suite
-  node --test tests/sw-cache-quota.test.mjs
-
-  # Verify i18n symmetry
-  node --test tests/i18n-dictionaries.test.mjs
-
-  # Code quality and formatting
+  # 4. Biome linting verification
   npm run lint
   ```
-- **Circuit Breaker Guardrails:**
-  - Maximum 2 feedback loops between Coder and QA. If any contract fails, halt and inspect root cause.
-  - Zero external npm packages installed.
-  - Invariant protection: Active cache `CACHE_NAME` and `money-superapp-shared-payload` must never be purged.
+- **Circuit Breaker:** Max 2 feedback loops between Coder, QA, and Reviewer. If CDP connection or timing issues arise, review timeout parameters and DOM readyState waiting logic before escalating.

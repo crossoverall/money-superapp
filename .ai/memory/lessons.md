@@ -1594,3 +1594,26 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
   4. **Quality Gates & Automated Verification:** Created comprehensive test suite `tests/sw-cache-quota.test.mjs` (byte formatting, SW message contracts, Node VM mock cache execution, DOM structure, and i18n dictionary symmetry) and updated `tests/smoke.test.mjs`.
 - **Rule:** When managing offline PWA cache lifecycles, always protect active application cache and Web Share Target stores from eviction, use bi-directional `MessageChannel` ports with `event.source` fallback for reliable SW messaging, provide native Cache API fallbacks for storage estimation, and wrap cache deletion operations in resilient error handlers to prevent activation hangs.
 
+
+### 2026-10-19: Zero-Dependency Headless Chrome CDP E2E Multi-Journey Test Suite (Phase 113)
+
+- **Date & Context:** 2026-10-19, implementing zero-dependency headless Chrome DevTools Protocol (CDP) multi-journey browser test suite (`tests/e2e-browser-journeys.test.mjs`, `package.json`, `tests/smoke.test.mjs`) (`v2.5.56`).
+- **Problem:**
+  1. Unit tests running in Node.js `node:vm` or mock DOM environments cannot verify true multi-window/cross-iframe browser behaviors: URL hash routing synchronization (`#appFrame` src), iframe parent-child `postMessage` event propagation, cross-tool Bridge lifecycle execution (`moneySuperapp.pendingBudget`), and browser localStorage/theme/language reload persistence.
+  2. Introducing heavyweight testing frameworks (Puppeteer, Playwright, Cypress) introduces hundreds of NPM runtime/dev dependencies, violating ADR-001 (Zero NPM runtime dependencies, minimal toolchain footprint).
+  3. Headless Chrome processes spawned directly in Node.js test suites can leak background processes, lock temporary user-data directories, or hang test execution if process lifecycle and CDP WebSocket connections are not gracefully terminated.
+- **Resolution:**
+  1. **Zero-Dependency Headless Chrome CDP Driver (`tests/e2e-browser-journeys.test.mjs`):** Built a self-contained CDP WebSocket client using native Node.js 22 `WebSocket`, `node:http`, and `node:child_process`:
+     - Spawns Chrome/Chromium (`--headless=new`, `--remote-debugging-port=0`, `--user-data-dir=<temp-dir>`) discovered via `resolveChromeBinary()`.
+     - Starts an ephemeral static HTTP loopback server on dynamic port (`port: 0`) to serve application assets without external dependencies or cross-origin restrictions.
+     - Implements robust lifecycle teardown: closes CDP WebSocket, sends graceful `Browser.close` command via CDP, issues fallback process termination (`SIGTERM` / `SIGKILL`), and recursively removes temporary profile directories with retry logic.
+  2. **End-to-End Cross-Iframe Multi-Journey Verification:** Created 5 comprehensive journey suites executing against real browser DOM:
+     - **Journey 1 (Tab & Hash Sync):** Verifies app shell tab button clicks, programmatic `window.switchToTab()`, and `window.location.hash` changes properly synchronize iframe URL and active UI classes.
+     - **Journey 2 (Theme & Language Persistence):** Validates dark/light theme switching and Thai/English bilingual toggles persist across full browser page reloads (`location.reload()`) with matching DOM attributes (`lang`, `data-theme`).
+     - **Journey 3 (Cross-Tool Bridge Protocol):** Validates end-to-end data transfer from `remaining-money.html` to `rebalance.html` via `moneySuperapp.pendingBudget`, verifying single-use consumption, budget input injection, and UI alert banner display.
+     - **Journey 4 (Backup, Reset & Restore Round-Trip):** Validates full-app JSON export, master data purge across all tool namespaces, and exact state reconstitution from exported backup payload.
+     - **Journey 5 (Settings & Storage Diagnostics):** Validates opening settings modal, inspecting storage quota readout, dynamic cache version display, and clean modal dismissal.
+  3. **Automated Quality Gates:** Added `npm run test:e2e` to `package.json`, integrated regression contract assertions in `tests/smoke.test.mjs`, and verified zero-dependency compatibility across all test runs.
+- **Rule:** When creating end-to-end browser tests in zero-dependency architectures, use native Node.js `WebSocket` and CDP over an ephemeral loopback HTTP server, always enforce strict process lifecycle management (graceful `Browser.close`, fallback `SIGKILL`, and temp dir removal), and verify cross-frame contracts end-to-end against live DOM and `localStorage`.
+
+
