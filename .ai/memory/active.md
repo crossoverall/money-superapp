@@ -8,4 +8,4 @@ pipeline: []
 ---
 
 ### Idle State
-No active task currently running. Ready for next intake.
+All initiatives from the Master Improvement Plan are completed. Ready for next intake.

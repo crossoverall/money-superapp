@@ -15,6 +15,21 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-19: Lighthouse CI Quality Gate & Automated PWA Performance Checks (v2.5.61)
+- **Date & Context:** 2026-10-19, Phase 118 Lighthouse CI & PWA Quality Gate (`v2.5.61`).
+- **Problem:**
+  1. While unit, smoke, and CDP browser tests verified functionality, there was no declarative Lighthouse CI configuration ensuring ongoing audit readiness across PWA installability, accessibility standards, best practices, and performance budgets.
+  2. In an iframe-hosted multi-document app shell (ADR-002), default Lighthouse CI configurations assume single-page applications with history fallback servers (`isSinglePageApplication: true`), which fails when auditing multi-HTML file distributions statically.
+  3. Automated PWA assertions in test runners could mistakenly look for `navigator.serviceWorker.register` directly in `index.html` rather than in the modularized `js/app-shell.js` controller.
+- **Root Cause:**
+  - Absence of root `.lighthouserc.json` and CI workflow integration.
+  - Architecture decoupling of static HTML shell from JavaScript lifecycle controllers.
+- **Solution & Rule:**
+  1. **Declarative Lighthouse CI Configuration (`.lighthouserc.json`):** Configured zero-build static distribution auditing (`staticDistDir: "./"`, `isSinglePageApplication: false`, `numberOfRuns: 1`) with strict assertion thresholds for PWA (0.90), Accessibility (0.90), Best Practices (0.90), and Performance (0.85).
+  2. **Secure GitHub Actions CI Integration (`.github/workflows/ci.yml`):** Added `treosh/lighthouse-ci-action@v12` with `uploadArtifacts: false` and `temporaryPublicStorage: false` under `permissions: contents: read` to prevent external telemetry or asset leaks.
+  3. **PWA & Cache Invariant Validation (`tests/performance.test.mjs` & `tests/smoke.test.mjs`):** Added `./js/engines/dashboard-viz.js` to `expectedAssets` in the Service Worker cache verification test and added comprehensive assertions verifying `.lighthouserc.json` schemas, PWA metadata, theme-color, icon presence, and Service Worker registration.
+  4. **Quality Gates & Smoke Test:** Phase 118 assertions verified in `tests/smoke.test.mjs`, 666/666 tests passing across 180 suites, 0 Biome errors/warnings.
+
 ### 2026-10-19: Automated Zero-Dependency Visual Regression Suite & Headless SVG Geometry Resolution (v2.5.60)
 - **Date & Context:** 2026-10-19, Phase 117 Visual Regression & Layout Invariant Suite (`v2.5.60`).
 - **Problem:**

@@ -114,6 +114,7 @@ describe('Pillar 6 Performance Audit & Optimization Verification Suite', () => {
         './js/engines/rebalance-subtools.js',
         './js/engines/tax-worksheet.js',
         './js/engines/i18n-core.js',
+        './js/engines/dashboard-viz.js',
         './js/i18n/th.js',
         './js/i18n/en.js',
         './css/tailwind-lite.css',
@@ -185,6 +186,74 @@ describe('Pillar 6 Performance Audit & Optimization Verification Suite', () => {
       assert.ok(
         totalTimeMs < 150,
         `100 calculation cycles must execute well within budget: took ${totalTimeMs.toFixed(2)}ms (budget: 150ms)`,
+      );
+    });
+  });
+
+  describe('Lighthouse CI Quality Gate & PWA Performance Audit Verification (.lighthouserc.json)', () => {
+    it('verifies .lighthouserc.json configures static zero-build collection and strict budget assertions', () => {
+      const configPath = path.join(ROOT_DIR, '.lighthouserc.json');
+      assert.ok(fs.existsSync(configPath), '.lighthouserc.json must exist');
+
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      assert.ok(config.ci, 'Lighthouse CI config must declare ci root key');
+      assert.ok(config.ci.collect, 'Lighthouse CI config must declare collect block');
+      assert.strictEqual(
+        config.ci.collect.staticDistDir,
+        './',
+        'staticDistDir must audit root repository directly without requiring bundler/transpilation',
+      );
+      assert.strictEqual(
+        config.ci.collect.isSinglePageApplication,
+        false,
+        'isSinglePageApplication must be false for iframe-based modular architecture',
+      );
+      assert.strictEqual(config.ci.collect.numberOfRuns, 1, 'numberOfRuns must be configured');
+
+      const assertions = config.ci.assert?.assertions;
+      assert.ok(assertions, 'Lighthouse CI assertions must be defined');
+      assert.ok(assertions['categories:pwa'], 'categories:pwa must be asserted');
+      assert.ok(assertions['categories:accessibility'], 'categories:accessibility must be asserted');
+      assert.ok(assertions['categories:best-practices'], 'categories:best-practices must be asserted');
+      assert.ok(assertions['categories:performance'], 'categories:performance must be asserted');
+
+      assert.strictEqual(assertions['categories:pwa'][0], 'warn');
+      assert.ok(assertions['categories:pwa'][1].minScore >= 0.9, 'PWA minScore must be >= 0.9');
+
+      assert.strictEqual(assertions['categories:accessibility'][0], 'warn');
+      assert.ok(assertions['categories:accessibility'][1].minScore >= 0.9, 'Accessibility minScore must be >= 0.9');
+
+      assert.strictEqual(assertions['categories:best-practices'][0], 'warn');
+      assert.ok(assertions['categories:best-practices'][1].minScore >= 0.9, 'Best practices minScore must be >= 0.9');
+
+      assert.strictEqual(assertions['categories:performance'][0], 'warn');
+      assert.ok(assertions['categories:performance'][1].minScore >= 0.85, 'Performance minScore must be >= 0.85');
+    });
+
+    it('verifies PWA installability, manifest metadata, and theme color contracts for Lighthouse audit readiness', () => {
+      const manifestPath = path.join(ROOT_DIR, 'manifest.json');
+      assert.ok(fs.existsSync(manifestPath), 'manifest.json must exist');
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+
+      assert.ok(manifest.name, 'manifest.json must declare name');
+      assert.ok(manifest.short_name, 'manifest.json must declare short_name');
+      assert.ok(manifest.start_url, 'manifest.json must declare start_url');
+      assert.strictEqual(manifest.display, 'standalone', 'display must be standalone');
+      assert.ok(Array.isArray(manifest.icons) && manifest.icons.length > 0, 'manifest.json must declare icons');
+
+      for (const icon of manifest.icons) {
+        const iconPath = path.join(ROOT_DIR, icon.src.replace(/^\.\//, ''));
+        assert.ok(fs.existsSync(iconPath), `Manifest icon file must exist: ${icon.src}`);
+      }
+
+      const indexHtml = fs.readFileSync(path.join(ROOT_DIR, 'index.html'), 'utf8');
+      assert.ok(indexHtml.includes('<link rel="manifest" href="manifest.json">'), 'index.html must link manifest.json');
+      assert.ok(indexHtml.includes('<meta name="theme-color"'), 'index.html must declare theme-color meta tag');
+
+      const appShellJs = fs.readFileSync(path.join(ROOT_DIR, 'js/app-shell.js'), 'utf8');
+      assert.ok(
+        appShellJs.includes('navigator.serviceWorker') && appShellJs.includes("register('./sw.js')"),
+        'js/app-shell.js must register sw.js for PWA offline capability',
       );
     });
   });

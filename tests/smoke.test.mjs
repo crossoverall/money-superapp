@@ -2241,5 +2241,48 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(visualContent.includes('Emulation.setDeviceMetricsOverride'), 'Must declare CDP viewport emulation');
       assert.ok(visualContent.includes('Page.captureScreenshot'), 'Must declare headless screenshot capture');
     });
+
+    it('verifies Phase 118 Lighthouse CI Quality Gate & Automated PWA Performance Checks', () => {
+      const lighthousercPath = path.join(ROOT_DIR, '.lighthouserc.json');
+      assert.ok(fs.existsSync(lighthousercPath), '.lighthouserc.json must exist');
+
+      const config = JSON.parse(fs.readFileSync(lighthousercPath, 'utf8'));
+      assert.ok(config.ci, 'Lighthouse CI config must declare ci block');
+      assert.strictEqual(
+        config.ci.collect?.staticDistDir,
+        './',
+        'Lighthouse CI staticDistDir must audit root static directory directly',
+      );
+      assert.strictEqual(config.ci.collect?.isSinglePageApplication, false, 'isSinglePageApplication must be false');
+      assert.strictEqual(config.ci.collect?.numberOfRuns, 1, 'numberOfRuns must be 1');
+
+      const assertions = config.ci.assert?.assertions;
+      assert.ok(assertions, 'assertions block must be defined');
+      assert.ok(assertions['categories:pwa'], 'PWA category assertion must exist');
+      assert.ok(assertions['categories:accessibility'], 'Accessibility category assertion must exist');
+      assert.ok(assertions['categories:best-practices'], 'Best practices category assertion must exist');
+      assert.ok(assertions['categories:performance'], 'Performance category assertion must exist');
+
+      // Verify CI workflow integrates Lighthouse CI
+      const ciWorkflowPath = path.join(ROOT_DIR, '.github/workflows/ci.yml');
+      assert.ok(fs.existsSync(ciWorkflowPath), '.github/workflows/ci.yml must exist');
+      const ciWorkflow = fs.readFileSync(ciWorkflowPath, 'utf8');
+      assert.ok(
+        ciWorkflow.includes('treosh/lighthouse-ci-action@v12'),
+        'ci.yml must declare treosh/lighthouse-ci-action@v12 action',
+      );
+      assert.ok(
+        ciWorkflow.includes("configPath: './.lighthouserc.json'"),
+        'ci.yml must link to .lighthouserc.json configuration file',
+      );
+
+      // Verify PWA performance invariants
+      const manifestPath = path.join(ROOT_DIR, 'manifest.json');
+      assert.ok(fs.existsSync(manifestPath), 'manifest.json must exist');
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+      assert.strictEqual(manifest.display, 'standalone', 'PWA display must be standalone');
+      assert.ok(manifest.theme_color, 'manifest must specify theme_color');
+      assert.ok(manifest.background_color, 'manifest must specify background_color');
+    });
   });
 });
