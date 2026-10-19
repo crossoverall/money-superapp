@@ -1704,3 +1704,20 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
 - **Rule:** When creating end-to-end browser tests in zero-dependency architectures, use native Node.js `WebSocket` and CDP over an ephemeral loopback HTTP server, always enforce strict process lifecycle management (graceful `Browser.close`, fallback `SIGKILL`, and temp dir removal), and verify cross-frame contracts end-to-end against live DOM and `localStorage`.
 
 
+### 2026-10-19: Responsive Container Width Standardization (896px / max-w-4xl) Across Sub-Tools (Phase 119)
+
+- **Date & Context:** 2026-10-19, standardizing child tool layout container widths across `rebalance.html`, `tax-calculator.html`, `remaining-money.html`, `debt-calculator.html`, and `dashboard.html` to align with `tax-calculator-base.html` and `months-slips.html` (`v2.5.62`).
+- **Problem:**
+  1. Previously, five standalone tools (`rebalance.html`, `tax-calculator.html`, `remaining-money.html`, `debt-calculator.html`, and `dashboard.html`) were constrained to an ultra-narrow mobile container width of `max-width: 520px; margin-inline: auto;`.
+  2. In contrast, `tax-calculator-base.html` and `months-slips.html` used `max-w-4xl` (`896px` / `56rem`), resulting in an inconsistent visual presentation on desktop/tablet viewports where users with widescreen monitors experienced jarring width collapses when switching between tools.
+  3. When widening container boundaries to 896px, care had to be taken not to induce horizontal layout overflow or edge blowout on narrow mobile devices (down to 320px/375px), and not to alter print stylesheets which rely on unconstrained `max-width: 100% !important`.
+- **Resolution:**
+  1. **Container Alignment Parity:** Standardized `body { max-width: 896px; margin-inline: auto; }` across all 5 child tools, matching Tailwind `max-w-4xl` (`896px`) used by Income Tax and Payslips.
+  2. **Mobile Progressive Side Padding:** Applied responsive media queries (`@media (max-width: 640px)` / `@media (max-width: 480px)`) ensuring compact inner card padding (12px to 16px) with zero horizontal blowout (`scrollWidth <= innerWidth`).
+  3. **Print Stylesheet Isolation:** Preserved `@media print { body { max-width: 100% !important; ... } }` ensuring unclipped full-width A4 printing across all pages.
+  4. **Adversarial Audit & Regression Fix:** During review, caught an accidental overwrite of `.undo-btn:hover` in `rebalance.html` and immediately restored interactive button hover styling.
+  5. **Automated Verification:** Enhanced `tests/smoke.test.mjs` contract assertions and expanded `tests/visual-regression.test.mjs` CDP tests asserting that all tools expand beyond 520px up to 896px on desktop (1024x768) and maintain strictly 0px overflow on mobile (375x667).
+- **Rule:** When harmonizing responsive layout widths across multi-tool suites, always unify desktop max-width constraints (896px / `max-w-4xl`) while enforcing mobile responsive paddings, preserve dedicated print stylesheet overrides (`max-width: 100% !important`), and guard interactive button pseudo-classes during media query insertions.
+
+
+

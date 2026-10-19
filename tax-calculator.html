@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="version" content="2.5.61">
+  <meta name="version" content="2.5.62">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self';">
   <script>
     try {
@@ -73,7 +73,7 @@
       color: var(--ink);
       margin: 0;
       padding: 26px 16px 70px;
-      max-width: 520px;
+      max-width: 896px;
       margin-inline: auto;
       min-height: 100vh;
       box-sizing: border-box;
@@ -85,7 +85,6 @@
       border-radius: 16px;
       box-shadow: 0 4px 24px var(--card-shadow);
       width: 100%;
-      max-width: 520px;
       padding: 20px 16px 24px;
       box-sizing: border-box;
     }
@@ -97,6 +96,12 @@
       .card {
         padding: 16px 12px 20px;
         border-radius: 14px;
+      }
+    }
+
+    @media (min-width: 640px) {
+      .card {
+        padding: 24px 20px 28px;
       }
     }
 
@@ -940,7 +945,7 @@
         </div>
       </div>
     </div> <!-- end #taxPanelsContainer -->
-    <p style="text-align:center;font-size:0.72rem;color:#94a3b8;margin-top:16px;">v2.5.61</p>
+    <p style="text-align:center;font-size:0.72rem;color:#94a3b8;margin-top:16px;">v2.5.62</p>
   </div>
 
   <script src="js/engines/thai-pit.js"></script>

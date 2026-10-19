@@ -141,9 +141,9 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       const taxContent = fs.readFileSync(path.join(ROOT_DIR, 'tax-calculator.html'), 'utf8');
       assert.ok(
         taxContent.includes('padding: 26px 16px 70px') &&
-          taxContent.includes('max-width: 520px') &&
+          taxContent.includes('max-width: 896px') &&
           taxContent.includes('margin-inline: auto'),
-        'tax-calculator.html body must align with 520px max-width, margin-inline: auto, and 16px horizontal padding standard',
+        'tax-calculator.html body must align with 896px max-width, margin-inline: auto, and 16px horizontal padding standard',
       );
       assert.ok(
         taxContent.includes('padding: 20px 16px 24px'),
@@ -161,6 +161,17 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         !taxContent.includes('justify-content: center;\n      padding: 24px;'),
         'tax-calculator.html must not contain legacy 24px body padding with vertical flex centering',
       );
+    });
+
+    it('verifies rebalance, remaining-money, debt-calculator, and dashboard align with 896px container width standard', () => {
+      const files = ['rebalance.html', 'remaining-money.html', 'debt-calculator.html', 'dashboard.html'];
+      for (const file of files) {
+        const fileContent = fs.readFileSync(path.join(ROOT_DIR, file), 'utf8');
+        assert.ok(
+          fileContent.includes('max-width: 896px') && fileContent.includes('margin-inline: auto'),
+          `${file} body must align with 896px max-width and margin-inline: auto`,
+        );
+      }
     });
 
     it('verifies index.html declares mobile responsive topbar constraints and element hiding', () => {

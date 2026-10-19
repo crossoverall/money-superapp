@@ -542,6 +542,101 @@ describe('Phase 117: Automated Visual Regression & Layout Invariant Suite', () =
       assert.ok(metrics.bodyLeft >= 0, 'dashboard.html body left edge must be >= 0');
       assert.ok(metrics.bodyRight <= metrics.innerWidth, 'dashboard.html body right edge must be <= innerWidth');
     });
+
+    it('verifies all child tool pages (tax, dashboard, rebalance, remaining-money, debt) retain zero blowout on mobile 375x667', async (t) => {
+      if (!isChromeAvailable) {
+        t.skip('Chrome/Chromium binary not available on this platform');
+        return;
+      }
+
+      const childPages = [
+        'tax-calculator.html',
+        'dashboard.html',
+        'rebalance.html',
+        'remaining-money.html',
+        'debt-calculator.html',
+      ];
+
+      for (const page of childPages) {
+        await cdp.setViewport({ width: 375, height: 667, mobile: true, deviceScaleFactor: 1 });
+        await cdp.navigate(`http://127.0.0.1:${serverPort}/${page}`);
+        await cdp.waitFor(() => document.readyState === 'complete');
+
+        const metrics = await cdp.evaluate(`(() => {
+          const bodyRect = document.body.getBoundingClientRect();
+          return {
+            scrollWidth: document.documentElement.scrollWidth,
+            innerWidth: window.innerWidth,
+            bodyWidth: bodyRect.width,
+            bodyLeft: bodyRect.left,
+            bodyRight: bodyRect.right,
+          };
+        })()`);
+
+        assert.ok(
+          metrics.scrollWidth <= metrics.innerWidth,
+          `${page} scrollWidth (${metrics.scrollWidth}) <= innerWidth (${metrics.innerWidth}) on mobile 375x667`,
+        );
+        assert.ok(
+          metrics.bodyWidth <= metrics.innerWidth,
+          `${page} bodyWidth (${metrics.bodyWidth}) <= innerWidth (${metrics.innerWidth}) on mobile 375x667`,
+        );
+      }
+    });
+
+    it('verifies all child tool pages expand beyond 520px up to 896px without blowout on desktop 1024x768', async (t) => {
+      if (!isChromeAvailable) {
+        t.skip('Chrome/Chromium binary not available on this platform');
+        return;
+      }
+
+      const childPages = [
+        'tax-calculator.html',
+        'dashboard.html',
+        'rebalance.html',
+        'remaining-money.html',
+        'debt-calculator.html',
+      ];
+
+      for (const page of childPages) {
+        await cdp.setViewport({ width: 1024, height: 768, mobile: false, deviceScaleFactor: 1 });
+        await cdp.navigate(`http://127.0.0.1:${serverPort}/${page}`);
+        await cdp.waitFor(() => document.readyState === 'complete');
+
+        const metrics = await cdp.evaluate(`(() => {
+          const bodyRect = document.body.getBoundingClientRect();
+          const card = document.querySelector('.card, .panel');
+          const cardRect = card ? card.getBoundingClientRect() : null;
+          return {
+            scrollWidth: document.documentElement.scrollWidth,
+            innerWidth: window.innerWidth,
+            bodyWidth: Math.round(bodyRect.width),
+            bodyLeft: Math.round(bodyRect.left),
+            bodyRight: Math.round(bodyRect.right),
+            cardWidth: cardRect ? Math.round(cardRect.width) : null,
+          };
+        })()`);
+
+        assert.ok(
+          metrics.scrollWidth <= metrics.innerWidth,
+          `${page} scrollWidth (${metrics.scrollWidth}) <= innerWidth (${metrics.innerWidth}) on desktop 1024x768`,
+        );
+        assert.ok(
+          metrics.bodyWidth > 520,
+          `${page} bodyWidth (${metrics.bodyWidth}) must expand beyond 520px on desktop 1024x768`,
+        );
+        assert.ok(
+          metrics.bodyWidth <= 896,
+          `${page} bodyWidth (${metrics.bodyWidth}) must be <= 896px on desktop 1024x768`,
+        );
+        if (metrics.cardWidth !== null) {
+          assert.ok(
+            metrics.cardWidth > 520,
+            `${page} card/panel (${metrics.cardWidth}) must expand beyond 520px on desktop 1024x768`,
+          );
+        }
+      }
+    });
   });
 
   describe('Suite 4: SVG Visualizations Geometry & Bounding Rects', () => {
