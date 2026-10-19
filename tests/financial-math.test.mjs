@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import '../js/engines/thai-pit.js';
 
 /**
  * Thai Personal Income Tax (PIT) Bracket Engine
@@ -6512,6 +6513,149 @@ describe('Financial Math Verification', () => {
       assert.equal(evalRes.hasRetirementExcess, true);
       assert.equal(evalRes.isReady, false);
       assert.equal(evalRes.completedCount, 4); // pool500k invalidated by excess
+    });
+  });
+
+  describe('MoneyApp.evaluateThaiEsgDeduction (Phase 123 ThaiESG 2024-2026 Rules & SSO Dynamic Cap)', () => {
+    const { evaluateThaiEsgDeduction } = globalThis.MoneyApp;
+
+    describe('2024+ Statutory Rules (300,000 THB Cap & 5-Year Holding Period)', () => {
+      it('allows full amount when within statutory cap and 30% of income', () => {
+        const res = evaluateThaiEsgDeduction(200000, 1000000, 2024);
+        assert.equal(res.statutoryCap, 300000);
+        assert.equal(res.holdingYears, 5);
+        assert.equal(res.maxAllowed, 300000);
+        assert.equal(res.effectiveDeduction, 200000);
+        assert.equal(res.isExceeded, false);
+        assert.equal(res.excessAmount, 0);
+      });
+
+      it('defaults to 2024 rules when taxYear is omitted', () => {
+        const res = evaluateThaiEsgDeduction(300000, 1500000);
+        assert.equal(res.statutoryCap, 300000);
+        assert.equal(res.holdingYears, 5);
+        assert.equal(res.maxAllowed, 300000);
+        assert.equal(res.effectiveDeduction, 300000);
+        assert.equal(res.isExceeded, false);
+        assert.equal(res.excessAmount, 0);
+      });
+
+      it('applies 2024+ rules to future tax years (2025, 2026)', () => {
+        const res2025 = evaluateThaiEsgDeduction(250000, 1200000, 2025);
+        assert.equal(res2025.statutoryCap, 300000);
+        assert.equal(res2025.holdingYears, 5);
+
+        const res2026 = evaluateThaiEsgDeduction(250000, 1200000, 2026);
+        assert.equal(res2026.statutoryCap, 300000);
+        assert.equal(res2026.holdingYears, 5);
+      });
+
+      it('caps at statutory maximum 300,000 THB when income is high', () => {
+        const res = evaluateThaiEsgDeduction(400000, 2000000, 2024);
+        assert.equal(res.statutoryCap, 300000);
+        assert.equal(res.maxAllowed, 300000);
+        assert.equal(res.effectiveDeduction, 300000);
+        assert.equal(res.isExceeded, true);
+        assert.equal(res.excessAmount, 100000);
+      });
+    });
+
+    describe('Legacy 2023 Statutory Rules (100,000 THB Cap & 8-Year Holding Period)', () => {
+      it('applies 100,000 THB cap and 8-year holding period for taxYear 2023', () => {
+        const res = evaluateThaiEsgDeduction(80000, 500000, 2023);
+        assert.equal(res.statutoryCap, 100000);
+        assert.equal(res.holdingYears, 8);
+        assert.equal(res.maxAllowed, 100000);
+        assert.equal(res.effectiveDeduction, 80000);
+        assert.equal(res.isExceeded, false);
+        assert.equal(res.excessAmount, 0);
+      });
+
+      it('caps at 100,000 THB for 2023 even if 30% of income is higher', () => {
+        const res = evaluateThaiEsgDeduction(150000, 1000000, 2023);
+        assert.equal(res.statutoryCap, 100000);
+        assert.equal(res.holdingYears, 8);
+        assert.equal(res.maxAllowed, 100000);
+        assert.equal(res.effectiveDeduction, 100000);
+        assert.equal(res.isExceeded, true);
+        assert.equal(res.excessAmount, 50000);
+      });
+    });
+
+    describe('30% Assessable Income Ceiling Restriction', () => {
+      it('caps deduction at 30% of total income when below statutory cap (2024)', () => {
+        // Income = 400,000 -> 30% = 120,000 (< 300,000)
+        const res = evaluateThaiEsgDeduction(150000, 400000, 2024);
+        assert.equal(res.maxAllowed, 120000);
+        assert.equal(res.effectiveDeduction, 120000);
+        assert.equal(res.isExceeded, true);
+        assert.equal(res.excessAmount, 30000);
+      });
+
+      it('caps deduction at 30% of total income when below statutory cap (2023)', () => {
+        // Income = 200,000 -> 30% = 60,000 (< 100,000)
+        const res = evaluateThaiEsgDeduction(80000, 200000, 2023);
+        assert.equal(res.maxAllowed, 60000);
+        assert.equal(res.effectiveDeduction, 60000);
+        assert.equal(res.isExceeded, true);
+        assert.equal(res.excessAmount, 20000);
+      });
+
+      it('handles borderline exactly at 30% income limit', () => {
+        // Income = 500,000 -> 30% = 150,000
+        const res = evaluateThaiEsgDeduction(150000, 500000, 2024);
+        assert.equal(res.maxAllowed, 150000);
+        assert.equal(res.effectiveDeduction, 150000);
+        assert.equal(res.isExceeded, false);
+        assert.equal(res.excessAmount, 0);
+      });
+    });
+
+    describe('Edge Cases and Input Sanitization', () => {
+      it('handles zero income gracefully without flagging false excess', () => {
+        const res = evaluateThaiEsgDeduction(100000, 0, 2024);
+        assert.equal(res.statutoryCap, 300000);
+        assert.equal(res.maxAllowed, 300000);
+        assert.equal(res.effectiveDeduction, 100000);
+        assert.equal(res.isExceeded, false);
+        assert.equal(res.excessAmount, 0);
+      });
+
+      it('handles zero investment amount', () => {
+        const res = evaluateThaiEsgDeduction(0, 600000, 2024);
+        assert.equal(res.effectiveDeduction, 0);
+        assert.equal(res.isExceeded, false);
+        assert.equal(res.excessAmount, 0);
+      });
+
+      it('handles negative or invalid amount by sanitizing to zero', () => {
+        const resNeg = evaluateThaiEsgDeduction(-50000, 600000, 2024);
+        assert.equal(resNeg.effectiveDeduction, 0);
+        assert.equal(resNeg.isExceeded, false);
+        assert.equal(resNeg.excessAmount, 0);
+
+        const resNaN = evaluateThaiEsgDeduction(NaN, 600000, 2024);
+        assert.equal(resNaN.effectiveDeduction, 0);
+      });
+
+      it('handles string numeric inputs correctly', () => {
+        const res = evaluateThaiEsgDeduction('150000', '1000000', '2024');
+        assert.equal(res.effectiveDeduction, 150000);
+        assert.equal(res.statutoryCap, 300000);
+        assert.equal(res.holdingYears, 5);
+      });
+    });
+
+    describe('SSO Dynamic Annual Ceiling Math Validation', () => {
+      it('evaluates dynamic annual ceiling across progressive tiers', () => {
+        const getYearlyCap = (ssoCapVal) => (ssoCapVal > 0 ? ssoCapVal : 875) * 12;
+        assert.equal(getYearlyCap(750), 9000);
+        assert.equal(getYearlyCap(875), 10500);
+        assert.equal(getYearlyCap(1000), 12000);
+        assert.equal(getYearlyCap(1150), 13800);
+        assert.equal(getYearlyCap(0), 10500); // fallback default to 875 * 12
+        assert.equal(getYearlyCap(undefined), 10500);
+      });
     });
   });
 });

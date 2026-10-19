@@ -1201,20 +1201,20 @@ function calculateTax() {
       }
     }
 
-    // SSO in yearly mode: total amount input in THB (statutory cap at 13,800 THB/year)
+    // SSO in yearly mode: total amount input in THB (dynamic statutory cap based on active ssoCap)
     const yearlySsoInput = document.getElementById('yearlySso');
+    const ssoCapVal = parseNum(document.getElementById('ssoCap')?.value);
     let yearlySsoVal = 0;
     if (yearlySsoInput && yearlySsoInput.value !== '') {
       yearlySsoVal = parseNum(yearlySsoInput.value);
     } else {
-      const ssoCapVal = parseNum(document.getElementById('ssoCap')?.value);
       if (ssoCapVal > 0) {
         yearlySsoVal = Math.min((yearlyIncome / 12) * 0.05, ssoCapVal) * 12;
       } else {
         yearlySsoVal = 0;
       }
     }
-    const maxYearlySso = 13800;
+    const maxYearlySso = (ssoCapVal > 0 ? ssoCapVal : 875) * 12;
     ssoDeduction = Math.min(yearlySsoVal, maxYearlySso);
 
     const warnYearlySsoEl = document.getElementById('warn-yearly-sso');
@@ -1309,16 +1309,27 @@ function calculateTax() {
     }
   }
 
-  // 3. กองทุน ThaiESG: สูงสุด 300,000 บาท หรือ 30% ของเงินได้
-  const maxThaiEsg = Math.min(300000, totalIncome > 0 ? totalIncome * 0.3 : 300000);
-  const effectiveThaiEsg = Math.min(thaiEsgDeduct, maxThaiEsg);
+  // 3. กองทุน ThaiESG: สูงสุด 300,000 บาท หรือ 30% ของเงินได้ (เงื่อนไขปี 2024+)
+  const esgEval =
+    typeof MoneyApp !== 'undefined' && MoneyApp.evaluateThaiEsgDeduction
+      ? MoneyApp.evaluateThaiEsgDeduction(thaiEsgDeduct, totalIncome, 2024)
+      : {
+          effectiveDeduction: Math.min(thaiEsgDeduct, Math.min(300000, totalIncome > 0 ? totalIncome * 0.3 : 300000)),
+          statutoryCap: 300000,
+          maxAllowed: Math.min(300000, totalIncome > 0 ? totalIncome * 0.3 : 300000),
+          isExceeded: thaiEsgDeduct > Math.min(300000, totalIncome > 0 ? totalIncome * 0.3 : 300000) && totalIncome > 0,
+          excessAmount: 0,
+          holdingYears: 5,
+        };
+  const maxThaiEsg = esgEval.maxAllowed;
+  const effectiveThaiEsg = esgEval.effectiveDeduction;
   const warnEsgEl = document.getElementById('warn-thaiesg');
   if (warnEsgEl) {
-    if (thaiEsgDeduct > maxThaiEsg && totalIncome > 0) {
+    if (esgEval.isExceeded) {
       warnEsgEl.textContent =
         LANG === 'en'
-          ? `⚠️ Capped at ${formatMoney(maxThaiEsg)} THB (max 30% of income or 300,000 THB)`
-          : `⚠️ ใช้สิทธิ์ได้สูงสุด ${formatMoney(maxThaiEsg)} บาท (ไม่เกิน 30% ของรายได้ หรือ 300,000 บาท)`;
+          ? `⚠️ Capped at ${formatMoney(maxThaiEsg)} THB (max 30% of income or ${formatMoney(esgEval.statutoryCap)} THB)`
+          : `⚠️ ใช้สิทธิ์ได้สูงสุด ${formatMoney(maxThaiEsg)} บาท (ไม่เกิน 30% ของรายได้ หรือ ${formatMoney(esgEval.statutoryCap)} บาท)`;
       warnEsgEl.style.display = 'block';
     } else {
       warnEsgEl.style.display = 'none';
@@ -1731,9 +1742,16 @@ function calculateTaxOptimizationRoom({
     }
   }
 
-  // 1. ThaiESG: up to 300k, capped at 30% of total income
-  const maxEsg = Math.min(300000, totInc > 0 ? totInc * 0.3 : 300000);
-  const usedEsg = Math.min(esg, maxEsg);
+  // 1. ThaiESG: up to 300k, capped at 30% of total income (evaluated via evaluateThaiEsgDeduction)
+  const esgEval =
+    typeof MoneyApp !== 'undefined' && MoneyApp.evaluateThaiEsgDeduction
+      ? MoneyApp.evaluateThaiEsgDeduction(esg, totInc, 2024)
+      : {
+          maxAllowed: Math.min(300000, totInc > 0 ? totInc * 0.3 : 300000),
+          effectiveDeduction: Math.min(esg, Math.min(300000, totInc > 0 ? totInc * 0.3 : 300000)),
+        };
+  const maxEsg = esgEval.maxAllowed;
+  const usedEsg = esgEval.effectiveDeduction;
   const remEsg = Math.max(0, maxEsg - usedEsg);
   const pctEsg = maxEsg > 0 ? (usedEsg / maxEsg) * 100 : 0;
 

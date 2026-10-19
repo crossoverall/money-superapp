@@ -229,6 +229,49 @@
   }
 
   /**
+   * @typedef {Object} ThaiEsgDeductionResult
+   * @property {number} effectiveDeduction - Statutory allowable deduction amount
+   * @property {number} statutoryCap - Absolute statutory fund limit (100,000 for <2024, 300,000 for >=2024)
+   * @property {number} maxAllowed - Max allowable considering 30% assessable income ceiling
+   * @property {boolean} isExceeded - True if amount exceeds statutory or income limit
+   * @property {number} excessAmount - Amount invested exceeding statutory allowance
+   * @property {number} holdingYears - Required investment holding period (8 for <2024, 5 for >=2024)
+   */
+
+  /**
+   * Evaluates Thailand ESG (ThaiESG) Fund statutory tax deduction allowance.
+   * Statutory rules:
+   * - 2024 onwards: Max 300,000 THB, capped at 30% of total assessable income, 5 years holding period.
+   * - 2023: Max 100,000 THB, capped at 30% of total assessable income, 8 years holding period.
+   *
+   * @param {number|string} amount - Invested ThaiESG amount
+   * @param {number|string} totalIncome - Total assessable income
+   * @param {number|string} [taxYear=2024] - Tax year (e.g. 2023 vs 2024+)
+   * @returns {ThaiEsgDeductionResult}
+   */
+  function evaluateThaiEsgDeduction(amount, totalIncome, taxYear) {
+    var amt = Math.max(0, Number(amount) || 0);
+    var inc = Math.max(0, Number(totalIncome) || 0);
+    var year = Number(taxYear) > 0 ? Number(taxYear) : 2024;
+
+    var statutoryCap = year < 2024 ? 100000 : 300000;
+    var holdingYears = year < 2024 ? 8 : 5;
+    var maxAllowed = Math.min(statutoryCap, inc > 0 ? inc * 0.3 : statutoryCap);
+    var effectiveDeduction = Math.min(amt, maxAllowed);
+    var isExceeded = amt > maxAllowed && inc > 0;
+    var excessAmount = isExceeded ? amt - maxAllowed : 0;
+
+    return {
+      effectiveDeduction: effectiveDeduction,
+      statutoryCap: statutoryCap,
+      maxAllowed: maxAllowed,
+      isExceeded: isExceeded,
+      excessAmount: excessAmount,
+      holdingYears: holdingYears,
+    };
+  }
+
+  /**
    * @typedef {Object} ThaiEFilingChecklistItem
    * @property {string} id - Checklist requirement identifier
    * @property {boolean} completed - True if requirement is verified
@@ -323,7 +366,8 @@
    * @property {number|string} [gpf=0] - GPF contribution
    * @property {number|string} [nsf=0] - NSF contribution
    * @property {number|string} [pensionInsurance=0] - Annuity life insurance premium
-   * @property {number|string} [thaiEsg=0] - Thailand ESG fund investment (up to 300,000 THB)
+   * @property {number|string} [thaiEsg=0] - Thailand ESG fund investment
+   * @property {number|string} [taxYear=2024] - Tax year for statutory rule evaluation (2023 vs 2024+)
    * @property {number|string} [homeLoanInterest=0] - Residential mortgage interest (up to 100,000 THB)
    * @property {number|string} [donationEdu=0] - Education / public hospital donations (2x allowance)
    * @property {number|string} [donationGeneral=0] - General charitable donations
@@ -360,6 +404,7 @@
    * @property {boolean} canInstallment - True if payable amount is >= 3,000 THB (eligible for 3-month installment)
    * @property {number} installment3Months - Monthly installment amount (3 equal payments)
    * @property {ThaiRetirementPoolResult} retirementPool - Retirement deductions pool metrics
+   * @property {ThaiEsgDeductionResult} thaiEsg - ThaiESG deduction evaluation and holding rules
    */
 
   /**
@@ -429,7 +474,9 @@
     });
     var retirementBundle = retirementPool.effectiveTotal;
 
-    var thaiEsg = Math.min(300000, Number(p.thaiEsg) || 0);
+    var taxYear = p.taxYear || 2024;
+    var thaiEsgEval = evaluateThaiEsgDeduction(p.thaiEsg, assessableTotal, taxYear);
+    var thaiEsg = thaiEsgEval.effectiveDeduction;
     var groupB = sso + combinedLifeHealth + parentHealth + retirementBundle + thaiEsg;
 
     // Group C: Real estate & mortgage interest
@@ -514,6 +561,7 @@
       canInstallment: canInstallment,
       installment3Months: installmentAmount,
       retirementPool: retirementPool,
+      thaiEsg: thaiEsgEval,
     };
   }
 
@@ -720,6 +768,7 @@
   MoneyApp.computeThaiPitTax = computeThaiPitTax;
   MoneyApp.calculateTaxBracketStepDown = calculateTaxBracketStepDown;
   MoneyApp.calculateRetirementCeilingPool = calculateRetirementCeilingPool;
+  MoneyApp.evaluateThaiEsgDeduction = evaluateThaiEsgDeduction;
   MoneyApp.evaluateEFilingPreFlightChecklist = evaluateEFilingPreFlightChecklist;
   MoneyApp.calculateThaiEFilingWorksheet = calculateThaiEFilingWorksheet;
   MoneyApp.calculateThaiDividendTaxCredit = calculateThaiDividendTaxCredit;
@@ -739,6 +788,9 @@
     }
     if (typeof global.calculateRetirementCeilingPool === 'undefined') {
       global.calculateRetirementCeilingPool = calculateRetirementCeilingPool;
+    }
+    if (typeof global.evaluateThaiEsgDeduction === 'undefined') {
+      global.evaluateThaiEsgDeduction = evaluateThaiEsgDeduction;
     }
     if (typeof global.evaluateEFilingPreFlightChecklist === 'undefined') {
       global.evaluateEFilingPreFlightChecklist = evaluateEFilingPreFlightChecklist;

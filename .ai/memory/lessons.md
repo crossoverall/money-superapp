@@ -15,6 +15,27 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-19: ThaiESG 2024–2026 Statutory Rules Calibration & Dynamic SSO Annual Ceiling (v2.5.64)
+- **Date & Context:** 2026-10-19, Phase 123 ThaiESG 2024–2026 Statutory Calibration & Dynamic SSO Ceiling (`v2.5.64`).
+- **Problem:**
+  1. The Thai Personal Income Tax (PIT) deduction engine previously capped ThaiESG investments at 100,000 THB with an 8-year holding period under obsolete 2023 ministerial regulations, failing to support the updated 2024–2026 Thailand Revenue Department statutory rules (300,000 THB cap up to 30% of assessable income with a 5-year holding period).
+  2. In the tax calculator base UI (`js/tax-calculator-base.js`), the Social Security (SSO) deduction ceiling warning in yearly mode was statically pegged or hardcoded to 13,800 THB (`1,150 * 12`), generating false-positive warning messages or allowing out-of-bounds inputs when users selected lower progressive monthly SSO contribution tiers (e.g. 750 THB/month capped at 9,000 THB/year, or 875 THB/month capped at 10,500 THB/year).
+- **Root Cause:**
+  - Static deduction limits in tax calculation utilities that lacked parameterization for evolving Thai tax statutes (2024–2026 ThaiESG revision).
+  - Hardcoded maximum threshold checks in the UI layer decoupled from the selected SSO monthly progressive tier.
+- **Solution & Rule:**
+  1. **Dual-Statutory ThaiESG Engine (`MoneyApp.evaluateThaiEsgDeduction` in `js/engines/thai-pit.js`):**
+     - Parameterized `evaluateThaiEsgDeduction(amount, totalIncome, taxYear = 2024)`.
+     - For `taxYear >= 2024`: Statutory cap is 300,000 THB, limited to min(300,000, 30% of total income), requiring a 5-year holding period.
+     - For legacy `taxYear < 2024`: Statutory cap is 100,000 THB, limited to min(100,000, 30% of total income), requiring an 8-year holding period.
+     - Returns `{ effectiveDeduction, statutoryCap, maxAllowed, isExceeded, excessAmount, holdingYears }` and integrates into e-filing worksheets.
+  2. **Dynamic Annual SSO Ceiling Formula:**
+     - Computed dynamic annual ceiling using `const maxYearlySso = (ssoCapVal > 0 ? ssoCapVal : 875) * 12;`.
+     - Validates yearly deductions dynamically against the active tier (e.g., 9,000 THB for 750, 10,500 THB for 875, 12,000 THB for 1,000, and 13,800 THB for 1,150), preventing false-positive or missed warning states.
+  3. **Quality Gates & Smoke Test:**
+     - Full mathematical verification and type contract test coverage added in `tests/financial-math.test.mjs` and `tests/type-contracts.test.mjs`.
+     - All 685 unit and integration tests passing across 186 test suites; 0 Biome linter errors.
+
 ### 2026-10-19: Lighthouse CI Quality Gate & Automated PWA Performance Checks (v2.5.61)
 - **Date & Context:** 2026-10-19, Phase 118 Lighthouse CI & PWA Quality Gate (`v2.5.61`).
 - **Problem:**

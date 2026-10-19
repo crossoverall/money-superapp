@@ -169,6 +169,18 @@ describe('Pillar 6 Type Contracts Verification Suite (Core Engines Batch 1)', ()
       assert.strictEqual(typeof res.canInstallment, 'boolean');
       assert.strictEqual(typeof res.installment3Months, 'number');
       assert.ok(res.retirementPool && typeof res.retirementPool === 'object');
+      assert.ok(res.thaiEsg && typeof res.thaiEsg === 'object');
+    });
+
+    it('evaluateThaiEsgDeduction conforms to ThaiEsgDeductionResult schema', () => {
+      const res = MoneyApp.evaluateThaiEsgDeduction(150000, 500000, 2024);
+      assert.ok(res && typeof res === 'object');
+      assert.strictEqual(typeof res.effectiveDeduction, 'number');
+      assert.strictEqual(typeof res.statutoryCap, 'number');
+      assert.strictEqual(typeof res.maxAllowed, 'number');
+      assert.strictEqual(typeof res.isExceeded, 'boolean');
+      assert.strictEqual(typeof res.excessAmount, 'number');
+      assert.strictEqual(typeof res.holdingYears, 'number');
     });
 
     it('calculateThaiDividendTaxCredit conforms to ThaiDividendTaxCreditResult schema', () => {
