@@ -8,15 +8,52 @@
 
 ((global) => {
   /**
+   * @typedef {Object} TargetDateGlidepathSplit
+   * @property {number} core - Equities percentage allocation (0-100)
+   * @property {number} ballast - Fixed income & bonds percentage allocation (0-100)
+   * @property {number} satellite - Gold & alternative assets percentage allocation (0-100)
+   */
+
+  /**
+   * @typedef {Object} TargetDateAssetBreakdown
+   * @property {string} coreDescriptionTh - Thai asset description for core equities
+   * @property {string} coreDescriptionEn - English asset description for core equities
+   * @property {string} ballastDescriptionTh - Thai asset description for ballast fixed income
+   * @property {string} ballastDescriptionEn - English asset description for ballast fixed income
+   * @property {string} satelliteDescriptionTh - Thai asset description for satellite assets
+   * @property {string} satelliteDescriptionEn - English asset description for satellite assets
+   */
+
+  /**
+   * @typedef {Object} TargetDateGlidepathParams
+   * @property {number|string} [currentAge=30] - Investor's current age
+   * @property {number|string} [targetRetirementAge=60] - Target retirement age
+   * @property {number|string} [targetYear] - Explicit target retirement year
+   * @property {number|string} [currentYear] - Override current reference year
+   * @property {'conservative'|'moderate'|'aggressive'} [riskTolerance='moderate'] - Investor risk profile
+   */
+
+  /**
+   * @typedef {Object} TargetDateGlidepathResult
+   * @property {number} currentAge - Evaluated investor age
+   * @property {number} targetRetirementAge - Evaluated target retirement age
+   * @property {number} yearsToRetire - Net investment horizon years remaining
+   * @property {number} targetYear - Computed retirement calendar year
+   * @property {'conservative'|'moderate'|'aggressive'} riskTolerance - Evaluated risk tolerance
+   * @property {TargetDateGlidepathSplit} split - Recommended percentage allocation split
+   * @property {'early_accumulation'|'mid_transition'|'pre_retirement'|'distribution'} phaseKey - Lifecycle phase
+   * @property {string} phaseNameTh - Thai lifecycle phase title
+   * @property {string} phaseNameEn - English lifecycle phase title
+   * @property {string} adviceTh - Thai strategic portfolio guidance
+   * @property {string} adviceEn - English strategic portfolio guidance
+   * @property {TargetDateAssetBreakdown} assetBreakdown - Descriptive asset classes
+   */
+
+  /**
    * Target Date Fund (TDF) Glidepath Allocation Engine
    *
-   * @param {Object} params
-   * @param {number} [params.currentAge=30]
-   * @param {number} [params.targetRetirementAge=60]
-   * @param {number} [params.targetYear]
-   * @param {number} [params.currentYear]
-   * @param {string} [params.riskTolerance='moderate'] 'conservative' | 'moderate' | 'aggressive'
-   * @returns {Object} Target allocation split, phase narrative, and asset class descriptions
+   * @param {TargetDateGlidepathParams} [params]
+   * @returns {TargetDateGlidepathResult} Target allocation split, phase narrative, and asset class descriptions
    */
   function calculateTargetDateGlidepath(params) {
     if (!params) params = {};

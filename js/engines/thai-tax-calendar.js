@@ -98,6 +98,55 @@
     },
   ];
 
+  /**
+   * @typedef {Object} ThaiTaxDeadlineMilestone
+   * @property {string} id - Milestone identifier
+   * @property {string} titleTh - Thai title
+   * @property {string} titleEn - English title
+   * @property {string} descTh - Thai description
+   * @property {string} descEn - English description
+   * @property {string} targetDateTh - Thai target date display text
+   * @property {string} targetDateEn - English target date display text
+   * @property {number} month - Calendar month (1-12)
+   * @property {number} day - Calendar day of month (1-31)
+   * @property {string} audienceTh - Thai target audience explanation
+   * @property {string} audienceEn - English target audience explanation
+   * @property {string} badgeTh - Thai badge label
+   * @property {string} badgeEn - English badge label
+   */
+
+  /**
+   * @typedef {Object} ThaiTaxDeadlineEvent
+   * @property {string} id - Deadline identifier
+   * @property {string} titleTh - Thai title
+   * @property {string} titleEn - English title
+   * @property {string} descTh - Thai description
+   * @property {string} descEn - English description
+   * @property {string} targetDateTh - Thai target date display string
+   * @property {string} targetDateEn - English target date display string
+   * @property {string} audienceTh - Thai target audience description
+   * @property {string} audienceEn - English target audience description
+   * @property {string} badgeTh - Thai category badge
+   * @property {string} badgeEn - English category badge
+   * @property {number} targetYear - Statutory tax year or target calendar year
+   * @property {Date} targetDate - Computed deadline Date object
+   * @property {number} daysRemaining - Days remaining until statutory deadline
+   * @property {boolean} isPassedThisYear - True if deadline in current calendar year has already elapsed
+   */
+
+  /**
+   * @typedef {Object} ThaiTaxDeadlinesResult
+   * @property {Date} referenceDate - Reference Date used for countdown calculations
+   * @property {ThaiTaxDeadlineEvent} nextDeadline - Nearest upcoming statutory tax deadline
+   * @property {Array<ThaiTaxDeadlineEvent>} deadlines - Chronologically ordered tax deadlines
+   */
+
+  /**
+   * Calculates Thai Statutory Tax Deadlines, remaining days countdown, and compliance milestones.
+   *
+   * @param {Date|string|number} [refDate] - Reference date (defaults to current date/time)
+   * @returns {ThaiTaxDeadlinesResult} Computed deadlines and nearest milestone
+   */
   function calculateThaiTaxDeadlines(refDate) {
     var current = refDate ? new Date(refDate) : new Date();
     var currentYear = current.getFullYear();

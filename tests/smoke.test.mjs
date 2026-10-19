@@ -1823,5 +1823,45 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(rebJs.includes('resetBtn:'), 'rebalance.js must define resetBtn');
       assert.ok(taxBaseJs.includes('lblPool500kTitle:'), 'tax-calculator-base.js must define lblPool500kTitle');
     });
+
+    it('verifies Phase 106 JSDoc Type Annotations & Type Contracts for Core Engines (Batch 1)', () => {
+      const jsconfigPath = path.join(ROOT_DIR, 'jsconfig.json');
+      assert.ok(fs.existsSync(jsconfigPath), 'jsconfig.json must exist in project root');
+      const jsconfig = JSON.parse(fs.readFileSync(jsconfigPath, 'utf8'));
+      assert.strictEqual(jsconfig.compilerOptions?.checkJs, true, 'jsconfig.json must enable checkJs');
+      assert.ok(jsconfig.include?.includes('js/engines/**/*'), 'jsconfig.json include list must cover js/engines/**/*');
+
+      const typeContractsTestPath = path.join(ROOT_DIR, 'tests/type-contracts.test.mjs');
+      assert.ok(fs.existsSync(typeContractsTestPath), 'tests/type-contracts.test.mjs must exist');
+
+      // Verify Batch 1 engines declare JSDoc typedef contracts
+      const batch1Engines = [
+        {
+          file: 'js/engines/thai-pit.js',
+          types: ['ThaiPITBracketStepDownResult', 'ThaiRetirementPoolResult', 'ThaiEFilingWorksheetResult'],
+        },
+        { file: 'js/engines/thai-tax-calendar.js', types: ['ThaiTaxDeadlinesResult', 'ThaiTaxDeadlineEvent'] },
+        { file: 'js/engines/insurance.js', types: ['InsuranceAdequacyResult', 'TermLifePremiumResult'] },
+        { file: 'js/engines/gold.js', types: ['ThaiGoldMetricsResult', 'ThaiGoldParams'] },
+        { file: 'js/engines/foreign-tax.js', types: ['ForeignRepatriationResult', 'ForeignRepatriationParams'] },
+        {
+          file: 'js/engines/inheritance-tax.js',
+          types: ['ThaiInheritanceAndGiftTaxResult', 'ThaiInheritanceAndGiftTaxParams'],
+        },
+        { file: 'js/engines/glidepath.js', types: ['TargetDateGlidepathResult', 'TargetDateGlidepathParams'] },
+      ];
+
+      for (const item of batch1Engines) {
+        const filePath = path.join(ROOT_DIR, item.file);
+        assert.ok(fs.existsSync(filePath), `${item.file} must exist`);
+        const content = fs.readFileSync(filePath, 'utf8');
+        for (const typeName of item.types) {
+          assert.ok(
+            content.includes(`@typedef {Object} ${typeName}`),
+            `${item.file} must declare @typedef {Object} ${typeName}`,
+          );
+        }
+      }
+    });
   });
 });

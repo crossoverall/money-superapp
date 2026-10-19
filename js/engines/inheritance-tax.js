@@ -20,17 +20,49 @@
   };
 
   /**
+   * @typedef {Object} ThaiInheritanceAndGiftTaxParams
+   * @property {number|string} [estateValue=0] - Total legacy asset value (THB)
+   * @property {'spouse'|'ascendant_descendant'|'other'} [heirRelationship='ascendant_descendant'] - Heir relationship to testator
+   * @property {number|string} [numberOfHeirs=1] - Number of equal heirs sharing the estate
+   * @property {number|string} [annualGiftValue=0] - Annual gift amount during lifetime (THB)
+   * @property {'parent_to_child_realestate'|'family_movable'|'other_customary'} [giftType='family_movable'] - Gift classification
+   * @property {number|string} [giftingYears=3] - Planned years for phased lifetime gifting
+   */
+
+  /**
+   * @typedef {Object} ThaiInheritanceAndGiftTaxResult
+   * @property {number} estateValue - Total legacy asset value (THB)
+   * @property {'spouse'|'ascendant_descendant'|'other'} heirRelationship - Heir relationship category
+   * @property {number} numberOfHeirs - Number of equal heirs
+   * @property {number} portionPerHeir - Net estate portion allocated per heir (THB)
+   * @property {number} statutoryExemptionPerHeir - Statutory exemption cap per heir (100M THB)
+   * @property {number} exemptionPerHeir - Effective exemption applied per heir (THB)
+   * @property {number} taxablePerHeir - Net taxable legacy per heir (THB)
+   * @property {number} taxRate - Statutory inheritance tax rate applied (0%, 5%, or 10%)
+   * @property {number} taxPerHeir - Inheritance tax payable by each heir (THB)
+   * @property {number} totalInheritanceTax - Total combined inheritance tax liability (THB)
+   * @property {number} netLegacyReceived - Net estate value received by all heirs after tax (THB)
+   * @property {number} annualGiftValue - Declared annual gift value (THB)
+   * @property {'parent_to_child_realestate'|'family_movable'|'other_customary'} giftType - Gift type category
+   * @property {number} annualGiftExemption - Annual statutory gift tax exemption cap (10M or 20M THB)
+   * @property {number} taxableAnnualGift - Taxable annual gift amount exceeding statutory exemption (THB)
+   * @property {number} annualGiftTaxRate - Section 48(6) flat gift tax rate (5%)
+   * @property {number} annualGiftTax - Annual gift tax payable (THB)
+   * @property {number} netAnnualGift - Net gift proceeds received by donee (THB)
+   * @property {number} giftingYears - Planned horizon for phased annual lifetime transfers
+   * @property {number} plannedLifetimeGifts - Total cumulative gifts transferred over planning horizon (THB)
+   * @property {number} residualEstateForInheritance - Remaining estate transferred via bequest (THB)
+   * @property {number} strategyTaxOnResidual - Inheritance tax due on remaining residual estate (THB)
+   * @property {number} strategyTaxSavings - Total statutory tax saved by executing phased gifting plan (THB)
+   * @property {number} strategyTaxSavingsPct - Percentage tax reduction achieved through strategy (%)
+   */
+
+  /**
    * Calculates Thai Inheritance Tax (พ.ร.บ. ภาษีการรับมรดก พ.ศ. 2558)
    * and Annual Gift Tax (ประมวลรัษฎากร มาตรา 42(26)-(28) & 48(6)).
    *
-   * @param {Object} params
-   * @param {number} [params.estateValue=0] - Total legacy asset value (THB)
-   * @param {'spouse'|'ascendant_descendant'|'other'} [params.heirRelationship='ascendant_descendant'] - Heir relationship to testator
-   * @param {number} [params.numberOfHeirs=1] - Number of equal heirs sharing the estate
-   * @param {number} [params.annualGiftValue=0] - Annual gift amount during lifetime (THB)
-   * @param {'parent_to_child_realestate'|'family_movable'|'other_customary'} [params.giftType='family_movable'] - Gift classification
-   * @param {number} [params.giftingYears=3] - Planned years for phased lifetime gifting
-   * @returns {Object} Comprehensive inheritance tax, gift tax, and phased gifting strategy optimization
+   * @param {ThaiInheritanceAndGiftTaxParams} [params]
+   * @returns {ThaiInheritanceAndGiftTaxResult} Comprehensive inheritance tax, gift tax, and phased gifting strategy optimization
    */
   function calculateThaiInheritanceAndGiftTax(params) {
     params = params || {};

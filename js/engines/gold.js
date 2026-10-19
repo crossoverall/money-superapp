@@ -21,18 +21,69 @@
   };
 
   /**
+   * @typedef {Object} ThaiGoldTrancheInput
+   * @property {string} [id] - Tranche lot unique identifier
+   * @property {string} [date] - Purchase date string
+   * @property {'bar'|'jewelry'} [goldType='bar'] - Gold product type
+   * @property {'baht'|'salung'|'gram'} [weightUnit='baht'] - Input weight unit
+   * @property {number|string} [weight=0] - Lot weight quantity
+   * @property {number|string} [costPerBaht=0] - Purchase price per baht weight (THB)
+   * @property {number|string} [blockFee=0] - Block or craftsmanship fee (THB)
+   */
+
+  /**
+   * @typedef {Object} ThaiGoldTrancheProcessed
+   * @property {string} id - Lot ID
+   * @property {string} date - Purchase date
+   * @property {'bar'|'jewelry'} goldType - Standardized product type
+   * @property {number} weightBaht - Weight normalized to Thai baht
+   * @property {number} weightGrams - Weight normalized to grams
+   * @property {number} costPerBaht - Cost per baht weight
+   * @property {number} blockFee - Block fee
+   * @property {number} totalCost - Total cost for this tranche
+   */
+
+  /**
+   * @typedef {Object} ThaiGoldParams
+   * @property {'bar'|'jewelry'} [goldType='bar'] - Gold product type ('bar' 15.244g or 'jewelry' 15.16g)
+   * @property {'baht'|'salung'|'gram'} [weightUnit='baht'] - Input weight unit
+   * @property {number|string} [weight=0] - Input weight quantity
+   * @property {number|string} [costPerBaht=0] - Purchase price per baht weight (THB)
+   * @property {number|string} [blockFee=0] - Block fee (ค่าบล็อก) or craft fee (ค่ากำเหน็จ) (THB)
+   * @property {number|string} [currentMarketPrice=0] - Current selling price of Gold Traders Assoc (THB/baht)
+   * @property {number|string} [currentBuybackPrice=0] - Current buyback price of Gold Traders Assoc (THB/baht)
+   * @property {Array<ThaiGoldTrancheInput>} [tranches=[]] - Optional array of multiple DCA purchase lots
+   */
+
+  /**
+   * @typedef {Object} ThaiGoldMetricsResult
+   * @property {'bar'|'jewelry'} goldType - Active product type
+   * @property {'baht'|'salung'|'gram'} weightUnit - Input unit
+   * @property {number} weightBaht - Total holdings weight in Thai Baht
+   * @property {number} weightGrams - Total holdings weight in Grams
+   * @property {number} weightSalung - Total holdings weight in Salung
+   * @property {number} weightTroyOz - Total holdings weight in Troy Ounces
+   * @property {number} gramsPerBaht - Gram conversion factor applied (15.244 or 15.16)
+   * @property {number} totalCost - Total acquisition cost basis in THB
+   * @property {number} effectiveCostPerBaht - Average weighted break-even acquisition cost per Baht
+   * @property {number} currentMarketPrice - GTA selling benchmark price (THB/baht)
+   * @property {number} currentBuybackPrice - Effective GTA buyback price (THB/baht)
+   * @property {number} marketValue - Portfolio market value at selling price (THB)
+   * @property {number} liquidationValue - Immediate cash-in value at buyback price (THB)
+   * @property {number} unrealizedGainLoss - Unrealized P/L vs market value (THB)
+   * @property {number} unrealizedGainLossPct - Unrealized P/L percentage (%)
+   * @property {number} liquidationGainLoss - Net liquidation P/L at buyback price (THB)
+   * @property {number} liquidationGainLossPct - Net liquidation P/L percentage (%)
+   * @property {number} breakEvenMarketPrice - Required market price to break even
+   * @property {number} breakEvenBuybackPrice - Required buyback price to break even
+   * @property {Array<ThaiGoldTrancheProcessed>} processedTranches - Itemized lot calculations
+   */
+
+  /**
    * Thai Gold Bar & Jewelry DCA P/L & Baht Weight Calculator
    *
-   * @param {Object} params
-   * @param {'bar'|'jewelry'} [params.goldType='bar'] - Gold product type
-   * @param {'baht'|'salung'|'gram'} [params.weightUnit='baht'] - Input weight unit
-   * @param {number} [params.weight=0] - Input weight quantity
-   * @param {number} [params.costPerBaht=0] - Purchase price per baht weight (THB)
-   * @param {number} [params.blockFee=0] - Block fee (ค่าบล็อก) or craft fee (ค่ากำเหน็จ) (THB)
-   * @param {number} [params.currentMarketPrice=0] - Current selling price of Gold Traders Assoc (THB/baht)
-   * @param {number} [params.currentBuybackPrice=0] - Current buyback price of Gold Traders Assoc (THB/baht)
-   * @param {Array<Object>} [params.tranches=[]] - Optional array of multiple DCA purchase lots
-   * @returns {Object} Comprehensive weight conversions, cost basis, valuation, and P/L
+   * @param {ThaiGoldParams} [params]
+   * @returns {ThaiGoldMetricsResult} Comprehensive weight conversions, cost basis, valuation, and P/L
    */
   function calculateThaiGoldMetrics(params) {
     params = params || {};

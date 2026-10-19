@@ -41,6 +41,11 @@
     { min: 5000000, max: Infinity, rate: 0.35 },
   ];
 
+  /**
+   * Computes statutory Thai Personal Income Tax using progressive brackets.
+   * @param {number|string} netIncome - Annual net taxable income in THB
+   * @returns {number} Calculated PIT tax amount in THB (rounded to nearest integer)
+   */
   function computeThaiPitTax(netIncome) {
     var remaining = Math.max(0, parseNum(netIncome));
     var totalTax = 0;
@@ -58,12 +63,31 @@
   }
 
   /**
+   * @typedef {Object} ThaiPITBracketStepDownResult
+   * @property {number} netTaxableIncome - Annual net taxable income in THB
+   * @property {number} currentRate - Active marginal tax rate (e.g. 0.20)
+   * @property {number} currentRatePct - Active marginal tax rate percentage (e.g. 20)
+   * @property {number} currentTierIndex - Index of current tier in THAI_PIT_TIERS (0-7)
+   * @property {boolean} isTaxFree - True if in the 0% tax-free tier (<= 150,000 THB)
+   * @property {number} lowerThreshold - Lower income boundary of current tier
+   * @property {number} nextLowerRate - Marginal rate of next lower tier
+   * @property {number} nextLowerRatePct - Percentage marginal rate of next lower tier
+   * @property {number} amountToStepDown - Additional deduction needed to step down into lower bracket
+   * @property {number} taxSavedAtStepDown - Tax saved at the marginal rate by stepping down
+   * @property {number} stepDownRoiPct - Immediate guaranteed tax savings ROI percentage
+   * @property {number} amountToTaxFree - Additional deduction needed to reach 0% bracket
+   * @property {number} taxSavedToTaxFree - Total tax saved if reduced to 0% bracket
+   * @property {number} progressInCurrentTierPct - Percentage progress through current tier span
+   * @property {number} totalCurrentTax - Total PIT tax liability under current income
+   */
+
+  /**
    * Computes Thai Personal Income Tax Bracket Boundary Headroom & Step-Down Targets.
    * Calculates the exact deduction needed to drop into the next lower tax bracket,
    * the immediate guaranteed tax return ROI, and distance to reach the tax-free 0% threshold.
    *
-   * @param {number} netTaxableIncome - Annual net taxable income after legal expenses and deductions
-   * @returns {Object} Tax bracket boundary metrics, step-down targets, and guaranteed savings
+   * @param {number|string} netTaxableIncome - Annual net taxable income after legal expenses and deductions
+   * @returns {ThaiPITBracketStepDownResult} Tax bracket boundary metrics, step-down targets, and guaranteed savings
    */
   function calculateTaxBracketStepDown(netTaxableIncome) {
     var net = Math.max(0, parseNum(netTaxableIncome));
@@ -131,8 +155,38 @@
   }
 
   /**
+   * @typedef {Object} ThaiRetirementPoolParams
+   * @property {number|string} [pvd=0] - Provident Fund contribution (THB)
+   * @property {number|string} [rmf=0] - Retirement Mutual Fund investment (THB)
+   * @property {number|string} [ssf=0] - Super Savings Fund investment (THB)
+   * @property {number|string} [gpf=0] - Government Pension Fund contribution (THB)
+   * @property {number|string} [nsf=0] - National Savings Fund contribution (THB)
+   * @property {number|string} [pensionInsurance=0] - Annuity Life Insurance premium (THB)
+   */
+
+  /**
+   * @typedef {Object} ThaiRetirementPoolResult
+   * @property {number} pvd - Sanitized PVD amount
+   * @property {number} rmf - Sanitized RMF amount
+   * @property {number} ssf - Sanitized SSF amount
+   * @property {number} gpf - Sanitized GPF amount
+   * @property {number} nsf - Sanitized NSF amount
+   * @property {number} pensionInsurance - Sanitized annuity insurance amount
+   * @property {number} totalRaw - Total uncapped retirement investment sum
+   * @property {number} effectiveTotal - Statutory effective deduction capped at 500,000 THB
+   * @property {number} excess - Disallowed amount exceeding statutory 500,000 THB ceiling
+   * @property {number} headroom - Remaining tax allowance capacity before reaching 500,000 THB
+   * @property {number} utilizationPct - Percentage utilization of 500,000 THB ceiling
+   * @property {'safe'|'warning'|'exceeded'} status - Compliance status
+   * @property {boolean} isExceeded - True if total raw contributions exceed 500,000 THB
+   */
+
+  /**
    * Statutory 500k Retirement Deductions Pool Warning Engine (Section 47 Thai Revenue Code).
    * Combines PVD (Provident Fund), RMF, SSF, GPF, NSF, and Annuity Life Insurance under the statutory 500,000 THB ceiling.
+   *
+   * @param {ThaiRetirementPoolParams} [params]
+   * @returns {ThaiRetirementPoolResult}
    */
   function calculateRetirementCeilingPool(params) {
     var p = params || {};
@@ -175,8 +229,40 @@
   }
 
   /**
+   * @typedef {Object} ThaiEFilingChecklistItem
+   * @property {string} id - Checklist requirement identifier
+   * @property {boolean} completed - True if requirement is verified
+   * @property {boolean} [isExceeded] - Excess flag for statutory pools
+   */
+
+  /**
+   * @typedef {Object} ThaiEFilingPreFlightChecklistParams
+   * @property {Object} [checks]
+   * @property {boolean} [checks.doc50Tawi]
+   * @property {boolean} [checks.pool500k]
+   * @property {boolean} [checks.thaiEsg]
+   * @property {boolean} [checks.consentRd]
+   * @property {boolean} [checks.promptPayCitizen]
+   * @property {Object} [retirementPool]
+   * @property {boolean} [retirementPool.isExceeded]
+   */
+
+  /**
+   * @typedef {Object} ThaiEFilingPreFlightChecklistResult
+   * @property {Array<ThaiEFilingChecklistItem>} checklist - Pre-flight milestone checks
+   * @property {number} completedCount - Number of satisfied requirements
+   * @property {number} totalCount - Total number of requirements
+   * @property {number} completionPct - Percentage of checklist completed
+   * @property {boolean} isReady - True if 100% compliant and ready for filing
+   * @property {boolean} hasRetirementExcess - True if retirement pool ceiling is violated
+   */
+
+  /**
    * Statutory ภ.ง.ด. 90/91 e-Filing Pre-Flight Checklist Evaluator.
    * Evaluates 5 statutory compliance milestones before filing on efiling.rd.go.th.
+   *
+   * @param {ThaiEFilingPreFlightChecklistParams} [params]
+   * @returns {ThaiEFilingPreFlightChecklistResult}
    */
   function evaluateEFilingPreFlightChecklist(params) {
     var p = params || {};
@@ -214,10 +300,76 @@
   }
 
   /**
+   * @typedef {Object} ThaiEFilingWorksheetParams
+   * @property {number|string} [salary=0] - Monthly salary (Section 40(1))
+   * @property {number|string} [bonus=0] - Annual bonus (Section 40(1))
+   * @property {number|string} [yearlyIncome=0] - Other annual employment income (Section 40(1))
+   * @property {number|string} [freelance402=0] - Freelance/service income (Section 40(2))
+   * @property {number|string} [dividend404b=0] - Domestic stock dividends (Section 40(4)(b))
+   * @property {number} [dividendCitRate=0.2] - Corporate income tax rate of dividend paying company
+   * @property {boolean} [applyDividendCredit=false] - Whether to include dividends and claim tax credit
+   * @property {number|string} [spouseDeduction=0] - Non-earning spouse deduction (up to 60,000 THB)
+   * @property {number|string} [childrenCount=0] - Number of qualifying children (30,000 THB each)
+   * @property {number|string} [parentCount=0] - Number of qualifying elderly parents (30,000 THB each)
+   * @property {number|string} [disabledCount=0] - Number of disabled dependents (60,000 THB each)
+   * @property {number|string} [antenatalDeduction=0] - Antenatal and childbirth care expense (up to 60,000 THB)
+   * @property {number|string} [sso=0] - Social Security contributions (up to 10,500 THB)
+   * @property {number|string} [lifeInsurance=0] - General life insurance premium (up to 100,000 THB)
+   * @property {number|string} [healthInsurance=0] - Health insurance premium (up to 25,000 THB)
+   * @property {number|string} [parentHealthInsurance=0] - Parents' health insurance premium (up to 15,000 THB)
+   * @property {number|string} [rmf=0] - RMF investment
+   * @property {number|string} [ssf=0] - SSF investment
+   * @property {number|string} [pvd=0] - PVD contribution
+   * @property {number|string} [gpf=0] - GPF contribution
+   * @property {number|string} [nsf=0] - NSF contribution
+   * @property {number|string} [pensionInsurance=0] - Annuity life insurance premium
+   * @property {number|string} [thaiEsg=0] - Thailand ESG fund investment (up to 300,000 THB)
+   * @property {number|string} [homeLoanInterest=0] - Residential mortgage interest (up to 100,000 THB)
+   * @property {number|string} [donationEdu=0] - Education / public hospital donations (2x allowance)
+   * @property {number|string} [donationGeneral=0] - General charitable donations
+   * @property {number|string} [taxWithheld50Tawi=0] - Total withholding tax deducted at source (50 Tawi)
+   */
+
+  /**
+   * @typedef {Object} ThaiEFilingWorksheetDeductions
+   * @property {number} groupA - Personal & Family allowances total
+   * @property {number} groupB - Insurance & Retirement savings total
+   * @property {number} groupC - Real estate & mortgage interest total
+   * @property {number} groupD - Allowable charitable donations total
+   * @property {number} totalDeductions - Sum of all statutory deductions
+   */
+
+  /**
+   * @typedef {Object} ThaiEFilingWorksheetResult
+   * @property {number} income401 - Total employment income (Section 40(1))
+   * @property {number} income402 - Total freelance income (Section 40(2))
+   * @property {number} income404b - Total dividend income (Section 40(4)(b))
+   * @property {number} dividendCredit - Computed Section 47 ทวิ dividend tax credit
+   * @property {number} totalAssessableIncome - Gross assessable income
+   * @property {number} statutoryExpenseDeduction - 50% standard expense deduction (max 100,000 THB)
+   * @property {number} incomeAfterExpense - Income after statutory expenses
+   * @property {ThaiEFilingWorksheetDeductions} deductions - Deductions breakdown by groups A-D
+   * @property {number} netTaxableIncome - Final net taxable income
+   * @property {number} taxBracketPct - Top marginal tax rate reached (%)
+   * @property {number} grossCalculatedTax - Progressive tax before credits
+   * @property {number} taxAfterDividendCredit - Tax liability after dividend credit offset
+   * @property {number} taxWithheld50Tawi - Tax already withheld at source (50 Tawi)
+   * @property {number} netTaxDueOrRefund - Positive = refund receivable, negative = additional tax payable
+   * @property {boolean} isRefund - True if taxpayer is owed a refund from Revenue Department
+   * @property {boolean} isPayable - True if additional tax payment is required
+   * @property {boolean} canInstallment - True if payable amount is >= 3,000 THB (eligible for 3-month installment)
+   * @property {number} installment3Months - Monthly installment amount (3 equal payments)
+   * @property {ThaiRetirementPoolResult} retirementPool - Retirement deductions pool metrics
+   */
+
+  /**
    * Thai Revenue Department (ภ.ง.ด. 90/91) e-Filing Form Pre-fill Worksheet Engine.
    * Maps taxable incomes (40(1), 40(2), 40(4)(b)), statutory standard 50% expenses,
    * 4-group tax deductions, progressive PIT tax brackets, dividend tax credit,
    * and 50 Tawi withholding into statutory RD online e-filing boxes.
+   *
+   * @param {ThaiEFilingWorksheetParams} [params]
+   * @returns {ThaiEFilingWorksheetResult}
    */
   function calculateThaiEFilingWorksheet(params) {
     var p = params || {};
@@ -366,14 +518,69 @@
   }
 
   /**
+   * @typedef {Object} ThaiDividendLotInput
+   * @property {string} [name=''] - Stock symbol or company name
+   * @property {number|string} [amount] - Cash dividend amount in THB
+   * @property {number|string} [dividend] - Alias for amount
+   * @property {number|string} [corporateTaxRate=0.20] - Corporate tax rate paid by company (CIT)
+   * @property {number|string} [withholdingRate=0.10] - Withholding tax rate at source (default 10%)
+   */
+
+  /**
+   * @typedef {Object} ThaiDividendLotDetail
+   * @property {string} name - Stock name/symbol
+   * @property {number} amount - Net cash dividend received
+   * @property {number} corporateTaxRate - CIT rate paid by issuing company
+   * @property {number} creditFactor - Tax credit multiplier (t / (1 - t))
+   * @property {number} taxCredit - Section 47 ทวิ dividend tax credit amount
+   * @property {number} grossedUp - Grossed-up dividend income (dividend + credit)
+   * @property {number} withholdingTax - Withholding tax deducted at source
+   */
+
+  /**
+   * @typedef {Object} ThaiDividendScenarioResult
+   * @property {'final_tax'|'claim_credit'} method - Filing scenario method
+   * @property {number} [combinedNetIncome] - Taxable income including grossed-up dividends
+   * @property {number} [combinedTaxLiability] - PIT tax on combined income
+   * @property {number} [regularTaxLiability] - PIT tax on ordinary income excluding dividends
+   * @property {number} regularWithheld - Tax withheld on ordinary income
+   * @property {number} dividendWithheld - Withholding tax deducted from dividends
+   * @property {number} dividendCreditClaimed - Total dividend tax credits claimed
+   * @property {number} [totalCredits] - Total tax credits (regular withheld + dividend withheld + credit)
+   * @property {number} totalTaxCost - Effective net tax liability for scenario
+   * @property {number} netPayableOrRefund - Net cash due or refund
+   */
+
+  /**
+   * @typedef {Object} ThaiDividendTaxCreditParams
+   * @property {number|string|Array<ThaiDividendLotInput>} [dividends] - Cash dividend amount or array of dividend lots
+   * @property {number|string} [dividendAmount] - Alias for dividends amount
+   * @property {number|string} [corporateTaxRate=0.20] - Default corporate income tax rate (CIT, typically 0.20)
+   * @property {number|string} [otherTaxableNetIncome=0] - Taxpayer's regular net taxable income before dividends
+   * @property {number|string} [regularTaxWithheld=0] - Regular tax already withheld at source (50 Tawi)
+   */
+
+  /**
+   * @typedef {Object} ThaiDividendTaxCreditResult
+   * @property {number} totalDividends - Total net cash dividends
+   * @property {number} totalDividendWht - Total 10% withholding tax deducted at source
+   * @property {number} totalTaxCredit - Total Section 47 ทวิ dividend tax credit
+   * @property {number} totalGrossedUp - Total grossed-up dividend income
+   * @property {number} otherTaxableNetIncome - Domestic taxable net income before dividends
+   * @property {number} combinedNetIncome - Combined taxable income under claim credit method
+   * @property {ThaiDividendScenarioResult} scenarioFinalTax - Scenario A: 10% Final Tax without filing
+   * @property {ThaiDividendScenarioResult} scenarioClaimCredit - Scenario B: Claim tax credit in ภ.ง.ด. 90
+   * @property {'claim_credit'|'final_tax'|'equivalent'} optimalChoice - Statutorily optimal filing choice
+   * @property {number} netTaxAdvantage - Net monetary advantage of optimal choice over alternative
+   * @property {boolean} isClaimAdvantageous - True if claiming credit yields higher refund or lower tax
+   * @property {Array<ThaiDividendLotDetail>} lotsDetail - Itemized breakdown per dividend lot
+   */
+
+  /**
    * Calculates Thai Stock Dividend Tax Credit (เครดิตภาษีเงินปันผล มาตรา 47 ทวิ)
    *
-   * @param {Object} params
-   * @param {number|Array<Object>} [params.dividends] - Cash dividend amount or array of dividend lots
-   * @param {number} [params.corporateTaxRate=0.20] - Default corporate income tax rate (CIT, typically 0.20)
-   * @param {number} [params.otherTaxableNetIncome=0] - Taxpayer's regular net taxable income before dividends
-   * @param {number} [params.regularTaxWithheld=0] - Regular tax already withheld at source (50 Tawi)
-   * @returns {Object} Dividend tax credit metrics, scenarios, and optimal filing recommendation
+   * @param {ThaiDividendTaxCreditParams} [params]
+   * @returns {ThaiDividendTaxCreditResult} Dividend tax credit metrics, scenarios, and optimal filing recommendation
    */
   function calculateThaiDividendTaxCredit(params) {
     params = params || {};

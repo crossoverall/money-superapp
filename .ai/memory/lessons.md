@@ -15,6 +15,20 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-19: Zero-Build JSDoc Type Annotations & Automated Type Contract Test Suite (v2.5.49)
+- **Date & Context:** 2026-10-19, Phase 106 Pillar 6 Type Safety Initiative (`v2.5.49`).
+- **Problem:**
+  1. The money-superapp repository strictly enforces ADR-001 (zero-build, 100% offline-first, client-side private, zero NPM runtime dependencies). Migrating to TypeScript is prohibited as it would introduce a mandatory build/transpilation step or breaking runtime dependencies.
+  2. However, core financial calculation engines in `js/engines/` lacked formal type schemas, leading to occasional silent schema mismatches (e.g. the historical v2.5.7 `effectiveTaxRatePct` vs `effectiveTaxRate` bug).
+  3. Running `npx tsc` can stall waiting for interactive network prompts if TypeScript is not locally installed.
+- **Root Cause:** Absence of a zero-build type-checking configuration and automated contract verification test suite for core calculation engine functions.
+- **Solution & Rule:**
+  1. **Zero-Build Type Safety via `jsconfig.json`:** Created root `jsconfig.json` configuring `checkJs: true`, `target: "ES2022"`, `moduleResolution: "NodeNext"`, and `include: ["js/engines/**/*"]`, delivering IDE and editor type diagnostics with zero compilation build steps.
+  2. **Comprehensive JSDoc Type Contracts (Batch 1 Core Engines):** Annotated 7 core mathematical/statutory engines (`thai-pit.js`, `thai-tax-calendar.js`, `insurance.js`, `gold.js`, `foreign-tax.js`, `inheritance-tax.js`, `glidepath.js`) with exhaustive `@typedef`, `@param`, `@returns`, and `@property` annotations.
+  3. **Automated Type Contract Test Suite (`tests/type-contracts.test.mjs`):** Built 13 comprehensive unit tests validating runtime output schemas, property types, numerical bounds, and edge cases (NaN, string numbers, negative values) across all 7 Batch 1 engines.
+  4. **Quality Gates & Smoke Test:** Added Phase 106 smoke assertions in `tests/smoke.test.mjs`, verified 545/545 tests passing across 126 suites (0 failures), and 0 Biome lint errors/warnings.
+
+
 ### 2026-10-19: Subagent Timeout & 1-Minute Heartbeat Monitoring Protocol
 - **Date & Context:** 2026-10-19, Multi-Agent SDLC Operations & Process Enforcement.
 - **Problem:**

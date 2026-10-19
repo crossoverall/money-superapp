@@ -30,6 +30,11 @@
     { limit: Infinity, rate: 0.35 },
   ];
 
+  /**
+   * Internal PIT fallback calculator for progressive tax brackets.
+   * @param {number|string} netIncome - Net taxable income in THB
+   * @returns {number} Computed tax amount in THB
+   */
   function computeThaiPitTax(netIncome) {
     if (global.MoneyApp && typeof global.MoneyApp.computeThaiPitTax === 'function') {
       return global.MoneyApp.computeThaiPitTax(netIncome);
@@ -50,16 +55,47 @@
   }
 
   /**
+   * @typedef {Object} ForeignRepatriationParams
+   * @property {number|string} [remittanceAmount=0] - Total foreign capital remitted into Thailand (THB)
+   * @property {number|string} [pre2024AccumulatedAmount=0] - Funds earned prior to Jan 1, 2024 (100% grandfathered tax-exempt)
+   * @property {number|string} [pre2024Amount=0] - Alias for pre2024AccumulatedAmount
+   * @property {number|string} [principalCapitalAmount=0] - Initial investment capital/principal (not taxable income)
+   * @property {number|string} [principalAmount=0] - Alias for principalCapitalAmount
+   * @property {number|string} [daysInThailand=180] - Number of days residing in Thailand in the remittance tax year
+   * @property {number|string} [foreignTaxPaidThb=0] - Foreign tax paid abroad eligible for DTA tax credit (THB)
+   * @property {number|string} [foreignTaxPaid=0] - Alias for foreignTaxPaidThb
+   * @property {number|string} [otherTaxableNetIncome=0] - Domestic net taxable income in Thailand before remittance (THB)
+   * @property {number|string} [otherDomesticNetIncome=0] - Alias for otherTaxableNetIncome
+   */
+
+  /**
+   * @typedef {Object} ForeignRepatriationResult
+   * @property {number} remittanceAmount - Total foreign capital remitted
+   * @property {number} daysInThailand - Stay duration in tax year
+   * @property {boolean} isTaxResident - True if >= 180 days in Thailand
+   * @property {boolean} isResident - Alias for isTaxResident
+   * @property {boolean} isExempt - True if 100% legally exempt from Thai PIT
+   * @property {'none'|'non_resident_under_180_days'|'pre_2024_grandfathered'|'principal_capital_return'} exemptionReason - Statutory exemption reason
+   * @property {number} pre2024ExemptAmount - Portion grandfathered under Order P.162/2566
+   * @property {number} capitalPrincipalExemptAmount - Portion recognized as non-taxable principal capital
+   * @property {number} totalExemptAmount - Total exempt portion of remittance
+   * @property {number} taxableRemittance - Net assessable foreign income remitted
+   * @property {number} grossThaiTaxOnRemittance - PIT tax liability on remittance before DTA credit
+   * @property {number} allowableDtaCredit - Foreign tax credit offset permitted under DTA
+   * @property {number} dtaForeignTaxCredit - Alias for allowableDtaCredit
+   * @property {number} netThaiTaxPayable - Final net Thai PIT due to Revenue Department
+   * @property {number} dtaSavings - Money saved through Double Tax Agreement foreign tax credits
+   * @property {number} effectiveTaxRatePct - Effective Thai tax rate on total remitted sum (%)
+   * @property {number} effectiveTaxRate - Alias for effectiveTaxRatePct
+   * @property {number} totalNetCashRetained - Net cash retained in Thailand after all taxes
+   * @property {number} netRetainedInThailand - Alias for totalNetCashRetained
+   */
+
+  /**
    * Evaluates Thai Foreign Investment Repatriation Tax (Revenue Dept Orders P.161/P.162)
    *
-   * @param {Object} params
-   * @param {number} [params.remittanceAmount=0] - Total foreign capital remitted into Thailand (THB)
-   * @param {number} [params.pre2024AccumulatedAmount=0] - Funds earned prior to Jan 1, 2024 (100% grandfathered tax-exempt)
-   * @param {number} [params.principalCapitalAmount=0] - Initial investment capital/principal (not taxable income)
-   * @param {number} [params.daysInThailand=180] - Number of days residing in Thailand in the remittance tax year
-   * @param {number} [params.foreignTaxPaidThb=0] - Foreign tax paid abroad eligible for DTA tax credit (THB)
-   * @param {number} [params.otherTaxableNetIncome=0] - Domestic net taxable income in Thailand before remittance (THB)
-   * @returns {Object} Tax liability, DTA credits, exemptions, and strategic repatriation guidance
+   * @param {ForeignRepatriationParams} [params]
+   * @returns {ForeignRepatriationResult} Tax liability, DTA credits, exemptions, and strategic repatriation guidance
    */
   function calculateForeignRepatriationTax(params) {
     params = params || {};
