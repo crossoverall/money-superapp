@@ -62,14 +62,39 @@
   }
 
   /**
+   * @typedef {Object} BridgeEnvelope
+   * @property {number} version - Protocol version (1 for current, 0 for legacy adapter)
+   * @property {string} source - Originating tool name
+   * @property {string} target - Destination tool name
+   * @property {string} action - Action event identifier
+   * @property {*} payload - Transferred data payload
+   * @property {number} timestamp - Unix epoch timestamp (ms)
+   */
+
+  /**
+   * @typedef {Object} BridgeSendOptions
+   * @property {string} [source] - Override source tool name
+   */
+
+  /**
+   * @typedef {Object} BridgePeekResult
+   * @property {*} payload - Extracted data payload
+   * @property {BridgeEnvelope} envelope - Envelope metadata
+   */
+
+  /**
+   * @typedef {Object} BridgeTargetOptions
+   * @property {string} [target] - Override target tool name
+   */
+
+  /**
    * Dispatches a bridge payload to a target tool.
    *
    * @param {string} targetTool - Destination tool ID (e.g. 'rebalance', 'remaining-money', 'debt-calculator')
    * @param {string} action - Action identifier (e.g. 'budget', 'tax_accrual', 'debt_windfall')
    * @param {*} payload - Structured payload data
-   * @param {Object} [options]
-   * @param {string} [options.source] - Override source tool name
-   * @returns {Object} Constructed envelope
+   * @param {BridgeSendOptions} [options] - Sender options
+   * @returns {BridgeEnvelope} Constructed envelope
    */
   function send(targetTool, action, payload, options) {
     if (!targetTool || !action) {
@@ -114,6 +139,10 @@
 
   /**
    * Inspects pending bridge data without consuming it.
+   *
+   * @param {string} action - Action identifier (e.g. 'budget', 'tax_accrual')
+   * @param {BridgeTargetOptions} [options] - Target options
+   * @returns {BridgePeekResult|null} Pending payload and envelope, or null if empty
    */
   function peek(action, options) {
     const opts = options || {};
@@ -162,8 +191,8 @@
    * Consumes pending bridge data for the current tool once.
    *
    * @param {string} action - Action identifier
-   * @param {Function} handler - Callback receiving (payload, envelope)
-   * @param {Object} [options]
+   * @param {function(*, BridgeEnvelope): void} handler - Callback receiving (payload, envelope)
+   * @param {BridgeTargetOptions} [options] - Target options
    * @returns {boolean} True if a message was consumed
    */
   function receive(action, handler, options) {

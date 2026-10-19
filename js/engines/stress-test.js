@@ -16,10 +16,57 @@
   };
 
   /**
+   * @typedef {Object} IncomeShockParams
+   * @property {number|string} [liquidReserve=0] - Available liquid cash and savings buffer (THB)
+   * @property {number|string} [severanceBuffer=0] - Legal severance pay or severance reserve (THB)
+   * @property {number|string} [monthlyNeeds=0] - Essential monthly living expenses (THB)
+   * @property {number|string} [monthlyWants=0] - Discretionary monthly lifestyle expenses (THB)
+   * @property {number|string} [monthlyDebtService=0] - Monthly contractual debt obligations (THB)
+   * @property {'layoff'|'resignation'|'medical'|'total_shock'} [shockType='layoff'] - Income shock scenario
+   * @property {number} [customSsoMonthly] - Custom monthly Section 33 SSO unemployment compensation
+   */
+
+  /**
+   * @typedef {Object} IncomeShockRunwayScenario
+   * @property {number} [monthlyDrain] - Monthly burn rate under this scenario (THB)
+   * @property {number} runwayMonths - Survival runway duration in months
+   * @property {number} survivalDays - Survival runway duration in days
+   * @property {number} [extendedMonths] - Additional survival buffer months gained from SSO
+   */
+
+  /**
+   * @typedef {Object} LiquidityLadderStep
+   * @property {number} step - Step order (1-4)
+   * @property {string} titleTh - Thai title of defense tier
+   * @property {string} titleEn - English title of defense tier
+   * @property {number} [amount] - Available capital in this defense tier (THB)
+   * @property {string} noteTh - Thai strategic advice
+   * @property {string} noteEn - English strategic advice
+   */
+
+  /**
+   * @typedef {Object} IncomeShockStressTestResult
+   * @property {number} totalAvailableLiquidity - Combined liquid reserves plus severance (THB)
+   * @property {number} liquidReserve - Pure cash/savings reserve (THB)
+   * @property {number} severanceBuffer - Severance buffer (THB)
+   * @property {number} barebonesMonthlyExpense - Minimum survival monthly burn rate (THB)
+   * @property {number} standardMonthlyExpense - Baseline lifestyle monthly burn rate (THB)
+   * @property {'layoff'|'resignation'|'medical'|'total_shock'} shockType - Evaluated shock scenario
+   * @property {number} ssoMonthlyBenefit - Section 33 monthly compensation
+   * @property {number} ssoBenefitMonths - Statutory benefit duration (months)
+   * @property {{ barebones: IncomeShockRunwayScenario, standard: IncomeShockRunwayScenario, withSsoOffset: IncomeShockRunwayScenario }} scenarios - Runway projections
+   * @property {'safe'|'moderate'|'high_risk'|'critical'} riskLevel - Financial vulnerability classification
+   * @property {Array<LiquidityLadderStep>} liquidityLadder - 4-stage liquidity defense sequence
+   */
+
+  /**
    * Phase 67: Emergency Fund & Income Shock Stress-Tester.
    * Simulates sudden loss of income (layoff, resignation, illness, or total shock),
    * compares Barebones survival vs Standard lifestyle drain, and models Section 33
    * Social Security unemployment benefit offsets and severance buffers.
+   *
+   * @param {IncomeShockParams} [params]
+   * @returns {IncomeShockStressTestResult}
    */
   function calculateIncomeShockStressTest(params) {
     var p = params || {};
@@ -180,11 +227,52 @@
   }
 
   /**
+   * @typedef {Object} ChildEducationYearlyProjection
+   * @property {number} degreeYear - Academic year of study (1 to N)
+   * @property {number} childAge - Projected age of child during this school year
+   * @property {number} tuitionCost - Inflated tuition fee for that academic year (THB)
+   */
+
+  /**
+   * @typedef {Object} ChildEducationFundParams
+   * @property {number|string} [currentAge=0] - Child's current age
+   * @property {number|string} [targetAge=18] - Age when tertiary education commences
+   * @property {number|string} [degreeDurationYears=4] - Degree duration in years
+   * @property {'thai_public'|'bilingual'|'private'|'inter_thai'|'inter_overseas'} [educationTrack='thai_public'] - Educational pathway track
+   * @property {number} [customAnnualTuition] - Custom present-day annual tuition override (THB)
+   * @property {number} [tuitionInflationRate=5.0] - Annual expected education cost inflation rate (%)
+   * @property {number} [expectedInvestmentReturn=6.0] - Expected annual investment return on education portfolio (%)
+   * @property {number|string} [existingEducationSavings=0] - Current dedicated education fund savings balance (THB)
+   */
+
+  /**
+   * @typedef {Object} ChildEducationFundResult
+   * @property {number} currentAge - Evaluated child current age
+   * @property {number} targetAge - College entry age
+   * @property {number} yearsToCollege - Investment runway horizon in years
+   * @property {number} degreeDurationYears - Degree duration in years
+   * @property {'thai_public'|'bilingual'|'private'|'inter_thai'|'inter_overseas'} educationTrack - Active education track
+   * @property {number} baseAnnualTuition - Present-value annual tuition baseline (THB)
+   * @property {number} tuitionInflationRate - Applied annual education inflation rate (%)
+   * @property {number} expectedInvestmentReturn - Applied portfolio expected return rate (%)
+   * @property {number} existingSavings - Current dedicated education savings (THB)
+   * @property {number} fvExistingSavings - Compounded future value of existing savings at college entry (THB)
+   * @property {number} totalFutureTuitionNeeded - Total inflation-adjusted education funding requirement (THB)
+   * @property {number} netFundShortfall - Net future education funding gap (THB)
+   * @property {number} monthlyDcaNeeded - Required monthly investment DCA to achieve 100% funding (THB)
+   * @property {number} fundedRatioPct - Percentage of target tuition already funded by existing savings (%)
+   * @property {Array<ChildEducationYearlyProjection>} yearlyProjections - Year-by-year tuition inflation projection
+   */
+
+  /**
    * Phase 68: Child Education & Higher Learning Sinking Fund Planner.
    * Models education tuition inflation (typically 4-7% p.a., exceeding headline CPI),
    * evaluates future values across major Thai education pathways (Government, Bilingual,
    * Private, Inter-Thai, and Overseas Degrees), factors existing dedicated savings,
    * and computes required monthly investment DCA to bridge the education gap.
+   *
+   * @param {ChildEducationFundParams} [params]
+   * @returns {ChildEducationFundResult}
    */
   function calculateChildEducationFund(params) {
     var p = params || {};

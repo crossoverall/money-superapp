@@ -20,13 +20,41 @@
   };
 
   /**
+   * @typedef {Object} ThaiPropertyTaxTierDetail
+   * @property {string} labelTh - Thai bracket label
+   * @property {string} labelEn - English bracket label
+   * @property {number} ratePct - Applied statutory tax rate (%)
+   * @property {number} taxableInTier - Assessable base subject to this tier (THB)
+   * @property {number} taxInTier - Property tax calculated in this tier (THB)
+   */
+
+  /**
+   * @typedef {Object} ThaiPropertyTaxParams
+   * @property {'agricultural'|'residential_primary'|'residential_building_only'|'residential_secondary'|'commercial'|'vacant'} [landCategory='residential_primary'] - Land classification
+   * @property {number|string} [appraisalValue=0] - Official government appraisal value (THB)
+   * @property {number|string} [vacantConsecutiveYears=0] - Consecutive years left unutilized (for vacant land penalty)
+   */
+
+  /**
+   * @typedef {Object} ThaiPropertyTaxResult
+   * @property {'agricultural'|'residential_primary'|'residential_building_only'|'residential_secondary'|'commercial'|'vacant'} landCategory - Land category evaluated
+   * @property {number} appraisalValue - Government appraisal value in THB
+   * @property {number} exemptionAmount - Statutory value exemption applied in THB
+   * @property {number} taxableBase - Net taxable property base after exemption in THB
+   * @property {number} totalTax - Total annual land and building tax liability in THB
+   * @property {number} effectiveRatePct - Effective property tax rate relative to appraisal value (%)
+   * @property {number} marginalRatePct - Highest marginal statutory tax rate reached (%)
+   * @property {Array<ThaiPropertyTaxTierDetail>} tiers - Progressive bracket breakdown
+   * @property {boolean} canInstallment - True if eligible for 3-month installment payment (>= 3,000 THB)
+   * @property {number} installmentMonthly - Monthly installment amount for 3 payments
+   * @property {string} statutoryDeadline - Statutory payment deadline description
+   */
+
+  /**
    * Calculates Thai Land and Building Tax (ภาษีที่ดินและสิ่งปลูกสร้าง พ.ร.บ. 2562)
    *
-   * @param {Object} params
-   * @param {string} [params.landCategory='residential_primary'] - Land classification
-   * @param {number} [params.appraisalValue=0] - Official government appraisal value (THB)
-   * @param {number} [params.vacantConsecutiveYears=0] - Consecutive years left unutilized (for vacant land penalty)
-   * @returns {Object} Tax liability, brackets breakdown, effective rate, and installment options
+   * @param {ThaiPropertyTaxParams} [params]
+   * @returns {ThaiPropertyTaxResult} Tax liability, brackets breakdown, effective rate, and installment options
    */
   function calculateThaiLandAndBuildingTax(params) {
     params = params || {};

@@ -20,19 +20,44 @@
   };
 
   /**
+   * @typedef {Object} RetirementThreeBucketsParams
+   * @property {number|string} [annualLivingExpense=360000] - Annual retirement living expense (THB)
+   * @property {number|string} [monthlySsoPension=4125] - Monthly Social Security (ประกันสังคม) or guaranteed pension (THB)
+   * @property {number|string} [monthlyElderlyAllowance=600] - Monthly government elderly allowance (เบี้ยผู้สูงอายุ) (THB)
+   * @property {number|string} [totalRetirementAssets=6000000] - Total accumulated retirement net worth (THB)
+   * @property {number|string} [bucket1Years=2] - Cash bucket coverage horizon (years, typically 1-2)
+   * @property {number|string} [bucket2Years=5] - Income/Bonds bucket coverage horizon (years, typically 3-7)
+   * @property {number|string} [bucket1YieldPct=1.5] - Annual return on cash/money market (%)
+   * @property {number|string} [bucket2YieldPct=3.5] - Annual return on fixed income/bonds (%)
+   * @property {number|string} [bucket3YieldPct=7.0] - Annual return on global equities/growth (%)
+   */
+
+  /**
+   * @typedef {Object} RetirementThreeBucketsResult
+   * @property {number} annualLivingExpense - Annual living expense budget
+   * @property {number} annualGuaranteedIncome - Guaranteed annual income (SSO + allowances)
+   * @property {number} netAnnualDrawdown - Net annual portfolio drawdown required
+   * @property {number} guaranteedIncomeCoveragePct - Percentage of expenses covered by guaranteed pension
+   * @property {number} bucket1Years - Target years of liquid cash
+   * @property {number} bucket2Years - Target years of fixed income
+   * @property {number} bucket1Target - Target capital for Bucket 1 (Liquid Cash)
+   * @property {number} bucket2Target - Target capital for Bucket 2 (Fixed Income Buffer)
+   * @property {number} bucket3Target - Residual capital for Bucket 3 (Long-Term Growth Equities)
+   * @property {number} totalRetirementAssets - Evaluated total retirement asset pool
+   * @property {number} defensiveNeeds - Minimum defensive capital needed (Bucket 1 + Bucket 2)
+   * @property {boolean} isUnderfunded - True if total assets are insufficient to cover defensive needs
+   * @property {number} shortfallAmount - Capital shortfall below defensive needs in THB
+   * @property {number} bearMarketRunwayYears - Total years of living expense runway provided by defensive buckets
+   * @property {number} annualYieldCashFlow - Estimated total annual cash distribution from yields
+   * @property {number} blendedYieldPct - Portfolio weighted average annual dividend/interest yield (%)
+   * @property {boolean} isYieldSelfSustaining - True if annual yields fully cover net drawdown
+   */
+
+  /**
    * Calculates Retirement 3-Bucket Cash Flow Allocation and Drawdown Schedule
    *
-   * @param {Object} params
-   * @param {number} [params.annualLivingExpense=360000] - Annual retirement living expense (THB)
-   * @param {number} [params.monthlySsoPension=4125] - Monthly Social Security (ประกันสังคม) or guaranteed pension (THB)
-   * @param {number} [params.monthlyElderlyAllowance=600] - Monthly government elderly allowance (เบี้ยผู้สูงอายุ) (THB)
-   * @param {number} [params.totalRetirementAssets=6000000] - Total accumulated retirement net worth (THB)
-   * @param {number} [params.bucket1Years=2] - Cash bucket coverage horizon (years, typically 1-2)
-   * @param {number} [params.bucket2Years=5] - Income/Bonds bucket coverage horizon (years, typically 3-7)
-   * @param {number} [params.bucket1YieldPct=1.5] - Annual return on cash/money market (%)
-   * @param {number} [params.bucket2YieldPct=3.5] - Annual return on fixed income/bonds (%)
-   * @param {number} [params.bucket3YieldPct=7.0] - Annual return on global equities/growth (%)
-   * @returns {Object} 3-Bucket targets, net drawdowns, runway, and cash cushion resilience metrics
+   * @param {RetirementThreeBucketsParams} [params]
+   * @returns {RetirementThreeBucketsResult} 3-Bucket targets, net drawdowns, runway, and cash cushion resilience metrics
    */
   function calculateRetirementThreeBuckets(params) {
     params = params || {};

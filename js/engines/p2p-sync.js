@@ -543,6 +543,21 @@
     return data;
   };
 
+  /**
+   * @typedef {Object} QrSvgOptions
+   * @property {number} [size=256] - Width and height of SVG image in pixels
+   * @property {number} [margin=2] - Margin border in quiet zone modules
+   * @property {string} [color='#000000'] - Foreground module fill color
+   * @property {string} [background='#ffffff'] - Background canvas fill color
+   */
+
+  /**
+   * Renders a QR code matrix directly to an inline SVG XML markup string.
+   *
+   * @param {string} text - Text, JSON, or payload chunk to encode
+   * @param {QrSvgOptions} [options] - Visual rendering options
+   * @returns {string} Inline SVG markup string
+   */
   function renderQrSvg(text, options) {
     var opt = options || {};
     var size = opt.size || 256;
@@ -605,6 +620,22 @@
     );
   }
 
+  /**
+   * @typedef {Object} P2PPayloadChunk
+   * @property {number} c - 1-based index of this chunk
+   * @property {number} t - Total chunk count
+   * @property {string} d - Chunk substring data payload
+   * @property {string} id - Unique transfer session identifier
+   */
+
+  /**
+   * Splits arbitrary payload string into sequential QR chunks for air-gapped camera transmission.
+   *
+   * @param {string} payload - Raw text, JSON, or encrypted vault envelope string
+   * @param {number} [maxChunkSize=200] - Maximum payload character length per QR frame
+   * @param {string} [transferId] - Unique transfer session identifier
+   * @returns {Array<P2PPayloadChunk>} Array of chunk objects ready for sequential QR display
+   */
   function chunkPayload(payload, maxChunkSize, transferId) {
     var size = Math.max(50, maxChunkSize || 200);
     var str = String(payload || '');
@@ -626,6 +657,21 @@
     return chunks;
   }
 
+  /**
+   * @typedef {Object} P2PAssemblyResult
+   * @property {boolean} complete - True if all required chunks were successfully received
+   * @property {number} received - Count of unique chunks received
+   * @property {number} total - Total expected chunk count
+   * @property {Array<number>} missing - Array of missing 1-based chunk indices
+   * @property {string|null} payload - Reassembled full payload string or null
+   */
+
+  /**
+   * Reconstructs full payload from scanned QR chunks, tracking missing frames.
+   *
+   * @param {Array<P2PPayloadChunk>} chunkArray - Array of scanned chunk objects
+   * @returns {P2PAssemblyResult} Assembly status and reconstructed payload string
+   */
   function assembleChunks(chunkArray) {
     var id = '';
     var total = 0;

@@ -15,6 +15,27 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-19: Zero-Build JSDoc Type Annotations & Contract Verification Suite - Batch 2 (v2.5.50)
+- **Date & Context:** 2026-10-19, Phase 107 Pillar 6 Type Safety Initiative (`v2.5.50`).
+- **Problem:**
+  1. Core financial modeling, bank statement parsing, offline cryptographic vault, and P2P synchronization engines in `js/engines/` (`retirement-buckets.js`, `property-tax.js`, `bank-parser.js`, `refinance.js`, `stress-test.js`, `vault-crypto.js`, `p2p-sync.js`, `bridge.js`) lacked formal JSDoc `@typedef` schemas.
+  2. In `p2p-sync.js`, `chunkPayload(payload, maxChunkSize, transferId)` has an internal safety clamp `Math.max(50, maxChunkSize || 200)`. Any unit test attempting to test chunking with payloads shorter than 50 characters produced only 1 chunk regardless of requested `maxChunkSize`, causing subtle contract test assertion surprises.
+- **Root Cause:** Absence of JSDoc typedef annotations on Batch 2 engines, and undocumented minimum threshold constraint in P2P payload chunking.
+- **Solution & Rule:**
+  1. **Comprehensive JSDoc Type Schemas (Batch 2):** Annotated all 8 engines with `@typedef`, `@param`, and `@returns` schemas:
+     - `retirement-buckets.js`: `RetirementThreeBucketsParams`, `RetirementThreeBucketsResult`
+     - `property-tax.js`: `ThaiPropertyTaxTierDetail`, `ThaiPropertyTaxParams`, `ThaiPropertyTaxResult`
+     - `bank-parser.js`: `ThaiBankParsedTransaction`, `ThaiBankLineItem`, `ThaiBankSummary`, `ThaiBankCandidate`, `ThaiBankStatementParsedResult`
+     - `refinance.js`: `DebtPayoffSimulationResult`, `DebtVelocityComparisonResult`, `TaxAccrualPlanResult`, `DebtConsolidationResult`
+     - `stress-test.js`: `IncomeShockStressTestResult`, `ChildEducationFundResult`
+     - `vault-crypto.js`: `VaultEnvelope`, async PIN hashing and salt generation contracts
+     - `p2p-sync.js`: `QrSvgOptions`, `P2PPayloadChunk`, `P2PAssemblyResult`
+     - `bridge.js`: `BridgeEnvelope`, `BridgePeekResult`, `BridgeSendOptions`, `BridgeTargetOptions`
+  2. **Automated Batch 2 Contract Test Suite (`tests/type-contracts-batch2.test.mjs`):** Implemented 14 exhaustive contract validation tests ensuring runtime return objects match declared types, number ranges, and structural keys.
+  3. **P2P Chunking Invariant:** Verified test fixtures supply payloads >50 characters when testing multi-chunk assembly logic.
+  4. **Quality Gates & Smoke Test:** Phase 107 assertions verified in `tests/smoke.test.mjs`, 560/560 tests passing across 135 suites, 0 Biome errors/warnings.
+
+
 ### 2026-10-19: Zero-Build JSDoc Type Annotations & Automated Type Contract Test Suite (v2.5.49)
 - **Date & Context:** 2026-10-19, Phase 106 Pillar 6 Type Safety Initiative (`v2.5.49`).
 - **Problem:**

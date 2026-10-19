@@ -1863,5 +1863,63 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         }
       }
     });
+
+    it('verifies Phase 107 JSDoc Type Annotations & Type Contracts for Core Engines (Batch 2)', () => {
+      const typeContractsBatch2Path = path.join(ROOT_DIR, 'tests/type-contracts-batch2.test.mjs');
+      assert.ok(fs.existsSync(typeContractsBatch2Path), 'tests/type-contracts-batch2.test.mjs must exist');
+
+      // Verify Batch 2 engines declare JSDoc typedef contracts
+      const batch2Engines = [
+        {
+          file: 'js/engines/retirement-buckets.js',
+          types: ['RetirementThreeBucketsResult', 'RetirementThreeBucketsParams'],
+        },
+        {
+          file: 'js/engines/property-tax.js',
+          types: ['ThaiPropertyTaxResult', 'ThaiPropertyTaxParams'],
+        },
+        {
+          file: 'js/engines/bank-parser.js',
+          types: ['ThaiBankStatementParsedResult', 'ThaiBankSummary'],
+        },
+        {
+          file: 'js/engines/refinance.js',
+          types: [
+            'DebtPayoffSimulationResult',
+            'DebtVelocityComparisonResult',
+            'TaxAccrualPlanResult',
+            'DebtConsolidationResult',
+          ],
+        },
+        {
+          file: 'js/engines/stress-test.js',
+          types: ['IncomeShockStressTestResult', 'ChildEducationFundResult'],
+        },
+        {
+          file: 'js/engines/vault-crypto.js',
+          types: ['VaultEnvelope'],
+        },
+        {
+          file: 'js/engines/p2p-sync.js',
+          types: ['QrSvgOptions', 'P2PPayloadChunk', 'P2PAssemblyResult'],
+        },
+        {
+          file: 'js/engines/bridge.js',
+          types: ['BridgeEnvelope', 'BridgePeekResult'],
+        },
+      ];
+
+      for (const item of batch2Engines) {
+        const filePath = path.join(ROOT_DIR, item.file);
+        assert.ok(fs.existsSync(filePath), `${item.file} must exist`);
+        const content = fs.readFileSync(filePath, 'utf8');
+        for (const typeName of item.types) {
+          assert.ok(
+            content.includes(`@typedef {Object} ${typeName}`),
+            `${item.file} must declare @typedef {Object} ${typeName}`,
+          );
+        }
+      }
+    });
   });
 });

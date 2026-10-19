@@ -19,11 +19,53 @@
   };
 
   /**
+   * @typedef {Object} ThaiBankParsedTransaction
+   * @property {'credit'|'debit'} type - Transaction direction
+   * @property {number} amount - Absolute transaction amount in THB
+   * @property {string} description - Transaction description / channel note
+   * @property {string} date - Transaction date string
+   */
+
+  /**
+   * @typedef {Object} ThaiBankLineItem
+   * @property {string} name - Extracted item label
+   * @property {number} value - Line item monetary value
+   * @property {string} date - Transaction date
+   */
+
+  /**
+   * @typedef {Object} ThaiBankSummary
+   * @property {number} totalInflow - Cumulative incoming deposits (THB)
+   * @property {number} totalOutflow - Cumulative outgoing withdrawals (THB)
+   * @property {number} transactionCount - Total parsed transaction count
+   */
+
+  /**
+   * @typedef {Object} ThaiBankCandidate
+   * @property {Array<ThaiBankLineItem>} incomes - Identified income candidates
+   * @property {Array<ThaiBankLineItem>} expenses - Identified expense candidates
+   * @property {Array<*>} savings - Initialized savings allocation slots
+   * @property {{ tax: boolean, sso: boolean, pvd: boolean }} manualOverrides - Lock toggles
+   * @property {boolean} showEmergencyRunway - UI runway flag
+   * @property {number} currentEmergencyReserve - Emergency reserve baseline
+   */
+
+  /**
+   * @typedef {Object} ThaiBankStatementParsedResult
+   * @property {boolean} isBankStatement - True if recognized and successfully parsed
+   * @property {string} [bankCode] - Recognized bank identifier (e.g. 'kbank', 'scb', 'ktb', 'kkp')
+   * @property {string} [bankName] - Human-readable bank brand name
+   * @property {ThaiBankSummary} [summary] - Statement cashflow totals
+   * @property {ThaiBankCandidate} [candidate] - Budget structure ready for 1-click import
+   * @property {Array<ThaiBankParsedTransaction>} [transactions] - Standardized transaction history
+   */
+
+  /**
    * Auto-detects and parses Thai Mobile Banking CSV Statements (KBank, SCB, Krungthai, KKP, etc.)
    *
    * @param {string} csvText - Raw CSV text
    * @param {string} [fileName=''] - File name for bank brand heuristics
-   * @returns {Object} Structured bank statement data or { isBankStatement: false }
+   * @returns {ThaiBankStatementParsedResult} Structured bank statement data or { isBankStatement: false }
    */
   function detectAndParseThaiBankStatement(csvText, fileName) {
     if (typeof csvText !== 'string' || !csvText.trim()) {

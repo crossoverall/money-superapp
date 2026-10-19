@@ -52,6 +52,22 @@
     );
   }
 
+  /**
+   * @typedef {Object} VaultEnvelope
+   * @property {'money-superapp-vault-v1'} format - Vault specification envelope format
+   * @property {string} createdAt - ISO 8601 creation timestamp
+   * @property {string} salt - Base64 encoded 16-byte PBKDF2 salt
+   * @property {string} iv - Base64 encoded 12-byte AES-GCM IV
+   * @property {string} ciphertext - Base64 encoded AES-GCM ciphertext
+   */
+
+  /**
+   * Encrypts plaintext string using AES-GCM (256-bit) and PBKDF2 key derivation (100,000 iterations).
+   *
+   * @param {string} plainText - Raw JSON or text payload to secure
+   * @param {string} passphrase - User encryption passphrase
+   * @returns {Promise<string>} Pretty-printed JSON vault envelope string
+   */
   async function encryptVaultData(plainText, passphrase) {
     if (!passphrase || typeof passphrase !== 'string' || passphrase.trim() === '') {
       throw new Error('Passphrase cannot be empty');
@@ -79,6 +95,13 @@
     );
   }
 
+  /**
+   * Decrypts encrypted vault envelope back to original plaintext string.
+   *
+   * @param {string|VaultEnvelope} vaultPayloadOrString - Vault envelope object or serialized JSON string
+   * @param {string} passphrase - User passphrase used to encrypt
+   * @returns {Promise<string>} Decrypted plaintext content
+   */
   async function decryptVaultData(vaultPayloadOrString, passphrase) {
     if (!passphrase || typeof passphrase !== 'string') {
       throw new Error('Passphrase cannot be empty');
@@ -108,8 +131,10 @@
   }
 
   /**
-   * Phase 70: Biometric & PIN App Lock Engine.
-   * Provides salted SHA-256 PIN hashing, verification, and timeout formatting.
+   * Generates a cryptographically random hexadecimal salt string.
+   *
+   * @param {number} [byteLength=16] - Desired salt length in bytes
+   * @returns {string} Hexadecimal salt string
    */
   function generateSalt(byteLength) {
     var len = Number(byteLength) || 16;
@@ -130,6 +155,13 @@
     return hex;
   }
 
+  /**
+   * Hashes numeric user PIN with salt using SHA-256 (or FNV-1a client fallback).
+   *
+   * @param {string} pin - Raw user PIN
+   * @param {string} [salt=''] - Salt string
+   * @returns {Promise<string>} Hexadecimal digest
+   */
   async function hashPin(pin, salt) {
     if (!pin || typeof pin !== 'string') {
       throw new Error('PIN must be a non-empty string');
@@ -161,12 +193,27 @@
     return `00000000${(h >>> 0).toString(16)}`.slice(-8);
   }
 
+  /**
+   * Verifies candidate user PIN against stored salted hash.
+   *
+   * @param {string} pin - Candidate user PIN
+   * @param {string} salt - Stored salt
+   * @param {string} expectedHash - Stored hash
+   * @returns {Promise<boolean>} True if PIN matches
+   */
   async function verifyPin(pin, salt, expectedHash) {
     if (!pin || !expectedHash) return false;
     var computed = await hashPin(pin, salt);
     return computed === expectedHash;
   }
 
+  /**
+   * Formats auto-lock timeout duration for display in Thai or English.
+   *
+   * @param {number|string} seconds - Lock timeout duration in seconds (-1 for never, 0 for immediate)
+   * @param {'th'|'en'} [lang='th'] - Language code
+   * @returns {string} Localized label
+   */
   function formatAppLockTimeout(seconds, lang) {
     var sec = Number(seconds);
     var isEn = lang === 'en';

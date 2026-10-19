@@ -15,9 +15,53 @@
   };
 
   /**
+   * @typedef {Object} DebtPayoffItemInput
+   * @property {string} [id] - Debt unique ID
+   * @property {string} [name] - Debt descriptive name
+   * @property {number|string} [balance=0] - Outstanding balance in THB
+   * @property {number|string} [rate=0] - Annual interest rate (%)
+   * @property {number|string} [minPayment=0] - Contractual minimum monthly payment in THB
+   */
+
+  /**
+   * @typedef {Object} DebtPayoffWindfallInput
+   * @property {number} amount - Windfall injection amount in THB
+   * @property {number} month - Target month for lump-sum injection (1-based index)
+   */
+
+  /**
+   * @typedef {Object} DebtPayoffMilestone
+   * @property {string} id - Debt identifier
+   * @property {string} name - Debt name
+   * @property {number} month - Month when principal reached zero
+   */
+
+  /**
+   * @typedef {Object} DebtTrajectoryPoint
+   * @property {number} month - Month index
+   * @property {number} balance - Aggregate remaining debt balance
+   */
+
+  /**
+   * @typedef {Object} DebtPayoffSimulationResult
+   * @property {number} months - Total months required to achieve debt-free status
+   * @property {number} totalInterest - Cumulative interest accrued and paid (THB)
+   * @property {number} totalPaid - Total cash paid out (principal + interest)
+   * @property {Array<DebtPayoffMilestone>} payoffOrder - Chronological sequence of eliminated debts
+   * @property {DebtPayoffMilestone|null} firstDebtCleared - First eliminated debt milestone
+   * @property {Array<DebtTrajectoryPoint>} trajectory - Month-by-month debt balance trajectory
+   */
+
+  /**
    * Client-side Debt Payoff Simulation Engine.
    * Simulates month-by-month debt schedule under Avalanche or Snowball strategies,
    * accounting for minimum payments, interest accrual, rolled-over payments, and optional lump-sum windfalls.
+   *
+   * @param {Array<DebtPayoffItemInput>} debtsList - Active debt portfolio
+   * @param {number|string} [extraMonthly=0] - Additional monthly debt acceleration budget (THB)
+   * @param {'avalanche'|'snowball'} [strategy='avalanche'] - Acceleration allocation strategy
+   * @param {DebtPayoffWindfallInput|null} [windfall] - Optional lump-sum cash injection
+   * @returns {DebtPayoffSimulationResult} Payoff duration, total interest, and trajectory
    */
   function simulateDebtPayoff(debtsList, extraMonthly, strategy, windfall) {
     var rawDebts = Array.isArray(debtsList) ? debtsList : [];
@@ -135,7 +179,34 @@
   }
 
   /**
+   * @typedef {Object} DebtVelocityParams
+   * @property {Array<DebtPayoffItemInput>} [debts] - Active debt portfolio
+   * @property {number|string} [extraPayment=0] - Extra monthly payment amount
+   * @property {DebtPayoffWindfallInput|null} [windfall] - Optional windfall injection
+   */
+
+  /**
+   * @typedef {Object} DebtVelocityComparisonResult
+   * @property {DebtPayoffSimulationResult} baseline - Baseline schedule with minimum payments only
+   * @property {DebtPayoffSimulationResult} avalanche - Accelerated schedule using mathematical Avalanche (highest interest first)
+   * @property {DebtPayoffSimulationResult} snowball - Accelerated schedule using psychological Snowball (lowest balance first)
+   * @property {number} interestDelta - Interest saved by Avalanche over Snowball in THB
+   * @property {number} monthDelta - Additional months required by Snowball compared to Avalanche
+   * @property {number} firstWinMonthDelta - Months earlier Snowball eliminates its first debt compared to Avalanche
+   * @property {number} avMonthsSaved - Months saved by Avalanche relative to baseline
+   * @property {number} snMonthsSaved - Months saved by Snowball relative to baseline
+   * @property {number} avInterestSaved - Interest saved by Avalanche relative to baseline (THB)
+   * @property {number} snInterestSaved - Interest saved by Snowball relative to baseline (THB)
+   * @property {'avalanche'|'snowball'|'equal'} recommended - Recommended strategy based on mathematical & behavioral heuristics
+   * @property {string} reasonTh - Thai recommendation rationale
+   * @property {string} reasonEn - English recommendation rationale
+   */
+
+  /**
    * Snowball vs. Avalanche Visual Velocity Comparator Engine.
+   *
+   * @param {DebtVelocityParams} [params]
+   * @returns {DebtVelocityComparisonResult} Comparative metrics, interest savings, and strategy recommendation
    */
   function compareDebtVelocity(params) {
     var p = params || {};
@@ -206,14 +277,28 @@
   }
 
   /**
+   * @typedef {Object} TaxAccrualPlanParams
+   * @property {number|string} [calculatedTax=0] - Total annual PIT liability calculated
+   * @property {number|string} [withheldTax=0] - Total tax withheld at source (50 Tawi)
+   */
+
+  /**
+   * @typedef {Object} TaxAccrualPlanResult
+   * @property {'payable'|'refund'|'balanced'} status - Net tax status
+   * @property {number} amount - Absolute monetary amount (payable or refund)
+   * @property {number} monthlyAccrual - Recommended monthly accrual reserve for next filing
+   * @property {boolean} canInstallment - True if eligible for 3-month installment payment (>= 3,000 THB)
+   * @property {number} installmentAmount - Payment per installment (3 payments)
+   * @property {number} recommendedWindfall - Refund deployable towards debt payoff or investing
+   */
+
+  /**
    * Calculates Annual Tax Due Accrual & Tax Refund Windfall Planning Metrics.
    * Amortizes tax due into monthly reserves (12-month provision or 3-installment 0% plan),
    * or calculates refund windfall deployment amount for debt payoff or rebalancing.
    *
-   * @param {Object} params
-   * @param {number} [params.calculatedTax=0] - Total annual PIT liability calculated
-   * @param {number} [params.withheldTax=0] - Total tax withheld at source (50 Tawi)
-   * @returns {Object} Tax outcome status, amounts, monthly provisions, and windfall recommendation
+   * @param {TaxAccrualPlanParams} [params]
+   * @returns {TaxAccrualPlanResult} Tax outcome status, amounts, monthly provisions, and windfall recommendation
    */
   function calculateTaxAccrualAndRefundPlan(params) {
     var p = params || {};
@@ -260,16 +345,34 @@
   }
 
   /**
+   * @typedef {Object} DebtConsolidationOptions
+   * @property {Array<{balance?: number|string, rate?: number|string, minPayment?: number|string}>} [debts=[]] - Debts to consolidate
+   * @property {number|string} [currentTotalInterest=0] - Current total interest projected across debts
+   * @property {number|string} [currentTotalMinPayment=0] - Current combined monthly minimum payment
+   * @property {number|string} [refinanceRate=9.9] - Offered consolidation loan APR (%)
+   * @property {number|string} [refinanceTermMonths=36] - Consolidation loan term in months
+   */
+
+  /**
+   * @typedef {Object} DebtConsolidationResult
+   * @property {number} totalBalance - Aggregate balance consolidated (THB)
+   * @property {number} weightedRate - Weighted average APR of original debts (%)
+   * @property {number} refinanceRate - Offered APR of consolidation facility (%)
+   * @property {number} refinanceTermMonths - Term duration (months)
+   * @property {number} newMonthlyPayment - New fixed monthly payment under consolidation loan (THB)
+   * @property {number} totalRefinanceInterest - Total interest payable under consolidated facility (THB)
+   * @property {number} totalRefinancePaid - Total cash paid over consolidated loan term (THB)
+   * @property {number} interestSaved - Net interest saved vs current debt trajectory (THB)
+   * @property {number} monthlyPaymentDiff - Monthly cashflow relief (positive = freed cashflow, negative = extra required)
+   * @property {'optimal'|'higher_interest'|'faster_payoff'|'no_debt'} verdict - Financial assessment verdict
+   */
+
+  /**
    * Debt Consolidation & Refinance Calculation Engine.
    * Calculates new monthly payment, total interest, interest savings, and monthly cash flow differential (relief or extra payment).
    *
-   * @param {Object} options
-   * @param {Array<{balance: number, rate: number, minPayment: number}>} [options.debts=[]]
-   * @param {number} [options.currentTotalInterest=0]
-   * @param {number} [options.currentTotalMinPayment=0]
-   * @param {number} [options.refinanceRate=9.9]
-   * @param {number} [options.refinanceTermMonths=36]
-   * @returns {Object} Consolidation metrics including newMonthlyPayment, interestSaved, monthlyPaymentDiff, and verdict
+   * @param {DebtConsolidationOptions} [options]
+   * @returns {DebtConsolidationResult} Consolidation metrics including newMonthlyPayment, interestSaved, monthlyPaymentDiff, and verdict
    */
   function calculateDebtConsolidation(options) {
     var opts = options || {};
