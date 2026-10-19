@@ -1,4 +1,4 @@
-const CACHE_NAME = 'money-superapp-v2.5.52';
+const CACHE_NAME = 'money-superapp-v2.5.53';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -44,7 +44,9 @@ const ASSETS_TO_CACHE = [
   './css/tailwind-lite.css',
   './css/theme.css',
   './manifest.json',
-  './icon.svg'
+  './icon.svg',
+  './screenshots/desktop.svg',
+  './screenshots/mobile.svg'
 ];
 
 self.addEventListener('install', event => {

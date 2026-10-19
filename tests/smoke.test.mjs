@@ -884,6 +884,34 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(sharedJs.includes('validateShareTargetPayload'), 'shared.js must export validateShareTargetPayload');
     });
 
+    it('verifies Phase 110 Web App Manifest, shortcuts, screenshots, and PWA App Shell install controls', () => {
+      const manifestJson = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'manifest.json'), 'utf8'));
+      assert.equal(manifestJson.id, 'money-superapp', 'manifest must declare id');
+      assert.equal(manifestJson.lang, 'th-TH', 'manifest must declare lang');
+      assert.equal(manifestJson.dir, 'ltr', 'manifest must declare dir');
+      assert.equal(manifestJson.orientation, 'any', 'manifest must declare orientation');
+      assert.ok(
+        Array.isArray(manifestJson.shortcuts) && manifestJson.shortcuts.length >= 4,
+        'manifest must declare shortcuts',
+      );
+      assert.ok(
+        Array.isArray(manifestJson.screenshots) && manifestJson.screenshots.length >= 2,
+        'manifest must declare screenshots',
+      );
+
+      const indexHtml = fs.readFileSync(path.join(ROOT_DIR, 'index.html'), 'utf8');
+      assert.ok(indexHtml.includes('id="btn-pwa-install"'), 'index.html must include #btn-pwa-install');
+      assert.ok(indexHtml.includes('id="pwaOfflineBadge"'), 'index.html must include #pwaOfflineBadge');
+      assert.ok(indexHtml.includes('id="pwaStatusDot"'), 'index.html must include #pwaStatusDot');
+      assert.ok(indexHtml.includes('id="lbl-pwa-offline-badge"'), 'index.html must include #lbl-pwa-offline-badge');
+
+      const appShellJs = fs.readFileSync(path.join(ROOT_DIR, 'js/app-shell.js'), 'utf8');
+      assert.ok(appShellJs.includes('beforeinstallprompt'), 'app-shell.js must listen for beforeinstallprompt');
+      assert.ok(appShellJs.includes('appinstalled'), 'app-shell.js must listen for appinstalled');
+      assert.ok(appShellJs.includes('function installPwa'), 'app-shell.js must define installPwa');
+      assert.ok(appShellJs.includes('function updateNetworkStatus'), 'app-shell.js must define updateNetworkStatus');
+    });
+
     it('verifies dashboard, remaining-money, and shared.js declare Phase 81 Insurance Gap Budget Bridge', () => {
       const dashHtml = fs.readFileSync(path.join(ROOT_DIR, 'dashboard.html'), 'utf8');
       assert.ok(dashHtml.includes('id="box-ins-premium-bridge"'), 'dashboard.html must define #box-ins-premium-bridge');

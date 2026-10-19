@@ -88,6 +88,10 @@ const translations = {
     btnBiometricUnlock: 'ปลดล็อกด้วย Face ID / Touch ID',
     pwaUpdateText: 'มีเวอร์ชันใหม่พร้อมใช้งาน',
     pwaUpdateBtn: 'อัปเดตเลย ➔',
+    pwaInstallBtn: 'ติดตั้งแอป',
+    pwaInstallTitle: 'ติดตั้ง Money Superapp ลงในอุปกรณ์',
+    pwaOfflineReady: 'พร้อมใช้งานออฟไลน์',
+    pwaOfflineMode: 'โหมดออฟไลน์',
     gdriveWorking: '⏳ กำลังทำงาน...',
     autoLockOpt0: 'ล็อกทันทีเมื่อสลับหน้าต่าง',
     autoLockOpt1: '1 นาที',
@@ -182,6 +186,10 @@ const translations = {
     btnBiometricUnlock: 'Unlock with Face ID / Touch ID',
     pwaUpdateText: 'New version available',
     pwaUpdateBtn: 'Update Now ➔',
+    pwaInstallBtn: 'Install App',
+    pwaInstallTitle: 'Install Money Superapp to your device',
+    pwaOfflineReady: 'Offline Ready',
+    pwaOfflineMode: 'Offline Mode',
     gdriveWorking: '⏳ Working...',
     autoLockOpt0: 'Lock immediately on blur',
     autoLockOpt1: '1 minute',
@@ -434,6 +442,16 @@ function applyLang(lang) {
     document.getElementById('badge-onboard-keys').textContent = t.badgeOnboardKeys;
   if (document.getElementById('qrCameraFallbackNotice'))
     document.getElementById('qrCameraFallbackNotice').textContent = t.qrCameraFallback;
+
+  if (document.getElementById('lbl-pwa-install'))
+    document.getElementById('lbl-pwa-install').textContent = t.pwaInstallBtn;
+  if (document.getElementById('btn-pwa-install')) {
+    document.getElementById('btn-pwa-install').title = t.pwaInstallTitle;
+    document.getElementById('btn-pwa-install').setAttribute('aria-label', t.pwaInstallTitle);
+  }
+  if (typeof updateNetworkStatus === 'function') {
+    updateNetworkStatus();
+  }
 
   if (typeof updateQrImportUI === 'function') {
     updateQrImportUI();
@@ -2913,9 +2931,98 @@ if ('serviceWorker' in navigator) {
 
         reg.update();
         console.log('PWA ServiceWorker registered with scope: ', reg.scope);
+        if (typeof updateNetworkStatus === 'function') {
+          updateNetworkStatus();
+        }
       })
       .catch((err) => {
         console.warn('PWA ServiceWorker registration failed: ', err);
       });
   });
+}
+
+// Phase 110: PWA Installation Handling & Offline Status Monitor
+let deferredInstallPrompt = null;
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent browser default mini-infobar
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    const btn = document.getElementById('btn-pwa-install');
+    if (btn) {
+      btn.style.display = 'inline-flex';
+    }
+  });
+
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    const btn = document.getElementById('btn-pwa-install');
+    if (btn) {
+      btn.style.display = 'none';
+    }
+    console.log('Money Superapp PWA was installed successfully');
+  });
+
+  window.addEventListener('online', () => {
+    updateNetworkStatus();
+  });
+
+  window.addEventListener('offline', () => {
+    updateNetworkStatus();
+  });
+}
+
+async function installPwa() {
+  if (!deferredInstallPrompt) return;
+  try {
+    deferredInstallPrompt.prompt();
+    const choiceResult = await deferredInstallPrompt.userChoice;
+    if (choiceResult && choiceResult.outcome === 'accepted') {
+      console.log('User accepted PWA installation');
+    }
+  } catch (err) {
+    console.warn('PWA install prompt error:', err);
+  }
+  deferredInstallPrompt = null;
+  const btn = document.getElementById('btn-pwa-install');
+  if (btn) {
+    btn.style.display = 'none';
+  }
+}
+
+function updateNetworkStatus() {
+  const isOnline = typeof navigator !== 'undefined' ? navigator.onLine !== false : true;
+  const badge = document.getElementById('pwaOfflineBadge');
+  const dot = document.getElementById('pwaStatusDot');
+  const label = document.getElementById('lbl-pwa-offline-badge');
+  const lang = typeof getLang === 'function' ? getLang() : 'th';
+  const t = translations[lang] || translations.th;
+
+  if (dot) {
+    dot.className = `pwa-status-dot ${isOnline ? 'online' : 'offline'}`;
+  }
+  if (label) {
+    label.textContent = isOnline ? t.pwaOfflineReady : t.pwaOfflineMode;
+  }
+  if (badge) {
+    badge.title = isOnline
+      ? lang === 'en'
+        ? 'PWA Ready & Cached Offline'
+        : 'ระบบแคชออฟไลน์พร้อมใช้งาน 100%'
+      : lang === 'en'
+        ? 'Currently Offline — Operating from Cache'
+        : 'กำลังใช้งานออฟไลน์ — ข้อมูลและระบบทำงานจากแคช';
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.installPwa = installPwa;
+  window.updateNetworkStatus = updateNetworkStatus;
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', updateNetworkStatus);
+  } else {
+    updateNetworkStatus();
+  }
 }

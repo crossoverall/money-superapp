@@ -1,4 +1,5 @@
 {
+  "id": "money-superapp",
   "name": "Money Superapp",
   "short_name": "MoneyApp",
   "description": "All-in-one personal finance, tax simulation, salary calculation, and portfolio rebalancing suite for Thailand.",
@@ -8,6 +9,8 @@
   "background_color": "#0f172a",
   "theme_color": "#0d9488",
   "orientation": "any",
+  "lang": "th-TH",
+  "dir": "ltr",
   "categories": ["finance", "productivity", "utilities"],
   "icons": [
     {
@@ -15,6 +18,72 @@
       "sizes": "192x192 512x512 any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View financial dashboard & health score",
+      "url": "./index.html#dashboard",
+      "icons": [
+        {
+          "src": "icon.svg",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Remaining Money",
+      "short_name": "Remaining",
+      "description": "Calculate salary deductions & net remaining money",
+      "url": "./index.html#remaining-money",
+      "icons": [
+        {
+          "src": "icon.svg",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Portfolio Rebalance",
+      "short_name": "Rebalance",
+      "description": "Portfolio rebalancing and DCA calculator",
+      "url": "./index.html#rebalance",
+      "icons": [
+        {
+          "src": "icon.svg",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Income Tax",
+      "short_name": "Tax",
+      "description": "Thai Personal Income Tax calculator",
+      "url": "./index.html#tax-calculator-base",
+      "icons": [
+        {
+          "src": "icon.svg",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/desktop.svg",
+      "sizes": "1280x720",
+      "type": "image/svg+xml",
+      "form_factor": "wide",
+      "label": "Money Superapp Desktop Dashboard"
+    },
+    {
+      "src": "screenshots/mobile.svg",
+      "sizes": "390x844",
+      "type": "image/svg+xml",
+      "form_factor": "narrow",
+      "label": "Money Superapp Mobile View"
     }
   ],
   "share_target": {

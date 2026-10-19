@@ -11,6 +11,10 @@
     privacyFooter: '🔒 100% Client-Side Privacy — ทุกการคำนวณและข้อมูลถูกเก็บไว้ในอุปกรณ์ของคุณเท่านั้น ไม่มีการส่งข้อมูลสู่เซิร์ฟเวอร์',
     printFooter: 'Money Superapp (100% Offline & Client-Side Private) • https://crossoverall.github.io/money-superapp/',
     skipLink: 'ข้ามไปยังเนื้อหาหลัก (Skip to content)',
+    pwaInstallBtn: 'Install App',
+    pwaInstallTitle: 'Install Money Superapp to your device',
+    pwaOfflineReady: 'Offline Ready',
+    pwaOfflineMode: 'Offline Mode',
 
     // Navigation Tabs
     tabDashboard: 'Portfolio Dashboard',

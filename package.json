@@ -1,6 +1,6 @@
 {
   "name": "money-superapp",
-  "version": "2.5.52",
+  "version": "2.5.53",
   "description": "Zero-build, offline-first personal finance toolkit for Thailand",
   "type": "module",
   "scripts": {

@@ -15,6 +15,31 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-19: W3C Web App Manifest Polish, Rich Install Prompts & Offline Readiness Indicator (v2.5.53)
+- **Date & Context:** 2026-10-19, Phase 110 Web App Manifest & Lighthouse PWA 100 Polish (`v2.5.53`).
+- **Problem:**
+  1. The Web App Manifest lacked modern W3C identification, internationalization metadata (`id`, `lang`, `dir`, `orientation`), App Shortcuts, and form-factor differentiated screenshot previews (`wide` and `narrow`), preventing Chromium and mobile browsers from presenting rich install UI dialogs.
+  2. Install promotions relied on default browser ambient badges without an explicit in-app install action trigger or install lifecycle telemetry.
+  3. Users lacked visual feedback on offline readiness and network connectivity transitions in the shell footer.
+- **Root Cause:** Incomplete manifest metadata relative to modern W3C PWA Installability specifications, and unhandled `beforeinstallprompt` / `appinstalled` browser lifecycle events.
+- **Solution & Rule:**
+  1. **W3C Web App Manifest Standards for Rich Install Prompts:**
+     - Always provide unique application identifier `"id": "money-superapp"` distinct from `start_url` to prevent app identity fragmentation.
+     - Specify `"lang": "th-TH"`, `"dir": "ltr"`, and `"orientation": "any"` in `manifest.json`.
+     - Include quick App Shortcuts (`shortcuts`) pointing to major core tools (`#dashboard`, `#remaining-money`, `#rebalance`, `#tax-calculator-base`) with valid icon sizes.
+     - Provide responsive vector screenshot descriptors with explicit `form_factor` (`"wide"` for desktop viewports $\ge 1280\times 720$ and `"narrow"` for mobile viewports $\le 390\times 844$) and precache screenshot assets in Service Worker (`sw.js`).
+  2. **Install Lifecycle Event Handling (`beforeinstallprompt` & `appinstalled`):**
+     - Capture `beforeinstallprompt`, call `e.preventDefault()`, store deferred prompt event, and reveal custom `#btn-pwa-install` action button in the topbar.
+     - On user click, invoke `deferredPrompt.prompt()` and await `userChoice`.
+     - Listen to `appinstalled` to immediately hide the install trigger, clear deferred prompt reference, and dispatch telemetry/notification.
+  3. **Dual Offline Readiness & Connectivity Monitoring:**
+     - Provide an offline status indicator (`#pwaOfflineBadge`) in the shell privacy bar with an active status dot.
+     - Monitor both `window.addEventListener('online')` / `offline` and `navigator.serviceWorker.controller` readiness.
+     - When offline or disconnected, update the badge text to "โหมดออฟไลน์ (ใช้งานได้)" / "Offline mode (ready)" with appropriate styling, reassuring users that all calculations run locally without network access.
+  4. **Quality Gates & Automated Verification:**
+     - Created `tests/pwa-manifest.test.mjs` verifying manifest schema, shortcuts, screenshot form factors, disk file presence, SW cache integrity, and DOM element contracts.
+     - Ensured 100% dictionary symmetry in `th.js` and `en.js` for all PWA UI strings.
+
 ### 2026-10-19: Performance Optimizations: Preload Hints, Speculative Prefetch & CSS Content-Visibility (v2.5.52)
 - **Date & Context:** 2026-10-19, Phase 109 Tier 3 Performance & Optimization Initiative (`v2.5.52`).
 - **Problem:**
