@@ -2601,5 +2601,205 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       new Script(`${taxCsvSafeMatch[0]}\nresult = csvSafe('@SUM');`).runInContext(testVm);
       assert.equal(testVm.result, "'@SUM");
     });
+
+    it('verifies Phase 125 Universal Cloud Export (Debt Payoff & Rebalance Orders to Google Drive) contracts and controls', () => {
+      const debtHtml = fs.readFileSync(path.join(ROOT_DIR, 'debt-calculator.html'), 'utf8');
+      const debtJs = fs.readFileSync(path.join(ROOT_DIR, 'js/debt-calculator.js'), 'utf8');
+      const rebHtml = fs.readFileSync(path.join(ROOT_DIR, 'rebalance.html'), 'utf8');
+      const rebJs = fs.readFileSync(path.join(ROOT_DIR, 'js/rebalance.js'), 'utf8');
+
+      // 1. Verify UI controls and modal in debt-calculator.html
+      assert.ok(debtHtml.includes('id="btnSaveToDrive"'), 'debt-calculator.html must define #btnSaveToDrive');
+      assert.ok(debtHtml.includes('id="driveExportModal"'), 'debt-calculator.html must define #driveExportModal');
+      assert.ok(debtHtml.includes('id="driveModalTitle"'), 'debt-calculator.html must define #driveModalTitle');
+      assert.ok(debtHtml.includes('id="driveModalSub"'), 'debt-calculator.html must define #driveModalSub');
+      assert.ok(debtHtml.includes('id="driveFormatCsv"'), 'debt-calculator.html must define #driveFormatCsv');
+      assert.ok(debtHtml.includes('id="driveFormatPdf"'), 'debt-calculator.html must define #driveFormatPdf');
+      assert.ok(debtHtml.includes('id="btnDriveShareOrSave"'), 'debt-calculator.html must define #btnDriveShareOrSave');
+      assert.ok(debtHtml.includes('id="btnOpenDrive"'), 'debt-calculator.html must define #btnOpenDrive');
+      assert.ok(debtHtml.includes('id="btnOpenSheets"'), 'debt-calculator.html must define #btnOpenSheets');
+      assert.ok(debtHtml.includes('data-i18n="driveGuide"'), 'debt-calculator.html must declare driveGuide');
+
+      // 2. Verify functions and exports in js/debt-calculator.js
+      assert.ok(debtJs.includes('function openDriveModal()'), 'debt-calculator.js must define openDriveModal');
+      assert.ok(debtJs.includes('function closeDriveModal()'), 'debt-calculator.js must define closeDriveModal');
+      assert.ok(
+        debtJs.includes('async function saveToGoogleDrive()'),
+        'debt-calculator.js must define saveToGoogleDrive',
+      );
+      assert.ok(
+        debtJs.includes('function generateDebtAmortizationCSV()'),
+        'debt-calculator.js must define generateDebtAmortizationCSV',
+      );
+      assert.ok(
+        debtJs.includes('window.generateDebtAmortizationCSV = generateDebtAmortizationCSV'),
+        'debt-calculator.js must export generateDebtAmortizationCSV',
+      );
+      assert.ok(
+        debtJs.includes('window.openDriveModal = openDriveModal'),
+        'debt-calculator.js must export openDriveModal',
+      );
+      assert.ok(
+        debtJs.includes('window.closeDriveModal = closeDriveModal'),
+        'debt-calculator.js must export closeDriveModal',
+      );
+      assert.ok(
+        debtJs.includes('window.saveToGoogleDrive = saveToGoogleDrive'),
+        'debt-calculator.js must export saveToGoogleDrive',
+      );
+      assert.ok(
+        debtJs.includes('debt_amortization_'),
+        'debt-calculator.js saveToGoogleDrive must generate debt_amortization_ filename',
+      );
+
+      // 3. Test generateDebtAmortizationCSV execution in VM context
+      const debtSandbox = {
+        console,
+        Math,
+        Date,
+        LANG: 'th',
+        state: {
+          strategy: 'avalanche',
+          extraPayment: 5000,
+          debts: [
+            { id: 1, name: 'Credit Card', balance: 50000, rate: 16, minPayment: 2500 },
+            { id: 2, name: '=HYPERLINK("http://evil.com")', balance: 100000, rate: 18, minPayment: 3000 },
+          ],
+        },
+        simulate: (_debts, _extra, _strategy) => ({
+          months: 24,
+          totalInterest: 14500,
+          payoffOrder: [
+            { name: '=HYPERLINK("http://evil.com")', month: 12 },
+            { name: 'Credit Card', month: 24 },
+          ],
+        }),
+      };
+      const debtVmContext = createContext(debtSandbox);
+      const debtCsvMatch = debtJs.match(/function generateDebtAmortizationCSV\(\) \{[\s\S]*?\n\}/);
+      assert.ok(debtCsvMatch, 'Must match generateDebtAmortizationCSV implementation');
+      new Script(`${debtCsvMatch[0]}\nresult = generateDebtAmortizationCSV();`).runInContext(debtVmContext);
+      const generatedDebtCsv = debtSandbox.result;
+
+      assert.ok(
+        generatedDebtCsv.startsWith('\uFEFF'),
+        'Debt CSV must prepend \\uFEFF BOM for Excel/Google Sheets compatibility',
+      );
+      assert.ok(
+        generatedDebtCsv.includes(
+          'Date,DebtName,Balance,InterestRate,MonthlyPayment,Strategy,PayoffMonths,TotalInterest',
+        ),
+        'Debt CSV must define standard amortization columns',
+      );
+      assert.ok(
+        generatedDebtCsv.includes('Credit Card,50000,16,2500,Avalanche,24,14500'),
+        'Debt CSV must include first debt',
+      );
+      assert.ok(
+        generatedDebtCsv.includes('"\'=HYPERLINK(""http://evil.com"")"'),
+        'Debt CSV must escape formula injection with leading single quote',
+      );
+
+      // 4. Verify UI controls and modal in rebalance.html
+      assert.ok(rebHtml.includes('id="btnSaveToDrive"'), 'rebalance.html must define #btnSaveToDrive');
+      assert.ok(rebHtml.includes('id="driveExportModal"'), 'rebalance.html must define #driveExportModal');
+      assert.ok(rebHtml.includes('id="driveModalTitle"'), 'rebalance.html must define #driveModalTitle');
+      assert.ok(rebHtml.includes('id="driveModalSub"'), 'rebalance.html must define #driveModalSub');
+      assert.ok(rebHtml.includes('id="driveFormatCsv"'), 'rebalance.html must define #driveFormatCsv');
+      assert.ok(rebHtml.includes('id="driveFormatPdf"'), 'rebalance.html must define #driveFormatPdf');
+      assert.ok(rebHtml.includes('id="btnDriveShareOrSave"'), 'rebalance.html must define #btnDriveShareOrSave');
+      assert.ok(rebHtml.includes('id="btnOpenDrive"'), 'rebalance.html must define #btnOpenDrive');
+      assert.ok(rebHtml.includes('id="btnOpenSheets"'), 'rebalance.html must define #btnOpenSheets');
+      assert.ok(rebHtml.includes('data-i18n="driveGuide"'), 'rebalance.html must declare driveGuide');
+
+      // 5. Verify functions and exports in js/rebalance.js
+      assert.ok(rebJs.includes('function openDriveModal()'), 'rebalance.js must define openDriveModal');
+      assert.ok(rebJs.includes('function closeDriveModal()'), 'rebalance.js must define closeDriveModal');
+      assert.ok(rebJs.includes('async function saveToGoogleDrive()'), 'rebalance.js must define saveToGoogleDrive');
+      assert.ok(
+        rebJs.includes('function generateRebalanceOrdersCSV()'),
+        'rebalance.js must define generateRebalanceOrdersCSV',
+      );
+      assert.ok(
+        rebJs.includes('window.generateRebalanceOrdersCSV = generateRebalanceOrdersCSV'),
+        'rebalance.js must export generateRebalanceOrdersCSV',
+      );
+      assert.ok(rebJs.includes('window.openDriveModal = openDriveModal'), 'rebalance.js must export openDriveModal');
+      assert.ok(rebJs.includes('window.closeDriveModal = closeDriveModal'), 'rebalance.js must export closeDriveModal');
+      assert.ok(
+        rebJs.includes('window.saveToGoogleDrive = saveToGoogleDrive'),
+        'rebalance.js must export saveToGoogleDrive',
+      );
+      assert.ok(
+        rebJs.includes('rebalance_orders_'),
+        'rebalance.js saveToGoogleDrive must generate rebalance_orders_ filename',
+      );
+
+      // 6. Test generateRebalanceOrdersCSV execution in VM context
+      const rebSandbox = {
+        console,
+        Math,
+        Date,
+        LANG: 'th',
+        state: {
+          totalBudget: 100000,
+          buckets: [
+            {
+              label: 'Core',
+              weight: 60,
+              assets: [
+                { name: 'Global Equities', value: 60000, weight: 100 },
+                { name: '=HYPERLINK("http://evil.com")', value: 40000, weight: 0 },
+              ],
+            },
+          ],
+        },
+        allocateBuckets: (_b) => [60000],
+        allocate: (_assets, _budget) => [60000, 0],
+      };
+      const rebVmContext = createContext(rebSandbox);
+      const rebCsvMatch = rebJs.match(/function generateRebalanceOrdersCSV\(\) \{[\s\S]*?\n\}/);
+      assert.ok(rebCsvMatch, 'Must match generateRebalanceOrdersCSV implementation');
+      new Script(`${rebCsvMatch[0]}\nresult = generateRebalanceOrdersCSV();`).runInContext(rebVmContext);
+      const generatedRebCsv = rebSandbox.result;
+
+      assert.ok(
+        generatedRebCsv.startsWith('\uFEFF'),
+        'Rebalance CSV must prepend \\uFEFF BOM for Excel/Google Sheets compatibility',
+      );
+      assert.ok(
+        generatedRebCsv.includes(
+          'Date,AssetClass,CurrentAmount,CurrentWeightPct,TargetWeightPct,TargetAmount,Action,OrderAmount',
+        ),
+        'Rebalance CSV must define standard order columns',
+      );
+      assert.ok(
+        generatedRebCsv.includes('Global Equities,60000,60,60,120000,BUY,60000'),
+        'Rebalance CSV must include buy order',
+      );
+      assert.ok(
+        generatedRebCsv.includes('"\'=HYPERLINK(""http://evil.com"")"'),
+        'Rebalance CSV must sanitize formula strings with leading single quote',
+      );
+
+      // 7. Verify CWE-1236 Formula Injection Sanitization across debt and rebalance CSV engines
+      const csvSafeRegex = /function csvSafe\(val\) \{[\s\S]*?return str;\s*\}/;
+      const debtCsvSafeMatch = debtJs.match(csvSafeRegex);
+      assert.ok(debtCsvSafeMatch, 'Debt calculator must define csvSafe');
+      const testVm = createContext({ result: null });
+      new Script(`${debtCsvSafeMatch[0]}\nresult = csvSafe('=HYPERLINK("http://evil.com")');`).runInContext(testVm);
+      assert.equal(testVm.result, '"\'=HYPERLINK(""http://evil.com"")"');
+
+      new Script(`${debtCsvSafeMatch[0]}\nresult = csvSafe('@SUM');`).runInContext(testVm);
+      assert.equal(testVm.result, "'@SUM");
+
+      const rebCsvSafeMatch = rebJs.match(csvSafeRegex);
+      assert.ok(rebCsvSafeMatch, 'Rebalance tool must define csvSafe');
+      new Script(`${rebCsvSafeMatch[0]}\nresult = csvSafe('=HYPERLINK("http://evil.com")');`).runInContext(testVm);
+      assert.equal(testVm.result, '"\'=HYPERLINK(""http://evil.com"")"');
+
+      new Script(`${rebCsvSafeMatch[0]}\nresult = csvSafe('@SUM');`).runInContext(testVm);
+      assert.equal(testVm.result, "'@SUM");
+    });
   });
 });

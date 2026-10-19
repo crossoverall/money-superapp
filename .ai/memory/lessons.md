@@ -15,6 +15,25 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-19: Universal Cloud Export for Debt & Portfolio Rebalance Tools & Full Suite CWE-1236 Defense (v2.5.66)
+- **Date & Context:** 2026-10-19, Phase 125 Universal Cloud Export & Defense-in-Depth Completion (`v2.5.66`).
+- **Problem:**
+  1. The Debt Freedom Calculator (`debt-calculator.html`) and Asset Allocation Rebalance Tool (`rebalance.html`) previously lacked cloud export capabilities to Google Drive and Google Sheets, requiring users to copy raw clipboard text or download local files manually.
+  2. With export endpoints proliferating across the application suite, ensuring uniform CSV Formula Injection (CWE-1236) sanitization across all tools was required so that malicious user input (e.g. debt account names or custom asset symbols starting with `=cmd|`, `@SUM`, `+`, or `-`) cannot execute arbitrary formulas in spreadsheet applications.
+- **Root Cause:**
+  - Remaining legacy tools had not yet received the standardized cloud export modal (`#driveExportModal`) and Web Share integration introduced in Phases 120 and 124.
+  - Potential formula injection vectors in custom debt titles and user-entered asset class labels.
+- **Solution & Rule:**
+  1. **Universal Cloud Export Implementation (`debt-calculator.html` & `rebalance.html`):**
+     - Integrated `#driveExportModal` and `#btnSaveToDrive` into both tools with CSV and PDF statement export options.
+     - Implemented `generateDebtAmortizationCSV()` and `generateRebalanceOrdersCSV()` prepending `\uFEFF` UTF-8 BOM for spreadsheet encoding compatibility.
+     - Provided 1-tap native Web Share API (`navigator.share({ files: [...] })`), fallback blob download, and 1-click shortcuts to `drive.google.com` and `sheets.new`.
+  2. **Suite-Wide CWE-1236 Neutralization Complete:**
+     - Standardized `csvSafe(val)` helper across all 5 export-capable tools (`remaining-money`, `dashboard`, `tax-calculator-base`, `debt-calculator`, and `rebalance`).
+     - Any non-numeric string starting with `=`, `+`, `-`, or `@` has a single quote `'` prepended prior to quote escaping, systematically eliminating formula execution risks across the entire app.
+  3. **Quality Gates & Smoke Test:**
+     - Verified with dedicated regression tests in `tests/smoke.test.mjs` running in Node.js VM context; 90 smoke tests passing with 0 Biome linter errors.
+
 ### 2026-10-19: Universal Cloud Export (Google Drive/Sheets/PDF) & CWE-1236 CSV Formula Neutralization (v2.5.65)
 - **Date & Context:** 2026-10-19, Phase 124 Universal Cloud Export & Security Hardening (`v2.5.65`).
 - **Problem:**

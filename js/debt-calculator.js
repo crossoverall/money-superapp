@@ -97,6 +97,17 @@ const translations = {
     resCarApr: 'อัตราดอกเบี้ยแท้จริง (Effective APR)',
     resCarPmt: 'ค่างวดต่อเดือน (รวม VAT 7%)',
     resCarInterest: 'ดอกเบี้ยรวมตลอดสัญญา',
+    btnSaveToDrive: 'บันทึกไปยัง Google Drive',
+    driveModalTitle: 'บันทึกข้อมูลไปยัง Google Drive',
+    driveModalSub: 'ส่งออกข้อมูลไปยัง Google Drive เพื่อเปิดใน Google Sheets หรือเก็บบันทึกประวัติ',
+    driveFormatLabel: 'เลือกรูปแบบไฟล์ที่ต้องการส่งออก:',
+    driveFormatCsv: 'CSV (เหมาะสำหรับ Google Sheets / วิเคราะห์ข้อมูล)',
+    driveFormatPdf: 'PDF (เหมาะสำหรับพิมพ์ / บันทึกเอกสารสรุป)',
+    btnDriveShareOrSave: 'แชร์ / บันทึกไฟล์',
+    btnOpenDrive: 'เปิด Google Drive',
+    btnOpenSheets: 'เปิด Google Sheets',
+    driveGuide:
+      '💡 เคล็ดลับ: เมื่อเลือก CSV ระบบจะเตรียมไฟล์ที่พร้อมเปิดด้วย Google Sheets ได้ทันที หากเปิดบนมือถือสามารถกดบันทึกลง Google Drive ได้โดยตรง',
   },
   en: {
     title: 'Debt Payoff Calculator',
@@ -198,6 +209,17 @@ const translations = {
     resCarInterest: 'Total Interest Paid',
     schedulePanelTitle: '📅 Payoff Schedule & Timeline',
     resetLayout: 'Reset Layout',
+    btnSaveToDrive: 'Save to Google Drive',
+    driveModalTitle: 'Save to Google Drive',
+    driveModalSub: 'Export dossier records to Google Drive for Google Sheets or archival',
+    driveFormatLabel: 'Select Export Format:',
+    driveFormatCsv: 'CSV (Best for Google Sheets / spreadsheet analysis)',
+    driveFormatPdf: 'PDF (Best for print / dossier statement summary)',
+    btnDriveShareOrSave: 'Share / Save File',
+    btnOpenDrive: 'Open Google Drive',
+    btnOpenSheets: 'Open Google Sheets',
+    driveGuide:
+      '💡 Tip: When exporting as CSV, the file is ready for Google Sheets. On mobile devices, you can tap to upload directly to Google Drive via native share.',
   },
 };
 
@@ -2202,3 +2224,132 @@ function resetDebtLayout() {
   }
 }
 window.resetDebtLayout = resetDebtLayout;
+
+function openDriveModal() {
+  const modal = document.getElementById('driveExportModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeDriveModal() {
+  const modal = document.getElementById('driveExportModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function generateDebtAmortizationCSV() {
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const debts = state?.debts || [];
+  const strategy = state?.strategy || 'avalanche';
+  const windfall =
+    state?.windfallEnabled && state?.windfallAmount > 0
+      ? { amount: state.windfallAmount, month: Math.max(1, state.windfallMonth) }
+      : null;
+  const extra = state?.extraPayment || 0;
+  const sim =
+    typeof simulate === 'function'
+      ? simulate(debts, extra, strategy, windfall)
+      : { months: 0, totalInterest: 0, payoffOrder: [] };
+
+  const header = 'Date,DebtName,Balance,InterestRate,MonthlyPayment,Strategy,PayoffMonths,TotalInterest';
+  const rows = [header];
+
+  function csvSafe(val) {
+    let str = String(val == null ? '' : val);
+    if (/^\s*[\t\r=+\-@]/.test(str)) {
+      if (Number.isNaN(Number(str))) {
+        str = `'${str}`;
+      }
+    }
+    if (/[",\r\n]/.test(str)) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  }
+
+  const stratName = strategy === 'snowball' ? 'Snowball' : 'Avalanche';
+
+  debts.forEach((d) => {
+    const match = (sim.payoffOrder || []).find((p) => p.name === d.name);
+    const months = match ? match.month : sim.months;
+    rows.push(
+      [
+        csvSafe(dateStr),
+        csvSafe(d.name),
+        typeof d.balance === 'number' ? d.balance : csvSafe(d.balance),
+        typeof d.rate === 'number' ? d.rate : csvSafe(d.rate),
+        typeof d.minPayment === 'number' ? d.minPayment : csvSafe(d.minPayment),
+        csvSafe(stratName),
+        months,
+        Math.round(sim.totalInterest),
+      ].join(','),
+    );
+  });
+
+  const bom = '\uFEFF';
+  return bom + rows.join('\r\n');
+}
+
+async function saveToGoogleDrive() {
+  const isEN = typeof LANG !== 'undefined' ? LANG === 'en' : false;
+  const formatInput = document.querySelector('input[name="driveFormat"]:checked');
+  const format = formatInput ? formatInput.value : 'csv';
+
+  if (format === 'pdf') {
+    closeDriveModal();
+    if (typeof printDebtPlan === 'function') {
+      printDebtPlan();
+    } else {
+      window.print();
+    }
+    return;
+  }
+
+  const csvContent = generateDebtAmortizationCSV();
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const fileName = `debt_amortization_${dateStr}.csv`;
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+  // Web Share API with file payload
+  if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+    try {
+      const file = typeof File !== 'undefined' ? new File([blob], fileName, { type: 'text/csv' }) : null;
+      if (file && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: isEN ? 'Debt Amortization Schedule for Google Drive' : 'ตารางปลดหนี้สำหรับ Google Drive',
+          text: isEN
+            ? 'Debt Freedom Amortization & Strategy Schedule (CSV)'
+            : 'ตารางแผนการปลดหนี้และเปรียบเทียบกลยุทธ์ (CSV)',
+        });
+        closeDriveModal();
+        return;
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        return;
+      }
+    }
+  }
+
+  // Fallback anchor download
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  closeDriveModal();
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeDriveModal();
+  }
+});
+
+// Window exports
+window.generateDebtAmortizationCSV = generateDebtAmortizationCSV;
+window.openDriveModal = openDriveModal;
+window.closeDriveModal = closeDriveModal;
+window.saveToGoogleDrive = saveToGoogleDrive;

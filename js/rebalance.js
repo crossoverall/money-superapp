@@ -113,6 +113,17 @@ const translations = {
     lblExportCsv: 'ดาวน์โหลด CSV',
     lblPrintRebalance: 'พิมพ์ / บันทึก PDF',
     resetBtn: 'ล้างข้อมูลที่บันทึกไว้',
+    btnSaveToDrive: 'บันทึกไปยัง Google Drive',
+    driveModalTitle: 'บันทึกข้อมูลไปยัง Google Drive',
+    driveModalSub: 'ส่งออกข้อมูลไปยัง Google Drive เพื่อเปิดใน Google Sheets หรือเก็บบันทึกประวัติ',
+    driveFormatLabel: 'เลือกรูปแบบไฟล์ที่ต้องการส่งออก:',
+    driveFormatCsv: 'CSV (เหมาะสำหรับ Google Sheets / วิเคราะห์ข้อมูล)',
+    driveFormatPdf: 'PDF (เหมาะสำหรับพิมพ์ / บันทึกเอกสารสรุป)',
+    btnDriveShareOrSave: 'แชร์ / บันทึกไฟล์',
+    btnOpenDrive: 'เปิด Google Drive',
+    btnOpenSheets: 'เปิด Google Sheets',
+    driveGuide:
+      '💡 เคล็ดลับ: เมื่อเลือก CSV ระบบจะเตรียมไฟล์ที่พร้อมเปิดด้วย Google Sheets ได้ทันที หากเปิดบนมือถือสามารถกดบันทึกลง Google Drive ได้โดยตรง',
   },
   en: {
     eyebrow: 'DCA TOOL',
@@ -228,6 +239,17 @@ const translations = {
     lblExportCsv: 'Export CSV',
     lblPrintRebalance: 'Print / Save PDF',
     resetBtn: 'Clear saved data',
+    btnSaveToDrive: 'Save to Google Drive',
+    driveModalTitle: 'Save to Google Drive',
+    driveModalSub: 'Export dossier records to Google Drive for Google Sheets or archival',
+    driveFormatLabel: 'Select Export Format:',
+    driveFormatCsv: 'CSV (Best for Google Sheets / spreadsheet analysis)',
+    driveFormatPdf: 'PDF (Best for print / dossier statement summary)',
+    btnDriveShareOrSave: 'Share / Save File',
+    btnOpenDrive: 'Open Google Drive',
+    btnOpenSheets: 'Open Google Sheets',
+    driveGuide:
+      '💡 Tip: When exporting as CSV, the file is ready for Google Sheets. On mobile devices, you can tap to upload directly to Google Drive via native share.',
   },
 };
 
@@ -3037,3 +3059,158 @@ if (typeof MoneyApp !== 'undefined' && MoneyApp.initCardLayoutManager) {
     },
   });
 }
+
+function openDriveModal() {
+  const modal = document.getElementById('driveExportModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeDriveModal() {
+  const modal = document.getElementById('driveExportModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function generateRebalanceOrdersCSV() {
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const totalBudget = state?.totalBudget || 0;
+  const buckets = state?.buckets || [];
+  const totalPortfolioVal = buckets.reduce(
+    (sum, b) => sum + (b.assets || []).reduce((s, a) => s + (Number(a.value) || 0), 0),
+    0,
+  );
+  const bucketBudgets = typeof allocateBuckets === 'function' ? allocateBuckets(totalBudget) : [];
+
+  const header = 'Date,AssetClass,CurrentAmount,CurrentWeightPct,TargetWeightPct,TargetAmount,Action,OrderAmount';
+  const rows = [header];
+
+  function csvSafe(val) {
+    let str = String(val == null ? '' : val);
+    if (/^\s*[\t\r=+\-@]/.test(str)) {
+      if (Number.isNaN(Number(str))) {
+        str = `'${str}`;
+      }
+    }
+    if (/[",\r\n]/.test(str)) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  }
+
+  if (Array.isArray(state?.orders) && state.orders.length > 0) {
+    state.orders.forEach((o) => {
+      rows.push(
+        [
+          csvSafe(dateStr),
+          csvSafe(o.assetClass || o.name || 'Asset'),
+          typeof o.currentAmount === 'number' ? o.currentAmount : 0,
+          typeof o.currentWeightPct === 'number' ? o.currentWeightPct : 0,
+          typeof o.targetWeightPct === 'number' ? o.targetWeightPct : 0,
+          typeof o.targetAmount === 'number' ? o.targetAmount : 0,
+          csvSafe(o.action || 'HOLD'),
+          typeof o.orderAmount === 'number' ? o.orderAmount : 0,
+        ].join(','),
+      );
+    });
+    const bom = '\uFEFF';
+    return bom + rows.join('\r\n');
+  }
+
+  buckets.forEach((bucket, bi) => {
+    const isBucketEx = bucket.enabled === false;
+    const bucketBudget = isBucketEx ? 0 : bucketBudgets[bi] || 0;
+    const assets = bucket.assets || [];
+    const activeIndices = [];
+    assets.forEach((a, idx) => {
+      if (a.enabled !== false && !isBucketEx) activeIndices.push(idx);
+    });
+    const activeAssets = activeIndices.map((idx) => assets[idx]);
+    const activeAlloc = isBucketEx || typeof allocate !== 'function' ? [] : allocate(activeAssets, bucketBudget);
+    const allocMap = new Array(assets.length).fill(0);
+    activeIndices.forEach((origIdx, activeIdx) => {
+      allocMap[origIdx] = activeAlloc[activeIdx] || 0;
+    });
+
+    assets.forEach((a, i) => {
+      const isEx = isBucketEx || a.enabled === false;
+      const add = isEx ? 0 : Math.round(allocMap[i] || 0);
+      const curVal = Math.round(Number(a.value) || 0);
+      const targetVal = Math.round(curVal + add);
+      const curPct = totalPortfolioVal > 0 ? Math.round((curVal / totalPortfolioVal) * 1000) / 10 : 0;
+      const targetPct = bucket.weight
+        ? Math.round(((bucket.weight * (Number(a.weight) || 0)) / 100) * 10) / 10
+        : Number(a.weight) || 0;
+      const action = isEx ? 'EXCLUDED' : add > 0 ? 'BUY' : 'HOLD';
+
+      const assetClass = a.assetClass || a.name || bucket.label;
+
+      rows.push(
+        [csvSafe(dateStr), csvSafe(assetClass), curVal, curPct, targetPct, targetVal, csvSafe(action), add].join(','),
+      );
+    });
+  });
+
+  const bom = '\uFEFF';
+  return bom + rows.join('\r\n');
+}
+
+async function saveToGoogleDrive() {
+  const isEN = typeof LANG !== 'undefined' ? LANG === 'en' : false;
+  const formatInput = document.querySelector('input[name="driveFormat"]:checked');
+  const format = formatInput ? formatInput.value : 'csv';
+
+  if (format === 'pdf') {
+    closeDriveModal();
+    window.print();
+    return;
+  }
+
+  const csvContent = generateRebalanceOrdersCSV();
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const fileName = `rebalance_orders_${dateStr}.csv`;
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+  // Web Share API with file payload
+  if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+    try {
+      const file = typeof File !== 'undefined' ? new File([blob], fileName, { type: 'text/csv' }) : null;
+      if (file && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: isEN ? 'Rebalance Orders for Google Drive' : 'รายการคำสั่ง Rebalance สำหรับ Google Drive',
+          text: isEN
+            ? 'Asset Allocation Rebalance Orders & Target Schedule (CSV)'
+            : 'รายการสั่งซื้อปรับสมดุลพอร์ตและเป้าหมายสัดส่วน (CSV)',
+        });
+        closeDriveModal();
+        return;
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        return;
+      }
+    }
+  }
+
+  // Fallback anchor download
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  closeDriveModal();
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeDriveModal();
+  }
+});
+
+// Window exports
+window.generateRebalanceOrdersCSV = generateRebalanceOrdersCSV;
+window.openDriveModal = openDriveModal;
+window.closeDriveModal = closeDriveModal;
+window.saveToGoogleDrive = saveToGoogleDrive;
