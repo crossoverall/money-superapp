@@ -1743,6 +1743,22 @@
   initShortcutForwarding();
   initTouchSwipeNavigation();
 
+  function requestAppBadgeUpdate(count) {
+    try {
+      if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+        window.parent.postMessage({ action: 'updateBadge', count: count }, '*');
+      }
+    } catch (_e) {}
+  }
+
+  function requestAppBadgeClear() {
+    try {
+      if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+        window.parent.postMessage({ action: 'clearBadge' }, '*');
+      }
+    } catch (_e) {}
+  }
+
   var MoneyApp = Object.assign(global.MoneyApp || {}, {
     LANG: LANG,
     THEME: THEME,
@@ -1801,6 +1817,8 @@
     validateShareTargetPayload: validateShareTargetPayload,
     calculateTermLifePremiumEstimate: calculateTermLifePremiumEstimate,
     THAI_PIT_TIERS: THAI_PIT_TIERS,
+    requestAppBadgeUpdate: requestAppBadgeUpdate,
+    requestAppBadgeClear: requestAppBadgeClear,
   });
 
   // Expose on global window object
@@ -1880,5 +1898,7 @@
       global.calculateDebtConsolidation = calculateDebtConsolidation;
     if (typeof global.calculateTaxBracketStepDown === 'undefined')
       global.calculateTaxBracketStepDown = calculateTaxBracketStepDown;
+    if (typeof global.requestAppBadgeUpdate === 'undefined') global.requestAppBadgeUpdate = requestAppBadgeUpdate;
+    if (typeof global.requestAppBadgeClear === 'undefined') global.requestAppBadgeClear = requestAppBadgeClear;
   }
 })(typeof window !== 'undefined' ? window : this);

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="2.5.68">
+<meta name="version" content="2.5.69">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://accounts.google.com/ https://www.googleapis.com/; frame-src 'self' https://accounts.google.com/; object-src 'none'; base-uri 'self';">
 <script>
   try {
@@ -244,6 +244,15 @@
   .pwa-status-dot.offline {
     background-color: #f59e0b;
     box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+  }
+  .pwa-status-dot.has-badge {
+    background-color: #ef4444;
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.8);
+    animation: pwaBadgePulse 2s infinite ease-in-out;
+  }
+  @keyframes pwaBadgePulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.35); opacity: 0.85; }
   }
 
   iframe { display: block; width: 100%; flex: 1 1 auto; border: none; background: var(--bg); }
@@ -599,7 +608,7 @@
       <span>⬇️</span>
       <span id="lbl-pwa-install" data-i18n="pwaInstallBtn">ติดตั้งแอป</span>
     </button>
-    <span class="version-badge">v2.5.68</span>
+    <span class="version-badge">v2.5.69</span>
     <button id="btn-help-modal" onclick="openOnboardingModal()" title="คู่มือการใช้งาน (Quick Tour)" aria-label="Open Quick Tour and Guide">
       <span class="help-icon">❓</span>
     </button>
@@ -608,6 +617,10 @@
     </button>
   </div>
  </div>
+</div>
+<!-- Pull-to-Refresh Indicator Bar (Phase 128) -->
+<div id="pullToRefreshBar" style="display:none; height:0px; overflow:hidden; transition:height 0.2s ease, opacity 0.2s ease; background:rgba(13, 148, 136, 0.12); border-bottom:1px solid rgba(13, 148, 136, 0.3); text-align:center; font-size:11px; font-weight:600; color:var(--brand, #0d9488); line-height:36px; user-select:none;">
+  <span id="pullToRefreshText" data-i18n="pullToRefreshText">🔄 เลื่อนลงเพื่อซิงค์ข้อมูล (Pull to refresh)</span>
 </div>
 <!-- App Viewport Container with Loading Skeleton & Accessible Skip-Link -->
 <main id="mainViewport" class="app-viewport">
@@ -636,7 +649,7 @@
       <span class="pwa-status-dot online" id="pwaStatusDot"></span>
       <span id="lbl-pwa-offline-badge" data-i18n="pwaOfflineReady">พร้อมใช้งานออฟไลน์</span>
     </span>
-    <span class="privacy-ver-badge">Money Superapp v2.5.68</span>
+    <span class="privacy-ver-badge">Money Superapp v2.5.69</span>
   </div>
 </div>
 

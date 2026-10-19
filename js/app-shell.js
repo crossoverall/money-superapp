@@ -112,6 +112,9 @@ const translations = {
     cacheRefreshing: 'กำลังอัปเดตไฟล์แคช...',
     cacheRefreshed: 'อัปเดตแคชออฟไลน์เรียบร้อยแล้ว',
     cachePurged: 'ล้างแคชเก่าที่ตกค้างเรียบร้อยแล้ว',
+    pullToRefreshText: '🔄 เลื่อนลงเพื่อซิงค์ข้อมูล (Pull to refresh)',
+    pullToRefreshRelease: '🔄 ปล่อยเพื่อซิงค์ข้อมูล (Release to refresh)',
+    pullToRefreshSyncing: '🔄 กำลังซิงค์ข้อมูล... (Syncing...)',
   },
   en: {
     skipLink: 'Skip to main content',
@@ -220,12 +223,27 @@ const translations = {
     cacheRefreshing: 'Refreshing cache assets...',
     cacheRefreshed: 'Offline cache refreshed successfully',
     cachePurged: 'Stale caches purged successfully',
+    pullToRefreshText: '🔄 Pull down to sync data',
+    pullToRefreshRelease: '🔄 Release to refresh',
+    pullToRefreshSyncing: '🔄 Syncing data...',
   },
 };
 
 if (typeof window !== 'undefined' && window.MoneyApp?.I18n) {
   window.MoneyApp.I18n.register('th', translations.th);
   window.MoneyApp.I18n.register('en', translations.en);
+}
+
+let currentAppBadgeCount = 0;
+
+function applyDocumentTitleWithBadge(baseTitle) {
+  if (typeof document === 'undefined') return;
+  const cleanTitle = (baseTitle || document.title || 'Money Superapp').replace(/^\(\d+\)\s*/, '');
+  if (currentAppBadgeCount > 0) {
+    document.title = `(${currentAppBadgeCount}) ${cleanTitle}`;
+  } else {
+    document.title = cleanTitle;
+  }
 }
 
 function getLang() {
@@ -269,7 +287,7 @@ function applyLang(lang) {
   if (activeBtn) {
     const desktopBtn = document.querySelector(`.top-nav button[data-tab="${activeBtn.dataset.tab}"]`);
     const titleText = desktopBtn?.dataset[lang] || activeBtn.dataset[lang] || activeBtn.textContent;
-    document.title = `Money Superapp — ${titleText}`;
+    applyDocumentTitleWithBadge(`Money Superapp — ${titleText}`);
   }
   const t = translations[lang] || translations.th;
   if (typeof window !== 'undefined' && window.MoneyApp?.I18n) {
@@ -283,6 +301,9 @@ function applyLang(lang) {
   }
   if (document.getElementById('lbl-privacy-footer'))
     document.getElementById('lbl-privacy-footer').textContent = t.privacyFooter;
+  if (document.getElementById('pullToRefreshText') && t.pullToRefreshText) {
+    document.getElementById('pullToRefreshText').textContent = t.pullToRefreshText;
+  }
   if (document.getElementById('lbl-modal-title')) document.getElementById('lbl-modal-title').textContent = t.modalTitle;
   const qrInput = document.getElementById('qrManualChunkInput');
   if (qrInput) {
@@ -2409,7 +2430,7 @@ function activateTab(tabIdOrSrc, updateHash = true) {
   const lang = getLang();
   const desktopBtn = document.querySelector(`.top-nav button[data-tab="${activeTab}"]`);
   const titleText = desktopBtn?.dataset[lang] || target.dataset[lang] || activeTab;
-  document.title = `Money Superapp — ${titleText}`;
+  applyDocumentTitleWithBadge(`Money Superapp — ${titleText}`);
 
   try {
     localStorage.setItem('moneySuperapp.activeTab', activeTab);
@@ -2483,6 +2504,20 @@ window.addEventListener('message', (e) => {
   }
   if (e.data && e.data.action === 'swipeTab' && e.data.direction) {
     handleSwipeTab(e.data.direction);
+  }
+  if (e.data && e.data.action === 'updateBadge') {
+    if (typeof MoneyApp !== 'undefined' && typeof MoneyApp.updateAppBadge === 'function') {
+      MoneyApp.updateAppBadge(e.data.count);
+    } else if (typeof updateAppBadge === 'function') {
+      updateAppBadge(e.data.count);
+    }
+  }
+  if (e.data && e.data.action === 'clearBadge') {
+    if (typeof MoneyApp !== 'undefined' && typeof MoneyApp.clearAppBadge === 'function') {
+      MoneyApp.clearAppBadge();
+    } else if (typeof clearAppBadge === 'function') {
+      clearAppBadge();
+    }
   }
 });
 
@@ -3295,13 +3330,267 @@ function updateNetworkStatus() {
   }
 }
 
+// --- Phase 128: Mobile Pull-to-Refresh Gesture & Web App Badging API ---
+
+/**
+ * Computes ambient financial notification badge count:
+ * 1. Days remaining in annual tax filing deadline (if in Jan–Apr and <= 30 days until April 8)
+ * 2. Budget deficit warning (if remaining budget < 0)
+ * @returns {number}
+ */
+function computeBadgeCount() {
+  let badgeCount = 0;
+
+  // 1. Annual tax filing deadline (April 8th e-Filing)
+  try {
+    const now = new Date();
+    const month = now.getMonth(); // 0 = Jan, 1 = Feb, 2 = Mar, 3 = Apr
+    if (month >= 0 && month <= 3) {
+      const year = now.getFullYear();
+      const deadline = new Date(year, 3, 8, 23, 59, 59, 999);
+      const diffMs = deadline.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      if (diffDays >= 0 && diffDays <= 30) {
+        badgeCount++;
+      }
+    }
+  } catch (_e) {}
+
+  // 2. Budget deficit warning from localStorage
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const directRemaining = localStorage.getItem('moneySuperapp.remaining');
+      if (directRemaining !== null && Number.parseFloat(directRemaining) < 0) {
+        badgeCount++;
+      } else {
+        const rawState = localStorage.getItem('remainingMoneyCalculator.state.v1');
+        if (rawState) {
+          const parsed = JSON.parse(rawState);
+          if (typeof parsed?.remaining === 'number' && parsed.remaining < 0) {
+            badgeCount++;
+          } else if (Array.isArray(parsed?.incomes) && Array.isArray(parsed?.expenses)) {
+            const inc = parsed.incomes.reduce((s, i) => s + (Number(i.amount) || 0), 0);
+            const exp = parsed.expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+            if (inc > 0 && inc - exp < 0) {
+              badgeCount++;
+            }
+          }
+        }
+      }
+    }
+  } catch (_e) {}
+
+  return badgeCount;
+}
+
+/**
+ * Sets Web App Badge via Badging API with title fallback and status dot indicator.
+ * @param {number} [count] - Optional specific badge count
+ * @returns {number} Active badge count
+ */
+function updateAppBadge(count) {
+  let badgeCount;
+  if (count === undefined || count === null) {
+    badgeCount = computeBadgeCount();
+  } else {
+    const parsed = Number.parseInt(count, 10);
+    badgeCount = Number.isNaN(parsed) ? 0 : Math.max(0, parsed);
+  }
+
+  currentAppBadgeCount = badgeCount;
+
+  if (typeof navigator !== 'undefined') {
+    if (badgeCount > 0 && typeof navigator.setAppBadge === 'function') {
+      navigator.setAppBadge(badgeCount).catch(() => {});
+    } else if (badgeCount === 0 && typeof navigator.clearAppBadge === 'function') {
+      navigator.clearAppBadge().catch(() => {});
+    }
+  }
+
+  // Fallback: document.title and #pwaStatusDot
+  if (typeof document !== 'undefined') {
+    applyDocumentTitleWithBadge(document.title);
+    const dot = document.getElementById('pwaStatusDot');
+    if (dot) {
+      dot.classList.toggle('has-badge', badgeCount > 0);
+    }
+  }
+
+  return badgeCount;
+}
+
+/**
+ * Clears Web App Badge via Badging API and resets fallback indicators.
+ * @returns {number} 0
+ */
+function clearAppBadge() {
+  currentAppBadgeCount = 0;
+  if (typeof navigator !== 'undefined' && typeof navigator.clearAppBadge === 'function') {
+    navigator.clearAppBadge().catch(() => {});
+  }
+  if (typeof document !== 'undefined') {
+    applyDocumentTitleWithBadge(document.title);
+    const dot = document.getElementById('pwaStatusDot');
+    if (dot) {
+      dot.classList.remove('has-badge');
+    }
+  }
+  return 0;
+}
+
+/**
+ * Mobile Pull-to-Refresh Gesture Controller.
+ * Expands #pullToRefreshBar dynamically on top pull and triggers cross-frame sync.
+ */
+function initPullToRefresh() {
+  if (typeof document === 'undefined') return;
+  const bar = document.getElementById('pullToRefreshBar');
+  const text = document.getElementById('pullToRefreshText');
+  if (!bar || !text) return;
+
+  let startX = 0;
+  let startY = 0;
+  let isTracking = false;
+  let isRefreshing = false;
+
+  const resetBar = (delay = 0) => {
+    setTimeout(() => {
+      bar.style.height = '0px';
+      bar.style.opacity = '0';
+      setTimeout(() => {
+        if (!isRefreshing) {
+          bar.style.display = 'none';
+          const lang = typeof getLang === 'function' ? getLang() : 'th';
+          const t = translations[lang] || translations.th;
+          text.textContent = t.pullToRefreshText || '🔄 เลื่อนลงเพื่อซิงค์ข้อมูล (Pull to refresh)';
+        }
+      }, 200);
+      isRefreshing = false;
+    }, delay);
+  };
+
+  window.addEventListener(
+    'touchstart',
+    (e) => {
+      if (isRefreshing) return;
+      if (e.touches?.length !== 1) {
+        isTracking = false;
+        return;
+      }
+      const target = e.target;
+      if (target?.closest?.('#settingsModal, #onboardingModal, input, select, textarea')) {
+        isTracking = false;
+        return;
+      }
+      const scrollY = window.scrollY || document.documentElement?.scrollTop || 0;
+      const touchY = e.touches[0].clientY;
+      if (scrollY <= 0 || touchY <= 80) {
+        isTracking = true;
+        startX = e.touches[0].clientX;
+        startY = touchY;
+      } else {
+        isTracking = false;
+      }
+    },
+    { passive: true },
+  );
+
+  window.addEventListener(
+    'touchmove',
+    (e) => {
+      if (!isTracking || isRefreshing || !e.touches?.length) return;
+      const currentX = e.touches[0].clientX;
+      const currentY = e.touches[0].clientY;
+      const deltaX = currentX - startX;
+      const deltaY = currentY - startY;
+
+      if (deltaY > 15 && Math.abs(deltaX) < 40) {
+        bar.style.display = 'block';
+        bar.style.opacity = '1';
+        const height = Math.min(42, Math.round(deltaY * 0.5));
+        bar.style.height = `${height}px`;
+
+        const lang = typeof getLang === 'function' ? getLang() : 'th';
+        const t = translations[lang] || translations.th;
+        if (deltaY > 65) {
+          text.textContent = t.pullToRefreshRelease || '🔄 ปล่อยเพื่อซิงค์ข้อมูล (Release to refresh)';
+        } else {
+          text.textContent = t.pullToRefreshText || '🔄 เลื่อนลงเพื่อซิงค์ข้อมูล (Pull to refresh)';
+        }
+      }
+    },
+    { passive: true },
+  );
+
+  window.addEventListener(
+    'touchend',
+    (e) => {
+      if (!isTracking || isRefreshing) return;
+      isTracking = false;
+
+      const touch = e.changedTouches?.[0];
+      if (!touch) {
+        resetBar(0);
+        return;
+      }
+      const deltaY = touch.clientY - startY;
+
+      if (deltaY > 65) {
+        isRefreshing = true;
+        bar.style.height = '42px';
+        const lang = typeof getLang === 'function' ? getLang() : 'th';
+        const t = translations[lang] || translations.th;
+        text.textContent = t.pullToRefreshSyncing || '🔄 กำลังซิงค์ข้อมูล... (Syncing...)';
+        if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+          try {
+            navigator.vibrate(15);
+          } catch (_e) {}
+        }
+
+        try {
+          if (frame?.contentWindow) {
+            frame.contentWindow.postMessage({ action: 'pullToRefreshSync' }, '*');
+          }
+        } catch (_e) {}
+
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('moneySuperapp:refresh'));
+        }
+
+        updateAppBadge();
+        resetBar(600);
+      } else {
+        resetBar(0);
+      }
+    },
+    { passive: true },
+  );
+}
+
+const shellGlobal = typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : global;
+shellGlobal.MoneyApp = shellGlobal.MoneyApp || {};
+shellGlobal.MoneyApp.computeBadgeCount = computeBadgeCount;
+shellGlobal.MoneyApp.updateAppBadge = updateAppBadge;
+shellGlobal.MoneyApp.clearAppBadge = clearAppBadge;
+shellGlobal.MoneyApp.initPullToRefresh = initPullToRefresh;
+
 if (typeof window !== 'undefined') {
   window.installPwa = installPwa;
   window.updateNetworkStatus = updateNetworkStatus;
+  window.computeBadgeCount = computeBadgeCount;
+  window.updateAppBadge = updateAppBadge;
+  window.clearAppBadge = clearAppBadge;
+  window.initPullToRefresh = initPullToRefresh;
+
+  const initShellPwaAndBadges = () => {
+    updateNetworkStatus();
+    initPullToRefresh();
+    updateAppBadge();
+  };
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', updateNetworkStatus);
+    document.addEventListener('DOMContentLoaded', initShellPwaAndBadges);
   } else {
-    updateNetworkStatus();
+    initShellPwaAndBadges();
   }
 }

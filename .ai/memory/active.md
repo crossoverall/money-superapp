@@ -7,45 +7,57 @@ iteration_count: 0
 pipeline: []
 ---
 
-### Feature / Task Specification: Phase 127 — Financial Math Invariant & Fuzz Testing Suite (v2.5.68)
+### Feature / Task Specification: Phase 128 — Mobile Pull-to-Refresh Gesture & Web App Badging API (v2.5.69)
 
 #### 1. Goal & Scope Limits
 - **Objective:**
-  Implement an enterprise-grade, zero-dependency financial math invariant and fuzz testing suite (`tests/fuzz-math.test.mjs`) executing 10,000 randomized permutations across core financial engines to mathematically guarantee:
-  1. Zero `NaN`, `Infinity`, `-0`, or uncontrolled float rounding anomalies across PIT tax brackets, debt payoff amortization, and portfolio rebalancing.
-  2. Mathematical Monotonicity Invariants: Higher taxable income never produces lower tax liability; avalanche strategy never costs more interest than snowball under identical conditions; remaining debt strictly decreases monotonically to zero.
-  3. Conservation of Capital Invariants: In rebalancing, total portfolio target equals sum of asset targets + cash delta; in debt amortization, Total Paid = Principal + Interest; tax deductions never exceed statutory statutoryCap ceilings regardless of input magnitude.
-  4. Extreme Boundary & Stress Testing: Fuzzing zero, negative values, fractional satang/cents, and mega-wealth inputs (100M+ THB).
-- **Target Files (<= 5 files, ~200 lines):**
-  1. `tests/fuzz-math.test.mjs` (New comprehensive math fuzz & invariant test suite)
+  Deliver native-grade mobile PWA polish to Money Superapp through:
+  1. **Pull-to-Refresh Gesture (`initPullToRefresh`):**
+     - Smooth top-edge pull-down gesture on touch devices with visual progress indicator (`#pullToRefreshBar`).
+     - Triggers bridge cache revalidation and cross-tool sync across all active frames with haptic feedback (`navigator.vibrate(15)`).
+  2. **Web App Badging API (`navigator.setAppBadge` / `navigator.clearAppBadge`):**
+     - Computes ambient financial indicators:
+       - Annual tax filing countdown during Q1 (days until April 8 e-Filing deadline).
+       - Budget deficit / urgent financial warnings count (negative remaining balance or unallocated funds).
+     - Graceful fallback for non-supported browsers via document title badge `(N) Money Superapp` and `#pwaStatusDot` badge dot.
+     - Child iframe tools can trigger badge refreshes via postMessage (`action: 'updateBadge'`).
+  3. 100% offline-first, zero runtime external libraries, zero layout shifts.
+- **Target Files (<= 5 files, ~180 lines):**
+  1. `index.html` (Add `#pullToRefreshBar` pull-down visual indicator element)
+  2. `js/app-shell.js` (Implement `initPullToRefresh`, `MoneyApp.updateAppBadge`, `MoneyApp.clearAppBadge`, and message listener)
+  3. `js/shared.js` (Add `MoneyApp.requestAppBadgeUpdate()` bridge postMessage helper)
+  4. `tests/smoke.test.mjs` (Add Phase 128 contract tests for badging and pull-to-refresh)
 - **Explicit Out of Scope:**
-  - Zero external NPM fuzzing libraries (ADR-001); use pure Node.js native math and `node:test` / `node:assert`.
-  - Must execute fast (under 2.5s) to preserve test suite velocity.
+  - No external mobile gesture libraries (ADR-001).
+  - No background push notification servers (strictly client-side Badging API).
 
 #### 2. Architecture & Decision Alignment
-- **Affected Components:** `tests/fuzz-math.test.mjs`, `js/engines/thai-pit.js`, `js/engines/debt-sim.js`, `js/engines/rebalance-engine.js`.
+- **Affected Components:** `index.html`, `js/app-shell.js`, `js/shared.js`, `tests/smoke.test.mjs`.
 - **Relevant ADRs:**
-  - ADR-001 (Zero runtime dependencies, 100% offline-first privacy)
-  - ADR-002 (Modular domain engine architecture)
+  - ADR-001 (Zero runtime dependencies, 100% client-side privacy)
+  - ADR-002 (Modular iframe app shell)
 
 #### 3. Step-by-Step Implementation Plan
-- **Step 1:** Create `tests/fuzz-math.test.mjs`.
-  - Implement pseudo-random seeded fuzz generator for deterministic repeatability.
-  - Implement PIT Progressive Bracket Fuzzer (2,500 iterations).
-  - Implement ThaiESG & Tax Deductions Invariant Fuzzer (2,500 iterations).
-  - Implement Debt Amortization Invariant Fuzzer (2,500 iterations).
-  - Implement Portfolio Rebalancing Invariant Fuzzer (2,500 iterations).
-  - Total: 10,000 fuzz permutations.
-- **Step 2:** Run `npm run lint` and `npm test` to verify zero failures and benchmark runtime speed.
-- **Step 3:** QA & Debugger verification.
-- **Step 4:** Code & Security Reviewer adversarial audit.
-- **Step 5:** Release & Docs (bump v2.5.68, lessons.md, commit, and push).
+- **Step 1:** In `index.html`:
+  - Add `#pullToRefreshBar` visual indicator above `<main id="mainContainer">`.
+- **Step 2:** In `js/app-shell.js`:
+  - Implement `initPullToRefresh()` tracking touch gestures when `scrollTop === 0`.
+  - Implement `MoneyApp.computeBadgeCount()` and `MoneyApp.updateAppBadge()`.
+  - Implement `MoneyApp.clearAppBadge()`.
+  - Handle `updateBadge` postMessage action from child iframes.
+- **Step 3:** In `js/shared.js`:
+  - Add `MoneyApp.requestAppBadgeUpdate()` dispatching `updateBadge` action to parent window.
+- **Step 4:** In `tests/smoke.test.mjs`:
+  - Add tests validating `#pullToRefreshBar`, `updateAppBadge`, fallback title badging, and postMessage forwarding.
+- **Step 5:** Run full QA verification (`npm run lint`, `npm test`).
+- **Step 6:** Code & Security Reviewer adversarial audit.
+- **Step 7:** Release & Docs (bump v2.5.69, lessons.md, commit, and push).
 
 #### 4. Acceptance Criteria
-- [x] `tests/fuzz-math.test.mjs` executes 10,000 fuzz permutations across 4 financial domains.
-- [x] Confirms zero `NaN`, `Infinity`, or negative zero output across all permutations.
-- [x] Confirms capital conservation and mathematical monotonicity invariants.
-- [x] Execution completes in under 3.5 seconds.
-- [x] Zero Biome lint errors/warnings.
+- [x] Pull-down gesture from top of screen reveals `#pullToRefreshBar` and refreshes bridge data on release.
+- [x] `MoneyApp.updateAppBadge()` correctly invokes `navigator.setAppBadge()` on supported environments.
+- [x] Unsupported environments fall back cleanly to title badge `(N) Money Superapp`.
+- [x] Child iframe tools can request badge updates via postMessage.
+- [x] Zero Biome lint warnings/errors.
 - [x] All tests pass in `npm test`.
-- [x] Released, bumped to v2.5.68, and pushed to `origin/master`.
+- [x] Released, bumped to v2.5.69, and pushed to `origin/master`.

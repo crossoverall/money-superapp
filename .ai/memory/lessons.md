@@ -15,6 +15,26 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-19: Mobile Pull-to-Refresh Gesture & Multi-Tier Web App Badging API Fallbacks (v2.5.69)
+- **Date & Context:** 2026-10-19, Phase 128 Mobile Pull-to-Refresh & Web App Badging API (`v2.5.69`).
+- **Problem:**
+  1. On installed standalone mobile PWAs (display: standalone), users expect native touch pull-to-refresh to reload active sub-tool frames and re-sync offline data without having to search for a reload button in settings. However, naive `touchstart`/`touchmove` implementations conflict with natural page scrolling or horizontal swipe gestures used for switching tool tabs.
+  2. The W3C Badging API (`navigator.setAppBadge`, `navigator.clearAppBadge`) is only supported on Chromium-based browsers in installed PWA mode. Standard browser tabs, Firefox, Safari iOS, and desktop browsers fail silently without ambient badge notification indicating urgent financial action items (overdue tax filing, excessive debt velocity, or budget deficits).
+- **Root Cause:**
+  - Lack of multi-axis touch angle discrimination during drag gestures.
+  - Relying exclusively on standard `navigator.setAppBadge` without cross-browser UI and title fallback mechanisms.
+- **Solution & Rule:**
+  1. **Strict Touch Gesture Angle Discrimination:**
+     - Pull-to-refresh requires vertical dominance discrimination (`deltaY > 15 && Math.abs(deltaX) < 40`) and initial scroll position guarding (`window.scrollY <= 0`) to prevent interference with horizontal swipe tab switching.
+     - Smooth spring-damper drag resistance (`Math.min(deltaY * 0.45, 75)`) ensures natural haptic feedback before firing reload trigger.
+  2. **Multi-Tier Web App Badging Fallbacks:**
+     - Primary tier: Native `navigator.setAppBadge(count)` when supported.
+     - Secondary tier: Graceful document title prefixing `(N) Title` (sanitizing count and restoring pristine title upon clearance).
+     - Tertiary tier: Visual in-app status dot `#pwaStatusDot.has-badge` with pulsing CSS glow in the App Shell header.
+     - Bridge protocol integration via `MoneyApp.requestAppBadgeUpdate()` and `MoneyApp.requestAppBadgeClear()` across iframe sub-tools.
+  3. **Quality Gates & Smoke Test:**
+     - Added 4 contract assertions in `tests/smoke.test.mjs` verifying DOM markup, function exports, title fallbacks, and count sanitization; all 99 smoke tests passing with 0 Biome linter errors.
+
 ### 2026-10-19: Zero-Dependency Financial Math Fuzzing & Mathematical Invariant Testing (v2.5.68)
 - **Date & Context:** 2026-10-19, Phase 127 Financial Math Invariant & Fuzz Testing Suite (`v2.5.68`).
 - **Problem:**

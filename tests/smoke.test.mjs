@@ -2930,4 +2930,155 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       );
     });
   });
+
+  describe('Phase 128: Mobile Pull-to-Refresh Gesture & Web App Badging API Contracts', () => {
+    it('verifies index.html declares #pullToRefreshBar and #pullToRefreshText indicator markup', () => {
+      const indexHtml = fs.readFileSync(path.join(ROOT_DIR, 'index.html'), 'utf8');
+      assert.ok(indexHtml.includes('id="pullToRefreshBar"'), 'index.html must define #pullToRefreshBar');
+      assert.ok(indexHtml.includes('id="pullToRefreshText"'), 'index.html must define #pullToRefreshText');
+      assert.ok(indexHtml.includes('.pwa-status-dot.has-badge'), 'index.html must style .pwa-status-dot.has-badge');
+    });
+
+    it('verifies js/app-shell.js defines and exports initPullToRefresh, computeBadgeCount, updateAppBadge, and clearAppBadge', () => {
+      const appShellJs = fs.readFileSync(path.join(ROOT_DIR, 'js/app-shell.js'), 'utf8');
+      assert.ok(appShellJs.includes('function initPullToRefresh'), 'app-shell.js must define initPullToRefresh');
+      assert.ok(appShellJs.includes('function computeBadgeCount'), 'app-shell.js must define computeBadgeCount');
+      assert.ok(appShellJs.includes('function updateAppBadge'), 'app-shell.js must define updateAppBadge');
+      assert.ok(appShellJs.includes('function clearAppBadge'), 'app-shell.js must define clearAppBadge');
+
+      assert.ok(
+        appShellJs.includes('MoneyApp.initPullToRefresh = initPullToRefresh'),
+        'app-shell.js must export initPullToRefresh to MoneyApp',
+      );
+      assert.ok(
+        appShellJs.includes('MoneyApp.computeBadgeCount = computeBadgeCount'),
+        'app-shell.js must export computeBadgeCount to MoneyApp',
+      );
+      assert.ok(
+        appShellJs.includes('MoneyApp.updateAppBadge = updateAppBadge'),
+        'app-shell.js must export updateAppBadge to MoneyApp',
+      );
+      assert.ok(
+        appShellJs.includes('MoneyApp.clearAppBadge = clearAppBadge'),
+        'app-shell.js must export clearAppBadge to MoneyApp',
+      );
+
+      // Verify message event handlers
+      assert.ok(
+        appShellJs.includes("e.data.action === 'updateBadge'"),
+        'app-shell.js message listener must handle updateBadge',
+      );
+      assert.ok(
+        appShellJs.includes("e.data.action === 'clearBadge'"),
+        'app-shell.js message listener must handle clearBadge',
+      );
+    });
+
+    it('verifies js/shared.js exposes requestAppBadgeUpdate and requestAppBadgeClear bridge dispatchers', () => {
+      const sharedJs = fs.readFileSync(path.join(ROOT_DIR, 'js/shared.js'), 'utf8');
+      assert.ok(sharedJs.includes('function requestAppBadgeUpdate'), 'shared.js must define requestAppBadgeUpdate');
+      assert.ok(sharedJs.includes('function requestAppBadgeClear'), 'shared.js must define requestAppBadgeClear');
+      assert.ok(
+        sharedJs.includes('requestAppBadgeUpdate: requestAppBadgeUpdate'),
+        'shared.js must export requestAppBadgeUpdate on MoneyApp',
+      );
+      assert.ok(
+        sharedJs.includes('requestAppBadgeClear: requestAppBadgeClear'),
+        'shared.js must export requestAppBadgeClear on MoneyApp',
+      );
+    });
+
+    it('verifies document.title badge fallback, count sanitization, and clearing logic in app shell sandbox', () => {
+      const appShellJs = fs.readFileSync(path.join(ROOT_DIR, 'js/app-shell.js'), 'utf8');
+
+      // Extract badging functions
+      const computeMatch = appShellJs.match(/function computeBadgeCount\(\)\s*\{[\s\S]*?\n\}/);
+      const updateMatch = appShellJs.match(/function updateAppBadge\(count\)\s*\{[\s\S]*?\n\}/);
+      const clearMatch = appShellJs.match(/function clearAppBadge\(\)\s*\{[\s\S]*?\n\}/);
+      const applyTitleMatch = appShellJs.match(/function applyDocumentTitleWithBadge\(baseTitle\)\s*\{[\s\S]*?\n\}/);
+
+      assert.ok(computeMatch, 'computeBadgeCount must be extractable');
+      assert.ok(updateMatch, 'updateAppBadge must be extractable');
+      assert.ok(clearMatch, 'clearAppBadge must be extractable');
+      assert.ok(applyTitleMatch, 'applyDocumentTitleWithBadge must be extractable');
+
+      const statusDotClasses = new Set();
+      let badgeSetCount = null;
+      let badgeCleared = false;
+
+      const mockDoc = {
+        title: 'Money Superapp — แดชบอร์ด',
+        getElementById: (id) => {
+          if (id === 'pwaStatusDot') {
+            return {
+              classList: {
+                toggle: (cls, condition) => {
+                  if (condition) statusDotClasses.add(cls);
+                  else statusDotClasses.delete(cls);
+                },
+                remove: (cls) => statusDotClasses.delete(cls),
+              },
+            };
+          }
+          return null;
+        },
+      };
+
+      const mockNav = {
+        setAppBadge: async (val) => {
+          badgeSetCount = val;
+        },
+        clearAppBadge: async () => {
+          badgeCleared = true;
+        },
+      };
+
+      const sandbox = {
+        console,
+        document: mockDoc,
+        navigator: mockNav,
+        Number,
+        Date,
+        Math,
+        currentAppBadgeCount: 0,
+        localStorage: {
+          getItem: () => null,
+        },
+      };
+
+      const vm = createContext(sandbox);
+      const code = `
+        ${applyTitleMatch[0]}
+        ${computeMatch[0]}
+        ${updateMatch[0]}
+        ${clearMatch[0]}
+      `;
+      new Script(code).runInContext(vm);
+
+      // Test 1: updateAppBadge with positive count
+      const activeCount = new Script('updateAppBadge(3);').runInContext(vm);
+      assert.equal(activeCount, 3);
+      assert.equal(sandbox.document.title, '(3) Money Superapp — แดชบอร์ด');
+      assert.equal(statusDotClasses.has('has-badge'), true);
+      assert.equal(badgeSetCount, 3);
+
+      // Test 2: count sanitization with float / string
+      new Script("updateAppBadge('5.8');").runInContext(vm);
+      assert.equal(sandbox.document.title, '(5) Money Superapp — แดชบอร์ด');
+      assert.equal(badgeSetCount, 5);
+
+      // Test 3: count 0 clears title and dot
+      new Script('updateAppBadge(0);').runInContext(vm);
+      assert.equal(sandbox.document.title, 'Money Superapp — แดชบอร์ด');
+      assert.equal(statusDotClasses.has('has-badge'), false);
+
+      // Test 4: clearAppBadge clears title and calls clearAppBadge
+      new Script('updateAppBadge(2);').runInContext(vm);
+      assert.equal(sandbox.document.title, '(2) Money Superapp — แดชบอร์ด');
+      new Script('clearAppBadge();').runInContext(vm);
+      assert.equal(sandbox.document.title, 'Money Superapp — แดชบอร์ด');
+      assert.equal(statusDotClasses.has('has-badge'), false);
+      assert.equal(badgeCleared, true);
+    });
+  });
 });
