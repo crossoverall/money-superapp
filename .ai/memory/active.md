@@ -7,55 +7,45 @@ iteration_count: 0
 pipeline: []
 ---
 
-### Feature / Task Specification: Phase 126 — Interactive Debt Payoff Visual SVG Comparison Timeline (v2.5.67)
+### Feature / Task Specification: Phase 127 — Financial Math Invariant & Fuzz Testing Suite (v2.5.68)
 
 #### 1. Goal & Scope Limits
 - **Objective:**
-  Elevate the debt payoff visualization in `debt-calculator.html` and `js/debt-calculator.js` from a static curve to a high-precision, interactive dual-line SVG comparison timeline:
-  1. Interactive pointer scrubbing (`pointermove` / `touchmove`) with dynamic vertical crosshair `<line id="svgChartCrosshair">` tracking exact months across Avalanche and Snowball curves.
-  2. Floating rich tooltip (`#debtChartTooltip`) displaying month, remaining principal for both Avalanche and Snowball, interest saved delta, and milestone loan payoff callouts (`🎉 Debt Paid Off!`).
-  3. Interactive chart view modes (`#btnChartModeDual`, `#btnChartModeAvalanche`, `#btnChartModeSnowball`) and clickable legend toggles to quickly focus on individual strategies or compare side-by-side.
-  4. Milestone inspection dots on both curves showing exactly when and where debts are eliminated.
-  5. 100% offline-first, zero external chart libraries, touch-optimized for mobile.
+  Implement an enterprise-grade, zero-dependency financial math invariant and fuzz testing suite (`tests/fuzz-math.test.mjs`) executing 10,000 randomized permutations across core financial engines to mathematically guarantee:
+  1. Zero `NaN`, `Infinity`, `-0`, or uncontrolled float rounding anomalies across PIT tax brackets, debt payoff amortization, and portfolio rebalancing.
+  2. Mathematical Monotonicity Invariants: Higher taxable income never produces lower tax liability; avalanche strategy never costs more interest than snowball under identical conditions; remaining debt strictly decreases monotonically to zero.
+  3. Conservation of Capital Invariants: In rebalancing, total portfolio target equals sum of asset targets + cash delta; in debt amortization, Total Paid = Principal + Interest; tax deductions never exceed statutory statutoryCap ceilings regardless of input magnitude.
+  4. Extreme Boundary & Stress Testing: Fuzzing zero, negative values, fractional satang/cents, and mega-wealth inputs (100M+ THB).
 - **Target Files (<= 5 files, ~200 lines):**
-  1. `debt-calculator.html` (Add chart wrapper `#debtChartWrapper`, `#debtChartTooltip`, view mode selector buttons)
-  2. `js/debt-calculator.js` (Implement `setupDebtChartInteractions()`, interactive crosshair scrubbing, and view mode filtering in `renderDebtChart()`)
-  3. `js/i18n/th.js` (Add i18n keys for chart mode buttons and comparison tooltip)
-  4. `js/i18n/en.js` (Add English parity keys)
-  5. `tests/smoke.test.mjs` (Add Phase 126 interactive SVG debt comparison timeline contract tests)
+  1. `tests/fuzz-math.test.mjs` (New comprehensive math fuzz & invariant test suite)
 - **Explicit Out of Scope:**
-  - No external SVG/Canvas charting libraries (ADR-001).
-  - No alteration of underlying debt simulation algorithms (`simulate` / `simulateMinOnly`).
+  - Zero external NPM fuzzing libraries (ADR-001); use pure Node.js native math and `node:test` / `node:assert`.
+  - Must execute fast (under 2.5s) to preserve test suite velocity.
 
 #### 2. Architecture & Decision Alignment
-- **Affected Components:** `debt-calculator.html`, `js/debt-calculator.js`, `js/i18n/*.js`, `tests/smoke.test.mjs`.
+- **Affected Components:** `tests/fuzz-math.test.mjs`, `js/engines/thai-pit.js`, `js/engines/debt-sim.js`, `js/engines/rebalance-engine.js`.
 - **Relevant ADRs:**
-  - ADR-001 (Zero runtime dependencies, 100% client-side privacy)
-  - ADR-002 (Modular iframe app shell)
+  - ADR-001 (Zero runtime dependencies, 100% offline-first privacy)
+  - ADR-002 (Modular domain engine architecture)
 
 #### 3. Step-by-Step Implementation Plan
-- **Step 1:** In `debt-calculator.html`:
-  - Wrap SVG inside `#debtChartWrapper` with relative positioning.
-  - Add floating tooltip container `#debtChartTooltip`.
-  - Add view mode toggle buttons (`#btnChartModeDual`, `#btnChartModeAvalanche`, `#btnChartModeSnowball`) above the chart.
-- **Step 2:** In `js/debt-calculator.js`:
-  - Enhance `renderDebtChart()` to support `state.chartMode` ('dual', 'avalanche', 'snowball').
-  - Render crosshair line `<line id="svgChartCrosshair">` and indicator dots.
-  - Implement `setupDebtChartInteractions()` to bind pointer events (`pointermove`, `pointerleave`) on the chart wrapper, calculate month coordinate from clientX, and update tooltip and crosshair.
-  - Implement clickable legend items allowing users to toggle active strategy or view mode.
-- **Step 3:** In `js/i18n/th.js` and `en.js`:
-  - Add `chartModeDual`, `chartModeAvalanche`, `chartModeSnowball`, `chartTooltipBalance`, `chartTooltipSaved`.
-- **Step 4:** In `tests/smoke.test.mjs`:
-  - Add assertions verifying `#debtChartWrapper`, `#debtChartTooltip`, `#svgChartCrosshair`, view mode buttons, and i18n keys.
-- **Step 5:** Run full QA verification (`npm run lint`, `npm test`).
-- **Step 6:** Adversarial Code & Security Review.
-- **Step 7:** Release & Docs (bump v2.5.67, lessons.md, commit, and push).
+- **Step 1:** Create `tests/fuzz-math.test.mjs`.
+  - Implement pseudo-random seeded fuzz generator for deterministic repeatability.
+  - Implement PIT Progressive Bracket Fuzzer (2,500 iterations).
+  - Implement ThaiESG & Tax Deductions Invariant Fuzzer (2,500 iterations).
+  - Implement Debt Amortization Invariant Fuzzer (2,500 iterations).
+  - Implement Portfolio Rebalancing Invariant Fuzzer (2,500 iterations).
+  - Total: 10,000 fuzz permutations.
+- **Step 2:** Run `npm run lint` and `npm test` to verify zero failures and benchmark runtime speed.
+- **Step 3:** QA & Debugger verification.
+- **Step 4:** Code & Security Reviewer adversarial audit.
+- **Step 5:** Release & Docs (bump v2.5.68, lessons.md, commit, and push).
 
 #### 4. Acceptance Criteria
-- [x] User can scrub across `#svgDebtChart` with mouse or touch to see dynamic vertical crosshair and floating tooltip `#debtChartTooltip`.
-- [x] Tooltip accurately reports Month, Avalanche Balance, Snowball Balance, and milestone payoff notifications.
-- [x] View mode buttons (`#btnChartModeDual`, `#btnChartModeAvalanche`, `#btnChartModeSnowball`) toggle curve visibility cleanly.
-- [x] Bilingual parity between `th.js` and `en.js`.
-- [x] Zero Biome lint warnings/errors.
+- [x] `tests/fuzz-math.test.mjs` executes 10,000 fuzz permutations across 4 financial domains.
+- [x] Confirms zero `NaN`, `Infinity`, or negative zero output across all permutations.
+- [x] Confirms capital conservation and mathematical monotonicity invariants.
+- [x] Execution completes in under 3.5 seconds.
+- [x] Zero Biome lint errors/warnings.
 - [x] All tests pass in `npm test`.
-- [x] Released, bumped to v2.5.67, and pushed to `origin/master`.
+- [x] Released, bumped to v2.5.68, and pushed to `origin/master`.

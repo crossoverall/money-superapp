@@ -15,6 +15,25 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-19: Zero-Dependency Financial Math Fuzzing & Mathematical Invariant Testing (v2.5.68)
+- **Date & Context:** 2026-10-19, Phase 127 Financial Math Invariant & Fuzz Testing Suite (`v2.5.68`).
+- **Problem:**
+  1. Traditional unit test suites only evaluate deterministic, fixed example inputs (e.g. 50,000 THB income, specific 2-debt configurations). Boundary anomalies such as subtle floating-point precision leaks, negative zero (`-0`), bracket boundary overlaps, or order allocation drift could slip past static tests under random user portfolios.
+  2. Heavy external property-based fuzz testing tools (e.g., fast-check, jsverify) violate ADR-001 by introducing significant npm dependency weight and complex test runtimes.
+- **Root Cause:**
+  - Reliance exclusively on handcrafted example cases rather than property-based automated invariant fuzzing across millions of possible financial states.
+- **Solution & Rule:**
+  1. **Zero-Dependency Deterministic Fuzz Engine (`tests/fuzz-math.test.mjs`):**
+     - Built a pure, zero-dependency pseudo-random generator using a deterministic 32-bit Linear Congruential Generator (LCG, `state = (state * 1664525 + 1013904223) >>> 0`) with static seeds.
+     - Generates 10,000 combinatorial permutations across PIT progressive brackets, ThaiESG caps, debt payoff strategies (Avalanche/Snowball), and portfolio rebalancing in ~125 ms in pure Node.js without any external libraries, fully complying with ADR-001.
+  2. **Mathematical Invariant Verification:**
+     - **Monotonicity Invariant:** Higher assessable income strictly never yields lower tax payable (`tax(A) <= tax(B)` for A < B).
+     - **Conservation of Debt Capital:** Total debt payments strictly equal total initial principal plus total interest paid across entire payoff lifecycles (`|totalPaid - (principal + totalInterest)| < 0.01`).
+     - **Conservation of Investment Capital:** Post-rebalance portfolio total strictly equals initial asset value plus invested new budget (`|postTotal - (preTotal + budget)| < 0.01`).
+     - **Sanitization Invariants:** Guaranteed zero `NaN`, zero `Infinity`, zero negative zero (`-0`), and non-negative buy-only rebalance orders.
+  3. **Quality Gates & Smoke Test:**
+     - Added 4 comprehensive fuzz test suites verifying 10,000 randomized permutations; all tests passing with 0 Biome linter errors.
+
 ### 2026-10-19: Interactive Debt Payoff SVG Timeline, SVG `<title>` XSS Defense & Dynamic Coordinate Cleanup (v2.5.67)
 - **Date & Context:** 2026-10-19, Phase 126 Interactive Debt Payoff Timeline & SVG Security (`v2.5.67`).
 - **Problem:**
