@@ -105,6 +105,7 @@ Agents use `.ai/memory/active.md` as the centralized hand-off state bus:
 3. **Circuit Breaker:** Max 2 feedback loops between Coder, QA, and Reviewer. If unresolved, halt and escalate to human.
 4. **Vertical Task Slicing:** Max 5 files or ~200 lines per task slice.
 5. **Pre-flight Check:** Verify clean git working tree and passing baseline builds before editing.
+6. **Subagent Timeout & Liveness Heartbeat:** Whenever subagents are launched, set a subagent timeout and schedule a status re-check every 1 minute (`schedule` with 60-second intervals and `manage_subagents list`). If a subagent exceeds timeout or becomes unresponsive, inspect status and take corrective action immediately.
 
 ---
 

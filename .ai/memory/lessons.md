@@ -15,6 +15,17 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-19: Subagent Timeout & 1-Minute Heartbeat Monitoring Protocol
+- **Date & Context:** 2026-10-19, Multi-Agent SDLC Operations & Process Enforcement.
+- **Problem:**
+  1. Long-running or delegated subagent tasks can silently hang or stall without proactive oversight, delaying SDLC pipeline velocity.
+- **Root Cause:** Absence of a mandatory heartbeat schedule and timeout enforcement mechanism for subagent dispatches.
+- **Solution & Rule:**
+  1. **Mandatory Timeout Setting:** Whenever subagents are invoked (`invoke_subagent`), explicit operational timeouts must be set based on task complexity.
+  2. **1-Minute Heartbeat Schedule:** Use the `schedule` tool (e.g. `DurationSeconds=60` / cron) to proactively re-check subagent status every 1 minute via `manage_subagents list`.
+  3. **Liveness & Action:** If a subagent is running normally, monitor; if finished or idle, consume results; if stalled or unresponsive past timeout, inspect logs, terminate with `manage_subagents kill`, and escalate.
+  4. **Codified in SDLC Team Guidelines:** Formally added to `AGENTS.md` (Rule #6), `.ai/routing.yaml` (`guardrails.subagent_monitoring`), and `.ai/agents/orchestrator.md` (Section 5).
+
 ### 2026-10-18: Universal Declarative i18n & Exhaustive Coverage Suite (v2.5.48)
 - **Date & Context:** 2026-10-18, Phase 105 Universal Declarative i18n & Coverage Test (`v2.5.48`).
 - **Problem:**

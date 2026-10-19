@@ -75,3 +75,14 @@ Use the YAML frontmatter in `.ai/memory/active.md` as the centralized state mach
 
 ### Gate 8: Delivery
 - Deliver a concise summary to the user detailing what was changed and verified.
+
+---
+
+## 5. Subagent Supervision & 1-Minute Heartbeat Monitoring
+Whenever subagents are invoked (`invoke_subagent`):
+1. **Set Subagent Timeout:** Define explicit operational deadlines and timeout expectations for every subagent task.
+2. **1-Minute Heartbeat Schedule:** Use the `schedule` tool (e.g., `DurationSeconds=60` or cron) to recheck active subagent status every 1 minute via `manage_subagents list`.
+3. **Liveness & Timeout Enforcement:**
+   - If a subagent is running normally, observe progress.
+   - If a subagent is idle with pending instructions, send the next instruction via `send_message`.
+   - If a subagent becomes unresponsive or exceeds the timeout threshold, inspect the transcript log, terminate via `manage_subagents kill`, and escalate or re-dispatch.

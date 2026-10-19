@@ -56,6 +56,11 @@ guardrails:
     enforced: true
     description: "Whenever the user asks to fix anything on the project, the agent MUST execute the full SDLC pipeline: Intake -> Plan -> HITL Approval -> Code -> QA Verification -> Security Review -> Release. Never bypass QA or Security Review."
 
+  subagent_monitoring:
+    enforced: true
+    timeout_recheck_interval_seconds: 60
+    description: "Whenever subagents are invoked, set subagent timeout and schedule a status recheck every 1 minute via manage_subagents list."
+
 # ==============================================================================
 # Workload Complexity Taxonomy & Routing Rules
 # ==============================================================================
