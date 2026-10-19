@@ -2560,7 +2560,7 @@ function renderFinancialGoals() {
   // 5. Monte Carlo Retirement Longevity Simulation
   const currentNetWorth = Math.max(0, p.netWorth);
   const withdrawalAmt = Math.max(0, annualExp);
-  const mcRes = simulateMonteCarloRetirement({
+  renderMonteCarloSection({
     initialPortfolio: currentNetWorth > 0 ? currentNetWorth : fireMetrics.fireNumber,
     annualWithdrawal: withdrawalAmt,
     years: 30,
@@ -2570,6 +2570,169 @@ function renderFinancialGoals() {
     trials: 500,
     seed: 42,
   });
+}
+
+let _latestSimulationSeq = 0;
+let _simulationWorker = null;
+let _workerFailed = false;
+let _workerMsgId = 0;
+const _pendingWorkerRequests = new Map();
+
+function getSimulationWorker() {
+  if (_workerFailed) return null;
+  if (_simulationWorker) return _simulationWorker;
+
+  if (typeof Worker === 'undefined') {
+    _workerFailed = true;
+    return null;
+  }
+
+  try {
+    if (typeof location !== 'undefined' && location.protocol === 'file:') {
+      _workerFailed = true;
+      return null;
+    }
+  } catch (_e) {}
+
+  try {
+    _simulationWorker = new Worker('js/workers/simulation-worker.js');
+    _simulationWorker.onmessage = (e) => {
+      const data = e.data || {};
+      const { id, type, success, payload, result, error } = data;
+      if (!id || !_pendingWorkerRequests.has(id)) return;
+
+      const req = _pendingWorkerRequests.get(id);
+      _pendingWorkerRequests.delete(id);
+      if (req.timer) clearTimeout(req.timer);
+
+      if (success || type === 'SIMULATE_MONTE_CARLO_SUCCESS') {
+        req.resolve(payload !== undefined ? payload : result);
+      } else {
+        try {
+          const syncEngine =
+            (typeof window !== 'undefined' && window.MoneyApp && window.MoneyApp.simulateMonteCarloRetirement) ||
+            simulateMonteCarloRetirement;
+          req.resolve(syncEngine(req.params));
+        } catch (syncErr) {
+          req.reject(new Error(error || syncErr?.message));
+        }
+      }
+    };
+
+    _simulationWorker.onerror = (err) => {
+      console.warn('[SimulationWorker] Worker error encountered, falling back to main thread engine:', err);
+      _workerFailed = true;
+      try {
+        _simulationWorker.terminate();
+      } catch (_te) {}
+      _simulationWorker = null;
+
+      _pendingWorkerRequests.forEach((req) => {
+        if (req.timer) clearTimeout(req.timer);
+        try {
+          const syncEngine =
+            (typeof window !== 'undefined' && window.MoneyApp && window.MoneyApp.simulateMonteCarloRetirement) ||
+            simulateMonteCarloRetirement;
+          req.resolve(syncEngine(req.params));
+        } catch (syncErr) {
+          req.reject(syncErr);
+        }
+      });
+      _pendingWorkerRequests.clear();
+    };
+
+    return _simulationWorker;
+  } catch (err) {
+    console.warn('[SimulationWorker] Failed to create Worker (e.g. SecurityError):', err);
+    _workerFailed = true;
+    _simulationWorker = null;
+    return null;
+  }
+}
+
+function terminateSimulationWorker() {
+  if (_simulationWorker) {
+    try {
+      _simulationWorker.terminate();
+    } catch (_) {}
+    _simulationWorker = null;
+  }
+  _workerFailed = false;
+  _pendingWorkerRequests.forEach((req) => {
+    if (req.timer) clearTimeout(req.timer);
+  });
+  _pendingWorkerRequests.clear();
+}
+
+function simulateMonteCarloAsync(params) {
+  return new Promise((resolve, reject) => {
+    const worker = getSimulationWorker();
+    if (!worker) {
+      try {
+        const syncEngine =
+          (typeof window !== 'undefined' && window.MoneyApp && window.MoneyApp.simulateMonteCarloRetirement) ||
+          simulateMonteCarloRetirement;
+        resolve(syncEngine(params));
+      } catch (err) {
+        reject(err);
+      }
+      return;
+    }
+
+    const id = ++_workerMsgId;
+    const timer = setTimeout(() => {
+      if (_pendingWorkerRequests.has(id)) {
+        const req = _pendingWorkerRequests.get(id);
+        _pendingWorkerRequests.delete(id);
+        console.warn(`[SimulationWorker] Request ${id} timed out after 5000ms, running synchronous fallback.`);
+        try {
+          const syncEngine =
+            (typeof window !== 'undefined' && window.MoneyApp && window.MoneyApp.simulateMonteCarloRetirement) ||
+            simulateMonteCarloRetirement;
+          req.resolve(syncEngine(req.params));
+        } catch (syncErr) {
+          req.reject(syncErr);
+        }
+      }
+    }, 5000);
+
+    _pendingWorkerRequests.set(id, {
+      resolve,
+      reject,
+      timer,
+      params,
+    });
+
+    try {
+      worker.postMessage({
+        id,
+        type: 'SIMULATE_MONTE_CARLO',
+        payload: params,
+      });
+    } catch (_postErr) {
+      if (_pendingWorkerRequests.has(id)) {
+        _pendingWorkerRequests.delete(id);
+        clearTimeout(timer);
+      }
+      try {
+        const syncEngine =
+          (typeof window !== 'undefined' && window.MoneyApp && window.MoneyApp.simulateMonteCarloRetirement) ||
+          simulateMonteCarloRetirement;
+        resolve(syncEngine(params));
+      } catch (syncErr) {
+        reject(syncErr);
+      }
+    }
+  });
+}
+
+function updateMonteCarloUI(mcRes) {
+  if (!mcRes) return;
+  const isEn = typeof LANG !== 'undefined' && LANG === 'en';
+  const currentUnit = typeof unit !== 'undefined' ? unit : 'THB';
+  const formatMoneyFn =
+    (typeof window !== 'undefined' && window.MoneyApp && window.MoneyApp.formatMoney) ||
+    (typeof formatMoney === 'function' ? formatMoney : (n) => String(n));
 
   const mcBadge = document.getElementById('badge-mc-survival');
   if (mcBadge) {
@@ -2592,23 +2755,80 @@ function renderFinancialGoals() {
   const p10El = document.getElementById('val-mc-p10');
   const p50El = document.getElementById('val-mc-p50');
   const p90El = document.getElementById('val-mc-p90');
-  if (p10El) p10El.textContent = `${formatMoney(mcRes.finalP10)} ${unit}`;
-  if (p50El) p50El.textContent = `${formatMoney(mcRes.finalP50)} ${unit}`;
-  if (p90El) p90El.textContent = `${formatMoney(mcRes.finalP90)} ${unit}`;
+  if (p10El) p10El.textContent = `${formatMoneyFn(mcRes.finalP10)} ${currentUnit}`;
+  if (p50El) p50El.textContent = `${formatMoneyFn(mcRes.finalP50)} ${currentUnit}`;
+  if (p90El) p90El.textContent = `${formatMoneyFn(mcRes.finalP90)} ${currentUnit}`;
 
   renderMonteCarloFanChart(mcRes.trajectoryPercentiles);
 }
 
-function simulateMonteCarloRetirement({
-  initialPortfolio = 10000000,
-  annualWithdrawal = 400000,
-  years = 30,
-  meanReturn = 0.07,
-  volatility = 0.1,
-  inflation = 0.025,
-  trials = 500,
-  seed = 42,
-} = {}) {
+function renderMonteCarloSection(params) {
+  if (!params) {
+    const p =
+      typeof gatherFinancialProfile === 'function' ? gatherFinancialProfile() : { netWorth: 0, monthlyExpense: 0 };
+    const g =
+      typeof getFinancialGoals === 'function'
+        ? getFinancialGoals()
+        : { customAnnualExpenses: 0, expectedReturnRate: 0.06 };
+    const annualExp = g.customAnnualExpenses > 0 ? g.customAnnualExpenses : (p.monthlyExpense || 0) * 12;
+    const currentNetWorth = Math.max(0, p.netWorth || 0);
+    params = {
+      initialPortfolio: currentNetWorth > 0 ? currentNetWorth : 10000000,
+      annualWithdrawal: Math.max(0, annualExp),
+      years: 30,
+      meanReturn: typeof g.expectedReturnRate === 'number' ? g.expectedReturnRate : 0.06,
+      volatility: 0.1,
+      inflation: 0.025,
+      trials: 500,
+      seed: 42,
+    };
+  }
+
+  const seq = ++_latestSimulationSeq;
+  const asyncSim =
+    (typeof window !== 'undefined' &&
+      window.MoneyApp &&
+      typeof window.MoneyApp.simulateMonteCarloAsync === 'function' &&
+      window.MoneyApp.simulateMonteCarloAsync) ||
+    simulateMonteCarloAsync;
+
+  return asyncSim(params)
+    .then((mcRes) => {
+      if (seq === _latestSimulationSeq) {
+        updateMonteCarloUI(mcRes);
+      }
+      return mcRes;
+    })
+    .catch((err) => {
+      console.warn('[MonteCarlo] Simulation failed, running synchronous fallback:', err);
+      if (seq === _latestSimulationSeq) {
+        const fallbackRes = simulateMonteCarloRetirement(params);
+        updateMonteCarloUI(fallbackRes);
+        return fallbackRes;
+      }
+    });
+}
+
+function simulateMonteCarloRetirement(params = {}) {
+  if (
+    typeof window !== 'undefined' &&
+    window.MoneyApp &&
+    typeof window.MoneyApp.simulateMonteCarloRetirement === 'function'
+  ) {
+    return window.MoneyApp.simulateMonteCarloRetirement(params);
+  }
+
+  const {
+    initialPortfolio = 10000000,
+    annualWithdrawal = 400000,
+    years = 30,
+    meanReturn = 0.07,
+    volatility = 0.1,
+    inflation = 0.025,
+    trials = 500,
+    seed = 42,
+  } = params;
+
   let s = seed || 12345;
   function rand() {
     s = (s * 1664525 + 1013904223) % 4294967296;
@@ -2687,6 +2907,21 @@ function simulateMonteCarloRetirement({
     finalP90: trajectoryPercentiles[safeYears].p90,
     trajectoryPercentiles,
   };
+}
+
+if (typeof window !== 'undefined') {
+  window.MoneyApp = window.MoneyApp || {};
+  window.MoneyApp.simulateMonteCarloAsync = simulateMonteCarloAsync;
+  window.MoneyApp.getSimulationWorker = getSimulationWorker;
+  window.MoneyApp.terminateSimulationWorker = terminateSimulationWorker;
+  window.MoneyApp.renderMonteCarloSection = renderMonteCarloSection;
+  window.MoneyApp.updateMonteCarloUI = updateMonteCarloUI;
+  if (typeof window.simulateMonteCarloAsync === 'undefined') {
+    window.simulateMonteCarloAsync = simulateMonteCarloAsync;
+  }
+  if (typeof window.renderMonteCarloSection === 'undefined') {
+    window.renderMonteCarloSection = renderMonteCarloSection;
+  }
 }
 
 function renderMonteCarloFanChart(trajectoryPercentiles) {

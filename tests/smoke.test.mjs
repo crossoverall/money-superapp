@@ -33,6 +33,8 @@ const CORE_JS_SCRIPTS = [
   'js/engines/vault-crypto.js',
   'js/engines/p2p-sync.js',
   'js/engines/bridge.js',
+  'js/engines/monte-carlo.js',
+  'js/workers/simulation-worker.js',
   'js/app-shell.js',
   'js/dashboard.js',
   'js/remaining-money.js',
