@@ -176,22 +176,23 @@ flowchart LR
     P127 --> P128["Phase 128<br/>Web App Badging & Gestures"]
 ```
 
-| Phase | Target Version | Scope & Deliverable | Complexity | Focus Area |
+| Phase | Target Version | Scope & Deliverable | Complexity | Status |
 |---|---|---|---|---|
-| **Phase 123** | `v2.5.64` | ThaiESG 2024–2026 holding rules + SSO progressive ceiling update | Level 1 | Regulatory |
-| **Phase 124** | `v2.5.65` | Universal Google Drive & Sheets export for Dashboard & Tax Dossier | Level 2 | Cloud / Export |
-| **Phase 125** | `v2.5.66` | Universal Google Drive & Sheets export for Debt & Rebalance tools | Level 2 | Cloud / Export |
-| **Phase 126** | `v2.5.67` | Interactive Debt Payoff visual SVG comparison timeline | Level 2 | Visualization |
-| **Phase 127** | `v2.5.68` | Zero-dependency mathematical invariant & fuzz testing suite | Level 1 | Quality / QA |
-| **Phase 128** | `v2.5.69` | Mobile swipe gestures between tools + App Badging API | Level 2 | Mobile / UX |
-| **Phase 129** | `v2.5.70` | IndexedDB tiered persistence engine (`js/engines/storage-db.js`) | Level 2 | Storage |
-| **Phase 130** | `v2.5.71` | Sequence of Returns Risk & Dynamic SWR retirement simulator | Level 2 | Modeling |
-| **Phase 131** | `v2.5.72` | WCAG 2.1 AA accessibility audit & live region announcements | Level 2 | Accessibility |
-| **Phase 132** | `v2.6.0`  | Multi-profile partition architecture (Personal / Family / Freelance) | Level 3 | Major Milestone |
+| **Phase 123** | `v2.5.64` | ThaiESG 2024–2026 holding rules + SSO progressive ceiling update | Level 1 | ✅ **Shipped** (`362f895`) |
+| **Phase 124** | `v2.5.65` | Universal Google Drive & Sheets export for Dashboard & Tax Dossier | Level 2 | ✅ **Shipped** (`0ddd75c`) |
+| **Phase 125** | `v2.5.66` | Universal Google Drive & Sheets export for Debt & Rebalance tools | Level 2 | ✅ **Shipped** (`24b3d04`) |
+| **Phase 126** | `v2.5.67` | Interactive Debt Payoff visual SVG comparison timeline | Level 2 | ✅ **Shipped** (`9841823`) |
+| **Phase 127** | `v2.5.68` | Zero-dependency mathematical invariant & fuzz testing suite | Level 1 | ✅ **Shipped** (`2219891`) |
+| **Phase 128** | `v2.5.69` | Mobile swipe gestures between tools + App Badging API | Level 2 | ✅ **Shipped** (`fee3b99`) |
+| **Phase 129** | `v2.5.70` | IndexedDB tiered persistence engine (`js/engines/storage-db.js`) | Level 2 | ⏳ Ready |
+| **Phase 130** | `v2.5.71` | Sequence of Returns Risk & Dynamic SWR retirement simulator | Level 2 | ⏳ Planned |
+| **Phase 131** | `v2.5.72` | WCAG 2.1 AA accessibility audit & live region announcements | Level 2 | ⏳ Planned |
+| **Phase 132** | `v2.6.0`  | Multi-profile partition architecture (Personal / Family / Freelance) | Level 3 | ⏳ Planned |
 
 ---
 
 ## Status Summary
 
 - **Previous Plan (`improvement-plan.md`):** **0 items left** (100% completed up through v2.5.63).
-- **New Plan (`plan.md`):** **10 planned phases** ready for execution starting at **Phase 123** (`v2.5.64`).
+- **Completed in this Session:** **Phases 123–128 (v2.5.64 – v2.5.69)** — 6 phases shipped & pushed.
+- **Remaining in Plan (`plan.md`):** **4 phases left** (Phases 129–132, targeting v2.6.0).
