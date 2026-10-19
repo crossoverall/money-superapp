@@ -1719,5 +1719,21 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
   5. **Automated Verification:** Enhanced `tests/smoke.test.mjs` contract assertions and expanded `tests/visual-regression.test.mjs` CDP tests asserting that all tools expand beyond 520px up to 896px on desktop (1024x768) and maintain strictly 0px overflow on mobile (375x667).
 - **Rule:** When harmonizing responsive layout widths across multi-tool suites, always unify desktop max-width constraints (896px / `max-w-4xl`) while enforcing mobile responsive paddings, preserve dedicated print stylesheet overrides (`max-width: 100% !important`), and guard interactive button pseudo-classes during media query insertions.
 
+### 2026-10-19: Privacy-Preserving Expense Tracking Export to Google Drive (CSV Ledger & PDF) (Phase 120)
+
+- **Date & Context:** 2026-10-19, implementing Save Expense Tracking Data to Google Drive in `remaining-money.html` (`v2.5.63`).
+- **Problem:**
+  1. Users calculating monthly budgets in `remaining-money.html` needed a seamless method to export their expense and cash flow data into Google Drive / Google Sheets to maintain recurring monthly expense tracking over time.
+  2. Integrating external third-party SDKs (such as Google Drive REST API, Google Identity Services OAuth, or external webhook relays) would directly violate ADR-001 (Zero-Build Static PWA, 100% Client-Side Privacy, zero remote scripts or telemetry trackers).
+  3. Exported CSV data opened in spreadsheet software (Google Sheets, Microsoft Excel) is vulnerable to CSV Formula Injection attacks (`=cmd|'`, `+`, `-`, `@`) and UTF-8 encoding corruption (mojibake) if not sanitized and BOM-prefixed properly.
+- **Resolution:**
+  1. **Zero-SDK Web Share API Level 2 Integration:** Implemented `#btnSaveToDrive` and `#driveExportModal` utilizing native `navigator.share({ files: [file] })`. On mobile (Android/iOS) and supported desktop operating systems, users can directly select "Save to Drive" / "Google Drive" from the native OS share sheet. For unsupported environments or desktop clicks, it automatically triggers a direct file download (`remaining_expense_ledger_YYYY-MM-DD.csv`).
+  2. **Standardized 7-Column Expense Tracking Ledger:** Engineered `generateExpenseLedgerCSV()` returning `Date,Type,Category,Item,Amount (THB),Note,Month`. Formats ISO dates and months (`YYYY-MM-DD`, `YYYY-MM`), auto-categorizes line items (Income, Expense, Savings, Summary), and includes a summary KPI footer ready for Google Sheets pivot tables and expense analysis.
+  3. **CSV Formula Injection Safeguard & UTF-8 BOM:** Routed all text cells through `csvSafe()` to escape formula triggers with a leading single quote (`'`), escaped quotes and delimiters via RFC-4180 (`""`), and prepended UTF-8 BOM (`\uFEFF`) to prevent spreadsheet garbling.
+  4. **Direct Navigation Shortcuts:** Included safe outbound shortcuts (`target="_blank" rel="noopener noreferrer"`) to Google Drive (`drive.google.com`) and Google Sheets (`sheets.new`) alongside clear usage guidance.
+  5. **Automated Quality Gates:** Added contract checks in `tests/smoke.test.mjs`, verified 100% bilingual dictionary symmetry (10 Phase 120 keys in `js/i18n/th.js` and `js/i18n/en.js`), and proved 100% pass across all 670 automated test suites.
+- **Rule:** For cloud storage exports in zero-build client-side PWAs, leverage browser-native Web Share Level 2 file sharing and direct download fallbacks instead of external third-party SDKs, always sanitize CSV cells against formula injection with UTF-8 BOM encoding, and provide secure `rel="noopener noreferrer"` shortcuts to destination web applications.
+
+
 
 

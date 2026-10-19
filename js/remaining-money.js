@@ -115,6 +115,17 @@ const translations = {
     optShockResignation: 'ลาออกเอง (ปกส. ม.33 ชดเชย 30% สูงสุด 4,500 บ./ด. 3 เดือน)',
     optShockMedical: 'เจ็บป่วย/พักงาน (ปกส. ม.33 ชดเชย 50% สูงสุด 7,500 บ./ด. 3 เดือน)',
     optShockTotal: 'วิกฤตสูญเสียรายได้ 100% (ไม่มีเงินชดเชยประกันสังคม)',
+    btnSaveToDrive: 'บันทึกไปยัง Google Drive',
+    driveModalTitle: 'บันทึกข้อมูลไปยัง Google Drive',
+    driveModalSub: 'ส่งออกข้อมูลรายรับ-รายจ่ายไปยัง Google Drive เพื่อเปิดใน Google Sheets หรือเก็บบันทึกประวัติ',
+    driveFormatLabel: 'เลือกรูปแบบไฟล์ที่ต้องการส่งออก:',
+    driveFormatCsv: 'CSV (เหมาะสำหรับ Google Sheets / บันทึกรายจ่ายต่อเนื่อง)',
+    driveFormatPdf: 'PDF (เหมาะสำหรับพิมพ์ / บันทึกเอกสารสรุป)',
+    btnDriveShareOrSave: 'แชร์ / บันทึกไฟล์',
+    btnOpenDrive: 'เปิด Google Drive',
+    btnOpenSheets: 'เปิด Google Sheets',
+    driveGuide:
+      '💡 เคล็ดลับ: เมื่อเลือก CSV ระบบจะเตรียมไฟล์ที่พร้อมเปิดด้วย Google Sheets ได้ทันที หากเปิดบนมือถือสามารถกดบันทึกลง Google Drive ได้โดยตรง',
   },
   en: {
     eyebrow: 'Money Manager',
@@ -232,6 +243,17 @@ const translations = {
     optShockResignation: 'Resignation (SSO 30% max 4,500 THB/mo for 3 months)',
     optShockMedical: 'Medical Leave (SSO 50% max 7,500 THB/mo for 3 months)',
     optShockTotal: '100% Sudden Shock (Zero SSO benefits)',
+    btnSaveToDrive: 'Save to Google Drive',
+    driveModalTitle: 'Save Expenses to Google Drive',
+    driveModalSub: 'Export cash flow & expense records to Google Drive for Google Sheets or archival',
+    driveFormatLabel: 'Select Export Format:',
+    driveFormatCsv: 'CSV (Best for Google Sheets / recurring expense tracking)',
+    driveFormatPdf: 'PDF (Best for print / monthly statement summary)',
+    btnDriveShareOrSave: 'Share / Save File',
+    btnOpenDrive: 'Open Google Drive',
+    btnOpenSheets: 'Open Google Sheets',
+    driveGuide:
+      '💡 Tip: When exporting as CSV, the file is ready for Google Sheets. On mobile devices, you can tap to upload directly to Google Drive via native share.',
   },
 };
 
@@ -2630,6 +2652,201 @@ function exportCSV() {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function generateExpenseLedgerCSV() {
+  const isEN = typeof LANG !== 'undefined' ? LANG === 'en' : false;
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const monthStr = dateStr.slice(0, 7);
+
+  const totalIncome = (state.incomes || []).reduce((s, item) => s + (item.value || 0), 0);
+  const totalExpense = (state.expenses || []).reduce((s, item) => s + (item.value || 0), 0);
+  const totalSavings = (state.savings || []).reduce((s, item) => s + (item.value || 0), 0);
+  const remaining = Math.round(totalIncome - totalExpense - totalSavings);
+
+  const header = 'Date,Type,Category,Item,Amount (THB),Note,Month';
+  const rows = [header];
+
+  function addRow(date, type, cat, item, amount, note, month) {
+    rows.push(
+      [
+        csvSafe(date),
+        csvSafe(type),
+        csvSafe(cat),
+        csvSafe(item),
+        typeof amount === 'number' ? amount : csvSafe(amount),
+        csvSafe(note),
+        csvSafe(month),
+      ].join(','),
+    );
+  }
+
+  // 1. Incomes (Type: Income/รายได้)
+  const typeIncome = isEN ? 'Income' : 'รายได้';
+  (state.incomes || []).forEach((item, idx) => {
+    const isSal = isSalaryRow(item, idx);
+    const cat = isSal ? (isEN ? 'Salary' : 'เงินเดือน') : isEN ? 'Other Income' : 'รายได้อื่นๆ';
+    const note = isSal ? (isEN ? 'Primary Salary' : 'เงินเดือนหลัก') : '';
+    addRow(dateStr, typeIncome, cat, getDisplayName(item.name), Math.round(item.value || 0), note, monthStr);
+  });
+
+  // 2. Expenses (Type: Expense/ค่าใช้จ่าย)
+  const typeExpense = isEN ? 'Expense' : 'ค่าใช้จ่าย';
+  (state.expenses || []).forEach((item) => {
+    const autoType = getAutoType(item);
+    let cat = isEN ? 'Living Expense' : 'ค่าใช้จ่ายทั่วไป';
+    let note = '';
+    if (autoType === 'tax') {
+      cat = isEN ? 'Tax' : 'ภาษี';
+      note = isEN ? 'Estimated Income Tax' : 'ภาษีเงินได้ (ประมาณการ)';
+    } else if (autoType === 'sso') {
+      cat = isEN ? 'Social Security' : 'ประกันสังคม';
+      note = isEN ? 'Social Security (SSO)' : 'ประกันสังคม (SSO)';
+    } else if (autoType === 'pvd') {
+      cat = isEN ? 'Provident Fund' : 'กองทุนสำรองเลี้ยงชีพ';
+      note = isEN ? `Provident Fund (${pvdPercent}%)` : `กองทุนสำรองเลี้ยงชีพ (${pvdPercent}%)`;
+    }
+    addRow(dateStr, typeExpense, cat, getDisplayName(item.name), Math.round(item.value || 0), note, monthStr);
+  });
+
+  // 3. Savings (Type: Savings/เงินออม)
+  const typeSavings = isEN ? 'Savings' : 'เงินออม';
+  (state.savings || []).forEach((item) => {
+    const cat = isEN ? 'Savings & Investment' : 'เงินออมและการลงทุน';
+    addRow(dateStr, typeSavings, cat, getDisplayName(item.name), Math.round(item.value || 0), '', monthStr);
+  });
+
+  // 4. Net Remaining & Summary Block (Type: Summary/สรุป)
+  const typeSummary = isEN ? 'Summary' : 'สรุป';
+  const remLabel =
+    totalSavings > 0
+      ? isEN
+        ? 'Remaining for Investment'
+        : 'เงินคงเหลือสำหรับลงทุน'
+      : isEN
+        ? 'Remaining Money'
+        : 'เงินคงเหลือ';
+  const remNote =
+    remaining > 0
+      ? isEN
+        ? 'Surplus'
+        : 'เหลือเงิน'
+      : remaining < 0
+        ? isEN
+          ? 'Deficit'
+          : 'เกินงบ'
+        : isEN
+          ? 'Balanced'
+          : 'สมดุล';
+
+  addRow(
+    dateStr,
+    typeSummary,
+    isEN ? 'Summary' : 'สรุป',
+    isEN ? 'Total Income' : 'รวมรายได้',
+    Math.round(totalIncome),
+    '',
+    monthStr,
+  );
+  addRow(
+    dateStr,
+    typeSummary,
+    isEN ? 'Summary' : 'สรุป',
+    isEN ? 'Total Expenses' : 'รวมค่าใช้จ่าย',
+    Math.round(totalExpense),
+    '',
+    monthStr,
+  );
+  if ((state.savings || []).length > 0) {
+    addRow(
+      dateStr,
+      typeSummary,
+      isEN ? 'Summary' : 'สรุป',
+      isEN ? 'Total Savings' : 'รวมเงินออม',
+      Math.round(totalSavings),
+      '',
+      monthStr,
+    );
+  }
+  addRow(dateStr, typeSummary, isEN ? 'Summary' : 'สรุป', remLabel, remaining, remNote, monthStr);
+
+  // 5. Emergency Runway if enabled
+  if (state.showEmergencyRunway) {
+    const reserve = Number(state.currentEmergencyReserve) || 0;
+    const runwayMonths = totalExpense > 0 ? Math.round((reserve / totalExpense) * 10) / 10 : 0;
+    const note =
+      totalExpense > 0
+        ? isEN
+          ? `${runwayMonths.toFixed(1)} months buffer`
+          : `สำรองได้ ${runwayMonths.toFixed(1)} เดือน`
+        : '';
+    addRow(
+      dateStr,
+      typeSummary,
+      isEN ? 'Emergency Runway' : 'เงินสำรองฉุกเฉิน',
+      isEN ? 'Current Emergency Reserve' : 'เงินสำรองฉุกเฉินปัจจุบัน',
+      Math.round(reserve),
+      note,
+      monthStr,
+    );
+  }
+
+  const bom = '\uFEFF';
+  return bom + rows.join('\r\n');
+}
+
+async function saveToGoogleDrive() {
+  const isEN = typeof LANG !== 'undefined' ? LANG === 'en' : false;
+  const formatInput = document.querySelector('input[name="driveFormat"]:checked');
+  const format = formatInput ? formatInput.value : 'csv';
+
+  if (format === 'pdf') {
+    closeDriveModal();
+    window.print();
+    return;
+  }
+
+  const csvContent = generateExpenseLedgerCSV();
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const fileName = `remaining_expense_ledger_${dateStr}.csv`;
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+  // Web Share API with file payload
+  if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+    try {
+      const file = typeof File !== 'undefined' ? new File([blob], fileName, { type: 'text/csv' }) : null;
+      if (file && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: isEN ? 'Expense Ledger for Google Drive' : 'บัญชีรายรับ-รายจ่ายสำหรับ Google Drive',
+          text: isEN ? 'Monthly Cash Flow & Expense Ledger (CSV)' : 'บันทึกบัญชีรายรับ-รายจ่ายและกระแสเงินสดประจำเดือน (CSV)',
+        });
+        closeDriveModal();
+        showBridgeNotification(isEN ? '✓ Shared expense ledger successfully!' : '✓ แชร์บัญชีรายจ่ายเรียบร้อยแล้ว');
+        return;
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        return;
+      }
+    }
+  }
+
+  // Fallback anchor download
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  closeDriveModal();
+  showBridgeNotification(
+    isEN
+      ? `✓ Downloaded ${fileName} — Ready to upload to Google Drive`
+      : `✓ ดาวน์โหลด ${fileName} เรียบร้อย — พร้อมอัปโหลดขึ้น Google Drive`,
+  );
+}
+
 function fallbackCopyText(text, onSuccess) {
   try {
     const ta = document.createElement('textarea');
@@ -3319,6 +3536,16 @@ function saveCustomTemplates(list) {
   } catch (_e) {}
 }
 
+function openDriveModal() {
+  const modal = document.getElementById('driveExportModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeDriveModal() {
+  const modal = document.getElementById('driveExportModal');
+  if (modal) modal.style.display = 'none';
+}
+
 function openTemplateModal() {
   renderTemplatesModal();
   const modal = document.getElementById('templateModal');
@@ -3456,6 +3683,10 @@ window.addEventListener('keydown', (e) => {
     if (tmplMod && tmplMod.style.display !== 'none') {
       closeTemplateModal();
     }
+    const driveMod = document.getElementById('driveExportModal');
+    if (driveMod && driveMod.style.display !== 'none') {
+      closeDriveModal();
+    }
   }
 });
 
@@ -3475,6 +3706,10 @@ window.deleteCustomTemplate = deleteCustomTemplate;
 window.applyBudgetTemplate = applyBudgetTemplate;
 window.selectQuickPreset = selectQuickPreset;
 window.renderQuickPresetsBar = renderQuickPresetsBar;
+window.openDriveModal = openDriveModal;
+window.closeDriveModal = closeDriveModal;
+window.saveToGoogleDrive = saveToGoogleDrive;
+window.generateExpenseLedgerCSV = generateExpenseLedgerCSV;
 
 // ── Init ───────────────────────────────────────────────────────────────────
 checkPendingLumpSum();

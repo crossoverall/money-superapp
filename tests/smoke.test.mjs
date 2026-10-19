@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it } from 'node:test';
+import { createContext, Script } from 'node:vm';
 
 const ROOT_DIR = process.cwd();
 
@@ -2294,6 +2295,104 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.strictEqual(manifest.display, 'standalone', 'PWA display must be standalone');
       assert.ok(manifest.theme_color, 'manifest must specify theme_color');
       assert.ok(manifest.background_color, 'manifest must specify background_color');
+    });
+
+    it('verifies Phase 120 Google Drive Expense Tracking Export (CSV/PDF) contracts and controls', () => {
+      const remHtml = fs.readFileSync(path.join(ROOT_DIR, 'remaining-money.html'), 'utf8');
+      const remJs = fs.readFileSync(path.join(ROOT_DIR, 'js/remaining-money.js'), 'utf8');
+
+      // 1. Verify UI controls and modal in remaining-money.html
+      assert.ok(remHtml.includes('id="btnSaveToDrive"'), 'remaining-money.html must define #btnSaveToDrive');
+      assert.ok(remHtml.includes('id="lblSaveToDrive"'), 'remaining-money.html must define #lblSaveToDrive');
+      assert.ok(remHtml.includes('id="driveExportModal"'), 'remaining-money.html must define #driveExportModal');
+      assert.ok(remHtml.includes('id="driveModalTitle"'), 'remaining-money.html must define #driveModalTitle');
+      assert.ok(remHtml.includes('id="driveModalSub"'), 'remaining-money.html must define #driveModalSub');
+      assert.ok(remHtml.includes('id="driveFormatCsv"'), 'remaining-money.html must define #driveFormatCsv');
+      assert.ok(remHtml.includes('id="driveFormatPdf"'), 'remaining-money.html must define #driveFormatPdf');
+      assert.ok(remHtml.includes('id="btnDriveShareOrSave"'), 'remaining-money.html must define #btnDriveShareOrSave');
+      assert.ok(remHtml.includes('id="btnOpenDrive"'), 'remaining-money.html must define #btnOpenDrive');
+      assert.ok(remHtml.includes('id="btnOpenSheets"'), 'remaining-money.html must define #btnOpenSheets');
+      assert.ok(remHtml.includes('data-i18n="driveGuide"'), 'remaining-money.html must declare driveGuide');
+
+      // 2. Verify controller functions and window exports in js/remaining-money.js
+      assert.ok(remJs.includes('function openDriveModal()'), 'remaining-money.js must define openDriveModal');
+      assert.ok(remJs.includes('function closeDriveModal()'), 'remaining-money.js must define closeDriveModal');
+      assert.ok(
+        remJs.includes('async function saveToGoogleDrive()'),
+        'remaining-money.js must define saveToGoogleDrive',
+      );
+      assert.ok(
+        remJs.includes('function generateExpenseLedgerCSV()'),
+        'remaining-money.js must define generateExpenseLedgerCSV',
+      );
+
+      assert.ok(
+        remJs.includes('window.openDriveModal = openDriveModal'),
+        'remaining-money.js must export openDriveModal',
+      );
+      assert.ok(
+        remJs.includes('window.closeDriveModal = closeDriveModal'),
+        'remaining-money.js must export closeDriveModal',
+      );
+      assert.ok(
+        remJs.includes('window.saveToGoogleDrive = saveToGoogleDrive'),
+        'remaining-money.js must export saveToGoogleDrive',
+      );
+      assert.ok(
+        remJs.includes('window.generateExpenseLedgerCSV = generateExpenseLedgerCSV'),
+        'remaining-money.js must export generateExpenseLedgerCSV',
+      );
+
+      // 3. Verify ledger CSV structure & BOM
+      assert.ok(
+        remJs.includes('Date,Type,Category,Item,Amount (THB),Note,Month'),
+        'generateExpenseLedgerCSV must define standard ledger columns',
+      );
+      assert.ok(
+        remJs.includes('remaining_expense_ledger_'),
+        'saveToGoogleDrive must generate remaining_expense_ledger_ filename',
+      );
+
+      // 4. Test generateExpenseLedgerCSV execution and CSV format contracts
+      const sandbox = {
+        console,
+        Math,
+        Date,
+        LANG: 'th',
+        pvdPercent: 5,
+        state: {
+          incomes: [{ name: 'Salary', value: 50000 }],
+          expenses: [{ name: 'Rent', value: 15000 }],
+          savings: [{ name: 'Emergency Fund', value: 5000 }],
+          showEmergencyRunway: true,
+          currentEmergencyReserve: 90000,
+        },
+        csvSafe: (v) => String(v ?? ''),
+        isSalaryRow: (_item, idx) => idx === 0,
+        getDisplayName: (name) => name,
+        getAutoType: () => null,
+      };
+      const vmContext = createContext(sandbox);
+      const csvGenMatch = remJs.match(/function generateExpenseLedgerCSV\(\) \{[\s\S]*?\n\}/);
+      assert.ok(csvGenMatch, 'Must match generateExpenseLedgerCSV implementation');
+      new Script(`${csvGenMatch[0]}\nresult = generateExpenseLedgerCSV();`).runInContext(vmContext);
+      const generatedCsv = sandbox.result;
+
+      assert.ok(
+        generatedCsv.startsWith('\uFEFF'),
+        'CSV must prepend \\uFEFF BOM for Excel/Google Sheets compatibility',
+      );
+      assert.ok(
+        generatedCsv.includes('Date,Type,Category,Item,Amount (THB),Note,Month'),
+        'CSV must include header row',
+      );
+      assert.ok(generatedCsv.includes('Salary,50000'), 'CSV must include Income rows');
+      assert.ok(generatedCsv.includes('Rent,15000'), 'CSV must include Expense rows');
+      assert.ok(generatedCsv.includes('Emergency Fund,5000'), 'CSV must include Savings rows');
+      assert.ok(generatedCsv.includes('50000'), 'CSV summary must include Total Income');
+      assert.ok(generatedCsv.includes('15000'), 'CSV summary must include Total Expenses');
+      assert.ok(generatedCsv.includes('5000'), 'CSV summary must include Total Savings');
+      assert.ok(generatedCsv.includes('30000'), 'CSV summary must include 30000 net remaining');
     });
   });
 });

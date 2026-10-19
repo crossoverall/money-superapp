@@ -141,6 +141,19 @@
     cacheRefreshed: 'Offline cache refreshed successfully',
     cachePurged: 'Stale caches purged successfully',
 
+    // Google Drive Expense Export (Phase 120)
+    btnSaveToDrive: 'Save to Google Drive',
+    driveModalTitle: 'Save Expenses to Google Drive',
+    driveModalSub: 'Export cash flow & expense records to Google Drive for Google Sheets or archival',
+    driveFormatLabel: 'Select Export Format:',
+    driveFormatCsv: 'CSV (Best for Google Sheets / recurring expense tracking)',
+    driveFormatPdf: 'PDF (Best for print / monthly statement summary)',
+    btnDriveShareOrSave: 'Share / Save File',
+    btnOpenDrive: 'Open Google Drive',
+    btnOpenSheets: 'Open Google Sheets',
+    driveGuide:
+      '💡 Tip: When exporting as CSV, the file is ready for Google Sheets. On mobile devices, you can tap to upload directly to Google Drive via native share.',
+
     // Confirmations & Prompts
     confirmResetDefaults: 'Clear form data and reset to defaults?',
     confirmDeleteRecord: 'Are you sure you want to delete this record?',

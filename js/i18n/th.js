@@ -140,6 +140,19 @@
     cacheRefreshed: 'อัปเดตแคชออฟไลน์เรียบร้อยแล้ว',
     cachePurged: 'ล้างแคชเก่าที่ตกค้างเรียบร้อยแล้ว',
 
+    // Google Drive Expense Export (Phase 120)
+    btnSaveToDrive: 'บันทึกไปยัง Google Drive',
+    driveModalTitle: 'บันทึกข้อมูลไปยัง Google Drive',
+    driveModalSub: 'ส่งออกข้อมูลรายรับ-รายจ่ายไปยัง Google Drive เพื่อเปิดใน Google Sheets หรือเก็บบันทึกประวัติ',
+    driveFormatLabel: 'เลือกรูปแบบไฟล์ที่ต้องการส่งออก:',
+    driveFormatCsv: 'CSV (เหมาะสำหรับ Google Sheets / บันทึกรายจ่ายต่อเนื่อง)',
+    driveFormatPdf: 'PDF (เหมาะสำหรับพิมพ์ / บันทึกเอกสารสรุป)',
+    btnDriveShareOrSave: 'แชร์ / บันทึกไฟล์',
+    btnOpenDrive: 'เปิด Google Drive',
+    btnOpenSheets: 'เปิด Google Sheets',
+    driveGuide:
+      '💡 เคล็ดลับ: เมื่อเลือก CSV ระบบจะเตรียมไฟล์ที่พร้อมเปิดด้วย Google Sheets ได้ทันที หากเปิดบนมือถือสามารถกดบันทึกลง Google Drive ได้โดยตรง',
+
     // Confirmations & Prompts
     confirmResetDefaults: 'ต้องการล้างข้อมูลและคืนค่าเริ่มต้นหรือไม่?',
     confirmDeleteRecord: 'คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?',

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.5.62">
+  <meta name="version" content="2.5.63">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self';">
   <script>
     try {
@@ -891,6 +891,7 @@
       <input type="file" id="importFileInput" accept=".json,.csv,text/csv,application/json" onchange="handleImportFile(this)" style="display:none;">
       <button class="reset-btn" id="btnTemplates" onclick="openTemplateModal()">📋 <span id="lblTemplates" data-i18n="lblTemplates">แม่แบบงบประมาณ</span></button>
       <button class="reset-btn" id="importBtn" onclick="document.getElementById('importFileInput').click()">📤 <span id="lblImport" data-i18n="lblImport">นำเข้าข้อมูล</span></button>
+      <button class="reset-btn" id="btnSaveToDrive" onclick="openDriveModal()">📁 <span id="lblSaveToDrive" data-i18n="btnSaveToDrive">บันทึกไปยัง Google Drive</span></button>
       <button class="reset-btn" id="copySummaryBtn" onclick="copySummary()">📋 <span id="lblCopySummary" data-i18n="lblCopySummary">คัดลอกสรุป</span></button>
       <button class="reset-btn" id="exportCsvBtn" onclick="exportCSV()">📥 <span id="lblExportCsv" data-i18n="lblExportCsv">ดาวน์โหลด CSV</span></button>
       <button class="reset-btn" id="exportJsonBtn" onclick="exportJSON()">💾 <span id="lblExportJson" data-i18n="lblExportJson">ดาวน์โหลด JSON</span></button>
@@ -900,7 +901,7 @@
       <button class="reset-btn" id="resetBtn" data-i18n="resetBtn" style="color:var(--ink-faint);">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v2.5.62</p>
+  <p class="version-tag">v2.5.63</p>
 
   <!-- Import Preview Modal -->
   <div id="importModal" role="dialog" aria-modal="true" aria-labelledby="importModalTitle" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; display:none; align-items:center; justify-content:center; backdrop-filter:blur(2px);" onclick="if(event.target===this)closeImportModal()">
@@ -1007,6 +1008,47 @@
       <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--line); padding-top:12px; font-size:11.5px; color:var(--ink-faint);">
         <span id="lblTemplateUndoNotice" data-i18n="lblTemplateUndoNotice">💡 นำแม่แบบมาใช้แล้ว สามารถกด ↩ เลิกทำ (Ctrl+Z) ได้ตลอดเวลา</span>
         <button type="button" onclick="closeTemplateModal()" style="background:none; border:1px solid var(--line); color:var(--ink-dim); padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;" id="btnCloseTemplate" data-i18n="btnCloseTemplate">ปิด</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Google Drive Export Modal -->
+  <div id="driveExportModal" role="dialog" aria-modal="true" aria-labelledby="driveModalTitle" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; display:none; align-items:center; justify-content:center; backdrop-filter:blur(2px);" onclick="if(event.target===this)closeDriveModal()">
+    <div style="background:var(--panel); border:1px solid var(--line); border-radius:16px; width:92%; max-width:500px; padding:20px; box-shadow:0 12px 30px rgba(0,0,0,0.3); color:var(--ink); font-family:inherit; max-height:90vh; overflow-y:auto;">
+      <!-- Header -->
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; border-bottom:1px solid var(--line); padding-bottom:12px;">
+        <div>
+          <h3 id="driveModalTitle" data-i18n="driveModalTitle" style="margin:0; font-size:16px; font-weight:700;">บันทึกข้อมูลไปยัง Google Drive</h3>
+          <div style="font-size:12px; color:var(--ink-dim); margin-top:2px;" id="driveModalSub" data-i18n="driveModalSub">ส่งออกข้อมูลรายรับ-รายจ่ายไปยัง Google Drive เพื่อเปิดใน Google Sheets หรือเก็บบันทึกประวัติ</div>
+        </div>
+        <button type="button" onclick="closeDriveModal()" style="background:none; border:none; font-size:22px; line-height:1; color:var(--ink-faint); cursor:pointer; padding:0 4px;" aria-label="Close">&times;</button>
+      </div>
+
+      <!-- Format Selector -->
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:16px;">
+        <div style="font-size:12px; font-weight:700; color:var(--ink); margin-bottom:10px;" id="lblDriveFormat" data-i18n="driveFormatLabel">เลือกรูปแบบไฟล์ที่ต้องการส่งออก:</div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; align-items:flex-start; gap:8px;">
+            <input type="radio" name="driveFormat" id="driveFormatCsv" value="csv" checked style="accent-color:var(--brand, #059669); margin-top:2px;">
+            <label for="driveFormatCsv" data-i18n="driveFormatCsv" style="cursor:pointer; font-size:13px;">CSV (เหมาะสำหรับ Google Sheets / บันทึกรายจ่ายต่อเนื่อง)</label>
+          </div>
+          <div style="display:flex; align-items:flex-start; gap:8px;">
+            <input type="radio" name="driveFormat" id="driveFormatPdf" value="pdf" style="accent-color:var(--brand, #059669); margin-top:2px;">
+            <label for="driveFormatPdf" data-i18n="driveFormatPdf" style="cursor:pointer; font-size:13px;">PDF (เหมาะสำหรับพิมพ์ / บันทึกเอกสารสรุป)</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Tip Box -->
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:16px; font-size:12px; color:var(--ink-dim); line-height:1.5;">
+        <span id="lblDriveGuide" data-i18n="driveGuide">💡 เคล็ดลับ: เมื่อเลือก CSV ระบบจะเตรียมไฟล์ที่พร้อมเปิดด้วย Google Sheets ได้ทันที หากเปิดบนมือถือสามารถกดบันทึกลง Google Drive ได้โดยตรง</span>
+      </div>
+
+      <!-- Action Button Row -->
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end;">
+        <button class="reset-btn" id="btnDriveShareOrSave" onclick="saveToGoogleDrive()" style="background:var(--brand, #059669); color:#fff; font-weight:700; padding:8px 16px; border-radius:8px; border:none; font-size:13px; cursor:pointer;">📤 <span id="lblDriveAction" data-i18n="btnDriveShareOrSave">แชร์ / บันทึกไฟล์</span></button>
+        <a href="https://drive.google.com/drive/my-drive" target="_blank" rel="noopener noreferrer" class="reset-btn" id="btnOpenDrive" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; background:var(--panel-2); border:1px solid var(--line); color:var(--ink); padding:8px 14px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">📂 <span data-i18n="btnOpenDrive">เปิด Google Drive</span></a>
+        <a href="https://sheets.new" target="_blank" rel="noopener noreferrer" class="reset-btn" id="btnOpenSheets" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; background:var(--panel-2); border:1px solid var(--line); color:var(--ink); padding:8px 14px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">📊 <span data-i18n="btnOpenSheets">เปิด Google Sheets</span></a>
       </div>
     </div>
   </div>
