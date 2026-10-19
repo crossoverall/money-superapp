@@ -111,6 +111,56 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'js/remaining-money.js must wrap right-side inputs and buttons in .entry-controls',
       );
     });
+
+    it('verifies dashboard.html declares responsive menu wrapping for h1, .panel-title, and #lbl-dossier-panel-title', () => {
+      const dashContent = fs.readFileSync(path.join(ROOT_DIR, 'dashboard.html'), 'utf8');
+      assert.ok(
+        dashContent.includes('@media (max-width: 640px)'),
+        'dashboard.html must define mobile media query for <= 640px screens',
+      );
+      assert.ok(
+        dashContent.includes('.panel-title') && dashContent.includes('flex-wrap: wrap'),
+        'dashboard.html must define flex-wrap: wrap on .panel-title',
+      );
+      assert.ok(
+        dashContent.includes('h1') && dashContent.includes('flex-wrap: wrap'),
+        'dashboard.html must define flex-wrap: wrap on h1',
+      );
+      assert.ok(
+        dashContent.includes('#lbl-dossier-panel-title') && dashContent.includes('flex-direction: column'),
+        'dashboard.html must define flex-direction: column for #lbl-dossier-panel-title under mobile query',
+      );
+      assert.ok(
+        dashContent.includes('#lbl-dossier-panel-title') && dashContent.includes('flex: 1 1 auto'),
+        'dashboard.html must define flex: 1 1 auto for dossier action buttons under mobile query',
+      );
+    });
+
+    it('verifies tax-calculator.html aligns container margins with remaining-money standard', () => {
+      const taxContent = fs.readFileSync(path.join(ROOT_DIR, 'tax-calculator.html'), 'utf8');
+      assert.ok(
+        taxContent.includes('padding: 26px 16px 70px') &&
+          taxContent.includes('max-width: 520px') &&
+          taxContent.includes('margin-inline: auto'),
+        'tax-calculator.html body must align with 520px max-width, margin-inline: auto, and 16px horizontal padding standard',
+      );
+      assert.ok(
+        taxContent.includes('padding: 20px 16px 24px'),
+        'tax-calculator.html .card must use 20px 16px 24px padding',
+      );
+      assert.ok(
+        taxContent.includes('@media (max-width: 480px)') && taxContent.includes('padding: 16px 12px 70px'),
+        'tax-calculator.html must define mobile <= 480px responsive body padding',
+      );
+      assert.ok(
+        !taxContent.includes('padding: 28px 32px 32px'),
+        'tax-calculator.html must not contain legacy 32px card padding',
+      );
+      assert.ok(
+        !taxContent.includes('justify-content: center;\n      padding: 24px;'),
+        'tax-calculator.html must not contain legacy 24px body padding with vertical flex centering',
+      );
+    });
   });
 
   describe('Script & Stylesheet Dependency Integrity', () => {

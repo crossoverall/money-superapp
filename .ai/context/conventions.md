@@ -188,6 +188,8 @@ Theme colors are declared via CSS custom properties on `:root` and `:root[data-t
 
 - Body font: `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Prompt", Helvetica, Arial, sans-serif`
 - Max mobile/desktop container width for tools: `520px` (centered via `margin-inline: auto`)
+- Standard tool container padding: `body { margin: 0; padding: 26px 16px 70px; max-width: 520px; margin-inline: auto; }` and `.card { padding: 20px 16px 24px; }` (responsive `.card` padding `16px 12px 20px` on viewports $\le 480\text{px}$). Avoid legacy excessive padding (e.g. 56px side margins) or vertical centering (`min-height: 100vh; display: flex; align-items: center;`) inside iframe tools.
+- Multi-action card headers: Always include `flex-wrap: wrap; gap: 8px;` on `h1` and `.panel-title`. On mobile (`@media (max-width: 640px)`), stack header and action groups into columns with full-width button rows (`flex: 1 1 auto;`) to prevent horizontal screen overflow.
 - Border radius: `16px` for primary panels, `12px` for inner cards/rows, `8px` for inputs/buttons
 
 ---

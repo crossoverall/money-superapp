@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.5.56">
+  <meta name="version" content="2.5.57">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self';">
   <script>
     try {
@@ -59,11 +59,11 @@
       margin:0; padding: 26px 16px 70px; max-width: 520px; margin-inline: auto;
     }
     .eyebrow{ font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 6px; }
-    h1{ font-size: 23px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 4px; display:flex; justify-content:space-between; align-items:center;}
+    h1{ font-size: 23px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 4px; display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 8px; }
     .sub{ color: var(--ink-dim); font-size: 13px; margin-bottom: 22px; line-height:1.5;}
 
-    .panel{ background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
-    .panel-title{ font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-faint); font-weight: 700; margin-bottom: 12px; display:flex; justify-content:space-between; align-items:center;}
+    .panel{ background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 16px; max-width: 100%; overflow: hidden; }
+    .panel-title{ font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-faint); font-weight: 700; margin-bottom: 12px; display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 8px; }
 
     .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom:16px; }
     .summary-card { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
@@ -134,6 +134,57 @@
     .reset-btn{ background:none; border:none; color: var(--ink-faint); text-decoration:underline; cursor:pointer; font-size:12px; }
     .reset-btn:hover{ color: var(--danger); }
     .version-tag{ text-align:center; font-size:11px; color:var(--line); margin-top:16px; }
+
+    #lbl-dossier-panel-title .action-btn {
+      padding: 4px 9px;
+      font-size: 11px;
+    }
+
+    @media (max-width: 640px) {
+      h1 {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .panel-title {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .panel {
+        max-width: 100%;
+        overflow: hidden;
+      }
+      #lbl-dossier-panel-title {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+      #lbl-dossier-panel-title .dossier-title-group,
+      #lbl-dossier-panel-title > div:first-child {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      #lbl-dossier-panel-title .dossier-action-group,
+      #lbl-dossier-panel-title > div.no-print {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      #lbl-dossier-panel-title .dossier-action-group .action-btn,
+      #lbl-dossier-panel-title > div.no-print .action-btn,
+      #lbl-dossier-panel-title .action-btn {
+        flex: 1 1 auto;
+        min-width: 0;
+        justify-content: center;
+        text-align: center;
+        padding: 5px 8px;
+        font-size: 11px;
+      }
+    }
 
     @media screen {
       .print-only { display: none !important; }
@@ -212,14 +263,14 @@
   <!-- Phase 65: Unified One-Page Financial Dossier & Executive PDF Report -->
   <div class="panel reorder-card" id="panelExecutiveDossier" role="region" aria-label="Executive Financial Dossier">
     <div class="panel-title" id="lbl-dossier-panel-title">
-      <div style="display:flex; align-items:center; gap:8px;">
+      <div class="dossier-title-group" style="display:flex; align-items:center; gap:8px;">
         <span id="lbl-dossier-title" data-i18n="dossierTitle">📋 แฟ้มสรุปการเงินฉบับผู้บริหาร (Executive Financial Dossier)</span>
         <span id="badge-dossier-sync" style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--panel-2); color:var(--ink-dim); border:1px solid var(--line);">7/7 Tools Synced</span>
       </div>
-      <div style="display:flex; gap:6px; align-items:center;" class="no-print">
-        <button type="button" onclick="toggleDossierPrivacyMask()" class="action-btn" style="padding:4px 9px; margin:0; border-radius:8px; font-size:11px;" id="btnTogglePrivacyMask" title="ซ่อน/แสดงจำนวนเงิน / Mask Amounts" aria-label="Toggle Privacy Mask">👁️ <span id="lblBtnPrivacyMask">ซ่อนตัวเลข</span></button>
-        <button type="button" onclick="printDossierExecutiveReport()" class="action-btn" style="padding:4px 9px; margin:0; border-radius:8px; font-size:11px; background:var(--ok-dim); border-color:var(--ok); color:var(--ok);" id="btnPrintDossier" title="พิมพ์แฟ้มสรุปฉบับผู้บริหาร / Print Dossier PDF" aria-label="Print Executive Dossier PDF">🖨️ <span id="lblBtnPrintDossier" data-i18n="btnPrintDossier">พิมพ์แฟ้มสรุป</span></button>
-        <button type="button" onclick="shareDossierExecutiveSummary()" class="action-btn" style="padding:4px 9px; margin:0; border-radius:8px; font-size:11px; background:var(--blue-dim, rgba(59,130,246,0.1)); border-color:var(--blue, #3b82f6); color:var(--blue, #3b82f6);" id="btnShareDossier" title="แชร์แฟ้มสรุปฉบับผู้บริหาร / Share Dossier Summary" aria-label="Share Executive Dossier">📤 <span id="lblBtnShareDossier" data-i18n="btnShareDossier">แชร์แฟ้มสรุป</span></button>
+      <div class="dossier-action-group no-print" style="display:flex; gap:6px; align-items:center;">
+        <button type="button" onclick="toggleDossierPrivacyMask()" class="action-btn" style="margin:0; border-radius:8px;" id="btnTogglePrivacyMask" title="ซ่อน/แสดงจำนวนเงิน / Mask Amounts" aria-label="Toggle Privacy Mask">👁️ <span id="lblBtnPrivacyMask">ซ่อนตัวเลข</span></button>
+        <button type="button" onclick="printDossierExecutiveReport()" class="action-btn" style="margin:0; border-radius:8px; background:var(--ok-dim); border-color:var(--ok); color:var(--ok);" id="btnPrintDossier" title="พิมพ์แฟ้มสรุปฉบับผู้บริหาร / Print Dossier PDF" aria-label="Print Executive Dossier PDF">🖨️ <span id="lblBtnPrintDossier" data-i18n="btnPrintDossier">พิมพ์แฟ้มสรุป</span></button>
+        <button type="button" onclick="shareDossierExecutiveSummary()" class="action-btn" style="margin:0; border-radius:8px; background:var(--blue-dim, rgba(59,130,246,0.1)); border-color:var(--blue, #3b82f6); color:var(--blue, #3b82f6);" id="btnShareDossier" title="แชร์แฟ้มสรุปฉบับผู้บริหาร / Share Dossier Summary" aria-label="Share Executive Dossier">📤 <span id="lblBtnShareDossier" data-i18n="btnShareDossier">แชร์แฟ้มสรุป</span></button>
       </div>
     </div>
     <div id="panelExecutiveDossierBody">
@@ -1339,7 +1390,7 @@
     </div>
   </div>
 
-  <p class="version-tag">Money Superapp v2.5.56</p>
+  <p class="version-tag">Money Superapp v2.5.57</p>
 
 <script src="js/engines/thai-pit.js"></script>
 <script src="js/engines/thai-tax-calendar.js"></script>

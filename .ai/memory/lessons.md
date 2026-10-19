@@ -15,6 +15,22 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-19: Mobile Responsive Menu Wrapping & PVD Tax Container Margin Harmonization (v2.5.57)
+- **Date & Context:** 2026-10-19, Phase 114 Mobile Responsive Menu Wrapping & PVD Margin Alignment (`v2.5.57`).
+- **Problem:**
+  1. On mobile viewports ($\le 414\text{px} / 375\text{px} / 320\text{px}$), the Executive Financial Dossier card header (`#lbl-dossier-panel-title`) in `dashboard.html` overflowed horizontally offscreen. The header row contained a title, sync status badge, and 3 action buttons (`btnTogglePrivacyMask`, `btnPrintDossier`, `btnShareDossier`) totaling over 600px width without flex wrapping, causing the 3rd button ("แชร์รายงาน / Share Dossier") to clip outside the viewport so that "พิมพ์รายงาน / Print Dossier" appeared as the last menu item on screen.
+  2. In `tax-calculator.html` (PVD & Severance Tax), legacy standalone styles (`body { display: flex; align-items: center; justify-content: center; padding: 24px; }` and `.card { padding: 28px 32px 32px; }`) introduced 56px margins on both sides (112px total reduction), severely cramping 2-column input fields and calculation tables on mobile devices compared to `remaining-money.html`. Furthermore, `min-height: 100vh; display: flex; align-items: center;` caused unnatural vertical centering when embedded in iframe hosts.
+- **Root Cause:** Absence of `flex-wrap: wrap` on multi-button card headers, and legacy pre-standard styling in `tax-calculator.html` that failed to follow the standardized container geometry established across the other iframe tools.
+- **Solution & Rule:**
+  1. **Mobile Multi-Action Header Wrapping (`dashboard.html`):**
+     - Declare `flex-wrap: wrap; gap: 8px;` on `h1` and `.panel-title`.
+     - In `@media (max-width: 640px)`, switch `#lbl-dossier-panel-title` to column stacking (`flex-direction: column; align-items: stretch; gap: 10px;`) with a full-width action button group (`.dossier-action-group` with `width: 100%; flex-wrap: wrap; gap: 8px;` and `flex: 1 1 auto` on all buttons), guaranteeing zero horizontal clipping and accessible tap targets down to 320px viewports.
+  2. **Harmonized Container Padding Standard (`tax-calculator.html`):**
+     - Replace legacy body and card padding with the canonical tool standard: `body { margin: 0; padding: 26px 16px 70px; max-width: 520px; margin-inline: auto; }` and `.card { padding: 20px 16px 24px; }` (with `@media (max-width: 480px) { .card { padding: 16px 12px 20px; } }`).
+     - This recovers 48px of usable horizontal screen real estate for mobile inputs and tables and eliminates jarring vertical displacement inside iframe shells.
+  3. **Automated Regression Defense (`tests/smoke.test.mjs`):**
+     - Added permanent smoke assertions asserting `@media (max-width: 640px)` header flex-wrap rules and verifying that legacy 56px margins in `tax-calculator.html` remain absent.
+
 ### 2026-10-19: W3C Web App Manifest Polish, Rich Install Prompts & Offline Readiness Indicator (v2.5.53)
 - **Date & Context:** 2026-10-19, Phase 110 Web App Manifest & Lighthouse PWA 100 Polish (`v2.5.53`).
 - **Problem:**
