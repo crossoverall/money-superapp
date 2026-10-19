@@ -2210,5 +2210,36 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       const dashContent = fs.readFileSync(path.join(ROOT_DIR, 'js/dashboard.js'), 'utf8');
       assert.ok(dashContent.includes('DashboardViz'), 'js/dashboard.js must reference MoneyApp.DashboardViz');
     });
+
+    it('verifies Phase 117 Automated Visual Regression & Layout Invariant Suite presence and contracts', () => {
+      const visualTestPath = path.join(ROOT_DIR, 'tests/visual-regression.test.mjs');
+      assert.ok(fs.existsSync(visualTestPath), 'tests/visual-regression.test.mjs must exist');
+
+      const pkgJson = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8'));
+      assert.ok(pkgJson.scripts['test:visual'], 'package.json must declare test:visual script');
+      assert.strictEqual(
+        pkgJson.scripts['test:visual'],
+        'node --test tests/visual-regression.test.mjs',
+        'test:visual script must target tests/visual-regression.test.mjs',
+      );
+
+      const visualContent = fs.readFileSync(visualTestPath, 'utf8');
+      const requiredSuites = [
+        'Suite 1: Mobile App Shell Layout Invariants (375x667 and 320x568)',
+        'Suite 2: Tablet & Desktop Viewport Responsive Invariants',
+        'Suite 3: Child Tool Pages & Side Margin Parity on Mobile',
+        'Suite 4: SVG Visualizations Geometry & Bounding Rects',
+        'Suite 5: Headless Screenshot Capture Capability',
+      ];
+
+      for (const suite of requiredSuites) {
+        assert.ok(visualContent.includes(suite), `tests/visual-regression.test.mjs must declare ${suite}`);
+      }
+
+      assert.ok(visualContent.includes('resolveChromeBinary'), 'Must declare headless Chrome binary discovery');
+      assert.ok(visualContent.includes('CdpClient'), 'Must declare native CDP WebSocket client');
+      assert.ok(visualContent.includes('Emulation.setDeviceMetricsOverride'), 'Must declare CDP viewport emulation');
+      assert.ok(visualContent.includes('Page.captureScreenshot'), 'Must declare headless screenshot capture');
+    });
   });
 });

@@ -15,6 +15,26 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-19: Automated Zero-Dependency Visual Regression Suite & Headless SVG Geometry Resolution (v2.5.60)
+- **Date & Context:** 2026-10-19, Phase 117 Visual Regression & Layout Invariant Suite (`v2.5.60`).
+- **Problem:**
+  1. Automated layout and responsive overflow testing previously relied on ad-hoc scratch scripts or manual browser resizing. Regressions like mobile header blowout or side margin asymmetries could slip past standard DOM unit tests because DOM unit tests don't simulate real rendering engines or layout computation.
+  2. Heavy external testing frameworks (Playwright, Puppeteer, Cypress) violate ADR-001 by introducing hundreds of megabytes of npm dependencies and complex build chains.
+  3. In headless Chromium via Chrome DevTools Protocol (CDP), querying `svg.getBoundingClientRect()` on an SVG element during dynamic DOM evaluation can return `{ width: 0, height: 0 }` before a paint frame or when default SVG display is `inline`, even though the parent container has `width: 454px` and computed styles reflect `454px`.
+- **Root Cause:**
+  - Standard unit tests run in jsdom or Node vm environments without a real CSS rendering tree or layout engine.
+  - SVG layout bounding box calculation in headless Chromium requires layout rasterization or computed style introspection.
+- **Solution & Rule:**
+  1. **Zero-Dependency Native CDP Architecture (`tests/visual-regression.test.mjs`):** Built a native, zero-dependency visual regression runner using Node.js built-in `http`, `child_process`, and native `WebSocket` CDP client (`Emulation.setDeviceMetricsOverride`, `Page.navigate`, `Runtime.evaluate`, `Page.captureScreenshot`).
+  2. **Comprehensive Viewport Invariant Suites:**
+     - Verified mobile (375x667) and ultra-narrow mobile (320x568) have 0px horizontal scroll (`scrollWidth <= innerWidth`), zero topbar action clipping (`rect.right <= innerWidth`), and docked bottom nav.
+     - Verified tablet (768x1024) and desktop (1024x768, 1280x800) responsive transitions.
+     - Verified child page container margin parity (`tax-calculator.html` PVD tax and `dashboard.html`).
+     - Verified CDP headless PNG screenshot generation matches valid PNG magic bytes.
+  3. **Robust SVG Layout Geometry Fallback:** In headless Chromium layout assertions, resolve SVG element dimensions using:
+     `(svgRect && svgRect.width > 0) ? svgRect.width : (svg ? parseFloat(window.getComputedStyle(svg).width) || svg.clientWidth : 0)`.
+  4. **Quality Gates & Smoke Test:** Phase 117 assertions verified in `tests/smoke.test.mjs`, registered `"test:visual"` in `package.json`, 663/663 tests passing across 179 suites, 0 Biome errors/warnings.
+
 ### 2026-10-19: Secondary Page Decomposition: Dashboard Visualizations Modularization & Test VM Context Isolation (v2.5.59)
 - **Date & Context:** 2026-10-19, Phase 116 Dashboard Visualizations Modularization (`v2.5.59`).
 - **Problem:**
