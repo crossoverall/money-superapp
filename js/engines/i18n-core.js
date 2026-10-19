@@ -8,6 +8,18 @@
  * 100% offline & client-side compatible (file:// and http(s)://).
  */
 
+/**
+ * @typedef {'th'|'en'} SupportedLanguage
+ */
+
+/**
+ * @typedef {Record<string, string>} I18nDictionary
+ */
+
+/**
+ * @typedef {Record<string, string|number|boolean>} I18nInterpolationParams
+ */
+
 ((global) => {
   const DEFAULT_LANG = 'th';
   let currentLang = DEFAULT_LANG;
@@ -138,8 +150,8 @@
 
   /**
    * Registers or extends translations for a specified language.
-   * @param {string} lang - 'th' or 'en'
-   * @param {Record<string, string>} dict - Dictionary key-value pairs
+   * @param {SupportedLanguage|string} lang - 'th' or 'en'
+   * @param {I18nDictionary} dict - Dictionary key-value pairs
    */
   function register(lang, dict) {
     if (!lang || typeof dict !== 'object' || dict === null) return;
@@ -150,8 +162,8 @@
 
   /**
    * Gets a read-only snapshot of the registered dictionary for a language.
-   * @param {string} [lang] - Language code ('th' | 'en')
-   * @returns {Record<string, string>}
+   * @param {SupportedLanguage|string} [lang] - Language code ('th' | 'en')
+   * @returns {I18nDictionary}
    */
   function getDictionary(lang) {
     const l = (lang || currentLang || DEFAULT_LANG).toLowerCase() === 'en' ? 'en' : 'th';
@@ -160,7 +172,7 @@
 
   /**
    * Sets the active language ('th' or 'en').
-   * @param {string} lang
+   * @param {SupportedLanguage|string} lang
    */
   function setLanguage(lang) {
     currentLang = lang && lang.toLowerCase() === 'en' ? 'en' : 'th';
@@ -171,7 +183,7 @@
 
   /**
    * Gets the active language code.
-   * @returns {string}
+   * @returns {SupportedLanguage}
    */
   function getLanguage() {
     if (typeof global.LANG === 'string' && (global.LANG === 'en' || global.LANG === 'th')) {
@@ -184,8 +196,8 @@
    * Resolves a translated string by key with parameter interpolation and fallbacks.
    * @param {string} key - Dictionary key
    * @param {string} [fallback] - Fallback string if key is not found
-   * @param {Record<string, any>} [params] - Optional named interpolation values {key}
-   * @param {string} [lang] - Optional explicit language override
+   * @param {I18nInterpolationParams} [params] - Optional named interpolation values {key}
+   * @param {SupportedLanguage|string} [lang] - Optional explicit language override
    * @returns {string}
    */
   function t(key, fallback = '', params = null, lang = null) {

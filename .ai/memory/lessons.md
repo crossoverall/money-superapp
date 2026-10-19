@@ -15,6 +15,26 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-19: Zero-Build JSDoc Type Annotations & Contract Verification Suite - Batch 3 (v2.5.51)
+- **Date & Context:** 2026-10-19, Phase 108 Pillar 6 Type Safety Initiative (`v2.5.51`).
+- **Problem:**
+  1. The remaining 6 modularized engines in `js/engines/` (`budget-import.js`, `cashflow-viz.js`, `financial-health.js`, `i18n-core.js`, `rebalance-subtools.js`, `tax-worksheet.js`) lacked formal JSDoc `@typedef` schemas.
+  2. In `cashflow-viz.js`, `classifyBudgetType(item)` evaluates keywords such as `pvd`, `สำรองเลี้ยงชีพ`, `ออม`, `ลงทุน`, but arbitrary asset descriptions like "กองทุน ThaiESG" without an explicit `budgetType: 'saving'` fallback to 'want', leading to contract test assertion mismatches if not explicitly annotated with `budgetType`.
+  3. `calculateSankeyFlows` returns `totalVolume`, `isDeficit`, `deficitAmount`, `nodes`, `links` rather than echoing gross breakdown values directly on the root object, which needed exact schema alignment in the contract definitions.
+- **Root Cause:** Absence of JSDoc typedef annotations on Batch 3 engines, and slight disparity between internal Sankey flow layout properties and external caller assumptions.
+- **Solution & Rule:**
+  1. **Comprehensive JSDoc Type Schemas (Batch 3):** Annotated all 6 remaining engines:
+     - `budget-import.js`: `BudgetImportIncome`, `BudgetImportExpense`, `BudgetImportSaving`, `BudgetImportCandidate`, `BudgetDetectedColumns`
+     - `cashflow-viz.js`: `Budget503020Params`, `BudgetRuleDonutArcs`, `BudgetRule503020Result`, `EmergencyRunwayResult`, `SankeyNode`, `SankeyLink`, `SankeyFlowResult`
+     - `financial-health.js`: `FinancialPillars`, `FinancialHealthScoreResult`, `NextBestMoveItem`, `RadarSpoke`, `RadarPointCoordinate`, `RadarCoordinatesResult`, `NetWorthCompositionResult`
+     - `i18n-core.js`: `SupportedLanguage`, `I18nDictionary`, `I18nInterpolationParams`
+     - `rebalance-subtools.js`: `ThaiGoldLot`, `ThaiGoldSubtoolState`, `ForeignTaxSubtoolState`, `GlidepathSubtoolState`
+     - `tax-worksheet.js`: `TaxWorksheetReportContext`, `TaxWorksheetDividendContext`, `TaxWorksheetEFilingContext`
+  2. **Automated Batch 3 Contract Test Suite (`tests/type-contracts-batch3.test.mjs`):** Built 16 tests verifying all 6 engines conform to declared schemas, bounds, and behaviors.
+  3. **100% Core Engine Type Safety Milestone Reached:** All 21 modularized calculation and domain engines in `js/engines/` are now 100% typed with zero-build JSDoc and verified by 43 automated contract test fixtures across 3 test suites (`tests/type-contracts*.test.mjs`).
+  4. **Quality Gates & Smoke Test:** Phase 108 assertions verified in `tests/smoke.test.mjs`, 577/577 tests passing across 142 suites, 0 Biome errors/warnings.
+
+
 ### 2026-10-19: Zero-Build JSDoc Type Annotations & Contract Verification Suite - Batch 2 (v2.5.50)
 - **Date & Context:** 2026-10-19, Phase 107 Pillar 6 Type Safety Initiative (`v2.5.50`).
 - **Problem:**

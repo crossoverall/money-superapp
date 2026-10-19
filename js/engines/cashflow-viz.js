@@ -1,8 +1,78 @@
 /**
- * Money Superapp - Cash Flow Visualization & Allocation Engine
- * Pure client-side SVG rendering and flow calculation for Cash Flow Waterfall,
- * 50/30/20 Budget Rule Compliance Donut, and Multi-Stage Sankey Stream Visualizers.
- * 100% offline & client-side compatible (file:// and http(s)://).
+ * @typedef {Object} Budget503020Params
+ * @property {number} [totalIncome] - Monthly gross/net income base in THB
+ * @property {Array<{ name: string, value: number|string, budgetType?: string }>} [expenses] - Itemized monthly expenses
+ * @property {Array<{ name: string, value: number|string }>} [savings] - Monthly savings / investment allocations
+ * @property {number} [remaining] - Net monthly surplus or deficit in THB
+ */
+
+/**
+ * @typedef {Object} BudgetRuleDonutArcs
+ * @property {number} radius - SVG circle radius
+ * @property {number} circumference - Perimeter length (2 * PI * r)
+ * @property {number} needsArc - Arc length for Needs portion
+ * @property {number} wantsArc - Arc length for Wants portion
+ * @property {number} savingsArc - Arc length for Savings portion
+ * @property {number} needsOffset - Stroke dashoffset for Needs arc
+ * @property {number} wantsOffset - Stroke dashoffset for Wants arc
+ * @property {number} savingsOffset - Stroke dashoffset for Savings arc
+ */
+
+/**
+ * @typedef {Object} BudgetRule503020Result
+ * @property {number} needsTotal - Total Needs expenditure in THB
+ * @property {number} wantsTotal - Total Wants expenditure in THB
+ * @property {number} savingsTotal - Total Savings allocation in THB
+ * @property {number} totalBudget - Combined expenditure + savings
+ * @property {number} base - Denominator base used for ratio calculation
+ * @property {number} needsPct - Needs ratio percentage (0-100)
+ * @property {number} wantsPct - Wants ratio percentage (0-100)
+ * @property {number} savingsPct - Savings ratio percentage (0-100)
+ * @property {string} status - Health assessment tier code
+ * @property {BudgetRuleDonutArcs} donut - SVG donut arc geometry
+ */
+
+/**
+ * @typedef {Object} EmergencyRunwayResult
+ * @property {number} reserve - Current emergency fund reserve in THB
+ * @property {number} monthlyExpenses - Monthly essential/total expenditure in THB
+ * @property {number} months - Calculated runway duration in months
+ * @property {'unspecified'|'danger'|'healthy'|'solid'} tier - Runway health classification
+ * @property {number} target3M - Minimum 3-month survival benchmark in THB
+ * @property {number} target6M - Recommended 6-month resilience benchmark in THB
+ * @property {number} deficit6M - Shortfall required to reach 6-month safety buffer in THB
+ */
+
+/**
+ * @typedef {Object} SankeyNode
+ * @property {string} id - Node identifier
+ * @property {string} name - Thai label
+ * @property {string} nameEn - English label
+ * @property {number} x - X coordinate
+ * @property {number} y - Y coordinate
+ * @property {number} width - Node bar width
+ * @property {number} height - Node bar height
+ * @property {number} value - Flow volume amount in THB
+ * @property {string} color - Hex/CSS color code
+ */
+
+/**
+ * @typedef {Object} SankeyLink
+ * @property {string} source - Source node ID
+ * @property {string} target - Target node ID
+ * @property {number} value - Transferred volume in THB
+ * @property {string} color - Ribbon fill color
+ * @property {string} path - SVG cubic bezier path string
+ */
+
+/**
+ * @typedef {Object} SankeyFlowResult
+ * @property {boolean} hasData - Whether inputs contain non-zero cashflow
+ * @property {boolean} isDeficit - Whether budget runs a net negative cash deficit
+ * @property {number} deficitAmount - Deficit amount if negative
+ * @property {number} totalVolume - Maximum scaling volume used for vertical layout
+ * @property {SankeyNode[]} nodes - Calculated layout nodes
+ * @property {SankeyLink[]} links - Calculated connection ribbons
  */
 
 ((global) => {
@@ -70,6 +140,12 @@
     'party',
   ];
 
+  /**
+   * Classifies budget item into Needs, Wants, or Savings based on keywords or budgetType metadata.
+   * @param {{ name?: string, budgetType?: string }} item - Item object
+   * @param {'expense'|'saving'} [defaultType='expense'] - Fallback category type
+   * @returns {'need'|'want'|'saving'}
+   */
   function classifyBudgetType(item, defaultType = 'expense') {
     if (!item) return 'want';
     if (item.budgetType === 'need' || item.budgetType === 'want' || item.budgetType === 'saving') {
@@ -92,6 +168,11 @@
     return 'want';
   }
 
+  /**
+   * Evaluates 50/30/20 budget rule compliance and computes SVG donut geometry.
+   * @param {Budget503020Params} [params]
+   * @returns {BudgetRule503020Result}
+   */
   function calculateBudgetRule503020({ totalIncome = 0, expenses = [], savings = [], remaining = 0 } = {}) {
     let needsTotal = 0;
     let wantsTotal = 0;
@@ -163,6 +244,11 @@
     };
   }
 
+  /**
+   * Calculates liquid cash emergency runway duration in months and benchmark deficits.
+   * @param {{ reserve?: number, monthlyExpenses?: number }} [params]
+   * @returns {EmergencyRunwayResult}
+   */
   function calculateEmergencyRunway({ reserve = 0, monthlyExpenses = 0 } = {}) {
     const res = Math.max(0, Number(reserve) || 0);
     const exp = Math.max(0, Number(monthlyExpenses) || 0);
@@ -196,6 +282,16 @@
     };
   }
 
+  /**
+   * Generates cubic SVG ribbon path connecting two vertical bars.
+   * @param {number} x0 - Start X
+   * @param {number} y0Top - Start Y top
+   * @param {number} y0Bottom - Start Y bottom
+   * @param {number} x1 - End X
+   * @param {number} y1Top - End Y top
+   * @param {number} y1Bottom - End Y bottom
+   * @returns {string} SVG path string
+   */
   function generateSankeyRibbonPath(x0, y0Top, y0Bottom, x1, y1Top, y1Bottom) {
     const dx = x1 - x0;
     const cpX1 = x0 + dx * 0.45;
@@ -210,6 +306,11 @@
     `.trim();
   }
 
+  /**
+   * Computes multi-stage Sankey stream flow diagram nodes and linking ribbons.
+   * @param {{ totalIncome?: number, deductions?: number, needs?: number, wants?: number, savings?: number, remaining?: number, width?: number, height?: number }} [params]
+   * @returns {SankeyFlowResult}
+   */
   function calculateSankeyFlows({
     totalIncome = 0,
     deductions = 0,

@@ -1921,5 +1921,80 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         }
       }
     });
+
+    it('verifies Phase 108 JSDoc Type Annotations & Type Contracts for Core Engines (Batch 3 & Complete Engine Suite)', () => {
+      const contractTestPath = path.join(ROOT_DIR, 'tests/type-contracts-batch3.test.mjs');
+      assert.ok(fs.existsSync(contractTestPath), 'tests/type-contracts-batch3.test.mjs must exist');
+
+      const batch3Engines = [
+        {
+          file: 'js/engines/budget-import.js',
+          types: ['BudgetImportCandidate', 'BudgetDetectedColumns'],
+        },
+        {
+          file: 'js/engines/cashflow-viz.js',
+          types: ['BudgetRule503020Result', 'EmergencyRunwayResult', 'SankeyFlowResult'],
+        },
+        {
+          file: 'js/engines/financial-health.js',
+          types: [
+            'FinancialHealthScoreResult',
+            'NextBestMoveItem',
+            'RadarCoordinatesResult',
+            'NetWorthCompositionResult',
+          ],
+        },
+        {
+          file: 'js/engines/i18n-core.js',
+          types: ['I18nDictionary', 'I18nInterpolationParams'],
+        },
+        {
+          file: 'js/engines/rebalance-subtools.js',
+          types: ['ThaiGoldSubtoolState', 'ForeignTaxSubtoolState', 'GlidepathSubtoolState'],
+        },
+        {
+          file: 'js/engines/tax-worksheet.js',
+          types: ['TaxWorksheetReportContext', 'TaxWorksheetDividendContext', 'TaxWorksheetEFilingContext'],
+        },
+      ];
+
+      for (const item of batch3Engines) {
+        const filePath = path.join(ROOT_DIR, item.file);
+        assert.ok(fs.existsSync(filePath), `${item.file} must exist`);
+        const content = fs.readFileSync(filePath, 'utf8');
+        for (const typeName of item.types) {
+          assert.ok(content.includes(typeName), `${item.file} must declare type ${typeName}`);
+        }
+      }
+
+      // Verify all 21 modularized engines in js/engines/ exist
+      const allEngines = [
+        'thai-pit.js',
+        'thai-tax-calendar.js',
+        'insurance.js',
+        'gold.js',
+        'foreign-tax.js',
+        'inheritance-tax.js',
+        'glidepath.js',
+        'retirement-buckets.js',
+        'property-tax.js',
+        'bank-parser.js',
+        'refinance.js',
+        'stress-test.js',
+        'vault-crypto.js',
+        'p2p-sync.js',
+        'bridge.js',
+        'budget-import.js',
+        'cashflow-viz.js',
+        'financial-health.js',
+        'i18n-core.js',
+        'rebalance-subtools.js',
+        'tax-worksheet.js',
+      ];
+      assert.strictEqual(allEngines.length, 21, 'Must track all 21 modularized core engines');
+      for (const eng of allEngines) {
+        assert.ok(fs.existsSync(path.join(ROOT_DIR, 'js/engines', eng)), `js/engines/${eng} must exist`);
+      }
+    });
   });
 });

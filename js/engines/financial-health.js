@@ -1,16 +1,74 @@
 /**
- * Money Superapp - Financial Health & Advisor Engine
- * Calculates 5-pillar composite health scores (Runway, Savings, Debt, Wealth, Tax),
- * priority-ranked Next Best Move action recommendations, Net Worth composition,
- * and 5-axis Radar / Spider chart trigonometry.
- * 100% offline & client-side compatible (file:// and http(s)://).
+ * @typedef {Object} FinancialPillars
+ * @property {number} runway - Liquid cash emergency reserve score (0-100)
+ * @property {number} savings - Monthly savings rate score (0-100)
+ * @property {number} debt - Debt-to-asset solvency score (0-100)
+ * @property {number} wealth - Net worth & retirement progress score (0-100)
+ * @property {number} tax - Statutory tax deduction utilization score (0-100)
+ */
+
+/**
+ * @typedef {Object} FinancialHealthScoreResult
+ * @property {number} compositeScore - Composite 5-pillar health score (0-100)
+ * @property {'critical'|'moderate'|'solid'|'excellent'} tier - Overall financial health tier
+ * @property {FinancialPillars} pillars - Individual pillar scores
+ */
+
+/**
+ * @typedef {Object} NextBestMoveItem
+ * @property {string} id - Unique action recommendation ID
+ * @property {number} priority - Urgency priority tier (1 = critical defense/debt, 2 = savings, 3 = optimization)
+ * @property {string} badge - Localized priority badge label
+ * @property {string} title - Localized action title
+ * @property {string} description - Localized detailed guidance
+ * @property {string} impact - Localized financial impact summary
+ * @property {string} actionLabel - Button CTA label
+ * @property {string} targetTab - Target tool hash or filename
+ */
+
+/**
+ * @typedef {Object} RadarSpoke
+ * @property {number} x1 - Center X
+ * @property {number} y1 - Center Y
+ * @property {number} x2 - Outer spoke X
+ * @property {number} y2 - Outer spoke Y
+ * @property {number} labelX - Label coordinate X
+ * @property {number} labelY - Label coordinate Y
+ * @property {string} label - Display label
+ */
+
+/**
+ * @typedef {Object} RadarPointCoordinate
+ * @property {number} x - Data point X
+ * @property {number} y - Data point Y
+ * @property {number} score - Pillar score value (0-100)
+ * @property {string} key - Pillar key name
+ * @property {string} label - Localized label
+ */
+
+/**
+ * @typedef {Object} RadarCoordinatesResult
+ * @property {string} dataPointsString - Space-separated polygon points
+ * @property {RadarPointCoordinate[]} pointCoordinates - Vertex coordinates
+ * @property {string[]} gridRings - Concentric polygon ring strings
+ * @property {RadarSpoke[]} spokes - Axis spoke lines and labels
+ */
+
+/**
+ * @typedef {Object} NetWorthCompositionResult
+ * @property {number} grossAssets - Total assets (cash + investments + gold) in THB
+ * @property {number} cashPct - Cash allocation percentage
+ * @property {number} investPct - Investment portfolio allocation percentage
+ * @property {number} goldPct - Gold & physical precious metals percentage
+ * @property {number} debtRatio - Total debt to gross assets ratio percentage
+ * @property {number} solvencyRatio - Net worth to gross assets solvency ratio percentage
  */
 
 ((global) => {
   /**
    * Calculates comprehensive 5-pillar financial health score.
-   * @param {Object} options
-   * @returns {{ compositeScore: number, tier: string, pillars: { runway: number, savings: number, debt: number, wealth: number, tax: number } }}
+   * @param {{ runwayMonths?: number, savingsRatePct?: number, debt?: number, assets?: number, netWorth?: number, fireTarget?: number, targetNetWorth?: number, annualExpenses?: number, taxDeductionsUtilizedPct?: number|null }} [options]
+   * @returns {FinancialHealthScoreResult}
    */
   function calculateFinancialHealthScore({
     runwayMonths = 0,
@@ -84,11 +142,11 @@
 
   /**
    * Generates prioritized Next Best Move action recommendations based on financial profile and health score.
-   * @param {Object} p Financial profile
-   * @param {Object} h Health score output
-   * @param {boolean} [isEn=false]
-   * @param {Function} [formatMoney]
-   * @returns {Array<Object>}
+   * @param {{ runwayMonths?: number, totalDebt?: number, savingsRate?: number, topMarginalRate?: number, monthlyInvest?: number }} [p] - Financial profile
+   * @param {{ pillars?: FinancialPillars, compositeScore?: number }} [h] - Health score output
+   * @param {boolean} [isEn=false] - Language flag
+   * @param {(val: number) => string} [formatMoney] - Money formatting callback
+   * @returns {NextBestMoveItem[]} Prioritized recommendation items (max 3)
    */
   function generateNextBestMoves(p = {}, h = {}, isEn = false, formatMoney = (v) => String(v)) {
     const runwayMonths = typeof p.runwayMonths === 'number' ? p.runwayMonths : 0;
@@ -207,9 +265,9 @@
 
   /**
    * Calculates 5-axis Radar / Spider chart polygon vertices and grid paths.
-   * @param {Object} pillars { runway, savings, debt, wealth, tax }
-   * @param {Object} [options]
-   * @returns {{ dataPointsString: string, pointCoordinates: Array<{ x: number, y: number, score: number, key: string, label: string }>, gridRings: Array<string>, spokes: Array<{ x1: number, y1: number, x2: number, y2: number, labelX: number, labelY: number, label: string }> }}
+   * @param {FinancialPillars} [pillars] - 5-pillar score object
+   * @param {{ centerX?: number, centerY?: number, maxR?: number, isEn?: boolean }} [options] - Geometry options
+   * @returns {RadarCoordinatesResult}
    */
   function calculateRadarCoordinates(pillars = {}, options = {}) {
     const centerX = options.centerX || 150;
@@ -307,8 +365,8 @@
 
   /**
    * Calculates net worth composition proportions and solvency ratios.
-   * @param {Object} p
-   * @returns {{ grossAssets: number, cashPct: number, investPct: number, goldPct: number, debtRatio: number, solvencyRatio: number }}
+   * @param {{ emergencyReserve?: number, portfolioVal?: number, goldVal?: number, totalDebt?: number, netWorth?: number }} [p] - Asset and liability inputs
+   * @returns {NetWorthCompositionResult}
    */
   function calculateNetWorthComposition(p = {}) {
     const c = Math.max(0, p.emergencyReserve || 0);

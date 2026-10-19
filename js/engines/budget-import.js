@@ -1,8 +1,41 @@
 /**
- * Money Superapp - Budget & Statement Data Importer Engine
- * Pure client-side RFC-4180 CSV tokenizer, heuristic column detector,
- * subtotal row filter, and candidate budget normalization for CSV and JSON imports.
- * 100% offline & client-side compatible (file:// and http(s)://).
+ * @typedef {Object} BudgetImportIncome
+ * @property {string} name - Name of income stream
+ * @property {number} value - Monthly amount in THB
+ * @property {boolean} [isSalary] - Whether this stream represents the primary salary
+ */
+
+/**
+ * @typedef {Object} BudgetImportExpense
+ * @property {string} name - Name of expense item
+ * @property {number} value - Monthly amount in THB
+ * @property {boolean} [auto] - Whether auto-calculated
+ * @property {'tax'|'sso'|'pvd'} [autoType] - Automated statutory category
+ */
+
+/**
+ * @typedef {Object} BudgetImportSaving
+ * @property {string} name - Name of savings / investment item
+ * @property {number} value - Monthly amount in THB
+ */
+
+/**
+ * @typedef {Object} BudgetImportCandidate
+ * @property {BudgetImportIncome[]} incomes - Normalized income items
+ * @property {BudgetImportExpense[]} expenses - Normalized expense items
+ * @property {BudgetImportSaving[]} savings - Normalized savings items
+ * @property {{ tax: boolean, sso: boolean, pvd: boolean }} [manualOverrides] - Manual statutory override flags
+ * @property {boolean} [showEmergencyRunway] - Whether emergency runway panel is enabled
+ * @property {number} [currentEmergencyReserve] - Current cash reserve in THB
+ * @property {number} [pvdPercent] - Detected PVD contribution percentage
+ */
+
+/**
+ * @typedef {Object} BudgetDetectedColumns
+ * @property {number} catCol - 0-indexed column for Category
+ * @property {number} itemCol - 0-indexed column for Item Name
+ * @property {number} amtCol - 0-indexed column for Amount
+ * @property {number} noteCol - 0-indexed column for Note / Remarks
  */
 
 ((global) => {
@@ -12,6 +45,11 @@
   const AUTO_SSO_NAME_TH = 'ประกันสังคม';
   const AUTO_PVD_NAME_TH = 'กองทุนสำรองเลี้ยงชีพ (PVD)';
 
+  /**
+   * Identifies automated statutory type from item object or name string.
+   * @param {{ autoType?: string, name?: string }} [item]
+   * @returns {'tax'|'sso'|'pvd'|null}
+   */
   function getAutoType(item) {
     if (!item) return null;
     if (item.autoType === 'tax' || item.autoType === 'sso' || item.autoType === 'pvd') {
@@ -95,7 +133,7 @@
   /**
    * Detects Category, Item Name, Amount, and Note column indexes from CSV header row.
    * @param {string[]} headerRow
-   * @returns {{ catCol: number, itemCol: number, amtCol: number, noteCol: number }}
+   * @returns {BudgetDetectedColumns}
    */
   function detectColumns(headerRow) {
     let catCol = -1;
@@ -130,6 +168,11 @@
     return { catCol, itemCol, amtCol, noteCol };
   }
 
+  /**
+   * Cleans CSV field string by trimming and stripping leading apostrophe.
+   * @param {string} val
+   * @returns {string}
+   */
   function cleanField(val) {
     if (typeof val !== 'string') return '';
     let s = val.trim();
@@ -139,6 +182,11 @@
     return s;
   }
 
+  /**
+   * Sanitizes numeric string or number to clean positive THB amount.
+   * @param {string|number} val
+   * @returns {number}
+   */
   function cleanAmount(val) {
     if (typeof val === 'number') return Number.isNaN(val) ? 0 : Math.max(0, val);
     if (typeof val !== 'string') return 0;
@@ -149,6 +197,12 @@
     return Number.isNaN(num) ? 0 : Math.max(0, num);
   }
 
+  /**
+   * Determines if a row represents a summary/subtotal line rather than an item.
+   * @param {string} [cat]
+   * @param {string} [item]
+   * @returns {boolean}
+   */
   function isSubtotalRow(cat, item) {
     const c = String(cat || '').toLowerCase();
     const it = String(item || '').toLowerCase();
@@ -171,9 +225,9 @@
 
   /**
    * Parses JSON text into a normalized candidate budget object.
-   * @param {string|Object} text
-   * @param {Object} [options]
-   * @returns {Object|null} Candidate budget object or null
+   * @param {string|Object} text - Raw JSON string or parsed object
+   * @param {{ isEN?: boolean, defaultPvd?: number }} [options]
+   * @returns {BudgetImportCandidate|null} Candidate budget object or null
    */
   function parseImportJSON(text, options = {}) {
     let parsed;
@@ -310,9 +364,9 @@
 
   /**
    * Parses CSV text into a normalized candidate budget object.
-   * @param {string} text
-   * @param {Object} [options]
-   * @returns {Object|null} Candidate budget object or null
+   * @param {string} text - Raw CSV content
+   * @param {{ fileName?: string, defaultPvd?: number, isEN?: boolean }} [options]
+   * @returns {BudgetImportCandidate|null} Candidate budget object or null
    */
   function parseImportCSV(text, options = {}) {
     if (typeof text !== 'string' || !text.trim()) {

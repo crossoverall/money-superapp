@@ -1,12 +1,31 @@
 /**
- * Money Superapp - Thai PIT E-Filing Worksheet & Tax Dossier Engine (Roadmap Phase 99)
- * Handles:
- * 1. ภ.ง.ด. 90/91 e-Filing Worksheet view calculation & clipboard synchronization
- * 2. Section 47 500k statutory retirement deductions pool evaluator & excess alerts
- * 3. Revenue Department Pre-Flight statutory compliance checklist
- * 4. Section 47 ทวิ Dividend Tax Credit UI & strategic decision verdict
- * 5. Formal Tax Dossier & Print Report generation
- * 100% offline & client-side compatible (file:// and http(s)://).
+ * @typedef {Object} TaxWorksheetReportContext
+ * @property {number} [netIncome] - Annual net taxable income in THB
+ * @property {number} [tax] - Total PIT liability in THB
+ * @property {number} [effRate] - Effective tax rate percentage (0-100)
+ * @property {number} [withheldTax] - Pre-withheld tax (50 Tawi) in THB
+ * @property {{ tiers?: Array<{ labelTh: string, labelEn: string, rate: number, ratePct: number, taxable: number, tax: number }>, topMarginalRate?: number }} [wf] - Progressive bracket breakdown
+ * @property {{ status: 'refund'|'payable'|'balanced', amount: number }} [refundMetrics] - Net refund or additional payable
+ * @property {boolean} [isEn] - Language flag
+ * @property {string} [unit] - Currency unit label
+ */
+
+/**
+ * @typedef {Object} TaxWorksheetDividendContext
+ * @property {string} [lang] - Language code ('th' | 'en')
+ * @property {(val: number) => string} [formatMoney] - Money formatting helper
+ */
+
+/**
+ * @typedef {Object} TaxWorksheetEFilingContext
+ * @property {string} [lang] - Language code ('th' | 'en')
+ * @property {string} [incomeMode] - 'monthly' or 'yearly'
+ * @property {number} [salary] - Monthly salary in THB
+ * @property {number} [bonus] - Annual bonus in THB
+ * @property {number} [yearlyIncome] - Gross yearly base income in THB
+ * @property {number} [yearlyBonus] - Gross yearly bonus in THB
+ * @property {Object} [deductions] - Deductions override object
+ * @property {number} [withheldTax] - Total withheld tax in THB
  */
 
 ((global) => {
@@ -23,7 +42,10 @@
   };
 
   /**
-   * Formats report date with Thai or English month and year.
+   * Formats report date with Thai or English month and Buddhist/Gregorian year.
+   * @param {Date|number|string} d - Date object, timestamp, or string
+   * @param {'th'|'en'|string} [lang='th'] - Language code
+   * @returns {string} Formatted timestamp string (e.g. "19 ต.ค. 2569 08:30")
    */
   function formatReportDate(d, lang) {
     const dateObj = d instanceof Date ? d : new Date(d);
@@ -98,6 +120,10 @@
     }
   }
 
+  /**
+   * Updates Section 47 ทวิ Dividend Tax Credit interactive preview and recommendation UI.
+   * @param {TaxWorksheetDividendContext} [context]
+   */
   function updateDividendTaxCreditUI(context = {}) {
     if (typeof document === 'undefined') return;
     const inpAmt = document.getElementById('inpDividendAmount');
@@ -201,6 +227,10 @@
     }
   }
 
+  /**
+   * Updates ภ.ง.ด. 90/91 e-Filing Worksheet view, Section 47 500k ceiling pool, and preflight checklist.
+   * @param {TaxWorksheetEFilingContext} [context]
+   */
   function updateEFilingWorksheetView(context = {}) {
     if (typeof document === 'undefined') return;
     const panel = document.getElementById('panelEFilingWorksheet');
@@ -586,6 +616,11 @@
     }
   }
 
+  /**
+   * Updates printable formal Tax Dossier & Print Report DOM elements.
+   * @param {TaxWorksheetReportContext} data - Calculation report payload
+   * @param {Object} [context] - Execution environment context
+   */
   function updatePrintReportView(data, context = {}) {
     if (typeof document === 'undefined') return;
     const reportEl = document.getElementById('taxPrintReport');

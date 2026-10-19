@@ -1,10 +1,45 @@
 /**
- * Money Superapp - Portfolio Auxiliary Sub-tools Engine (Roadmap Phase 98)
- * Encapsulates controllers, state persistence, UI sync, and presets for:
- * 1. Thai Gold Bar & Jewelry DCA Calculator & P/L Optimizer
- * 2. Foreign Investment & Crypto Repatriation Tax Advisor (Orders P.161 & P.162)
- * 3. Target Date Fund Glidepath Model & Lifecycle Allocation
- * 100% offline & client-side compatible (file:// and http(s)://).
+ * @typedef {Object} ThaiGoldLot
+ * @property {number} id - Unique lot identifier (timestamp)
+ * @property {string} date - Purchase date string (YYYY-MM-DD)
+ * @property {'bar'|'ornament'} goldType - Type of gold asset
+ * @property {number} weight - Weight quantity
+ * @property {'baht'|'salung'} weightUnit - Unit of measurement
+ * @property {number} costPerBaht - Price paid per baht-weight in THB
+ * @property {number} blockFee - Block / workmanship fee in THB
+ * @property {number} totalCost - Total acquisition cost in THB
+ */
+
+/**
+ * @typedef {Object} ThaiGoldSubtoolState
+ * @property {boolean} [isOpen] - Accordion expansion state
+ * @property {'bar'|'ornament'} goldType - Default gold type
+ * @property {'baht'|'salung'} weightUnit - Default weight unit
+ * @property {number} weight - Weight amount
+ * @property {number} costPerBaht - Cost per baht weight in THB
+ * @property {number} blockFee - Block / smith fee in THB
+ * @property {number} marketPrice - Association benchmark market price in THB
+ * @property {ThaiGoldLot[]} lots - Historical transaction lots
+ */
+
+/**
+ * @typedef {Object} ForeignTaxSubtoolState
+ * @property {boolean} [isOpen] - Accordion expansion state
+ * @property {number} remittanceAmount - Repatriated funds in THB
+ * @property {number} pre2024Amount - Grandfathered capital earned prior to 2024 in THB
+ * @property {number} principalAmount - Cost basis / principal capital in THB
+ * @property {number} daysInThailand - Physical stay duration in tax year
+ * @property {number} foreignTaxPaid - Tax paid abroad in THB
+ * @property {number} otherDomesticNetIncome - Other domestic taxable income in THB
+ */
+
+/**
+ * @typedef {Object} GlidepathSubtoolState
+ * @property {boolean} [isOpen] - Accordion expansion state
+ * @property {number} currentAge - Current chronological age
+ * @property {number} retireAge - Target retirement age
+ * @property {number|null} [targetYear] - Cohort target retirement year
+ * @property {'conservative'|'moderate'|'aggressive'} riskTolerance - Risk posture
  */
 
 ((global) => {
@@ -29,6 +64,10 @@
     lots: [],
   };
 
+  /**
+   * Loads gold calculator state from localStorage.
+   * @returns {ThaiGoldSubtoolState}
+   */
   function loadGoldState() {
     try {
       const saved =
@@ -42,6 +81,9 @@
     return goldState;
   }
 
+  /**
+   * Persists gold calculator state to localStorage.
+   */
   function saveGoldState() {
     try {
       localStorage.setItem(GOLD_STORAGE_KEY, JSON.stringify(goldState));
@@ -439,6 +481,10 @@
     otherDomesticNetIncome: 500000,
   };
 
+  /**
+   * Loads foreign tax advisor state from localStorage.
+   * @returns {ForeignTaxSubtoolState}
+   */
   function loadForeignTaxState() {
     try {
       const raw = localStorage.getItem(FOREIGN_TAX_STORAGE_KEY);
@@ -452,6 +498,9 @@
     return foreignTaxState;
   }
 
+  /**
+   * Persists foreign tax advisor state to localStorage.
+   */
   function saveForeignTaxState() {
     try {
       localStorage.setItem(FOREIGN_TAX_STORAGE_KEY, JSON.stringify(foreignTaxState));
@@ -656,6 +705,10 @@
     riskTolerance: 'moderate',
   };
 
+  /**
+   * Loads target date glidepath state from localStorage.
+   * @returns {GlidepathSubtoolState}
+   */
   function loadGlidepathState() {
     try {
       const raw = localStorage.getItem(GLIDEPATH_STORAGE_KEY);
@@ -669,6 +722,9 @@
     return glidepathState;
   }
 
+  /**
+   * Persists target date glidepath state to localStorage.
+   */
   function saveGlidepathState() {
     try {
       localStorage.setItem(GLIDEPATH_STORAGE_KEY, JSON.stringify(glidepathState));
@@ -703,6 +759,10 @@
     updateGlidepathUI();
   }
 
+  /**
+   * Calculates lifecycle glidepath asset allocation data.
+   * @returns {Object} TargetDateGlidepathResult or fallback lifecycle split
+   */
   function calculateGlidepathData() {
     if (typeof document === 'undefined') {
       return (
