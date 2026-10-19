@@ -161,6 +161,34 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         'tax-calculator.html must not contain legacy 24px body padding with vertical flex centering',
       );
     });
+
+    it('verifies index.html declares mobile responsive topbar constraints and element hiding', () => {
+      const indexContent = fs.readFileSync(path.join(ROOT_DIR, 'index.html'), 'utf8');
+      assert.ok(
+        indexContent.includes('@media (max-width: 768px)'),
+        'index.html must define mobile media query for <= 768px screens',
+      );
+      assert.ok(
+        indexContent.includes('.cmd-k-badge') && indexContent.includes('display: none !important'),
+        'index.html must hide .cmd-k-badge on mobile viewports',
+      );
+      assert.ok(
+        indexContent.includes('#lbl-pwa-install') && indexContent.includes('display: none !important'),
+        'index.html must hide #lbl-pwa-install on mobile viewports',
+      );
+      assert.ok(
+        indexContent.includes('@media (max-width: 480px)'),
+        'index.html must define smartphone media query for <= 480px screens',
+      );
+      assert.ok(
+        indexContent.includes('.brand-title') && indexContent.includes('display: none !important'),
+        'index.html must hide .brand-title on <= 480px screens to preserve header width',
+      );
+      assert.ok(
+        indexContent.includes('@media (max-width: 380px)'),
+        'index.html must define ultra-compact mobile media query for <= 380px screens',
+      );
+    });
   });
 
   describe('Script & Stylesheet Dependency Integrity', () => {

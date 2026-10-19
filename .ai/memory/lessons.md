@@ -15,6 +15,25 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-19: Mobile Topbar Action Overflow Resolution & Responsive Action Button Compaction (v2.5.58)
+- **Date & Context:** 2026-10-19, Phase 115 Mobile Topbar Action Overflow Resolution (`v2.5.58`).
+- **Problem:**
+  On mobile viewports ($\le 414\text{px}$ down to $320\text{px}$), the top navigation header in the App Shell (`index.html`) broke off the screen horizontally. The combined width of `.topbar-brand` (💰 Money Superapp = 135px) and `.topbar-actions` (TH/EN language toggle 69px + Light/Dark theme toggle 57px + 🔍 Search button 69px + ❓ Help button 32px + ⚙️ Settings button 32px + flex gaps) required over 440px. Because `.topbar-inner` is an unwrapped flex row, the rightmost actions (`#btn-help-modal` and `#btn-settings-modal`) were shoved completely off the right edge of the screen, leaving `#btn-cmd-palette` ("Search") as the last visible element in the mobile header.
+- **Root Cause:**
+  1. Desktop keyboard shortcut indicator (`.cmd-k-badge` "Ctrl+K") was displayed unconditionally inside `#btn-cmd-palette` even on mobile touchscreens where physical Ctrl keys do not exist, adding ~35px of unnecessary width.
+  2. The full brand title text (`.brand-title` "Money Superapp") was rendered on narrow mobile viewports, consuming 110px.
+  3. Action buttons had loose horizontal paddings and gaps that failed to compact on smartphone screens $\le 480\text{px}$ and ultra-narrow viewports $\le 380\text{px}$.
+- **Solution & Rule:**
+  1. **Tiered Responsive Topbar CSS Rules (`index.html`):**
+     - At `@media (max-width: 768px)`: Hide `.cmd-k-badge` and `#lbl-pwa-install` with `display: none !important;`. Apply compact pill styling to `.btn-cmd-palette` (`padding: 4px 7px; border-radius: 999px; font-size: 13px;`). Compact `.topbar-actions` to `gap: 3px; padding: 0;` and reduce language/theme toggle paddings.
+     - At `@media (max-width: 480px)`: Hide `.brand-title` with `display: none !important;` while preserving the prominent `💰` icon. This saves ~110px of width with zero brand loss.
+     - At `@media (max-width: 380px)`: Set `.topbar-actions { gap: 2px; }` and apply micro-compact padding (`3px 5px` on toggles, `3px 6px` on icon buttons).
+  2. **Deterministic Verification via Headless CDP:**
+     - Verified across all viewports (480px, 414px, 390px, 375px, 360px, 320px). At 320px, total topbar inner width is reduced to ~238px with the rightmost button `#btn-settings-modal` ending at 315px, leaving 5px of comfortable margin and strictly 0px horizontal overflow (`scrollWidth === clientWidth`).
+     - Verified desktop viewports (> 768px) remain 100% unaltered with desktop tabs, brand title, and "Ctrl+K" badges visible.
+  3. **Automated Regression Defense (`tests/smoke.test.mjs`):**
+     - Added permanent smoke tests asserting responsive media queries and element hiding rules for `.cmd-k-badge`, `#lbl-pwa-install`, and `.brand-title`.
+
 ### 2026-10-19: Mobile Responsive Menu Wrapping & PVD Tax Container Margin Harmonization (v2.5.57)
 - **Date & Context:** 2026-10-19, Phase 114 Mobile Responsive Menu Wrapping & PVD Margin Alignment (`v2.5.57`).
 - **Problem:**

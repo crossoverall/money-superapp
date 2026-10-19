@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="2.5.57">
+<meta name="version" content="2.5.58">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://accounts.google.com/ https://www.googleapis.com/; frame-src 'self' https://accounts.google.com/; object-src 'none'; base-uri 'self';">
 <script>
   try {
@@ -365,7 +365,20 @@
     .topbar-brand { display: flex; }
     .version-badge { display: none; }
     .privacy-bar { display: none; }
-    .btn-pwa-install { padding: 3px 7px; font-size: 11px; }
+    .topbar-actions { gap: 3px; padding: 0; }
+    .cmd-k-badge { display: none !important; }
+    .btn-cmd-palette {
+      padding: 4px 7px;
+      border-radius: 999px;
+      font-size: 13px;
+    }
+    .btn-pwa-install {
+      padding: 4px 7px;
+      border-radius: 999px;
+    }
+    #lbl-pwa-install {
+      display: none !important;
+    }
 
     .topbar-inner {
       height: 48px;
@@ -377,29 +390,29 @@
     }
 
     .lang-toggle {
-      padding: 0 4px;
-      gap: 3px;
+      padding: 0 2px;
+      gap: 2px;
     }
     .lang-toggle button {
-      padding: 4px 7px;
+      padding: 4px 6px;
       font-size: 11px;
     }
 
     .theme-toggle {
-      padding: 0 4px;
-      gap: 3px;
+      padding: 0 2px 0 4px;
+      gap: 2px;
       border-left: 1px solid var(--line);
     }
     .theme-toggle button {
-      padding: 4px 6px;
+      padding: 4px 5px;
       font-size: 12px;
     }
     .theme-text { display: none; }
 
     #btn-settings-modal, #btn-help-modal {
-      padding: 4px 8px;
+      padding: 4px 7px;
       font-size: 13px;
-      margin: auto 2px;
+      margin: auto 1px;
     }
     #lbl-settings-btn { display: none; }
 
@@ -515,6 +528,42 @@
       to { opacity: 1; transform: translateY(0); }
     }
   }
+
+  /* Smartphone / Compact Mobile Optimizations (<= 480px) */
+  @media (max-width: 480px) {
+    .topbar-inner {
+      padding: 0 6px;
+    }
+    .topbar-brand {
+      padding: 0 2px;
+      gap: 0;
+    }
+    .brand-title {
+      display: none !important;
+    }
+  }
+
+  /* Ultra-compact Smartphone Optimizations (<= 380px) */
+  @media (max-width: 380px) {
+    .topbar-inner {
+      padding: 0 4px;
+    }
+    .topbar-actions {
+      gap: 2px;
+    }
+    .lang-toggle button,
+    .theme-toggle button {
+      padding: 3px 5px;
+      font-size: 10.5px;
+    }
+    #btn-cmd-palette,
+    #btn-settings-modal,
+    #btn-help-modal,
+    .btn-pwa-install {
+      padding: 3px 6px;
+      font-size: 12px;
+    }
+  }
 </style>
 </head>
 <body>
@@ -550,7 +599,7 @@
       <span>⬇️</span>
       <span id="lbl-pwa-install" data-i18n="pwaInstallBtn">ติดตั้งแอป</span>
     </button>
-    <span class="version-badge">v2.5.57</span>
+    <span class="version-badge">v2.5.58</span>
     <button id="btn-help-modal" onclick="openOnboardingModal()" title="คู่มือการใช้งาน (Quick Tour)" aria-label="Open Quick Tour and Guide">
       <span class="help-icon">❓</span>
     </button>
@@ -587,7 +636,7 @@
       <span class="pwa-status-dot online" id="pwaStatusDot"></span>
       <span id="lbl-pwa-offline-badge" data-i18n="pwaOfflineReady">พร้อมใช้งานออฟไลน์</span>
     </span>
-    <span class="privacy-ver-badge">Money Superapp v2.5.57</span>
+    <span class="privacy-ver-badge">Money Superapp v2.5.58</span>
   </div>
 </div>
 
