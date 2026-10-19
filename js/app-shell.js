@@ -2639,7 +2639,41 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
+// Phase 109: Speculative Navigation Prefetching
+const prefetchedUrls = new Set();
+function prefetchTabUrl(src) {
+  if (!src || prefetchedUrls.has(src)) return;
+  prefetchedUrls.add(src);
+  try {
+    if (typeof document !== 'undefined' && document.createElement && document.head) {
+      const link = document.createElement('link');
+      link.rel = 'prefetch';
+      link.href = src;
+      document.head.appendChild(link);
+    }
+  } catch (_e) {}
+}
+
+if (typeof window !== 'undefined') {
+  window.MoneyApp = window.MoneyApp || {};
+  window.MoneyApp.prefetchTabUrl = prefetchTabUrl;
+}
+
 allNavButtons.forEach((btn) => {
+  btn.addEventListener(
+    'pointerenter',
+    () => {
+      if (btn.dataset.src) prefetchTabUrl(btn.dataset.src);
+    },
+    { passive: true },
+  );
+  btn.addEventListener(
+    'touchstart',
+    () => {
+      if (btn.dataset.src) prefetchTabUrl(btn.dataset.src);
+    },
+    { passive: true },
+  );
   btn.addEventListener('click', () => {
     activateTab(btn.dataset.tab, true);
   });

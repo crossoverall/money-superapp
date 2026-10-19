@@ -15,6 +15,21 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-19: Performance Optimizations: Preload Hints, Speculative Prefetch & CSS Content-Visibility (v2.5.52)
+- **Date & Context:** 2026-10-19, Phase 109 Tier 3 Performance & Optimization Initiative (`v2.5.52`).
+- **Problem:**
+  1. Standalone tool navigation inside the app-shell iframe incurred cold-fetch roundtrips before displaying iframe content, causing brief skeleton loader flashes.
+  2. Long, multi-section tools (`dashboard.html`, `rebalance.html`, `tax-calculator-base.html`) rendered offscreen accordion card bodies and tables on initial load, consuming unnecessary layout and composite calculation cycles on mobile devices.
+  3. Nav button clicks were reactive rather than speculative, missing the ~100-300ms window between user hover/touch and click.
+- **Root Cause:** Absence of resource hints (`preload`/`prefetch`), absence of CSS `content-visibility: auto`, and purely click-triggered navigation.
+- **Solution & Rule:**
+  1. **Resource Hints in Shell (`index.html`):** Added `<link rel="preload" href="css/theme.css" as="style">` for instantaneous FCP, and prefetch hints for high-frequency destination pages (`dashboard.html`, `remaining-money.html`, `css/tailwind-lite.css`).
+  2. **Speculative Tab Prefetching (`js/app-shell.js`):** Implemented `prefetchTabUrl(src)` triggered on `pointerenter` and `touchstart` with `{ passive: true }`, ensuring destination tool pages are warm in browser cache before click completion.
+  3. **CSS Content-Visibility Optimization (`css/theme.css`):** Introduced `.content-visibility-auto` with `contain-intrinsic-size: 1px 280px;` for `.panel.reorder-card:not(:first-child)`, allowing modern browsers to skip layout and painting for offscreen cards until scrolled into view without layout shift.
+  4. **Automated Performance Test Suite (`tests/performance.test.mjs`):** Created 5 automated tests validating resource hints, content-visibility rules, speculative prefetch listeners, complete service worker cache manifest coverage, and 100-iteration calculation speed benchmarks (<50ms).
+  5. **Quality Gates & Smoke Test:** Phase 109 assertions verified in `tests/smoke.test.mjs`, 583/583 tests passing across 148 suites, 0 Biome errors/warnings.
+
+
 ### 2026-10-19: Zero-Build JSDoc Type Annotations & Contract Verification Suite - Batch 3 (v2.5.51)
 - **Date & Context:** 2026-10-19, Phase 108 Pillar 6 Type Safety Initiative (`v2.5.51`).
 - **Problem:**

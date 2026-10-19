@@ -1,5 +1,5 @@
 ---
-task_id: "SDLC-PHASE-108-JSDOC-TYPE-ANNOTATIONS-BATCH-3"
+task_id: "SDLC-PHASE-109-PERFORMANCE-OPTIMIZATIONS"
 status: "completed"
 current_stage: "release"
 complexity: "level_2"
@@ -7,19 +7,21 @@ iteration_count: 0
 pipeline: ["orchestrator", "planner", "coder", "debugger", "reviewer", "release"]
 ---
 
-### Problem Diagnosis & Scope (Phase 108 - JSDoc Type Annotations & Type Contracts for Core Engines - Batch 3)
+### Problem Diagnosis & Scope (Phase 109 - Performance Audit & Resource Preloading)
 1. **Diagnosis**:
-   - Following Phase 106 (Batch 1: 7 core tax/investment engines) and Phase 107 (Batch 2: 8 banking/refinance/p2p/bridge engines), we complete Pillar 6 type contracts for the final Batch 3 engines (6 files):
-     1. `budget-import.js` (RFC-4180 tokenizer, column detection, candidate budget normalization)
-     2. `cashflow-viz.js` (Budget rule 50/30/20, emergency runway, Sankey stream flows & coordinates)
-     3. `financial-health.js` (5-pillar composite scoring, Next Best Move ranking, radar chart trigonometry, net worth composition)
-     4. `i18n-core.js` (Translation registry, declarative DOM injection, interpolation engine)
-     5. `rebalance-subtools.js` (Gold DCA, foreign tax repatriation, target date lifecycle glidepath state & UI)
-     6. `tax-worksheet.js` (ภ.ง.ด. 90/91 e-filing worksheet, Sec 47 500k ceiling pool, Sec 47 ทวิ dividend tax credit, printable tax dossier)
-   - With Batch 3, 100% of all 21 modularized engines in `js/engines/` will have comprehensive JSDoc `@typedef`, `@param`, `@returns` annotations and automated type contract verification test suites.
-2. **Strategy & Slices (Batch 3 - 6 Engines)**:
-   - Slice 1: JSDoc type annotations across `budget-import.js`, `cashflow-viz.js`, and `financial-health.js`.
-   - Slice 2: JSDoc type annotations across `i18n-core.js`, `rebalance-subtools.js`, and `tax-worksheet.js`.
-   - Slice 3: Create automated type contract test suite `tests/type-contracts-batch3.test.mjs` verifying contract conformance for all 6 engines.
-   - Slice 4: Update `tests/smoke.test.mjs` with Phase 108 assertions.
-   - Slice 5: Quality Gates (`rtk npm run lint` 0 errors/warnings, `npm test` 100% passing across all suites), Security Review, bump patch to `v2.5.51`, update lessons, commit and push to `origin/master`.
+   - Following the successful completion of Pillar 6 Type Contracts across all 21 modularized engines in `js/engines/` (Phases 106-108), the improvement plan calls for Tier 3 Strategic Performance Optimizations (Phase 109+).
+   - In a zero-build, offline-first client architecture (ADR-001):
+     1. Navigating between standalone tool pages (`dashboard.html`, `remaining-money.html`, `rebalance.html`, etc.) inside the iframe currently incurs cold-fetch overhead and brief skeleton loading if not already cached in memory.
+     2. Large pages with multiple auxiliary panels (e.g. `rebalance.html` with Gold DCA, Foreign Tax, Glidepath; `tax-calculator-base.html` with e-Filing Worksheet; `dashboard.html` with Dossier and Stress Testing) perform full layout and DOM rendering calculations on offscreen hidden card elements.
+     3. Nav tab interactions lack speculative prefetching on `pointerenter` / `touchstart`.
+2. **Strategy & Slices (Phase 109)**:
+   - Slice 1: CSS Rendering Performance & Content-Visibility:
+     - Add `.content-visibility-auto` utility and apply `content-visibility: auto; contain-intrinsic-size: 1px 300px;` to offscreen accordion card bodies and auxiliary tools in `css/theme.css`.
+   - Slice 2: Resource Hints & Hover Prefetching:
+     - Add `<link rel="preload">` for `css/theme.css` in `index.html`.
+     - Add `<link rel="prefetch">` for high-frequency destination pages (`dashboard.html`, `remaining-money.html`).
+     - Add speculative hover/touch prefetcher in `js/app-shell.js` (`prefetchTab(targetSrc)`) on nav button `pointerenter` and `touchstart`.
+   - Slice 3: Automated Performance & Integrity Test Suite:
+     - Create `tests/performance.test.mjs` verifying resource hints, prefetch mechanics, CSS content-visibility declarations, service worker cache consistency, and engine calculation benchmarks (<50ms).
+   - Slice 4: Update `tests/smoke.test.mjs` with Phase 109 assertions.
+   - Slice 5: Quality Gates (`rtk npm run lint` 0 errors/warnings, `npm test` 100% passing across all suites), Security Review, bump patch to `v2.5.52`, update lessons, commit and push to `origin/master`.

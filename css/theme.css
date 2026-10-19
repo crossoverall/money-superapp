@@ -415,6 +415,19 @@ html { line-height: 1.5; -webkit-text-size-adjust: 100%; }
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
+/* Phase 109: Rendering Performance & Content Visibility Optimization */
+.content-visibility-auto,
+.card-content-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 320px;
+}
+
+.panel.reorder-card:not(:first-child) {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 280px;
+}
+
+
 /* Phase 82: Universal Card Layout Toolbar */
 .card-layout-toolbar {
   display: flex;

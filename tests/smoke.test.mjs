@@ -1996,5 +1996,22 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
         assert.ok(fs.existsSync(path.join(ROOT_DIR, 'js/engines', eng)), `js/engines/${eng} must exist`);
       }
     });
+
+    it('verifies Phase 109 Performance Optimizations (Resource Hints, Content-Visibility, Speculative Prefetch)', () => {
+      const perfTestPath = path.join(ROOT_DIR, 'tests/performance.test.mjs');
+      assert.ok(fs.existsSync(perfTestPath), 'tests/performance.test.mjs must exist');
+
+      const indexHtml = fs.readFileSync(path.join(ROOT_DIR, 'index.html'), 'utf8');
+      assert.ok(indexHtml.includes('<link rel="preload" href="css/theme.css" as="style">'));
+      assert.ok(indexHtml.includes('<link rel="prefetch" href="dashboard.html">'));
+      assert.ok(indexHtml.includes('<link rel="prefetch" href="remaining-money.html">'));
+
+      const themeCss = fs.readFileSync(path.join(ROOT_DIR, 'css/theme.css'), 'utf8');
+      assert.ok(themeCss.includes('.content-visibility-auto'));
+      assert.ok(themeCss.includes('content-visibility: auto;'));
+
+      const appShellJs = fs.readFileSync(path.join(ROOT_DIR, 'js/app-shell.js'), 'utf8');
+      assert.ok(appShellJs.includes('prefetchTabUrl'));
+    });
   });
 });
