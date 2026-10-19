@@ -15,6 +15,23 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-19: Secondary Page Decomposition: Dashboard Visualizations Modularization & Test VM Context Isolation (v2.5.59)
+- **Date & Context:** 2026-10-19, Phase 116 Dashboard Visualizations Modularization (`v2.5.59`).
+- **Problem:**
+  1. `js/dashboard.js` exceeded 4,140 LOC, combining DOM state with complex SVG spline Bézier geometry, Monte Carlo fan chart coordinates, Net Worth Donut stroke offsets, and growth delta calculations.
+  2. When extracting visualization logic into `js/engines/dashboard-viz.js`, unit tests executing inside Node's `vm.createContext` or `new Function` test runners threw `ReferenceError: escapeHtml is not defined` during top-level dashboard initialization (`renderChart()`), because `escapeHtml` was attached to `window.escapeHtml` via an IIFE rather than declared as a bare lexical variable.
+  3. Node.js `assert.deepEqual` between objects returned from `vm.runInContext` and literals in the outer runner context failed due to prototype mismatch (`Object [Object] vs Object`).
+  4. In SVG stroke-dashoffset calculations, `(-segCash).toFixed(2)` emitted `"-0.00"` when cash was 0, creating invalid or non-standard SVG attribute representations.
+- **Root Cause:**
+  - Inline invocation of visualizer functions during script evaluation without guarding bare function names against window-scoped dependencies in mock environments.
+  - V8 VM context separation across execution realms.
+- **Solution & Rule:**
+  1. **Modular Engine Extraction (`js/engines/dashboard-viz.js`):** Modularized Catmull-Rom to cubic Bézier spline calculation (`buildSmoothSvgPath`), Donut arc geometry (`calculateDonutSegments`), Monte Carlo confidence fan geometries (`generateFanChartGeometry`, `renderMonteCarloFanChart`), and growth metrics (`calculateGrowthMetrics`).
+  2. **Safe Dependency Fallback Invariant:** When delegating to utility functions that may be window-scoped (such as `escapeHtml`), use `typeof window !== 'undefined' && typeof window.escapeHtml === 'function' ? window.escapeHtml : typeof escapeHtml === 'function' ? escapeHtml : (s) => String(s ?? '')`.
+  3. **SVG Coordinate Sanitization:** Normalize `-0.00` offsets to `'0'` with `String(-segCash.toFixed(2)) === '-0.00' ? '0' : String(-segCash.toFixed(2))`.
+  4. **Cross-Realm Unit Test Assertions:** In Node `vm` test runners, assert primitive properties individually or shallow clone objects across context boundaries instead of performing raw prototype-dependent `assert.deepEqual`.
+  5. **Quality Gates & Smoke Test:** Phase 116 assertions verified in `tests/smoke.test.mjs`, 654/654 tests passing across 173 suites, 0 Biome errors/warnings.
+
 ### 2026-10-19: Mobile Topbar Action Overflow Resolution & Responsive Action Button Compaction (v2.5.58)
 - **Date & Context:** 2026-10-19, Phase 115 Mobile Topbar Action Overflow Resolution (`v2.5.58`).
 - **Problem:**

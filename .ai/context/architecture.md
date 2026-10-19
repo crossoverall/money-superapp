@@ -62,7 +62,7 @@ Money Superapp uses a decoupled **Iframe Shell & Multi-Document Architecture**:
    - Read-only aggregation engine: pulls state from `rebalanceCalculator.state.v1`, `remainingMoneyCalculator.state.v1`, `moneySuperapp.taxBase`, and `moneySuperapp.debtCalculator.state.v1`.
    - Calculates consolidated KPIs: Net Worth (`(Portfolio + Reserve) - Debt`), Savings Rate %, Emergency Runway months, Debt balance, Top Marginal Tax bracket.
    - Saves historical monthly snapshots to `moneySuperapp.historicalSnapshots.v1`.
-   - Renders interactive multi-metric trend charts via native inline `<svg>`.
+   - Renders interactive multi-metric trend charts, Monte Carlo confidence fan geometries, and Net Worth donut arcs via native inline `<svg>`, modularized in `js/engines/dashboard-viz.js` (`MoneyApp.DashboardViz`).
 
 3. **Portfolio Rebalancing Calculator (`rebalance.html`)**
    - Manages asset allocation buckets (e.g. Core, Ballast, Satellite) and target percentages.

@@ -34,6 +34,7 @@ const CORE_JS_SCRIPTS = [
   'js/engines/p2p-sync.js',
   'js/engines/bridge.js',
   'js/engines/monte-carlo.js',
+  'js/engines/dashboard-viz.js',
   'js/workers/simulation-worker.js',
   'js/app-shell.js',
   'js/dashboard.js',
@@ -2181,6 +2182,33 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
 
       assert.ok(e2eContent.includes('resolveChromeBinary'), 'Must declare headless Chrome binary discovery');
       assert.ok(e2eContent.includes('CdpClient'), 'Must declare native CDP WebSocket client');
+    });
+
+    it('verifies Phase 116 Dashboard Visualizations Modularization and clean delegation', () => {
+      const vizPath = path.join(ROOT_DIR, 'js/engines/dashboard-viz.js');
+      assert.ok(fs.existsSync(vizPath), 'js/engines/dashboard-viz.js must exist on disk');
+      const vizContent = fs.readFileSync(vizPath, 'utf8');
+      assert.ok(
+        vizContent.includes('MoneyApp.DashboardViz = DashboardViz'),
+        'dashboard-viz.js must export MoneyApp.DashboardViz',
+      );
+      assert.ok(!vizContent.includes('eval('), 'dashboard-viz.js must never invoke eval()');
+      assert.ok(!vizContent.includes('document.write'), 'dashboard-viz.js must never invoke document.write()');
+
+      // Verify dashboard.html registers dashboard-viz.js before dashboard.js
+      const dashHtml = fs.readFileSync(path.join(ROOT_DIR, 'dashboard.html'), 'utf8');
+      assert.ok(dashHtml.includes('src="js/engines/dashboard-viz.js"'), 'dashboard.html must include dashboard-viz.js');
+      const vizIdx = dashHtml.indexOf('src="js/engines/dashboard-viz.js"');
+      const dashIdx = dashHtml.indexOf('src="js/dashboard.js"');
+      assert.ok(vizIdx > -1 && dashIdx > vizIdx, 'dashboard-viz.js must be loaded before dashboard.js');
+
+      // Verify service worker registers dashboard-viz.js
+      const swContent = fs.readFileSync(path.join(ROOT_DIR, 'sw.js'), 'utf8');
+      assert.ok(swContent.includes("'./js/engines/dashboard-viz.js'"), 'sw.js must cache js/engines/dashboard-viz.js');
+
+      // Verify dashboard.js delegates chart rendering cleanly
+      const dashContent = fs.readFileSync(path.join(ROOT_DIR, 'js/dashboard.js'), 'utf8');
+      assert.ok(dashContent.includes('DashboardViz'), 'js/dashboard.js must reference MoneyApp.DashboardViz');
     });
   });
 });
