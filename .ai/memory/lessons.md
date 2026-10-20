@@ -15,6 +15,29 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-20: Tiered Storage Engine: Prototype Pollution Defense, Heap Memory Hygiene & IDB Transaction Lifecycles (v2.5.70)
+- **Date & Context:** 2026-10-20, Phase 129 IndexedDB Tiered Persistence Engine (`v2.5.70`).
+- **Problem:**
+  1. **Prototype Poisoning in Client Storage:** Client-side JSON backup import and in-memory fallback key-value maps can inadvertently expose the global `Object.prototype` to malicious poisoning payloads (e.g., payloads containing `__proto__`, `constructor`, or `prototype` keys). If untrusted or exported JSON files are restored directly without structural prototype defenses, attackers can compromise application invariants.
+  2. **Heap Memory Leak in Multi-Tier Storage:** When an application maintains an in-memory fallback cache alongside IndexedDB, storing items in both tiers without pruning causes large multi-megabyte datasets (such as parsed bank statement line items, encrypted tax dossiers, or historical payslips) to persist unnecessarily in the JavaScript heap, wasting V8 memory.
+  3. **Premature Promise Resolution in IndexedDB Writes:** In IndexedDB `IDBObjectStore.put()` / `delete()` operations, resolving a Promise on `request.onsuccess` fires before the underlying `IDBTransaction` has durably committed to disk. If disk quota is exceeded or the transaction is aborted downstream, `request.onsuccess` triggers anyway, resulting in false positive success states and silent data loss.
+- **Root Cause:**
+  - Standard JavaScript `{}` object maps inherit from `Object.prototype` and are vulnerable to prototype tampering on key assignment.
+  - Failure to prune volatile in-memory fallback dictionaries once data has been confirmed stored in durable storage.
+  - Relying on `IDBRequest.onsuccess` instead of the enclosing `IDBTransaction.oncomplete` lifecycle event for transactional write durability.
+- **Solution & Rule:**
+  1. **Prototype Pollution Prevention in Client Storage:**
+     - All in-memory storage fallback dictionaries and deserialized import maps must be initialized with `Object.create(null)` (or use a native `Map`).
+     - Explicitly reject and skip any keys matching `__proto__`, `constructor`, or `prototype` during `setItem`, `importAll`, and legacy migration to prevent prototype poisoning attacks.
+  2. **Heap Memory Hygiene in Tiered Storage:**
+     - When a write to IndexedDB succeeds, explicitly prune `delete fallbackMemory[key]` so that large multi-megabyte datasets reside strictly in disk storage rather than duplicating RAM usage in the JavaScript heap. In-memory storage should be retained only as a last-resort fallback when durable storage is unavailable or fails.
+  3. **Strict IndexedDB Transaction Lifecycle Listening:**
+     - Promises for write operations (`setItem`, `removeItem`, `clear`, `importAll`) must listen to `tx.oncomplete` for resolution, and listen to both `tx.onerror` and `tx.onabort` (as well as `req.onerror`) to guarantee durable commits and catch storage quota errors (`QuotaExceededError`) and transaction rollbacks.
+  4. **Critical Key Mirroring & Dual Persistence:**
+     - Synchronously mirror critical UI configuration keys (e.g. `theme`, `lang`, `activeTab`) to `localStorage` while persisting primary application data in IndexedDB, preventing FOUC (flash of unstyled content) and language flicker on page initialization.
+  5. **Quality Gates & Automated Verification:**
+     - Created `tests/storage-db.test.mjs` verifying 13 distinct unit and integration invariants across CRUD, fallback modes, critical key mirroring, legacy migration, export/import, quota estimation, prototype pollution rejection, and heap memory pruning.
+
 ### 2026-10-19: Mobile Pull-to-Refresh Gesture & Multi-Tier Web App Badging API Fallbacks (v2.5.69)
 - **Date & Context:** 2026-10-19, Phase 128 Mobile Pull-to-Refresh & Web App Badging API (`v2.5.69`).
 - **Problem:**

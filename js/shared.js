@@ -569,6 +569,13 @@
   }
 
   var idbStorage = createIndexedDBAdapter();
+  var Storage =
+    global?.MoneyApp?.Storage ||
+    (typeof createStorageDB === 'function'
+      ? createStorageDB()
+      : typeof global?.createStorageDB === 'function'
+        ? global.createStorageDB()
+        : idbStorage);
 
   var _ext = global?.MoneyApp || {};
 
@@ -1779,6 +1786,8 @@
     partitionSnapshots: partitionSnapshots,
     createIndexedDBAdapter: createIndexedDBAdapter,
     idbStorage: idbStorage,
+    Storage: Storage,
+    StorageDB: Storage,
     encryptVaultData: encryptVaultData,
     decryptVaultData: decryptVaultData,
     TAX_DEADLINE_MILESTONES: TAX_DEADLINE_MILESTONES,

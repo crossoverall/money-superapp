@@ -31,6 +31,7 @@ const CORE_JS_SCRIPTS = [
   'js/engines/glidepath.js',
   'js/engines/refinance.js',
   'js/engines/stress-test.js',
+  'js/engines/storage-db.js',
   'js/engines/vault-crypto.js',
   'js/engines/p2p-sync.js',
   'js/engines/bridge.js',
@@ -3079,6 +3080,71 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.equal(sandbox.document.title, 'Money Superapp — แดชบอร์ด');
       assert.equal(statusDotClasses.has('has-badge'), false);
       assert.equal(badgeCleared, true);
+    });
+  });
+
+  describe('Phase 129: IndexedDB Tiered Storage Engine Contracts', () => {
+    it('verifies js/engines/storage-db.js exists and exports createStorageDB factory and MoneyApp.Storage', () => {
+      const storageDbPath = path.join(ROOT_DIR, 'js/engines/storage-db.js');
+      assert.ok(fs.existsSync(storageDbPath), 'js/engines/storage-db.js must exist on disk');
+
+      const storageDbContent = fs.readFileSync(storageDbPath, 'utf8');
+      assert.ok(storageDbContent.length > 500, 'storage-db.js must not be empty');
+      assert.ok(
+        storageDbContent.includes('function createStorageDB'),
+        'storage-db.js must define createStorageDB factory function',
+      );
+      assert.ok(
+        storageDbContent.includes('MoneyApp.Storage = storageDbInstance;') ||
+          storageDbContent.includes('MoneyApp.Storage = defaultStorage;') ||
+          storageDbContent.includes('MoneyApp.Storage ='),
+        'storage-db.js must export MoneyApp.Storage',
+      );
+      assert.ok(
+        storageDbContent.includes('MoneyApp.StorageDB = createStorageDB;') ||
+          storageDbContent.includes('MoneyApp.StorageDB = defaultStorage;'),
+        'storage-db.js must export MoneyApp.StorageDB',
+      );
+      assert.ok(
+        storageDbContent.includes('migrateFromLocalStorage'),
+        'storage-db.js must provide migrateFromLocalStorage helper',
+      );
+      assert.ok(storageDbContent.includes('exportAll'), 'storage-db.js must provide exportAll bulk helper');
+      assert.ok(storageDbContent.includes('importAll'), 'storage-db.js must provide importAll bulk helper');
+      assert.ok(storageDbContent.includes('estimate'), 'storage-db.js must provide estimate quota helper');
+    });
+
+    it('verifies index.html loads js/engines/storage-db.js before vault-crypto.js', () => {
+      const indexHtml = fs.readFileSync(path.join(ROOT_DIR, 'index.html'), 'utf8');
+      assert.ok(
+        indexHtml.includes('<script src="js/engines/storage-db.js"></script>'),
+        'index.html must include script tag for js/engines/storage-db.js',
+      );
+      const storageIdx = indexHtml.indexOf('<script src="js/engines/storage-db.js"></script>');
+      const vaultIdx = indexHtml.indexOf('<script src="js/engines/vault-crypto.js"></script>');
+      assert.ok(storageIdx !== -1, 'storage-db.js script must be present in index.html');
+      assert.ok(vaultIdx !== -1, 'vault-crypto.js script must be present in index.html');
+      assert.ok(storageIdx < vaultIdx, 'storage-db.js must be loaded before vault-crypto.js');
+    });
+
+    it('verifies sw.js precaches ./js/engines/storage-db.js', () => {
+      const swJs = fs.readFileSync(path.join(ROOT_DIR, 'sw.js'), 'utf8');
+      assert.ok(
+        swJs.includes("'./js/engines/storage-db.js'") || swJs.includes('"./js/engines/storage-db.js"'),
+        'sw.js ASSETS_TO_CACHE must include ./js/engines/storage-db.js',
+      );
+    });
+
+    it('verifies js/shared.js integrates MoneyApp.Storage and MoneyApp.StorageDB fallback bounds', () => {
+      const sharedJs = fs.readFileSync(path.join(ROOT_DIR, 'js/shared.js'), 'utf8');
+      assert.ok(
+        sharedJs.includes('Storage: Storage') || sharedJs.includes('Storage:'),
+        'js/shared.js must expose Storage on MoneyApp',
+      );
+      assert.ok(
+        sharedJs.includes('StorageDB: Storage') || sharedJs.includes('StorageDB:'),
+        'js/shared.js must expose StorageDB on MoneyApp',
+      );
     });
   });
 });
