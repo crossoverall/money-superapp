@@ -3147,4 +3147,93 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       );
     });
   });
+
+  describe('Phase 130: Sequence of Returns Risk (SRR) & Dynamic SWR Retirement Simulator Contracts', () => {
+    it('verifies js/engines/monte-carlo.js defines and exports findSafeWithdrawalRate and compareWithdrawalStrategies', () => {
+      const monteCarloPath = path.join(ROOT_DIR, 'js/engines/monte-carlo.js');
+      assert.ok(fs.existsSync(monteCarloPath), 'js/engines/monte-carlo.js must exist on disk');
+
+      const content = fs.readFileSync(monteCarloPath, 'utf8');
+      assert.ok(
+        content.includes('function findSafeWithdrawalRate'),
+        'monte-carlo.js must define findSafeWithdrawalRate',
+      );
+      assert.ok(
+        content.includes('function compareWithdrawalStrategies'),
+        'monte-carlo.js must define compareWithdrawalStrategies',
+      );
+      assert.ok(
+        content.includes('MoneyApp.findSafeWithdrawalRate = findSafeWithdrawalRate;'),
+        'monte-carlo.js must export findSafeWithdrawalRate to MoneyApp',
+      );
+      assert.ok(
+        content.includes('MoneyApp.compareWithdrawalStrategies = compareWithdrawalStrategies;'),
+        'monte-carlo.js must export compareWithdrawalStrategies to MoneyApp',
+      );
+      assert.ok(
+        content.includes('findSafeWithdrawalRate,') && content.includes('compareWithdrawalStrategies,'),
+        'monte-carlo.js module.exports must include findSafeWithdrawalRate and compareWithdrawalStrategies',
+      );
+    });
+
+    it('verifies findSafeWithdrawalRate returns valid SWR schema within realistic bound', () => {
+      const monteCarloJs = fs.readFileSync(path.join(ROOT_DIR, 'js/engines/monte-carlo.js'), 'utf8');
+      const sandbox = { console, Math, Number, Array };
+      const vm = createContext(sandbox);
+      new Script(monteCarloJs).runInContext(vm);
+
+      const findSwr = sandbox.MoneyApp?.findSafeWithdrawalRate || sandbox.findSafeWithdrawalRate;
+      assert.equal(typeof findSwr, 'function', 'findSafeWithdrawalRate must be callable');
+
+      const swrResult = findSwr(
+        {
+          initialPortfolio: 10000000,
+          years: 30,
+          meanReturn: 0.07,
+          volatility: 0.1,
+          inflation: 0.025,
+          trials: 100,
+          seed: 42,
+        },
+        90,
+      );
+
+      assert.ok(typeof swrResult.safeWithdrawalRate === 'number');
+      assert.ok(typeof swrResult.annualWithdrawal === 'number');
+      assert.ok(typeof swrResult.survivalProbability === 'number');
+      assert.ok(typeof swrResult.iterations === 'number');
+      assert.ok(swrResult.safeWithdrawalRate >= 3.0 && swrResult.safeWithdrawalRate <= 5.0);
+      assert.ok(swrResult.annualWithdrawal > 0);
+      assert.ok(swrResult.survivalProbability >= 90);
+    });
+
+    it('verifies compareWithdrawalStrategies executes all 3 dynamic strategies under identical seed', () => {
+      const monteCarloJs = fs.readFileSync(path.join(ROOT_DIR, 'js/engines/monte-carlo.js'), 'utf8');
+      const sandbox = { console, Math, Number, Array };
+      const vm = createContext(sandbox);
+      new Script(monteCarloJs).runInContext(vm);
+
+      const compareFn = sandbox.MoneyApp?.compareWithdrawalStrategies || sandbox.compareWithdrawalStrategies;
+      assert.equal(typeof compareFn, 'function', 'compareWithdrawalStrategies must be callable');
+
+      const comp = compareFn({
+        initialPortfolio: 10000000,
+        annualWithdrawal: 400000,
+        years: 25,
+        meanReturn: 0.07,
+        volatility: 0.12,
+        inflation: 0.025,
+        sequenceShock: 'early-bear',
+        trials: 100,
+        seed: 777,
+      });
+
+      assert.ok(comp.constant, 'constant strategy result must be present');
+      assert.ok(comp.guytonKlinger, 'guytonKlinger strategy result must be present');
+      assert.ok(comp.variableSpending, 'variableSpending strategy result must be present');
+      assert.ok(comp.srrComparison, 'srrComparison must be present');
+      assert.equal(comp.srrComparison.shockApplied, true);
+      assert.ok(['constant', 'guyton-klinger', 'variable-spending'].includes(comp.srrComparison.bestSurvivalStrategy));
+    });
+  });
 });

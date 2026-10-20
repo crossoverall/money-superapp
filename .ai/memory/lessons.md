@@ -15,6 +15,31 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-20: Sequence of Returns Risk (SRR) Modeling, Guyton-Klinger Guardrails & Bounded SWR Convergence (v2.5.71)
+- **Date & Context:** 2026-10-20, Phase 130 Sequence of Returns Risk & Dynamic SWR Retirement Simulator (`v2.5.71`).
+- **Problem:**
+  1. **Sequence of Returns Risk (SRR) Asymmetry:** Traditional retirement planning relies on average annual returns (e.g. 7% real). However, under fixed constant inflation-adjusted withdrawals, market return order matters drastically: early market crashes in years 1–3 permanently deplete the compounding asset base, leading to early portfolio ruin even if long-term average returns equal historical medians, whereas identical crashes occurring late in retirement have minimal impact.
+  2. **Rigidity of Fixed 4% Rule:** In severe early bear markets (such as 1973 stagflation, 2000 dot-com, or 2008 GFC), adhering blindly to fixed inflation adjustments forces continuous liquidations at distressed market troughs, driving failure rates upwards of 30-40%.
+  3. **Floating-Point Lockup in SWR Binary Search Solvers:** Naive binary search loops solving for the Safe Withdrawal Rate (`findSafeWithdrawalRate`) matching a target survival probability (e.g. 90%) risk infinite iteration or precision oscillation around floating-point boundaries if not strictly bounded.
+- **Root Cause:**
+  - Standard Monte Carlo or linear compounding fails to expose sequence order vulnerabilities.
+  - Lack of dynamic spending rules that adapt withdrawals to market state.
+  - Unbounded binary search while-loops lacking an iteration guard.
+- **Solution & Rule:**
+  1. **Explicit Sequence of Returns Risk (SRR) Stress Scenarios:**
+     - Implement dedicated sequence shock presets: `early_bear` (severe crash in years 1–3), `late_bear` (crash in final years), and `inflation_spike` (high inflation early in retirement).
+     - Under fixed constant withdrawals, early-bear survival probability is mathematically lower than late-bear survival, demonstrating the necessity of dynamic rules.
+  2. **Guyton-Klinger Dynamic Guardrail Rules:**
+     - **Capital Preservation Rule:** When the current withdrawal rate rises above 1.2x the initial withdrawal rate (`currentRate > initialRate * 1.2`), apply a 10% cut to the nominal withdrawal amount.
+     - **Prosperity Rule:** When the current withdrawal rate drops below 0.8x the initial rate, increase spending by 10%.
+     - **Inflation Freeze Rule:** Following a year with negative total portfolio returns, freeze inflation adjustment for the subsequent year's withdrawal.
+     - Enforce `spendingFloor` (default 70% of initial real spending) and `spendingCeiling` (default 130%) to prevent excessive lifestyle degradation or unconstrained spending.
+  3. **Bounded Binary Search for SWR Convergence:**
+     - Restrict the binary search interval `[low, high]` (typically `[0.01, 0.15]`) with a hard cap on iterations (`iterations < 20`) and tolerance `tolerance = 0.001` (0.1% SWR precision).
+     - Guarantees deterministic convergence in ~8 iterations while preventing infinite loops or floating-point precision lockup.
+  4. **Quality Gates & Automated Verification:**
+     - Created `tests/sequence-risk.test.mjs` verifying 9 unit and mathematical invariant tests across parameter defaults, SRR asymmetry, Guyton-Klinger outperformance, spending floors/ceilings, and SWR solver convergence; all 718 tests passing with 0 Biome linter errors.
+
 ### 2026-10-20: Tiered Storage Engine: Prototype Pollution Defense, Heap Memory Hygiene & IDB Transaction Lifecycles (v2.5.70)
 - **Date & Context:** 2026-10-20, Phase 129 IndexedDB Tiered Persistence Engine (`v2.5.70`).
 - **Problem:**

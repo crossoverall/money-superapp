@@ -19,6 +19,14 @@
   };
 
   /**
+   * @typedef {'constant'|'guyton-klinger'|'variable-spending'} WithdrawalStrategy
+   */
+
+  /**
+   * @typedef {'none'|'early-bear'|'late-bear'|'inflation-spike'} SequenceShock
+   */
+
+  /**
    * @typedef {Object} MonteCarloSimulationParams
    * @property {number|string} [initialPortfolio=10000000] - Starting portfolio capital in THB
    * @property {number|string} [annualWithdrawal=400000] - Initial annual retirement withdrawal in THB
@@ -28,6 +36,12 @@
    * @property {number|string} [inflation=0.025] - Annual inflation rate for expense escalation (e.g. 0.025 for 2.5%)
    * @property {number|string} [trials=500] - Number of stochastic Monte Carlo iterations (10 - 2000)
    * @property {number|string} [seed=42] - PRNG seed for deterministic simulation runs
+   * @property {WithdrawalStrategy} [withdrawalStrategy='constant'] - Dynamic withdrawal strategy rule
+   * @property {SequenceShock} [sequenceShock='none'] - Sequence of returns risk (SRR) shock scenario
+   * @property {number|string} [guardrailUpper=1.2] - Guyton-Klinger capital preservation upper guardrail multiplier
+   * @property {number|string} [guardrailLower=0.8] - Guyton-Klinger prosperity lower guardrail multiplier
+   * @property {number|string} [spendingFloor=0.75] - Variable spending minimum real withdrawal floor multiplier
+   * @property {number|string} [spendingCeiling=1.25] - Variable spending maximum real withdrawal ceiling multiplier
    */
 
   /**
@@ -46,6 +60,12 @@
    * @property {number} finalP50 - Median final portfolio value at terminal year (THB)
    * @property {number} finalP90 - Optimistic final portfolio value at terminal year (THB)
    * @property {TrajectoryPercentilePoint[]} trajectoryPercentiles - Annual percentile trajectories
+   * @property {number} averageAnnualWithdrawal - Mean annual withdrawal across all simulated non-ruined years (THB)
+   * @property {number} minWithdrawal - Minimum annual withdrawal observed (THB)
+   * @property {number} maxWithdrawal - Maximum annual withdrawal observed (THB)
+   * @property {boolean} srrShockApplied - True if sequence of returns shock scenario was active
+   * @property {WithdrawalStrategy} withdrawalStrategy - Strategy utilized
+   * @property {SequenceShock} sequenceShock - Sequence shock scenario evaluated
    */
 
   /**
@@ -70,6 +90,36 @@
     const trials = Math.max(10, Math.min(2000, Math.round(parseNum(p.trials, 500))));
     const seed = p.seed !== undefined && p.seed !== null ? Number(p.seed) || 12345 : 42;
 
+    const validStrategies = ['constant', 'guyton-klinger', 'variable-spending'];
+    const withdrawalStrategy = validStrategies.includes(p.withdrawalStrategy) ? p.withdrawalStrategy : 'constant';
+
+    const validShocks = ['none', 'early-bear', 'late-bear', 'inflation-spike'];
+    const sequenceShock = validShocks.includes(p.sequenceShock) ? p.sequenceShock : 'none';
+
+    const parsedGuardrailUpper =
+      p.guardrailUpper !== undefined && p.guardrailUpper !== null && p.guardrailUpper !== ''
+        ? parseNum(p.guardrailUpper, 1.2)
+        : 1.2;
+    const guardrailUpper = parsedGuardrailUpper > 1.0 ? parsedGuardrailUpper : 1.2;
+
+    const parsedGuardrailLower =
+      p.guardrailLower !== undefined && p.guardrailLower !== null && p.guardrailLower !== ''
+        ? parseNum(p.guardrailLower, 0.8)
+        : 0.8;
+    const guardrailLower = parsedGuardrailLower > 0 && parsedGuardrailLower < 1.0 ? parsedGuardrailLower : 0.8;
+
+    const parsedSpendingFloor =
+      p.spendingFloor !== undefined && p.spendingFloor !== null && p.spendingFloor !== ''
+        ? parseNum(p.spendingFloor, 0.75)
+        : 0.75;
+    const spendingFloor = parsedSpendingFloor > 0 && parsedSpendingFloor < 1.0 ? parsedSpendingFloor : 0.75;
+
+    const parsedSpendingCeiling =
+      p.spendingCeiling !== undefined && p.spendingCeiling !== null && p.spendingCeiling !== ''
+        ? parseNum(p.spendingCeiling, 1.25)
+        : 1.25;
+    const spendingCeiling = parsedSpendingCeiling > 1.0 ? parsedSpendingCeiling : 1.25;
+
     return {
       initialPortfolio,
       annualWithdrawal,
@@ -79,6 +129,12 @@
       inflation,
       trials,
       seed,
+      withdrawalStrategy,
+      sequenceShock,
+      guardrailUpper,
+      guardrailLower,
+      spendingFloor,
+      spendingCeiling,
     };
   }
 
@@ -142,29 +198,111 @@
     const meanReturn = valid.meanReturn;
     const volatility = valid.volatility;
     const inflation = valid.inflation;
+    const withdrawalStrategy = valid.withdrawalStrategy;
+    const sequenceShock = valid.sequenceShock;
+    const guardrailUpper = valid.guardrailUpper;
+    const guardrailLower = valid.guardrailLower;
+    const spendingFloor = valid.spendingFloor;
+    const spendingCeiling = valid.spendingCeiling;
+
+    const initialRate = safeInitPort > 0 ? safeInitWithdrawal / safeInitPort : 0;
 
     let successfulTrials = 0;
     const yearlyPortfolios = Array.from({ length: safeYears + 1 }, () => []);
+
+    let totalWithdrawalsSum = 0;
+    let totalWithdrawalsCount = 0;
+    let minWithdrawal = Infinity;
+    let maxWithdrawal = 0;
 
     for (let t = 0; t < safeTrials; t++) {
       let portfolio = safeInitPort;
       let withdrawal = safeInitWithdrawal;
       let ruined = false;
+      let prevReturn = 0;
+      let cumulativeInflation = 1.0;
 
       yearlyPortfolios[0].push(portfolio);
 
       for (let yr = 1; yr <= safeYears; yr++) {
         if (!ruined) {
+          let yrInflation = inflation;
+          if (sequenceShock === 'inflation-spike' && yr <= 3) {
+            yrInflation = 0.08;
+          }
+
+          if (yr > 1) {
+            cumulativeInflation *= 1 + yrInflation;
+
+            if (withdrawalStrategy === 'guyton-klinger') {
+              // Guyton-Klinger Rule 1: Inflation Rule
+              // If previous year return was negative, freeze inflation increase for current year
+              if (prevReturn >= 0) {
+                withdrawal *= 1 + yrInflation;
+              }
+
+              // Guyton-Klinger Rule 2 & 3: Guardrails
+              if (portfolio > 0 && initialRate > 0) {
+                const currRate = withdrawal / portfolio;
+                if (currRate > initialRate * guardrailUpper) {
+                  // Capital Preservation Rule: cut withdrawal by 10%
+                  withdrawal *= 0.9;
+                } else if (currRate < initialRate * guardrailLower) {
+                  // Prosperity Rule: increase withdrawal by 10%
+                  withdrawal *= 1.1;
+                }
+              }
+            } else if (withdrawalStrategy === 'variable-spending') {
+              // Variable Spending: Apply inflation
+              withdrawal *= 1 + yrInflation;
+
+              const realBase = safeInitWithdrawal * cumulativeInflation;
+              const floor = realBase * spendingFloor;
+              const ceiling = realBase * spendingCeiling;
+
+              if (prevReturn < 0) {
+                // If previous year return was negative, reduce by 10%, bounded by floor
+                withdrawal = Math.max(floor, withdrawal * 0.9);
+              } else if (prevReturn > 0 && portfolio >= safeInitPort) {
+                // If previous year return was positive and portfolio >= initialPortfolio, restore towards base
+                withdrawal = Math.min(ceiling, Math.max(withdrawal * 1.1, realBase));
+              }
+
+              withdrawal = Math.max(floor, Math.min(ceiling, withdrawal));
+            } else {
+              // 'constant': withdrawal scales with 1 + yrInflation
+              withdrawal *= 1 + yrInflation;
+            }
+          }
+
+          // Track strategy withdrawal
+          totalWithdrawalsSum += withdrawal;
+          totalWithdrawalsCount++;
+          if (withdrawal < minWithdrawal) minWithdrawal = withdrawal;
+          if (withdrawal > maxWithdrawal) maxWithdrawal = withdrawal;
+
           portfolio -= withdrawal;
           if (portfolio <= 0) {
             portfolio = 0;
             ruined = true;
           } else {
             const z = randomNormal();
-            const annualRate = meanReturn + volatility * z;
+            let annualRate = meanReturn + volatility * z;
+
+            // Apply sequence shocks
+            if (sequenceShock === 'early-bear') {
+              if (yr === 1) annualRate = -0.2;
+              else if (yr === 2) annualRate = -0.15;
+              else if (yr === 3) annualRate = -0.1;
+            } else if (sequenceShock === 'late-bear') {
+              if (yr === safeYears - 2 && yr >= 1) annualRate = -0.2;
+              else if (yr === safeYears - 1 && yr >= 1) annualRate = -0.15;
+              else if (yr === safeYears && yr >= 1) annualRate = -0.1;
+            }
+
             portfolio = Math.max(0, portfolio * (1 + annualRate));
+            prevReturn = annualRate;
           }
-          withdrawal *= 1 + inflation;
         }
         yearlyPortfolios[yr].push(portfolio);
       }
@@ -195,6 +333,12 @@
     else if (survivalProbability < 75) tier = 'fragile';
     else if (survivalProbability < 90) tier = 'moderate';
 
+    const averageAnnualWithdrawal =
+      totalWithdrawalsCount > 0 ? Math.round(totalWithdrawalsSum / totalWithdrawalsCount) : 0;
+    const safeMinWithdrawal = Number.isFinite(minWithdrawal) ? Math.round(minWithdrawal) : 0;
+    const safeMaxWithdrawal = Math.round(maxWithdrawal);
+    const srrShockApplied = sequenceShock !== 'none';
+
     return {
       survivalProbability,
       tier,
@@ -202,6 +346,140 @@
       finalP50: trajectoryPercentiles[safeYears].p50,
       finalP90: trajectoryPercentiles[safeYears].p90,
       trajectoryPercentiles,
+      averageAnnualWithdrawal,
+      minWithdrawal: safeMinWithdrawal,
+      maxWithdrawal: safeMaxWithdrawal,
+      srrShockApplied,
+      withdrawalStrategy,
+      sequenceShock,
+    };
+  }
+
+  /**
+   * Finds the Safe Withdrawal Rate (SWR) achieving a target survival probability via binary search
+   *
+   * @param {MonteCarloSimulationParams} [params]
+   * @param {number} [targetSurvival=90] - Target survival probability in % (e.g. 90)
+   * @returns {{ safeWithdrawalRate: number, annualWithdrawal: number, survivalProbability: number, iterations: number }}
+   */
+  function findSafeWithdrawalRate(params, targetSurvival = 90) {
+    const valid = validateMonteCarloParams(params);
+    const target = typeof targetSurvival === 'number' && !Number.isNaN(targetSurvival) ? targetSurvival : 90;
+    const initPort = valid.initialPortfolio;
+
+    if (initPort <= 0) {
+      return {
+        safeWithdrawalRate: 0,
+        annualWithdrawal: 0,
+        survivalProbability: 0,
+        iterations: 0,
+      };
+    }
+
+    let lowRate = 0.01;
+    let highRate = 0.15;
+    let bestRate = lowRate;
+    let bestSurvival = 0;
+    let bestWithdrawal = Math.round(initPort * lowRate);
+    let iterations = 0;
+
+    const searchSeed = valid.seed || 42;
+    const searchTrials = Math.max(100, Math.min(valid.trials, 300));
+
+    while (highRate - lowRate > 0.001 && iterations < 20) {
+      iterations++;
+      const midRate = (lowRate + highRate) / 2;
+      const trialWithdrawal = Math.round(initPort * midRate);
+
+      const sim = simulateMonteCarloRetirement({
+        ...valid,
+        annualWithdrawal: trialWithdrawal,
+        trials: searchTrials,
+        seed: searchSeed,
+      });
+
+      if (sim.survivalProbability >= target) {
+        bestRate = midRate;
+        bestSurvival = sim.survivalProbability;
+        bestWithdrawal = trialWithdrawal;
+        lowRate = midRate;
+      } else {
+        highRate = midRate;
+      }
+    }
+
+    const swrPercent = Number((bestRate * 100).toFixed(2));
+
+    return {
+      safeWithdrawalRate: swrPercent,
+      annualWithdrawal: bestWithdrawal,
+      survivalProbability: bestSurvival,
+      iterations,
+    };
+  }
+
+  /**
+   * Compares all 3 withdrawal strategies under identical stochastic parameters and sequence shocks
+   *
+   * @param {MonteCarloSimulationParams} [params]
+   * @returns {{ constant: MonteCarloSimulationResult, guytonKlinger: MonteCarloSimulationResult, variableSpending: MonteCarloSimulationResult, srrComparison: Object }}
+   */
+  function compareWithdrawalStrategies(params) {
+    const valid = validateMonteCarloParams(params);
+    const sharedSeed = valid.seed || 42;
+
+    const constant = simulateMonteCarloRetirement({
+      ...valid,
+      withdrawalStrategy: 'constant',
+      seed: sharedSeed,
+    });
+
+    const guytonKlinger = simulateMonteCarloRetirement({
+      ...valid,
+      withdrawalStrategy: 'guyton-klinger',
+      seed: sharedSeed,
+    });
+
+    const variableSpending = simulateMonteCarloRetirement({
+      ...valid,
+      withdrawalStrategy: 'variable-spending',
+      seed: sharedSeed,
+    });
+
+    let bestSurvivalStrategy = 'constant';
+    let maxSurv = constant.survivalProbability;
+    if (guytonKlinger.survivalProbability > maxSurv) {
+      bestSurvivalStrategy = 'guyton-klinger';
+      maxSurv = guytonKlinger.survivalProbability;
+    }
+    if (variableSpending.survivalProbability > maxSurv) {
+      bestSurvivalStrategy = 'variable-spending';
+      maxSurv = variableSpending.survivalProbability;
+    }
+
+    const srrComparison = {
+      bestSurvivalStrategy,
+      shockApplied: valid.sequenceShock !== 'none',
+      sequenceShock: valid.sequenceShock,
+      survivalRates: {
+        constant: constant.survivalProbability,
+        guytonKlinger: guytonKlinger.survivalProbability,
+        variableSpending: variableSpending.survivalProbability,
+      },
+      averageWithdrawals: {
+        constant: constant.averageAnnualWithdrawal,
+        guytonKlinger: guytonKlinger.averageAnnualWithdrawal,
+        variableSpending: variableSpending.averageAnnualWithdrawal,
+      },
+      diffGuytonVsConstant: Number((guytonKlinger.survivalProbability - constant.survivalProbability).toFixed(1)),
+      diffVariableVsConstant: Number((variableSpending.survivalProbability - constant.survivalProbability).toFixed(1)),
+    };
+
+    return {
+      constant,
+      guytonKlinger,
+      variableSpending,
+      srrComparison,
     };
   }
 
@@ -211,10 +489,18 @@
   MoneyApp.simulateMonteCarloRetirement = simulateMonteCarloRetirement;
   MoneyApp.validateMonteCarloParams = validateMonteCarloParams;
   MoneyApp.validateMonteCarloResult = validateMonteCarloResult;
+  MoneyApp.findSafeWithdrawalRate = findSafeWithdrawalRate;
+  MoneyApp.compareWithdrawalStrategies = compareWithdrawalStrategies;
 
   if (typeof global !== 'undefined') {
     if (typeof global.simulateMonteCarloRetirement === 'undefined') {
       global.simulateMonteCarloRetirement = simulateMonteCarloRetirement;
+    }
+    if (typeof global.findSafeWithdrawalRate === 'undefined') {
+      global.findSafeWithdrawalRate = findSafeWithdrawalRate;
+    }
+    if (typeof global.compareWithdrawalStrategies === 'undefined') {
+      global.compareWithdrawalStrategies = compareWithdrawalStrategies;
     }
   }
 
@@ -223,6 +509,8 @@
       simulateMonteCarloRetirement,
       validateMonteCarloParams,
       validateMonteCarloResult,
+      findSafeWithdrawalRate,
+      compareWithdrawalStrategies,
     };
   }
 })(typeof window !== 'undefined' ? window : typeof self !== 'undefined' ? self : globalThis);

@@ -175,6 +175,7 @@ flowchart LR
     P126 --> P127["Phase 127<br/>Math Invariant & Fuzz Testing Suite"]
     P127 --> P128["Phase 128<br/>Web App Badging & Gestures"]
     P128 --> P129["Phase 129<br/>IndexedDB Tiered Storage"]
+    P129 --> P130["Phase 130<br/>Sequence of Returns Risk"]
 ```
 
 | Phase | Target Version | Scope & Deliverable | Complexity | Status |
@@ -185,8 +186,8 @@ flowchart LR
 | **Phase 126** | `v2.5.67` | Interactive Debt Payoff visual SVG comparison timeline | Level 2 | ✅ **Shipped** (`9841823`) |
 | **Phase 127** | `v2.5.68` | Zero-dependency mathematical invariant & fuzz testing suite | Level 1 | ✅ **Shipped** (`2219891`) |
 | **Phase 128** | `v2.5.69` | Mobile swipe gestures between tools + App Badging API | Level 2 | ✅ **Shipped** (`fee3b99`) |
-| **Phase 129** | `v2.5.70` | IndexedDB tiered persistence engine (`js/engines/storage-db.js`) | Level 2 | ✅ **Shipped** |
-| **Phase 130** | `v2.5.71` | Sequence of Returns Risk & Dynamic SWR retirement simulator | Level 2 | ⏳ Planned |
+| **Phase 129** | `v2.5.70` | IndexedDB tiered persistence engine (`js/engines/storage-db.js`) | Level 2 | ✅ **Shipped** (`7de6b9e`) |
+| **Phase 130** | `v2.5.71` | Sequence of Returns Risk & Dynamic SWR retirement simulator | Level 2 | ✅ **Shipped** |
 | **Phase 131** | `v2.5.72` | WCAG 2.1 AA accessibility audit & live region announcements | Level 2 | ⏳ Planned |
 | **Phase 132** | `v2.6.0`  | Multi-profile partition architecture (Personal / Family / Freelance) | Level 3 | ⏳ Planned |
 
@@ -195,5 +196,5 @@ flowchart LR
 ## Status Summary
 
 - **Previous Plan (`improvement-plan.md`):** **0 items left** (100% completed up through v2.5.63).
-- **Completed in this Session:** **Phases 123–129 (v2.5.64 – v2.5.70)** — 7 phases shipped & pushed.
-- **Remaining in Plan (`plan.md`):** **3 phases left** (Phases 130–132, targeting v2.6.0).
+- **Completed in this Session:** **Phases 123–130 (v2.5.64 – v2.5.71)** — 8 phases shipped & pushed.
+- **Remaining in Plan (`plan.md`):** **2 phases left** (Phases 131–132, targeting v2.6.0).

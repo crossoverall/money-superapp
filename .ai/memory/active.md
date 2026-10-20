@@ -6,60 +6,60 @@ iteration_count: 0
 pipeline: []
 ---
 
-### Feature / Task Specification: Phase 129 — IndexedDB Tiered Storage Engine (`js/engines/storage-db.js`) (v2.5.70)
+### Feature / Task Specification: Phase 130 — Sequence of Returns Risk (SRR) & Dynamic SWR Retirement Simulator (v2.5.71)
 
 #### 1. Goal & Scope Limits
 - **Objective:**
-  Implement an enterprise-grade, asynchronous IndexedDB tiered storage engine (`js/engines/storage-db.js`) under `MoneyApp.Storage` with transparent fallback to `localStorage`:
-  1. Break past the 5MB `localStorage` browser ceiling to support large multi-year bank statements, payslip archives, and snapshot histories without quota exhaustion.
-  2. Implement unified asynchronous API: `getItem(key)`, `setItem(key, val)`, `removeItem(key)`, `clear()`, `keys()`, `hasItem(key)`.
-  3. Tiered persistence & synchronous mirroring:
-     - Critical UI preferences (`moneySuperapp.theme`, `moneySuperapp.lang`, `moneySuperapp.activeTab`) mirrored to `localStorage` for synchronous 0ms boot paint.
-     - Large payloads, vaults, and document history stored in IndexedDB (`moneySuperapp_idb` / `keyvalue`).
-  4. Migration & Bulk Utilities:
-     - `migrateFromLocalStorage()`: automatically imports legacy `localStorage` keys into IndexedDB.
-     - `exportAll()` and `importAll()`: backup, restore, and transfer utilities.
-     - `estimate()`: storage quota telemetry via `navigator.storage.estimate()`.
-  5. 100% offline-first, zero external libraries (ADR-001), works in all browsers and iframe contexts.
+  Upgrade the Monte Carlo retirement simulation engine (`js/engines/monte-carlo.js`) with Sequence of Returns Risk (SRR) stress-testing and dynamic Safe Withdrawal Rate (SWR) rules:
+  1. **Dynamic Withdrawal Rules (`withdrawalStrategy`):**
+     - `'constant'`: Traditional fixed real withdrawal (Bengen 4% rule adjusted for inflation).
+     - `'guyton-klinger'`: Dynamic guardrails with Capital Preservation Rule (cut spending by 10% when withdrawal rate exceeds upper guardrail), Prosperity Rule (increase spending by 10% when withdrawal rate drops below lower guardrail), and Portfolio Management Rule (skip inflation escalation following negative return years).
+     - `'variable-spending'`: Spending floor and ceiling guardrails with dynamic belt-tightening during bear markets.
+  2. **Sequence Shock Presets (`sequenceShock`):**
+     - `'none'`: Standard stochastic Gaussian simulation.
+     - `'early-bear'`: Stress-tests market downturn in years 1–3 (-20%, -15%, -10%).
+     - `'late-bear'`: Market downturn in final years (proves SRR mathematical asymmetry).
+     - `'inflation-spike'`: Stagflation scenario (inflation surges to 7–9% in years 1–3).
+  3. **Optimal SWR Solver (`findSafeWithdrawalRate`):**
+     - Computes the maximum safe initial withdrawal rate that preserves $\ge 90\%$ portfolio survival under selected sequence shocks and dynamic rules.
+  4. 100% offline-first, pure client-side math (ADR-001), zero breaking changes to existing `simulateMonteCarloRetirement` interface.
 - **Target Files (<= 5 files, ~200 lines):**
-  1. `js/engines/storage-db.js` (New core tiered storage engine)
-  2. `sw.js` (Add `storage-db.js` to offline precache manifest)
-  3. `index.html` (Include `<script src="js/engines/storage-db.js"></script>`)
-  4. `js/shared.js` (Bind `MoneyApp.Storage` and expose across iframe contexts)
-  5. `tests/storage-db.test.mjs` (Comprehensive unit & invariant test suite)
+  1. `js/engines/monte-carlo.js` (Implement dynamic withdrawal rules, sequence shocks, and `findSafeWithdrawalRate`)
+  2. `tests/sequence-risk.test.mjs` (New test suite for SRR and dynamic SWR rules)
+  3. `tests/smoke.test.mjs` (Contract assertions for new simulator APIs)
 - **Explicit Out of Scope:**
-  - No Dexie.js or third-party IDB wrappers (ADR-001).
-  - No breaking changes to existing synchronous `localStorage.getItem` reads in legacy tools.
+  - No external statistical libraries (ADR-001).
+  - No alteration of existing baseline Monte Carlo results when default parameters are passed.
 
 #### 2. Architecture & Decision Alignment
-- **Affected Components:** `js/engines/storage-db.js`, `sw.js`, `index.html`, `js/shared.js`, `tests/storage-db.test.mjs`.
+- **Affected Components:** `js/engines/monte-carlo.js`, `tests/sequence-risk.test.mjs`, `tests/smoke.test.mjs`.
 - **Relevant ADRs:**
-  - ADR-001 (Zero runtime dependencies, 100% offline-first client-side privacy)
-  - ADR-002 (Modular engine architecture)
+  - ADR-001 (Zero runtime dependencies, 100% offline-first privacy)
+  - ADR-002 (Modular domain engine architecture)
 
 #### 3. Step-by-Step Implementation Plan
-- **Step 1:** Create `js/engines/storage-db.js`:
-  - Implement `createStorageDB(options)` and export as `MoneyApp.Storage` & `MoneyApp.StorageDB`.
-  - Provide complete async CRUD: `getItem`, `setItem`, `removeItem`, `clear`, `keys`, `hasItem`.
-  - Provide telemetry & migration: `estimate()`, `migrateFromLocalStorage()`, `exportAll()`, `importAll()`.
-  - Provide transparent fallback to `localStorage` and memory when IDB is unavailable or blocked.
-- **Step 2:** In `sw.js`:
-  - Add `'./js/engines/storage-db.js'` to `PRECACHE_ASSETS`.
-- **Step 3:** In `index.html`:
-  - Add `<script src="js/engines/storage-db.js"></script>` before `js/engines/vault-crypto.js`.
-- **Step 4:** In `js/shared.js`:
-  - Wire `MoneyApp.Storage = global.MoneyApp?.Storage || ...` for iframe child windows.
-- **Step 5:** Create `tests/storage-db.test.mjs` and add smoke tests in `tests/smoke.test.mjs`:
-  - Test all CRUD methods with mock IDB and fallback localStorage.
-  - Test quota estimation, batch export/import, and migration.
-- **Step 6:** QA & Debugger verification (`npm run lint`, `npm test`).
-- **Step 7:** Code & Security Reviewer adversarial audit.
-- **Step 8:** Release & Docs (bump v2.5.70, update lessons.md, commit, push).
+- **Step 1:** In `js/engines/monte-carlo.js`:
+  - Extend `MonteCarloSimulationParams` with `withdrawalStrategy`, `sequenceShock`, `guardrailUpper`, `guardrailLower`, `spendingFloor`, `spendingCeiling`.
+  - In `simulateMonteCarloRetirement`: implement year-by-year shock overrides and dynamic withdrawal recalculations (Guyton-Klinger & variable spending).
+  - Implement `MoneyApp.findSafeWithdrawalRate(params, targetSurvival)`.
+  - Implement `MoneyApp.compareWithdrawalStrategies(params)` returning side-by-side comparison.
+- **Step 2:** Create `tests/sequence-risk.test.mjs`:
+  - Assert that `early-bear` produces significantly lower survival than `late-bear` under constant withdrawals (SRR mathematical invariant).
+  - Assert that Guyton-Klinger and variable-spending significantly increase survival during early-bear shocks.
+  - Assert that `findSafeWithdrawalRate` converges to valid rate in `[0.01, 0.15]`.
+  - Assert zero `NaN`, `Infinity`, or negative zero across all outputs.
+- **Step 3:** In `tests/smoke.test.mjs`:
+  - Add smoke assertions for `findSafeWithdrawalRate` and `compareWithdrawalStrategies`.
+- **Step 4:** QA & Debugger verification (`npm run lint`, `npm test`).
+- **Step 5:** Code & Security Reviewer adversarial audit.
+- **Step 6:** Release & Docs (bump v2.5.71, update lessons.md, commit, push).
 
 #### 4. Acceptance Criteria
-- [x] `MoneyApp.Storage` provides `getItem`, `setItem`, `removeItem`, `clear`, `keys`, `hasItem`, `estimate`, `migrateFromLocalStorage`, `exportAll`, `importAll`.
-- [x] Operates in IndexedDB with graceful fallback to `localStorage` and memory when IDB is unavailable.
-- [x] Critical bootstrap keys (`theme`, `lang`, `activeTab`) are mirrored for 0ms sync boot.
-- [x] Precached in `sw.js` and included in `index.html`.
+- [x] `simulateMonteCarloRetirement` supports `'constant'`, `'guyton-klinger'`, and `'variable-spending'` withdrawal rules.
+- [x] `simulateMonteCarloRetirement` supports `'early-bear'`, `'late-bear'`, and `'inflation-spike'` sequence shocks.
+- [x] Mathematical invariant verified: `early-bear` survival rate < `late-bear` survival rate under constant withdrawals.
+- [x] Guyton-Klinger guardrails mitigate early bear sequence risk, boosting survival probability.
+- [x] `findSafeWithdrawalRate` computes optimal initial SWR for a given confidence target.
+- [x] 100% backward compatible with existing calls; zero dependencies.
 - [x] All tests pass in `npm test` with 0 Biome linter errors/warnings.
-- [x] Released, bumped to v2.5.70, and pushed to `origin/master`.
+- [x] Released, bumped to v2.5.71, and pushed to `origin/master`.
