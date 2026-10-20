@@ -15,6 +15,33 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-20: WCAG 2.1 AA Focus-Visible Rings & Screen Reader Live Region Announcer (v2.5.72)
+- **Date & Context:** 2026-10-20, Phase 131 WCAG 2.1 AA Accessibility & Screen Reader Live Regions (`v2.5.72`).
+- **Problem:**
+  1. **Focus Indicator Invisibility & Clipping:** Standard browser outline overrides (e.g. `outline: none;` without replacement) remove keyboard navigation affordances, failing WCAG 2.1 SC 2.4.7 (Focus Visible) and SC 1.4.11 (Non-text Contrast). Furthermore, tight outlines with `outline-offset: 0` blend into button borders and card edges.
+  2. **Screen Reader Notification Latency & XSS Risk in Dynamic Live Regions:** Single-page applications and financial tools update dynamic KPI calculations (tax liabilities, emergency funds, SWR projections) purely through visual DOM rewrites. Assistive technology (screen readers like NVDA, VoiceOver, JAWS) fails to announce updated figures unless aria live regions are employed. Naively injecting dynamic user-controlled strings into live regions via `innerHTML` opens XSS vulnerabilities.
+  3. **Headless & Non-DOM Node.js Environment Crashes:** Utilities calling `document.getElementById` or `document.createElement` throw `ReferenceError: document is not defined` when executed in CLI scripts, background workers, or server-side test runners.
+- **Root Cause:**
+  - Inconsistent focus styling across form controls, links, and buttons.
+  - Absence of centralized ARIA live region management for calculation state updates.
+  - Direct DOM assumptions without environment guards.
+- **Solution & Rule:**
+  1. **WCAG 2.1 AA Focus-Visible Design System Contract:**
+     - Enforce `:focus-visible` styling across all interactive elements (`button`, `a`, `input`, `select`, `textarea`, `[tabindex]`).
+     - Use a high-contrast accent ring (`outline: 2px solid var(--accent, #10b981)`) with `outline-offset: 2px` to ensure the focus ring never collides with or clips inside adjacent element borders.
+     - Verify non-text contrast against light and dark backgrounds exceeds the 3:1 WCAG 2.1 AA threshold.
+     - Implement standard `.sr-only` utility with `position: absolute; width: 1px; height: 1px; clip: rect(0, 0, 0, 0); overflow: hidden;` for screen-reader-only labels.
+  2. **Screen Reader Live Region Announcer (`MoneyApp.announce`):**
+     - Expose `MoneyApp.announce(message, priority = 'polite')` in `js/shared.js`.
+     - Strictly assign text via `.textContent = text` (never `innerHTML`) to eliminate potential XSS vectors when echoing user-provided figures.
+     - Clamp priority strings strictly to `'polite'` or `'assertive'`, defaulting to `'polite'` to avoid interrupting in-progress screen reader speech.
+     - Re-use a single, singleton announcer element `#a11y-announcer` with `role="status"` and `aria-live="polite"` inside the document body.
+  3. **Graceful Degradation in Headless & Non-DOM Environments:**
+     - Guard all DOM accesses with `typeof document !== 'undefined' && typeof window !== 'undefined'`.
+     - In headless Node.js unit test or batch CLI environments, `MoneyApp.announce` gracefully returns the sanitized message without throwing runtime exceptions.
+  4. **Quality Gates & Automated Verification:**
+     - Created `tests/a11y-wcag.test.mjs` verifying 15 automated test cases across landmarks, metadata, focus-visible styles, `.sr-only` contracts, `MoneyApp.announce` live region updates, and KPI aria-live markup.
+
 ### 2026-10-20: Sequence of Returns Risk (SRR) Modeling, Guyton-Klinger Guardrails & Bounded SWR Convergence (v2.5.71)
 - **Date & Context:** 2026-10-20, Phase 130 Sequence of Returns Risk & Dynamic SWR Retirement Simulator (`v2.5.71`).
 - **Problem:**

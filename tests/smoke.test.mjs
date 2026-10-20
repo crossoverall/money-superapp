@@ -3236,4 +3236,35 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(['constant', 'guyton-klinger', 'variable-spending'].includes(comp.srrComparison.bestSurvivalStrategy));
     });
   });
+
+  describe('Phase 131: Accessible Screen-Reader Live Regions (MoneyApp.announce) & WCAG Contracts', () => {
+    it('verifies MoneyApp.announce contract is exported and callable', () => {
+      const sharedJs = fs.readFileSync(path.join(ROOT_DIR, 'js/shared.js'), 'utf8');
+      const sandbox = { console };
+      const vm = createContext(sandbox);
+      new Script(sharedJs).runInContext(vm);
+
+      assert.equal(typeof sandbox.MoneyApp?.announce, 'function');
+      assert.equal(typeof sandbox.announce, 'function');
+      assert.equal(sandbox.MoneyApp.announce('Test Announcement', 'polite'), 'Test Announcement');
+    });
+
+    it('verifies theme.css provides :focus-visible ring and .sr-only utility', () => {
+      const css = fs.readFileSync(path.join(ROOT_DIR, 'css/theme.css'), 'utf8');
+      assert.ok(css.includes(':focus-visible'), 'css/theme.css must declare :focus-visible');
+      assert.ok(css.includes('.sr-only'), 'css/theme.css must declare .sr-only');
+      assert.ok(css.includes('position: absolute'), '.sr-only must position absolute');
+      assert.ok(css.includes('clip: rect(0, 0, 0, 0)'), '.sr-only must have clip rect');
+    });
+
+    it('verifies key KPI cards in tax and remaining calculators feature aria-live and role="status"', () => {
+      const taxHtml = fs.readFileSync(path.join(ROOT_DIR, 'tax-calculator-base.html'), 'utf8');
+      assert.ok(taxHtml.includes('id="taxRefundCard"') && taxHtml.includes('aria-live="polite"'));
+      assert.ok(taxHtml.includes('id="cardNetPayable"') && taxHtml.includes('aria-live="polite"'));
+
+      const remHtml = fs.readFileSync(path.join(ROOT_DIR, 'remaining-money.html'), 'utf8');
+      assert.ok(remHtml.includes('id="kpiRemaining"') && remHtml.includes('aria-live="polite"'));
+      assert.ok(remHtml.includes('id="kpiEmergency"') && remHtml.includes('aria-live="polite"'));
+    });
+  });
 });

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="2.5.71">
+    <meta name="version" content="2.5.72">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self';">
     <script>
       try {
@@ -521,14 +521,14 @@
                         </div>
                     </div>
 
-                    <div class="mt-4 p-4 rounded-xl border text-center" style="background:var(--panel-2); border-color:var(--line);">
+                    <div id="cardNetPayable" class="mt-4 p-4 rounded-xl border text-center" style="background:var(--panel-2); border-color:var(--line);" aria-live="polite" role="status">
                         <span class="block text-sm mb-1" style="color:var(--ink-dim);" id="lbl-taxAmount" data-i18n="lbl-taxAmount">ภาษีที่ต้องชำระโดยประมาณ</span>
                         <span id="taxAmount" class="text-3xl font-bold" style="color:var(--core);">0</span>
                         <span class="font-medium" style="color:var(--ink-dim);" id="unitLabel"> บาท</span>
                     </div>
 
                     <!-- Tax Refund / Additional Payable Dynamic Verdict Card -->
-                    <div id="taxRefundCard" class="mt-4 p-4 rounded-xl border space-y-3 transition-all duration-300" style="background:var(--panel-2); border-color:var(--line);">
+                    <div id="taxRefundCard" class="mt-4 p-4 rounded-xl border space-y-3 transition-all duration-300" style="background:var(--panel-2); border-color:var(--line);" aria-live="polite" role="status">
                         <div class="flex items-center justify-between">
                             <span id="refundVerdictBadge" class="px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 shadow-xs" style="background:var(--core); color:#ffffff;">
                                 <span>✓</span> <span>ภาษีพอดี</span>
@@ -1076,7 +1076,7 @@
                     <span id="lbl-reset-tax" data-i18n="lbl-reset-tax">ล้างข้อมูล</span>
                 </button>
             </div>
-            <p class="text-xs text-gray-400">v2.5.71</p>
+            <p class="text-xs text-gray-400">v2.5.72</p>
         </div>
     </div>
 

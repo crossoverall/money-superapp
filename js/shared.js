@@ -1766,6 +1766,30 @@
     } catch (_e) {}
   }
 
+  function announce(message, priority = 'polite') {
+    const text = message !== undefined && message !== null ? String(message) : '';
+    const safePriority = priority === 'assertive' ? 'assertive' : 'polite';
+
+    if (typeof document !== 'undefined' && document.body) {
+      let announcer = document.getElementById('a11y-announcer');
+      if (!announcer) {
+        announcer = document.createElement('div');
+        announcer.id = 'a11y-announcer';
+        announcer.className = 'sr-only';
+        announcer.setAttribute('aria-live', safePriority);
+        announcer.setAttribute('aria-atomic', 'true');
+        document.body.appendChild(announcer);
+      } else if (announcer.getAttribute('aria-live') !== safePriority) {
+        announcer.setAttribute('aria-live', safePriority);
+      }
+
+      announcer.textContent = text;
+      return announcer;
+    }
+
+    return text;
+  }
+
   var MoneyApp = Object.assign(global.MoneyApp || {}, {
     LANG: LANG,
     THEME: THEME,
@@ -1828,6 +1852,7 @@
     THAI_PIT_TIERS: THAI_PIT_TIERS,
     requestAppBadgeUpdate: requestAppBadgeUpdate,
     requestAppBadgeClear: requestAppBadgeClear,
+    announce: announce,
   });
 
   // Expose on global window object
@@ -1909,5 +1934,6 @@
       global.calculateTaxBracketStepDown = calculateTaxBracketStepDown;
     if (typeof global.requestAppBadgeUpdate === 'undefined') global.requestAppBadgeUpdate = requestAppBadgeUpdate;
     if (typeof global.requestAppBadgeClear === 'undefined') global.requestAppBadgeClear = requestAppBadgeClear;
+    if (typeof global.announce === 'undefined') global.announce = announce;
   }
 })(typeof window !== 'undefined' ? window : this);

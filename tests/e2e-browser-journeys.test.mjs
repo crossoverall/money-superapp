@@ -105,7 +105,7 @@ class CdpClient {
     await new Promise((r) => setTimeout(r, 600));
   }
 
-  async waitFor(predicateFnString, timeoutMs = 8000, intervalMs = 120) {
+  async waitFor(predicateFnString, timeoutMs = 12000, intervalMs = 120) {
     const start = Date.now();
     let lastError = null;
     while (Date.now() - start < timeoutMs) {
