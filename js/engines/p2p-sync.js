@@ -731,9 +731,7 @@
    * @returns {boolean} True if BarcodeDetector is available
    */
   function isBarcodeDetectorSupported() {
-    const detector =
-      (typeof global !== 'undefined' && global.BarcodeDetector) ||
-      (typeof window !== 'undefined' && window.BarcodeDetector);
+    const detector = global?.BarcodeDetector || (typeof window !== 'undefined' && window.BarcodeDetector);
     return typeof detector !== 'undefined';
   }
 
@@ -744,9 +742,7 @@
    * @returns {Object|null} BarcodeDetector instance or null if unsupported
    */
   function createBarcodeDetector(formats = ['qr_code']) {
-    const Detector =
-      (typeof global !== 'undefined' && global.BarcodeDetector) ||
-      (typeof window !== 'undefined' && window.BarcodeDetector);
+    const Detector = global?.BarcodeDetector || (typeof window !== 'undefined' && window.BarcodeDetector);
     if (!Detector) return null;
     try {
       return new Detector({ formats });

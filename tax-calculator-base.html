@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="2.5.76">
+    <meta name="version" content="2.5.79">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self';">
     <script>
       try {
@@ -509,6 +509,87 @@
                             <label for="chkApplyDividendToTax" class="font-semibold cursor-pointer" style="color:var(--ink);" id="lbl-apply-div-tax" data-i18n="lbl-apply-div-tax">นำไปคำนวณในแบบภาษีรวมทันที</label>
                         </div>
                         <span class="text-[10px] font-bold" style="color:var(--ink-dim);" id="badge-applied-status">ปิดอยู่</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3.5 Spousal Joint vs Separate Tax Filing Optimizer (Pillar 5.2) -->
+            <div id="spousalTaxOptimizerCard" class="reorder-card mt-4 p-4 rounded-xl border space-y-3" style="background:var(--panel-2); border-color:var(--line);" role="region" aria-label="Spousal Joint vs Separate Tax Filing Optimizer">
+                <div class="panel-header flex items-center justify-between cursor-pointer" onclick="toggleSpousalOptimizer()" id="btn-toggle-spouse-optimizer" role="button" tabindex="0">
+                    <div class="flex items-center gap-2">
+                        <span class="text-base">👩‍❤️‍👨</span>
+                        <div>
+                            <span class="panel-title block text-xs font-bold" style="color:var(--ink);" id="lbl-spouse-opt-title" data-i18n="lbl-spouse-opt-title">วางแผนภาษีคู่สมรส (Joint vs Separate Filing Optimizer)</span>
+                            <span class="block text-[11px]" style="color:var(--ink-dim);" id="lbl-spouse-opt-sub" data-i18n="lbl-spouse-opt-sub">คำนวณเปรียบเทียบภาระภาษีรวมแบบยื่นรวม vs ยื่นแยก เพื่อหาทางเลือกที่ประหยัดที่สุด</span>
+                        </div>
+                    </div>
+                    <span class="text-xs font-bold px-2 py-0.5 rounded" style="background:var(--panel); border:1px solid var(--line); color:var(--ink-dim);" id="badge-spouse-opt-status"></span>
+                </div>
+
+                <div id="spousalTaxOptimizerCardBody" class="panel-body space-y-3 pt-2" style="border-top:1px solid var(--line);">
+                    <!-- Enable Checkbox Toggle -->
+                    <div class="flex items-center justify-between p-2 rounded-lg border text-xs" style="background:var(--panel); border-color:var(--line);">
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" id="chkEnableSpouseOptimizer" onchange="updateSpousalTaxOptimizerUI()" style="accent-color:var(--core); width:16px; height:16px; cursor:pointer;">
+                            <label for="chkEnableSpouseOptimizer" class="font-semibold cursor-pointer" style="color:var(--ink);" id="lbl-enable-spouse-opt" data-i18n="lbl-enable-spouse-opt">เปิดการจำลองภาษีคู่สมรส</label>
+                        </div>
+                    </div>
+
+                    <!-- Spouse Inputs Body -->
+                    <div id="spouseOptimizerBody" class="space-y-3" style="display:none;">
+                        <!-- Spouse Has Income Toggle -->
+                        <div class="flex items-center justify-between p-2 rounded-lg border text-xs" style="background:var(--panel); border-color:var(--line);">
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="chkSpouseHasIncome" checked onchange="updateSpousalTaxOptimizerUI()" style="accent-color:var(--core); width:16px; height:16px; cursor:pointer;">
+                                <label for="chkSpouseHasIncome" class="font-semibold cursor-pointer" style="color:var(--ink);" id="lbl-spouse-has-income" data-i18n="lbl-spouse-has-income">คู่สมรสมีเงินได้ในปีภาษีนี้</label>
+                            </div>
+                        </div>
+
+                        <!-- Spouse Annual Income -->
+                        <div id="rowSpouseIncome">
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-xs font-medium" style="color:var(--ink);" id="lbl-spouse-income" for="inpSpouseAnnualIncome" data-i18n="lbl-spouse-income">เงินได้ทั้งปีของคู่สมรส (บาท)</label>
+                                <span class="text-[10px]" style="color:var(--ink-faint);" id="lbl-spouse-income-hint" data-i18n="lbl-spouse-income-hint">เงินเดือน + โบนัส + รายได้อื่น</span>
+                            </div>
+                            <input type="number" id="inpSpouseAnnualIncome" placeholder="0" min="0" step="5000" inputmode="decimal" class="w-full px-3 py-1.5 rounded-lg text-sm font-semibold" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="updateSpousalTaxOptimizerUI()">
+                        </div>
+
+                        <!-- Spouse Deductions -->
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-xs font-medium" style="color:var(--ink);" id="lbl-spouse-deductions" for="inpSpouseDeductions" data-i18n="lbl-spouse-deductions">ค่าลดหย่อนอื่นๆ ของคู่สมรส (บาท)</label>
+                                <span class="text-[10px]" style="color:var(--ink-faint);" id="lbl-spouse-deductions-hint" data-i18n="lbl-spouse-deductions-hint">ประกัน/PVD/กองทุน/เลี้ยงดูบิดามารดา (ไม่รวม 60,000 ส่วนตัว)</span>
+                            </div>
+                            <input type="number" id="inpSpouseDeductions" placeholder="0" min="0" step="1000" inputmode="decimal" class="w-full px-3 py-1.5 rounded-lg text-sm font-semibold" style="background:var(--input-bg); color:var(--ink); border:1px solid var(--line);" oninput="updateSpousalTaxOptimizerUI()">
+                        </div>
+
+                        <!-- Side-by-Side Comparison Grid -->
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <!-- Option A: Separate Filing -->
+                            <div class="p-2.5 rounded-lg border space-y-1.5" style="background:var(--panel); border-color:var(--line);">
+                                <div class="font-bold text-[11px]" style="color:var(--ink-dim);" id="lbl-spouse-sep-title" data-i18n="lbl-spouse-sep-title">ทางเลือก 1: ยื่นแยกเดี่ยว (Separate)</div>
+                                <div class="flex justify-between text-[11px]"><span id="lbl-spouse-you" data-i18n="lbl-spouse-you">ภาษีคุณ:</span> <span id="valSpouseSepA" class="font-bold">0</span></div>
+                                <div class="flex justify-between text-[11px]"><span id="lbl-spouse-partner" data-i18n="lbl-spouse-partner">ภาษีคู่สมรส:</span> <span id="valSpouseSepB" class="font-bold">0</span></div>
+                                <div class="border-t pt-1 flex justify-between font-bold text-xs" style="border-top-color:var(--line);">
+                                    <span id="lbl-spouse-sep-sum" data-i18n="lbl-spouse-sep-sum">รวมภาษีทั้งบ้าน:</span>
+                                    <span id="valSpouseSepTotal" style="color:var(--ink);">0</span>
+                                </div>
+                            </div>
+
+                            <!-- Option B: Joint Filing -->
+                            <div class="p-2.5 rounded-lg border space-y-1.5" style="background:var(--panel); border-color:var(--line);">
+                                <div class="font-bold text-[11px]" style="color:var(--ink-dim);" id="lbl-spouse-joint-title" data-i18n="lbl-spouse-joint-title">ทางเลือก 2: ยื่นรวมกัน (Joint)</div>
+                                <div class="text-[11px]" style="color:var(--ink-faint);" id="desc-spouse-joint" data-i18n="desc-spouse-joint">รวมรายได้และค่าลดหย่อนทั้งหมด</div>
+                                <div class="border-t pt-1 flex justify-between font-bold text-xs" style="border-top-color:var(--line); margin-top:20px;">
+                                    <span id="lbl-spouse-joint-sum" data-i18n="lbl-spouse-joint-sum">รวมภาษีทั้งบ้าน:</span>
+                                    <span id="valSpouseJointTotal" style="color:var(--ink);">0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recommendation Verdict Callout -->
+                        <div id="spouseVerdictBox" class="p-2.5 rounded-lg text-xs leading-relaxed border" style="background:var(--ok-dim); border-color:var(--ok); color:var(--ok);">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1107,7 +1188,7 @@
                     <span id="lbl-reset-tax" data-i18n="lbl-reset-tax">ล้างข้อมูล</span>
                 </button>
             </div>
-            <p class="text-xs text-gray-400">v2.5.76</p>
+            <p class="text-xs text-gray-400">v2.5.79</p>
         </div>
     </div>
 

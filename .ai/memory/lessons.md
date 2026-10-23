@@ -15,6 +15,26 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-23: Joint Tax Filing & Spousal Exemption Optimizer (Phase 138 / v2.5.79)
+- **Date & Context:** 2026-10-23, Pillar 5.2 Joint Tax Filing & Spousal Exemption Optimizer (`v2.5.79`).
+- **Problem:**
+  - Under Section 57 ter of the Thai Revenue Code, married couples can choose between separate filing and joint filing.
+  - When both spouses have significant income, progressive PIT brackets make separate filing substantially more tax-advantageous due to dual standard expense deductions (50% max 100k each) and dual 0% brackets (150,000 THB each).
+  - Conversely, when one spouse has no or minimal income, joint filing unlocks the 60,000 THB spousal allowance and deduction transfers (life insurance, parent care, etc.), reducing the working spouse's net taxable income.
+  - Users lacked a side-by-side comparative simulation and actionable filing guidance.
+- **Solution & Invariants:**
+  1. **Statutory Optimization Engine (`optimizeSpousalTaxFiling` in `js/engines/thai-pit.js`):**
+     - Computes separate filing total PIT: `tax(SpouseA) + tax(SpouseB)`.
+     - Computes joint filing PIT: `tax(combinedGross - combinedExpenses - combinedAllowances)`.
+     - Determines recommendation (`separate`, `joint`, or `equal`) with exact Baht savings and bilingual rationale.
+  2. **UI & Accessibility (`tax-calculator-base.html` & `js/tax-calculator-base.js`):**
+     - Interactive spousal card `#spousalTaxOptimizerCard` with toggle, inputs for spouse income/deductions, side-by-side comparison grid, and dynamic recommendation verdict box.
+     - 100% key symmetry between Thai and English in `translations.th` and `translations.en`.
+  3. **Quality Gates & Invariants:**
+     - Preserved `defaultCollapsed` literal array in `js/tax-calculator-base.js` to satisfy `tests/smoke.test.mjs` line 892 contract.
+     - Wrapped VM engine returns in `Array.from()` to prevent prototype realm mismatches.
+     - Added 4 unit tests in `tests/joint-tax-optimizer.test.mjs`. All 797 tests pass with 0 failures.
+
 ### 2026-10-23: Native Barcode / QR Camera Scanner for P2P Device Migration (Phase 137 / v2.5.78)
 - **Date & Context:** 2026-10-23, Pillar 1.3 Native Barcode / QR Camera Scanner for P2P Sync (`v2.5.78`).
 - **Problem:**

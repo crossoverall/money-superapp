@@ -208,6 +208,21 @@ const translations = {
     btnOpenSheets: 'เปิด Google Sheets',
     driveGuide:
       '💡 เคล็ดลับ: เมื่อเลือก CSV ระบบจะเตรียมไฟล์ที่พร้อมเปิดด้วย Google Sheets ได้ทันที หากเปิดบนมือถือสามารถกดบันทึกลง Google Drive ได้โดยตรง',
+    'lbl-spouse-opt-title': 'วางแผนภาษีคู่สมรส (Joint vs Separate Filing Optimizer)',
+    'lbl-spouse-opt-sub': 'คำนวณเปรียบเทียบภาระภาษีรวมแบบยื่นรวม vs ยื่นแยก เพื่อหาทางเลือกที่ประหยัดที่สุด',
+    'lbl-enable-spouse-opt': 'เปิดการจำลองภาษีคู่สมรส',
+    'lbl-spouse-has-income': 'คู่สมรสมีเงินได้ในปีภาษีนี้',
+    'lbl-spouse-income': 'เงินได้ทั้งปีของคู่สมรส (บาท)',
+    'lbl-spouse-income-hint': 'เงินเดือน + โบนัส + รายได้อื่น',
+    'lbl-spouse-deductions': 'ค่าลดหย่อนอื่นๆ ของคู่สมรส (บาท)',
+    'lbl-spouse-deductions-hint': 'ประกัน/PVD/กองทุน/เลี้ยงดูบิดามารดา (ไม่รวม 60,000 ส่วนตัว)',
+    'lbl-spouse-sep-title': 'ทางเลือก 1: ยื่นแยกเดี่ยว (Separate)',
+    'lbl-spouse-you': 'ภาษีคุณ:',
+    'lbl-spouse-partner': 'ภาษีคู่สมรส:',
+    'lbl-spouse-sep-sum': 'รวมภาษีทั้งบ้าน:',
+    'lbl-spouse-joint-title': 'ทางเลือก 2: ยื่นรวมกัน (Joint)',
+    'desc-spouse-joint': 'รวมรายได้และค่าลดหย่อนทั้งหมด',
+    'lbl-spouse-joint-sum': 'รวมภาษีทั้งบ้าน:',
   },
   en: {
     'lbl-title': 'Tax Estimate 📊',
@@ -417,6 +432,21 @@ const translations = {
     btnOpenSheets: 'Open Google Sheets',
     driveGuide:
       '💡 Tip: When exporting as CSV, the file is ready for Google Sheets. On mobile devices, you can tap to upload directly to Google Drive via native share.',
+    'lbl-spouse-opt-title': 'Spousal Tax Optimizer (Joint vs Separate)',
+    'lbl-spouse-opt-sub': 'Compare combined household tax under joint vs separate filing to identify optimal savings',
+    'lbl-enable-spouse-opt': 'Enable Spousal Tax Simulator',
+    'lbl-spouse-has-income': 'Spouse earned income this tax year',
+    'lbl-spouse-income': "Spouse's Annual Income (THB)",
+    'lbl-spouse-income-hint': 'Salary + Bonus + Other Income',
+    'lbl-spouse-deductions': "Spouse's Other Deductions (THB)",
+    'lbl-spouse-deductions-hint': 'Insurance/PVD/Funds/Parents (excl. 60k personal)',
+    'lbl-spouse-sep-title': 'Option 1: Separate Filing',
+    'lbl-spouse-you': 'Your Tax:',
+    'lbl-spouse-partner': "Spouse's Tax:",
+    'lbl-spouse-sep-sum': 'Total Household Tax:',
+    'lbl-spouse-joint-title': 'Option 2: Joint Filing',
+    'desc-spouse-joint': 'All income and deductions combined',
+    'lbl-spouse-joint-sum': 'Total Household Tax:',
   },
 };
 
@@ -1199,6 +1229,103 @@ window.setDividendPreset = setDividendPreset;
 window.toggleApplyDividendToTax = toggleApplyDividendToTax;
 window.updateDividendTaxCreditUI = updateDividendTaxCreditUI;
 
+let currentSpouseUserIncome = 0;
+let currentSpouseUserDeductions = 0;
+
+function toggleSpousalOptimizer() {
+  if (taxBaseLayoutManager?.toggleCard) {
+    taxBaseLayoutManager.toggleCard('spousalTaxOptimizerCard');
+    return;
+  }
+  const panel = document.getElementById('spousalTaxOptimizerCardBody');
+  if (!panel) return;
+  const isHidden = panel.classList.contains('card-collapsed-hidden') || panel.style.display === 'none';
+  if (isHidden) {
+    panel.classList.remove('card-collapsed-hidden');
+    panel.style.display = 'block';
+    updateSpousalTaxOptimizerUI();
+  } else {
+    panel.classList.add('card-collapsed-hidden');
+  }
+}
+
+function updateSpousalTaxOptimizerUI() {
+  const card = document.getElementById('spousalTaxOptimizerCard');
+  if (!card) return;
+
+  const chkEnable = document.getElementById('chkEnableSpouseOptimizer');
+  const body = document.getElementById('spouseOptimizerBody');
+  const badgeStatus = document.getElementById('badge-spouse-opt-status');
+  const isEnabled = chkEnable ? chkEnable.checked : false;
+
+  const isEN = LANG === 'en';
+  const unit = isEN ? ' THB' : ' บาท';
+
+  if (badgeStatus) {
+    badgeStatus.textContent = isEnabled ? (isEN ? 'Active' : 'เปิดใช้งาน') : isEN ? 'Disabled' : 'ปิดอยู่';
+    badgeStatus.style.color = isEnabled ? 'var(--core, #10b981)' : 'var(--ink-dim)';
+  }
+
+  if (body) body.style.display = isEnabled ? 'block' : 'none';
+  if (!isEnabled) return;
+
+  const incA = currentSpouseUserIncome || 0;
+  const dedA = currentSpouseUserDeductions || 0;
+
+  const chkHasIncome = document.getElementById('chkSpouseHasIncome');
+  const hasIncomeB = chkHasIncome ? chkHasIncome.checked : true;
+  const rowSpouseIncome = document.getElementById('rowSpouseIncome');
+  if (rowSpouseIncome) rowSpouseIncome.style.display = hasIncomeB ? 'block' : 'none';
+
+  const inpSpouseIncome = document.getElementById('inpSpouseAnnualIncome');
+  const incB = hasIncomeB ? parseNum(inpSpouseIncome?.value) : 0;
+
+  const inpSpouseDeductions = document.getElementById('inpSpouseDeductions');
+  const dedB = parseNum(inpSpouseDeductions?.value);
+
+  const pit = window.MoneyApp;
+  if (!pit?.optimizeSpousalTaxFiling) return;
+
+  const res = pit.optimizeSpousalTaxFiling({
+    spouseA: { income: incA, deductions: dedA },
+    spouseB: { income: incB, deductions: dedB, hasIncome: hasIncomeB },
+    isEN,
+  });
+
+  const valSepA = document.getElementById('valSpouseSepA');
+  const valSepB = document.getElementById('valSpouseSepB');
+  const valSepTotal = document.getElementById('valSpouseSepTotal');
+  const valJointTotal = document.getElementById('valSpouseJointTotal');
+  const verdictBox = document.getElementById('spouseVerdictBox');
+
+  if (valSepA) valSepA.textContent = `${formatMoney(res.separateBreakdown.spouseA.taxPayable)} ${unit}`;
+  if (valSepB) valSepB.textContent = `${formatMoney(res.separateBreakdown.spouseB.taxPayable)} ${unit}`;
+  if (valSepTotal) valSepTotal.textContent = `${formatMoney(res.totalTaxSeparate)} ${unit}`;
+  if (valJointTotal) valJointTotal.textContent = `${formatMoney(res.totalTaxJoint)} ${unit}`;
+
+  if (verdictBox) {
+    if (res.recommendedOption === 'separate') {
+      verdictBox.style.background = 'var(--ok-dim, rgba(16,185,129,0.12))';
+      verdictBox.style.borderColor = 'var(--ok, #10b981)';
+      verdictBox.style.color = 'var(--ok, #059669)';
+      verdictBox.innerHTML = `✅ <strong>${isEN ? 'Recommended: Separate Filing' : 'คำแนะนำ: ยื่นแยกเดี่ยว'}</strong> — ${res.advisoryNote}`;
+    } else if (res.recommendedOption === 'joint') {
+      verdictBox.style.background = 'rgba(59, 130, 246, 0.12)';
+      verdictBox.style.borderColor = '#3b82f6';
+      verdictBox.style.color = '#2563eb';
+      verdictBox.innerHTML = `💡 <strong>${isEN ? 'Recommended: Joint Filing' : 'คำแนะนำ: ยื่นรวม'}</strong> — ${res.advisoryNote}`;
+    } else {
+      verdictBox.style.background = 'var(--panel-2)';
+      verdictBox.style.borderColor = 'var(--line)';
+      verdictBox.style.color = 'var(--ink-dim)';
+      verdictBox.innerHTML = `ℹ️ ${res.advisoryNote}`;
+    }
+  }
+}
+
+window.toggleSpousalOptimizer = toggleSpousalOptimizer;
+window.updateSpousalTaxOptimizerUI = updateSpousalTaxOptimizerUI;
+
 function handleEasyReceiptMainInput() {
   calculateTax();
 }
@@ -1688,6 +1815,9 @@ function calculateTax() {
   };
 
   updateEFilingWorksheetView(lastCalculatedDeductions);
+  currentSpouseUserIncome = totalIncome;
+  currentSpouseUserDeductions = pvdDeduction + ssoDeduction + additionalDeductions;
+  updateSpousalTaxOptimizerUI();
 }
 
 // Phase 74: Statutory Pre-Flight Checklist State
@@ -2818,6 +2948,7 @@ loadPreflightState();
 loadState();
 calculateTax();
 updateDividendTaxCreditUI();
+updateSpousalTaxOptimizerUI();
 renderTaxCalendar();
 
 // Universal Card Layout Manager
@@ -2832,6 +2963,7 @@ const taxBaseLayoutManager =
           'panelTaxIncome',
           'panelTaxDeductions',
           'dividendTaxCreditCard',
+          'spousalTaxOptimizerCard',
           'panelTaxResults',
           'taxAdvisorCard',
           'panelEFilingWorksheet',
@@ -2851,6 +2983,8 @@ const taxBaseLayoutManager =
               renderTaxCalendar();
             } else if (cardId === 'dividendTaxCreditCard') {
               updateDividendTaxCreditUI();
+            } else if (cardId === 'spousalTaxOptimizerCard') {
+              updateSpousalTaxOptimizerUI();
             }
           }
         },

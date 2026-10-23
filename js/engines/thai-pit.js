@@ -834,6 +834,120 @@
     };
   }
 
+  /**
+   * Evaluates and compares joint vs separate tax filing options for married couples under Thai PIT rules.
+   * Identifies the optimal filing method to minimize total combined household tax liability.
+   *
+   * @param {{ spouseA?: Object, spouseB?: Object, isEN?: boolean }} [params]
+   * @returns {Object} Optimization comparison and recommendation
+   */
+  function optimizeSpousalTaxFiling({ spouseA = {}, spouseB = {}, isEN = false } = {}) {
+    var incA = Math.max(0, Number(spouseA.income) || 0);
+    var incB = Math.max(0, Number(spouseB.income) || 0);
+    var hasIncomeB = typeof spouseB.hasIncome === 'boolean' ? spouseB.hasIncome : incB > 0;
+    if (!hasIncomeB) incB = 0;
+
+    var dedA = Math.max(0, Number(spouseA.deductions) || 0);
+    var dedB = Math.max(0, Number(spouseB.deductions) || 0);
+
+    var expA = Math.min(incA * 0.5, 100000);
+    var expB = hasIncomeB ? Math.min(incB * 0.5, 100000) : 0;
+
+    // 1. Separate Filing Scenario
+    var personalAllowanceA = 60000;
+    var spousalAllowanceSeparateA = hasIncomeB ? 0 : 60000;
+    var taxableSeparateA = Math.max(0, incA - expA - personalAllowanceA - spousalAllowanceSeparateA - dedA);
+    var taxSeparateA = computeThaiPitTax(taxableSeparateA);
+
+    var personalAllowanceB = hasIncomeB ? 60000 : 0;
+    var taxableSeparateB = hasIncomeB ? Math.max(0, incB - expB - personalAllowanceB - dedB) : 0;
+    var taxSeparateB = computeThaiPitTax(taxableSeparateB);
+
+    var totalTaxSeparate = taxSeparateA + taxSeparateB;
+
+    // 2. Joint Filing Scenario (All Income Combined)
+    var combinedIncome = incA + incB;
+    var combinedExpenses = expA + expB;
+    var combinedPersonalAllowance = 120000;
+    var combinedDeductions = dedA + dedB;
+    var taxableJoint = Math.max(0, combinedIncome - combinedExpenses - combinedPersonalAllowance - combinedDeductions);
+    var totalTaxJoint = computeThaiPitTax(taxableJoint);
+
+    // 3. Comparison & Optimal Verdict
+    var diff = totalTaxJoint - totalTaxSeparate;
+    var recommended = 'equal';
+    var savings = Math.abs(diff);
+
+    var noteTh = '';
+    var noteEn = '';
+
+    if (diff > 0) {
+      recommended = 'separate';
+      noteTh =
+        'แนะนำ: ยื่นแยกประหยัดกว่า ' +
+        Math.round(savings).toLocaleString() +
+        ' บาท เนื่องจากได้รับสิทธิยกเว้นภาษีขั้น 0% (150,000 บาทแรก) สองเท่า และไม่ดันฐานภาษีรวมสูงขึ้น';
+      noteEn =
+        'Recommended: Separate filing saves ' +
+        Math.round(savings).toLocaleString() +
+        ' THB by utilizing the 0% bracket twice and avoiding higher progressive tax brackets.';
+    } else if (diff < 0) {
+      recommended = 'joint';
+      noteTh =
+        'แนะนำ: ยื่นรวมประหยัดกว่า ' +
+        Math.round(savings).toLocaleString() +
+        ' บาท จากการนำค่าลดหย่อนของคู่สมรสที่ไม่มีเงินได้หรือเงินได้น้อยมาหักกลบได้อย่างเต็มที่';
+      noteEn =
+        'Recommended: Joint filing saves ' +
+        Math.round(savings).toLocaleString() +
+        ' THB by fully absorbing deductions and spousal allowances against combined income.';
+    } else {
+      recommended = 'equal';
+      noteTh = 'ทั้งสองวิธีให้ภาระภาษีเท่ากันพอดี (0 บาท หรือเท่ากัน)';
+      noteEn = 'Both filing methods yield the exact same tax liability.';
+    }
+
+    return {
+      recommendedOption: recommended,
+      taxSavings: Math.round(savings),
+      totalTaxSeparate: Math.round(totalTaxSeparate),
+      totalTaxJoint: Math.round(totalTaxJoint),
+      separateBreakdown: {
+        spouseA: {
+          income: incA,
+          expenses: Math.round(expA),
+          deductions: dedA,
+          personalAllowance: personalAllowanceA + spousalAllowanceSeparateA,
+          taxableIncome: Math.round(taxableSeparateA),
+          taxPayable: Math.round(taxSeparateA),
+          effectiveRate: incA > 0 ? parseFloat(((taxSeparateA / incA) * 100).toFixed(2)) : 0,
+        },
+        spouseB: {
+          income: incB,
+          expenses: Math.round(expB),
+          deductions: dedB,
+          personalAllowance: personalAllowanceB,
+          taxableIncome: Math.round(taxableSeparateB),
+          taxPayable: Math.round(taxSeparateB),
+          effectiveRate: incB > 0 ? parseFloat(((taxSeparateB / incB) * 100).toFixed(2)) : 0,
+        },
+        totalTax: Math.round(totalTaxSeparate),
+      },
+      jointBreakdown: {
+        combinedIncome: Math.round(combinedIncome),
+        combinedExpenses: Math.round(combinedExpenses),
+        combinedPersonalAllowance: combinedPersonalAllowance,
+        combinedDeductions: Math.round(combinedDeductions),
+        taxableIncome: Math.round(taxableJoint),
+        taxPayable: Math.round(totalTaxJoint),
+        effectiveRate: combinedIncome > 0 ? parseFloat(((totalTaxJoint / combinedIncome) * 100).toFixed(2)) : 0,
+      },
+      advisoryNoteTh: noteTh,
+      advisoryNoteEn: noteEn,
+      advisoryNote: isEN ? noteEn : noteTh,
+    };
+  }
+
   // Export on MoneyApp namespace
   global.MoneyApp = global.MoneyApp || {};
   var MoneyApp = global.MoneyApp;
@@ -847,6 +961,7 @@
   MoneyApp.evaluateEFilingPreFlightChecklist = evaluateEFilingPreFlightChecklist;
   MoneyApp.calculateThaiEFilingWorksheet = calculateThaiEFilingWorksheet;
   MoneyApp.calculateThaiDividendTaxCredit = calculateThaiDividendTaxCredit;
+  MoneyApp.optimizeSpousalTaxFiling = optimizeSpousalTaxFiling;
 
   if (typeof global !== 'undefined') {
     if (typeof global.THAI_PIT_TAX_BRACKETS === 'undefined') {
@@ -878,6 +993,9 @@
     }
     if (typeof global.calculateThaiDividendTaxCredit === 'undefined') {
       global.calculateThaiDividendTaxCredit = calculateThaiDividendTaxCredit;
+    }
+    if (typeof global.optimizeSpousalTaxFiling === 'undefined') {
+      global.optimizeSpousalTaxFiling = optimizeSpousalTaxFiling;
     }
   }
 })(typeof window !== 'undefined' ? window : globalThis);
