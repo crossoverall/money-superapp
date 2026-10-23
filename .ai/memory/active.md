@@ -1,7 +1,7 @@
 ---
-task_id: "phase-135-easy-e-receipt-tracker"
+task_id: "phase-136-interactive-cashflow-waterfall"
 status: "completed"
-current_stage: "idle"
+current_stage: "release"
 iteration_count: 1
 pipeline:
   - stage: "spec"
@@ -20,35 +20,41 @@ pipeline:
     status: "completed"
 ---
 
-### Feature Specification: Phase 135 — Easy E-Receipt & Tax Invoice Deduction Tracker (Pillar 2.3)
+### Feature Specification: Phase 136 — Interactive Cash Flow Waterfall & Category Filtering (Pillar 3.2)
 
 #### 1. Goal & Requirements
-- **Goal:** Implement comprehensive Thai Easy E-Receipt & e-Tax Invoice deduction engine and interactive tracker:
-  1. `js/engines/thai-pit.js`: Implement `evaluateEasyEReceiptDeduction({ vatAmount, nonVatAmount })` with strict statutory limits:
-     - Combined maximum ceiling: 50,000 THB.
-     - Non-VAT store ceiling (books, e-books, OTOP e-receipts): 20,000 THB max.
-     - VAT store ceiling (e-Tax Invoice): up to 50,000 THB (capped at remaining headroom).
-     - Returns utilization percentage, allowable deduction, non-deductible excess, and remaining room.
-  2. Integrate into `calculateThaiEFilingWorksheet` in `js/engines/thai-pit.js` under stimulus deductions.
-  3. `tax-calculator-base.html` & `js/tax-calculator-base.js`:
-     - Provide dual breakdown inputs (e-Tax Invoice VAT vs e-Receipt Non-VAT) alongside the aggregate input.
-     - Interactive deduction progress meter with 20k non-VAT sub-cap and 50k total cap markers.
-     - Marginal tax bracket savings calculation.
-  4. Bilingual translations in `translations.th` and `translations.en`.
-  5. Dedicated test suite `tests/easy-e-receipt.test.mjs` + type contract verification.
+- **Goal:** Transform the static cashflow waterfall chart in `remaining-money.html` into an interactive exploration tool:
+  1. **Click-to-Highlight & Category Filtering:**
+     - Enable clicking on any waterfall SVG bar (`income`, `deductions`, `expenses`, `savings`, `remaining`) or interactive category chips (`[All]`, `[Income]`, `[Deductions]`, `[Expenses]`, `[Savings]`, `[Surplus]`).
+     - Selected bar receives distinct stroke glow / focus ring; other bars dim to 35% opacity.
+     - Displays dynamic itemized drill-down panel below the chart:
+       - Itemized rows with amount and percentage of income.
+       - For expenses: classifies and highlights Needs vs Wants ratio.
+       - For deductions: lists tax, SSO, PVD.
+       - For savings: lists investment and savings goals.
+  2. **Surplus Allocation Simulator:**
+     - When monthly surplus > 0, provide an interactive 3-way surplus allocation simulator:
+       - 1. 🛡️ Emergency Reserve Buffer (% / THB)
+       - 2. 💳 Extra Debt Payoff (% / THB)
+       - 3. 📈 DCA Investment Portfolio (% / THB)
+     - Interactive slider distributes 100% of the surplus with instant visual feedback.
+     - One-click action button to bridge allocated DCA surplus directly into the Rebalancer (`rebalance.html`).
+  3. **Bilingual Parity:**
+     - Full translation symmetry between Thai and English.
+  4. **Automated Verification:**
+     - Tests in `tests/cashflow-viz.test.mjs` verifying category filtering, drill-down generation, surplus distribution math, and headless Chrome click interactions.
 
 #### 2. Architecture & Decision Alignment
 - **Affected Files:**
-  - `js/engines/thai-pit.js`: Implement `evaluateEasyEReceiptDeduction` and export via `MoneyApp`.
-  - `tax-calculator-base.html`: Add sub-inputs for VAT vs Non-VAT e-receipts and visual progress meter.
-  - `js/tax-calculator-base.js`: Wire input synchronization, progress meter rendering, and translations.
-  - `tests/easy-e-receipt.test.mjs`: Dedicated test suite testing mathematical boundaries, sub-cap rules, and UI synchronization.
-  - `tests/type-contracts.test.mjs`: Type contract verification for `evaluateEasyEReceiptDeduction`.
+  - `js/engines/cashflow-viz.js`: Add `filterCategory`, `getCategoryDrilldown`, and `calculateSurplusDistribution`.
+  - `remaining-money.html`: Add filter chip bar, drill-down container, and surplus allocation simulator UI.
+  - `js/remaining-money.js`: Wire up interactive click handlers, category state, and surplus simulator.
+  - `tests/cashflow-viz.test.mjs`: Test drill-down data structures, surplus allocation math, and UI interactivity.
 
 #### 3. Step-by-Step Implementation Plan
-- **Step 1:** Implement `evaluateEasyEReceiptDeduction` and update `calculateThaiEFilingWorksheet` in `js/engines/thai-pit.js`.
-- **Step 2:** Update `tax-calculator-base.html` with dual breakdown fields and visual ceiling meter.
-- **Step 3:** Update `js/tax-calculator-base.js` with calculation logic, input handlers, and bilingual translations.
-- **Step 4:** Author `tests/easy-e-receipt.test.mjs` and update `tests/type-contracts.test.mjs`.
-- **Step 5:** Run `npm run lint` and `npm test` across all 776+ tests.
-- **Step 6:** Review code and security, document lessons in `.ai/memory/lessons.md`, bump version to `v2.5.76`, and git push.
+- **Step 1:** In `js/engines/cashflow-viz.js`, implement `getCategoryDrilldown` and `calculateSurplusDistribution`.
+- **Step 2:** In `remaining-money.html`, add markup for category chips, drill-down card, and surplus simulator.
+- **Step 3:** In `js/remaining-money.js`, bind click events on SVG bars and filter chips, update drill-down UI, and wire surplus slider.
+- **Step 4:** Author automated test assertions in `tests/cashflow-viz.test.mjs`.
+- **Step 5:** Run `npm run lint` and `npm test` across all 785+ tests.
+- **Step 6:** Code & security review, record lessons, bump version to `v2.5.77`, and git push.

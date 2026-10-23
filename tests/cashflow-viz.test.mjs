@@ -223,3 +223,129 @@ test('CashflowViz.calculateSankeyFlows flags deficit scenarios accurately', () =
   assert.equal(deficitFlow.isDeficit, true);
   assert.equal(deficitFlow.deficitAmount, 8000);
 });
+
+test('CashflowViz.calculateSurplusDistribution guarantees exact capital conservation', () => {
+  const viz = loadCashflowViz();
+
+  // Standard 40/30/30 split on 15,000 THB surplus
+  const res = viz.calculateSurplusDistribution({
+    surplus: 15000,
+    reservePct: 40,
+    debtPct: 30,
+    dcaPct: 30,
+  });
+
+  assert.equal(res.surplus, 15000);
+  assert.equal(res.reservePct, 40);
+  assert.equal(res.debtPct, 30);
+  assert.equal(res.dcaPct, 30);
+  assert.equal(res.reserveAmount, 6000);
+  assert.equal(res.debtAmount, 4500);
+  assert.equal(res.dcaAmount, 4500);
+  assert.equal(res.totalDistributed, 15000);
+
+  // Odd surplus with potential rounding remainders (13,333 THB)
+  const odd = viz.calculateSurplusDistribution({
+    surplus: 13333,
+    reservePct: 40,
+    debtPct: 30,
+    dcaPct: 30,
+  });
+  assert.equal(odd.reserveAmount + odd.debtAmount + odd.dcaAmount, 13333);
+  assert.equal(odd.totalDistributed, 13333);
+
+  // Zero surplus
+  const zero = viz.calculateSurplusDistribution({ surplus: 0 });
+  assert.equal(zero.surplus, 0);
+  assert.equal(zero.reserveAmount, 0);
+  assert.equal(zero.debtAmount, 0);
+  assert.equal(zero.dcaAmount, 0);
+  assert.equal(zero.totalDistributed, 0);
+});
+
+test('CashflowViz.getCategoryDrilldown generates itemized categories and needs/wants classification', () => {
+  const viz = loadCashflowViz();
+
+  // Expenses drill-down
+  const expDrill = viz.getCategoryDrilldown({
+    category: 'expenses',
+    totalIncome: 60000,
+    expenses: [
+      { name: 'คอนโด', value: 15000, budgetType: 'need' },
+      { name: 'คาเฟ่', value: 5000, budgetType: 'want' },
+    ],
+  });
+  assert.equal(expDrill.category, 'expenses');
+  assert.equal(expDrill.totalAmount, 20000);
+  assert.equal(expDrill.pctOfIncome, 33.3);
+  assert.equal(expDrill.meta.needsTotal, 15000);
+  assert.equal(expDrill.meta.wantsTotal, 5000);
+  assert.equal(expDrill.meta.needsPct, 75);
+  assert.equal(expDrill.meta.wantsPct, 25);
+  assert.equal(expDrill.items.length, 2);
+
+  // Income drill-down
+  const incDrill = viz.getCategoryDrilldown({
+    category: 'income',
+    totalIncome: 60000,
+  });
+  assert.equal(incDrill.category, 'income');
+  assert.equal(incDrill.totalAmount, 60000);
+  assert.equal(incDrill.pctOfIncome, 100);
+
+  // Deductions drill-down
+  const dedDrill = viz.getCategoryDrilldown({
+    category: 'deductions',
+    totalIncome: 60000,
+    deductions: 5000,
+    deductionItems: [
+      { name: 'SSO', value: 750 },
+      { name: 'ภาษีหัก ณ ที่จ่าย', value: 4250 },
+    ],
+  });
+  assert.equal(dedDrill.category, 'deductions');
+  assert.equal(dedDrill.totalAmount, 5000);
+  assert.equal(dedDrill.items.length, 2);
+
+  // Surplus remaining drill-down
+  const remDrill = viz.getCategoryDrilldown({
+    category: 'remaining',
+    totalIncome: 60000,
+    remaining: 12000,
+  });
+  assert.equal(remDrill.category, 'remaining');
+  assert.equal(remDrill.meta.isSurplus, true);
+  assert.equal(remDrill.totalAmount, 12000);
+});
+
+test('CashflowViz.renderCashflowWaterfall renders data-category attributes and selection styles', () => {
+  const viz = loadCashflowViz();
+
+  let capturedInnerHtml = '';
+  const mockSvg = {
+    setAttribute: () => {},
+    querySelector: () => null,
+    set innerHTML(html) {
+      capturedInnerHtml = html;
+    },
+    get innerHTML() {
+      return capturedInnerHtml;
+    },
+  };
+
+  viz.renderCashflowWaterfall(mockSvg, {
+    totalIncome: 50000,
+    deductions: 5000,
+    generalExpenses: 20000,
+    totalSavings: 10000,
+    remaining: 15000,
+    selectedCategory: 'expenses',
+  });
+
+  assert.ok(capturedInnerHtml.includes('data-category="income"'));
+  assert.ok(capturedInnerHtml.includes('data-category="deductions"'));
+  assert.ok(capturedInnerHtml.includes('data-category="expenses"'));
+  assert.ok(capturedInnerHtml.includes('waterfall-bar selected'));
+  assert.ok(capturedInnerHtml.includes('opacity="1"'));
+  assert.ok(capturedInnerHtml.includes('opacity="0.35"'));
+});

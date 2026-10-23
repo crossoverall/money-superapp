@@ -67,6 +67,19 @@ const translations = {
     lblCfExpenses: 'ค่าใช้จ่ายทั่วไป:',
     lblCfSavings: 'เงินออม:',
     lblCfRemaining: 'คงเหลือลงทุน:',
+    lblCfChipAll: 'ทั้งหมด',
+    lblCfChipIncome: 'รายได้',
+    lblCfChipDeductions: 'หักตามกฎหมาย',
+    lblCfChipExpenses: 'ค่าใช้จ่าย',
+    lblCfChipSavings: 'เงินออม',
+    lblCfChipRemaining: 'คงเหลือ',
+    lblCfDrillNeeds: 'จำเป็น',
+    lblCfDrillWants: 'ตามใจ',
+    lblSurplusSimTitle: 'จัดสรรเงินคงเหลือสุทธิ (Surplus Allocation)',
+    lblSimReserve: 'สำรองฉุกเฉิน',
+    lblSimDebt: 'เร่งปลดหนี้',
+    lblSimDca: 'ลงทุนสม่ำเสมอ DCA',
+    lblBridgeDca: 'ส่งยอด DCA ไป Rebalance พอร์ต ➔',
     copiedSuccess: '✓ คัดลอกแล้ว!',
     lblImport: 'นำเข้าข้อมูล',
     importModalTitle: 'ตรวจสอบข้อมูลที่นำเข้า',
@@ -195,6 +208,19 @@ const translations = {
     lblCfExpenses: 'Living Expenses:',
     lblCfSavings: 'Savings:',
     lblCfRemaining: 'Investable Surplus:',
+    lblCfChipAll: 'All Streams',
+    lblCfChipIncome: 'Gross Income',
+    lblCfChipDeductions: 'Deductions',
+    lblCfChipExpenses: 'Living Expenses',
+    lblCfChipSavings: 'Savings',
+    lblCfChipRemaining: 'Net Surplus',
+    lblCfDrillNeeds: 'Needs',
+    lblCfDrillWants: 'Wants',
+    lblSurplusSimTitle: 'Surplus Allocation Simulator',
+    lblSimReserve: 'Emergency Reserve',
+    lblSimDebt: 'Debt Payoff',
+    lblSimDca: 'DCA Investment',
+    lblBridgeDca: 'Bridge DCA to Portfolio Rebalance ➔',
     copiedSuccess: '✓ Copied!',
     lblImport: 'Import Data',
     importModalTitle: 'Import Data Preview',
@@ -515,6 +541,33 @@ if (LANG === 'en') {
   if (cfS) cfS.textContent = EN.lblCfSavings;
   const cfR = document.getElementById('lblCfRemaining');
   if (cfR) cfR.textContent = EN.lblCfRemaining;
+
+  const chipAll = document.getElementById('lblCfChipAll');
+  if (chipAll) chipAll.textContent = EN.lblCfChipAll;
+  const chipInc = document.getElementById('lblCfChipIncome');
+  if (chipInc) chipInc.textContent = EN.lblCfChipIncome;
+  const chipDed = document.getElementById('lblCfChipDeductions');
+  if (chipDed) chipDed.textContent = EN.lblCfChipDeductions;
+  const chipExp = document.getElementById('lblCfChipExpenses');
+  if (chipExp) chipExp.textContent = EN.lblCfChipExpenses;
+  const chipSav = document.getElementById('lblCfChipSavings');
+  if (chipSav) chipSav.textContent = EN.lblCfChipSavings;
+  const chipRem = document.getElementById('lblCfChipRemaining');
+  if (chipRem) chipRem.textContent = EN.lblCfChipRemaining;
+  const dNeeds = document.getElementById('lblCfDrillNeeds');
+  if (dNeeds) dNeeds.textContent = EN.lblCfDrillNeeds;
+  const dWants = document.getElementById('lblCfDrillWants');
+  if (dWants) dWants.textContent = EN.lblCfDrillWants;
+  const sSimTitle = document.getElementById('lblSurplusSimTitle');
+  if (sSimTitle) sSimTitle.textContent = EN.lblSurplusSimTitle;
+  const sRes = document.getElementById('lblSimReserve');
+  if (sRes) sRes.textContent = EN.lblSimReserve;
+  const sDebt = document.getElementById('lblSimDebt');
+  if (sDebt) sDebt.textContent = EN.lblSimDebt;
+  const sDca = document.getElementById('lblSimDca');
+  if (sDca) sDca.textContent = EN.lblSimDca;
+  const bDca = document.getElementById('lblBridgeDca');
+  if (bDca) bDca.textContent = EN.lblBridgeDca;
 
   const tmplBtn = document.getElementById('lblTemplates');
   if (tmplBtn) tmplBtn.textContent = EN.lblTemplates;
@@ -1999,20 +2052,44 @@ function compute() {
 }
 
 // ── Visual Cashflow Allocation Bar & Waterfall ─────────────────────────────
+let currentWaterfallCategory = 'all';
+let surplusSliders = { reservePct: 40, debtPct: 30, dcaPct: 30 };
+let lastCashflowTotals = {
+  totalIncome: 0,
+  totalExpense: 0,
+  deductions: 0,
+  generalExpenses: 0,
+  totalSavings: 0,
+  remaining: 0,
+  deductionItems: [],
+};
+
 function updateCashflowVisual(totalIncome, totalExpense, totalSavings, remaining) {
   const panel = document.getElementById('cashflowPanel');
   if (!panel) return;
 
   let deductions = 0;
   let generalExpenses = 0;
+  const deductionItems = [];
   (state.expenses || []).forEach((item) => {
     const val = item.value || 0;
     if (getAutoType(item) !== null) {
       deductions += val;
+      deductionItems.push({ name: item.name, value: val });
     } else {
       generalExpenses += val;
     }
   });
+
+  lastCashflowTotals = {
+    totalIncome,
+    totalExpense,
+    deductions,
+    generalExpenses,
+    totalSavings,
+    remaining,
+    deductionItems,
+  };
 
   const isEN = LANG === 'en';
   const base = Math.max(totalIncome, deductions + generalExpenses + totalSavings, 0.0001);
@@ -2075,6 +2152,8 @@ function updateCashflowVisual(totalIncome, totalExpense, totalSavings, remaining
 
   // 4. Render SVG Waterfall
   renderCashflowWaterfall(totalIncome, deductions, generalExpenses, totalSavings, remaining);
+  updateCashflowDrilldownUI();
+  updateSurplusSimulatorUI();
 
   // 5. Render 50/30/20 Budget Rule Donut & Runway
   renderBudgetRule503020(totalIncome, totalExpense, totalSavings, remaining);
@@ -2108,8 +2187,23 @@ function renderCashflowWaterfall(totalIncome, deductions, generalExpenses, total
       generalExpenses,
       totalSavings,
       remaining,
+      selectedCategory: currentWaterfallCategory === 'all' ? null : currentWaterfallCategory,
       isEN: LANG === 'en',
       fmtCurrency,
+    });
+
+    svg.querySelectorAll('.waterfall-bar').forEach((bar) => {
+      bar.addEventListener('click', () => {
+        const cat = bar.getAttribute('data-category');
+        selectCashflowCategory(cat === currentWaterfallCategory ? 'all' : cat);
+      });
+      bar.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          const cat = bar.getAttribute('data-category');
+          selectCashflowCategory(cat === currentWaterfallCategory ? 'all' : cat);
+        }
+      });
     });
   }
 }
@@ -2305,6 +2399,203 @@ const savedCfView = (() => {
   }
 })();
 setCashflowView(savedCfView);
+
+// ── Waterfall Category Filter & Surplus Simulator ──────────────────────────
+function selectCashflowCategory(category) {
+  currentWaterfallCategory = category || 'all';
+
+  const chipContainer = document.getElementById('cfCategoryChips');
+  if (chipContainer) {
+    chipContainer.querySelectorAll('.btn-cf-chip').forEach((btn) => {
+      const match = btn.getAttribute('data-category') === currentWaterfallCategory;
+      btn.classList.toggle('active', match);
+      btn.setAttribute('aria-selected', match ? 'true' : 'false');
+    });
+  }
+
+  renderCashflowWaterfall(
+    lastCashflowTotals.totalIncome,
+    lastCashflowTotals.deductions,
+    lastCashflowTotals.generalExpenses,
+    lastCashflowTotals.totalSavings,
+    lastCashflowTotals.remaining,
+  );
+
+  updateCashflowDrilldownUI();
+  updateSurplusSimulatorUI();
+}
+
+function updateCashflowDrilldownUI() {
+  const card = document.getElementById('cfDrilldownCard');
+  if (!card) return;
+  if (!currentWaterfallCategory || currentWaterfallCategory === 'all') {
+    card.style.display = 'none';
+    return;
+  }
+  const viz = window.MoneyApp?.CashflowViz;
+  if (!viz?.getCategoryDrilldown) return;
+
+  const isEN = LANG === 'en';
+  const unit = isEN ? ' THB' : ' บาท';
+
+  const drill = viz.getCategoryDrilldown({
+    category: currentWaterfallCategory,
+    totalIncome: lastCashflowTotals.totalIncome,
+    deductions: lastCashflowTotals.deductions,
+    deductionItems: lastCashflowTotals.deductionItems,
+    expenses: state.expenses || [],
+    savings: state.savings || [],
+    remaining: lastCashflowTotals.remaining,
+    isEN,
+  });
+
+  card.style.display = 'block';
+  const titleEl = document.getElementById('cfDrilldownTitle');
+  if (titleEl) titleEl.textContent = isEN ? drill.titleEn : drill.titleTh;
+
+  const totalEl = document.getElementById('cfDrilldownTotal');
+  if (totalEl) {
+    totalEl.textContent = `${fmtCurrency(drill.totalAmount)}${unit} (${drill.pctOfIncome}%)`;
+  }
+
+  const nwBox = document.getElementById('cfDrilldownNeedsWants');
+  if (nwBox) {
+    if (drill.category === 'expenses' && drill.meta) {
+      nwBox.style.display = 'block';
+      const nVal = document.getElementById('cfDrillNeedsVal');
+      const wVal = document.getElementById('cfDrillWantsVal');
+      if (nVal) nVal.textContent = `${fmtCurrency(drill.meta.needsTotal)}${unit} (${drill.meta.needsPct}%)`;
+      if (wVal) wVal.textContent = `${fmtCurrency(drill.meta.wantsTotal)}${unit} (${drill.meta.wantsPct}%)`;
+    } else {
+      nwBox.style.display = 'none';
+    }
+  }
+
+  const listEl = document.getElementById('cfDrilldownList');
+  if (listEl) {
+    listEl.innerHTML = '';
+    (drill.items || []).forEach((item) => {
+      const row = document.createElement('div');
+      row.style.cssText =
+        'display:flex; justify-content:space-between; align-items:center; padding:4px 8px; background:var(--panel-2); border-radius:6px;';
+      const typeBadge = item.type
+        ? `<span style="font-size:9px; padding:1px 5px; border-radius:4px; margin-left:6px; background:var(--line); color:var(--ink-dim); text-transform:uppercase;">${item.type}</span>`
+        : '';
+      row.innerHTML = `
+        <div style="display:flex; align-items:center;">
+          <span style="color:var(--ink); font-weight:500;">${item.name || ''}</span>
+          ${typeBadge}
+        </div>
+        <div style="font-weight:700; color:var(--ink);">
+          ${fmtCurrency(item.value)}${unit}
+          <span style="font-size:10px; font-weight:400; color:var(--ink-dim); margin-left:4px;">(${item.pctOfIncome}%)</span>
+        </div>
+      `;
+      listEl.appendChild(row);
+    });
+  }
+}
+
+function updateSurplusSimulatorUI() {
+  const card = document.getElementById('cfSurplusSimCard');
+  if (!card) return;
+  const surplus = lastCashflowTotals.remaining;
+  const isSurplusCategory = currentWaterfallCategory === 'remaining';
+  const shouldShow = surplus > 0 && (isSurplusCategory || currentWaterfallCategory === 'all');
+  if (!shouldShow) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = 'block';
+
+  const viz = window.MoneyApp?.CashflowViz;
+  if (!viz?.calculateSurplusDistribution) return;
+
+  const dist = viz.calculateSurplusDistribution({
+    surplus,
+    reservePct: surplusSliders.reservePct,
+    debtPct: surplusSliders.debtPct,
+    dcaPct: surplusSliders.dcaPct,
+  });
+
+  const isEN = LANG === 'en';
+  const unit = isEN ? ' THB' : ' บาท';
+
+  const badgeEl = document.getElementById('cfSurplusSimTotalBadge');
+  if (badgeEl) badgeEl.textContent = `+${fmtCurrency(dist.surplus)}${unit}`;
+
+  const resVal = document.getElementById('valSimReserve');
+  if (resVal) resVal.textContent = `${fmtCurrency(dist.reserveAmount)}${unit} (${dist.reservePct}%)`;
+
+  const debtVal = document.getElementById('valSimDebt');
+  if (debtVal) debtVal.textContent = `${fmtCurrency(dist.debtAmount)}${unit} (${dist.debtPct}%)`;
+
+  const dcaVal = document.getElementById('valSimDca');
+  if (dcaVal) dcaVal.textContent = `${fmtCurrency(dist.dcaAmount)}${unit} (${dist.dcaPct}%)`;
+}
+
+function bridgeSurplusDcaToRebalance() {
+  const surplus = lastCashflowTotals.remaining;
+  if (surplus <= 0) return;
+  const viz = window.MoneyApp?.CashflowViz;
+  const dist = viz?.calculateSurplusDistribution
+    ? viz.calculateSurplusDistribution({
+        surplus,
+        reservePct: surplusSliders.reservePct,
+        debtPct: surplusSliders.debtPct,
+        dcaPct: surplusSliders.dcaPct,
+      })
+    : { dcaAmount: surplus };
+
+  const dcaAmount = dist.dcaAmount;
+  if (dcaAmount > 0) {
+    try {
+      localStorage.setItem('moneySuperapp.pendingBudget', String(dcaAmount));
+    } catch (_e) {}
+    if (window.parent && typeof window.parent.switchToTab === 'function') {
+      window.parent.switchToTab('rebalance');
+    } else {
+      const targetOrigin = window.location.origin && window.location.origin !== 'null' ? window.location.origin : '*';
+      window.parent.postMessage({ action: 'switchToTab', target: 'rebalance' }, targetOrigin);
+    }
+  }
+}
+
+// Bind Waterfall Category Chips and Simulator Controls
+const chipContainer = document.getElementById('cfCategoryChips');
+if (chipContainer) {
+  chipContainer.querySelectorAll('.btn-cf-chip').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const cat = btn.getAttribute('data-category');
+      selectCashflowCategory(cat);
+    });
+  });
+}
+
+const rngReserve = document.getElementById('rngSimReserve');
+const rngDebt = document.getElementById('rngSimDebt');
+const rngDca = document.getElementById('rngSimDca');
+
+function handleSurplusSliderChange() {
+  surplusSliders.reservePct = Number(rngReserve?.value) || 0;
+  surplusSliders.debtPct = Number(rngDebt?.value) || 0;
+  surplusSliders.dcaPct = Number(rngDca?.value) || 0;
+  updateSurplusSimulatorUI();
+}
+
+if (rngReserve) rngReserve.addEventListener('input', handleSurplusSliderChange);
+if (rngDebt) rngDebt.addEventListener('input', handleSurplusSliderChange);
+if (rngDca) rngDca.addEventListener('input', handleSurplusSliderChange);
+
+const btnBridgeDca = document.getElementById('btnBridgeSurplusDca');
+if (btnBridgeDca) {
+  btnBridgeDca.addEventListener('click', bridgeSurplusDcaToRebalance);
+}
+
+if (typeof window !== 'undefined') {
+  window.selectCashflowCategory = selectCashflowCategory;
+  window.bridgeSurplusDcaToRebalance = bridgeSurplusDcaToRebalance;
+}
 
 function onToggleRunway(checked) {
   state.showEmergencyRunway = !!checked;

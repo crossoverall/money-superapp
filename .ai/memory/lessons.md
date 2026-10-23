@@ -15,6 +15,25 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-23: Interactive Cash Flow Waterfall & Category Filtering (Phase 136 / v2.5.77)
+- **Date & Context:** 2026-10-23, Pillar 3.2 Interactive Cash Flow Waterfall & Category Filtering (`v2.5.77`).
+- **Problem:**
+  - The static cashflow waterfall chart provided a top-level macro overview but offered no way to inspect itemized components (Needs vs Wants ratio, specific statutory deductions, savings breakdown) or simulate surplus allocation.
+  - Adding interactive filter chips and dynamic breakdown cards without strict bilingual translation synchronization and clean initial empty values triggers headless Chrome live DOM bilingual parity test failures.
+- **Solution & Invariants:**
+  1. **Interactive Category Filtering & Focus States (`js/engines/cashflow-viz.js`):**
+     - Enhanced `renderCashflowWaterfall` with `selectedCategory` parameter, applying `data-category="${step.id}"`, focus ring / border stroke (`stroke="var(--core, #10b981)" stroke-width="2.5"`), and dimmed opacity (`0.35`) to non-selected bars.
+     - Implemented `getCategoryDrilldown` providing itemized amounts, percentage of gross income, and Needs vs Wants classification.
+  2. **3-Way Surplus Allocation Simulator & Capital Conservation:**
+     - Implemented `calculateSurplusDistribution({ surplus, reservePct, debtPct, dcaPct })` guaranteeing exact conservation of surplus down to integer baht (`reserveAmount + debtAmount + dcaAmount === surplus`).
+     - Added 3 interactive percentage sliders (Emergency Reserve, Debt Payoff, DCA Investment) with instant Baht feedback.
+     - Added one-click bridge button (`btnBridgeSurplusDca`) saving allocated DCA surplus to `localStorage` under `moneySuperapp.pendingBudget` and switching directly to `rebalance.html`.
+  3. **Quality Gates & Invariants:**
+     - 100% key symmetry between Thai and English in `translations.th` and `translations.en`.
+     - Added unit tests in `tests/cashflow-viz.test.mjs` (11/11 passing).
+     - Headless Chrome live DOM parity verified across all 8 tools with 0 untranslated Thai elements in English mode.
+
+
 ### 2026-10-23: Easy E-Receipt & Tax Invoice Deduction Tracker (Phase 135 / v2.5.76)
 - **Date & Context:** 2026-10-23, Pillar 2.3 Easy E-Receipt & e-Tax Invoice Deduction Tracker (`v2.5.76`).
 - **Problem:**

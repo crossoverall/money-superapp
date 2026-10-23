@@ -511,6 +511,196 @@
     };
   }
 
+  /**
+   * Calculates 3-way strategic distribution of monthly cash surplus.
+   * Guarantees exact conservation of surplus down to integer baht.
+   *
+   * @param {{ surplus?: number, reservePct?: number, debtPct?: number, dcaPct?: number }} [params]
+   * @returns {{ surplus: number, reservePct: number, debtPct: number, dcaPct: number, reserveAmount: number, debtAmount: number, dcaAmount: number, totalDistributed: number }}
+   */
+  function calculateSurplusDistribution({ surplus = 0, reservePct = 40, debtPct = 30, dcaPct = 30 } = {}) {
+    const s = Math.max(0, Math.round(Number(surplus) || 0));
+    if (s <= 0) {
+      return {
+        surplus: 0,
+        reservePct: 40,
+        debtPct: 30,
+        dcaPct: 30,
+        reserveAmount: 0,
+        debtAmount: 0,
+        dcaAmount: 0,
+        totalDistributed: 0,
+      };
+    }
+
+    const rPct = Math.max(0, Number(reservePct) || 0);
+    const dbPct = Math.max(0, Number(debtPct) || 0);
+    const dPct = Math.max(0, Number(dcaPct) || 0);
+    const sumPct = rPct + dbPct + dPct || 100;
+
+    const normRPct = Math.round((rPct / sumPct) * 100);
+    const normDbPct = Math.round((dbPct / sumPct) * 100);
+    const normDPct = Math.max(0, 100 - normRPct - normDbPct);
+
+    const reserveAmount = Math.round((s * normRPct) / 100);
+    const debtAmount = Math.round((s * normDbPct) / 100);
+    const dcaAmount = Math.max(0, s - reserveAmount - debtAmount);
+
+    return {
+      surplus: s,
+      reservePct: normRPct,
+      debtPct: normDbPct,
+      dcaPct: normDPct,
+      reserveAmount,
+      debtAmount,
+      dcaAmount,
+      totalDistributed: reserveAmount + debtAmount + dcaAmount,
+    };
+  }
+
+  /**
+   * Generates itemized drill-down data for a selected cashflow waterfall category.
+   *
+   * @param {{ category?: string, totalIncome?: number, deductions?: number, deductionItems?: Array<{ name: string, value: number }>, expenses?: Array<{ name: string, value: number, budgetType?: string }>, savings?: Array<{ name: string, value: number }>, remaining?: number, isEN?: boolean }} params
+   * @returns {Object}
+   */
+  function getCategoryDrilldown({
+    category = 'expenses',
+    totalIncome = 0,
+    deductions = 0,
+    deductionItems = [],
+    expenses = [],
+    savings = [],
+    remaining = 0,
+    isEN = false,
+  } = {}) {
+    const inc = Math.max(totalIncome, 1);
+    const cat = (category || 'expenses').toLowerCase().trim();
+
+    if (cat === 'income') {
+      return {
+        category: 'income',
+        titleTh: 'รายได้รวม (Gross Inflow)',
+        titleEn: 'Gross Inflow',
+        totalAmount: totalIncome,
+        pctOfIncome: 100,
+        items: [
+          {
+            name: isEN ? 'Gross Monthly Income' : 'รายได้รวมต่อเดือน',
+            value: totalIncome,
+            pctOfIncome: 100,
+            type: 'inflow',
+          },
+        ],
+      };
+    }
+
+    if (cat === 'deductions') {
+      const items =
+        Array.isArray(deductionItems) && deductionItems.length > 0
+          ? deductionItems.map((d) => ({
+              name: d.name,
+              value: Number(d.value) || 0,
+              pctOfIncome: parseFloat((((Number(d.value) || 0) / inc) * 100).toFixed(1)),
+              type: 'statutory',
+            }))
+          : [
+              {
+                name: isEN ? 'Statutory Deductions (Tax/SSO/PVD)' : 'รายการหักตามกฎหมาย (ภาษี/ประกันสังคม/PVD)',
+                value: deductions,
+                pctOfIncome: parseFloat(((deductions / inc) * 100).toFixed(1)),
+                type: 'statutory',
+              },
+            ];
+      return {
+        category: 'deductions',
+        titleTh: 'หักตามกฎหมาย (Deductions)',
+        titleEn: 'Statutory Deductions',
+        totalAmount: deductions,
+        pctOfIncome: parseFloat(((deductions / inc) * 100).toFixed(1)),
+        items,
+      };
+    }
+
+    if (cat === 'savings') {
+      const items = (savings || []).map((s) => ({
+        name: s.name || (isEN ? 'Savings / Investment' : 'เงินออม / ลงทุน'),
+        value: Number(s.value) || 0,
+        pctOfIncome: parseFloat((((Number(s.value) || 0) / inc) * 100).toFixed(1)),
+        type: 'saving',
+      }));
+      const totalSavings = items.reduce((sum, item) => sum + item.value, 0);
+      return {
+        category: 'savings',
+        titleTh: 'เงินออมและลงทุน (Savings & Investments)',
+        titleEn: 'Savings & Investments',
+        totalAmount: totalSavings,
+        pctOfIncome: parseFloat(((totalSavings / inc) * 100).toFixed(1)),
+        items,
+      };
+    }
+
+    if (cat === 'remaining') {
+      const isSurplus = remaining >= 0;
+      return {
+        category: 'remaining',
+        titleTh: isSurplus ? 'คงเหลือสุทธิ (Net Surplus)' : 'ขาดดุลสุทธิ (Net Deficit)',
+        titleEn: isSurplus ? 'Net Surplus' : 'Net Deficit',
+        totalAmount: remaining,
+        pctOfIncome: parseFloat(((remaining / inc) * 100).toFixed(1)),
+        items: [
+          {
+            name: isSurplus
+              ? isEN
+                ? 'Unallocated Cashflow Surplus'
+                : 'กระแสเงินสดคงเหลือสำหรับจัดสรร'
+              : isEN
+                ? 'Monthly Cashflow Deficit'
+                : 'เงินไม่พอใช้จ่ายรายเดือน (ขาดดุล)',
+            value: remaining,
+            pctOfIncome: parseFloat(((remaining / inc) * 100).toFixed(1)),
+            type: 'surplus',
+          },
+        ],
+        meta: {
+          isSurplus,
+        },
+      };
+    }
+
+    // Default: 'expenses'
+    let needsTotal = 0;
+    let wantsTotal = 0;
+    const items = (expenses || []).map((e) => {
+      const val = Number(e.value) || 0;
+      const bType = e.budgetType || classifyBudgetType(e, 'expense');
+      if (bType === 'need') needsTotal += val;
+      else wantsTotal += val;
+      return {
+        name: e.name || (isEN ? 'Expense' : 'ค่าใช้จ่าย'),
+        value: val,
+        pctOfIncome: parseFloat(((val / inc) * 100).toFixed(1)),
+        type: bType,
+      };
+    });
+    const totalExp = needsTotal + wantsTotal;
+
+    return {
+      category: 'expenses',
+      titleTh: 'ค่าใช้จ่ายทั่วไป (Living Expenses)',
+      titleEn: 'Living Expenses',
+      totalAmount: totalExp,
+      pctOfIncome: parseFloat(((totalExp / inc) * 100).toFixed(1)),
+      items,
+      meta: {
+        needsTotal,
+        wantsTotal,
+        needsPct: totalExp > 0 ? parseFloat(((needsTotal / totalExp) * 100).toFixed(1)) : 0,
+        wantsPct: totalExp > 0 ? parseFloat(((wantsTotal / totalExp) * 100).toFixed(1)) : 0,
+      },
+    };
+  }
+
   function renderCashflowWaterfall(
     svgEl,
     {
@@ -519,6 +709,7 @@
       generalExpenses = 0,
       totalSavings = 0,
       remaining = 0,
+      selectedCategory = null,
       isEN = false,
       fmtCurrency = (v) => String(v),
     } = {},
@@ -650,9 +841,15 @@
       const incBase = totalIncome > 0 ? totalIncome : valMax;
       const pctVal = Math.abs((step.delta / incBase) * 100);
       const tip = `${step.name}: ${step.delta >= 0 ? '+' : ''}${fmtCurrency(step.delta)} (${pctVal.toFixed(1)}%)`;
+      const isSelected = selectedCategory === step.id;
+      const barOpacity = selectedCategory ? (isSelected ? '1' : '0.35') : '0.9';
+      const strokeAttr = isSelected
+        ? `stroke="var(--core, #10b981)" stroke-width="2.5"`
+        : `stroke="none" stroke-width="0"`;
+
       svgHtml += `
-        <g class="waterfall-bar" style="cursor:pointer;">
-          <rect x="${bx.toFixed(1)}" y="${drawY.toFixed(1)}" width="${barWidth}" height="${barHeight.toFixed(1)}" rx="4" fill="${step.color}" opacity="0.9">
+        <g class="waterfall-bar${isSelected ? ' selected' : ''}" data-category="${step.id}" style="cursor:pointer;" tabindex="0" role="button" aria-label="${tip}">
+          <rect x="${bx.toFixed(1)}" y="${drawY.toFixed(1)}" width="${barWidth}" height="${barHeight.toFixed(1)}" rx="4" fill="${step.color}" opacity="${barOpacity}" ${strokeAttr}>
             <title>${tip}</title>
           </rect>
         </g>
@@ -805,6 +1002,8 @@
     calculateEmergencyRunway,
     generateSankeyRibbonPath,
     calculateSankeyFlows,
+    calculateSurplusDistribution,
+    getCategoryDrilldown,
     renderCashflowWaterfall,
     renderCashflowSankey,
   };
@@ -815,6 +1014,8 @@
   global.MoneyApp.calculateBudgetRule503020 = calculateBudgetRule503020;
   global.MoneyApp.calculateEmergencyRunway = calculateEmergencyRunway;
   global.MoneyApp.calculateSankeyFlows = calculateSankeyFlows;
+  global.MoneyApp.calculateSurplusDistribution = calculateSurplusDistribution;
+  global.MoneyApp.getCategoryDrilldown = getCategoryDrilldown;
 
   if (typeof global !== 'undefined') {
     if (typeof global.CashflowViz === 'undefined') {
