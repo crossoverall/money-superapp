@@ -15,6 +15,25 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-23: Mobile Modal Viewport Centering & Flexbox Overflow Trapping (Phase 132 / v2.5.73)
+- **Date & Context:** 2026-10-23, Mobile Settings & Data Management Modal Viewport Overflow Fix (`v2.5.73`).
+- **Problem:**
+  - On mobile viewports (e.g. 375x667, 320x568), opening the Settings & Data Management modal (`#settingsModal`) pushed the modal completely out of screen.
+  - The top 464px (including the header, title, and close button) was pushed above the screen (`top: -463px`), and the bottom 464px was pushed below the screen (`bottom: 1130px`).
+  - Because Flexbox vertical centering (`align-items: center; justify-content: center;`) was used without an explicit `max-height` or `overflow-y: auto`, the modal was unscrollable, trapping the user with no way to see the settings or click close.
+- **Root Cause:**
+  - The intrinsic height of the modal content was ~1,600px–1,850px across its 9 configuration cards.
+  - `#settingsModal > div` lacked `max-height` and had `overflow-y: visible` by default. In CSS Flexbox, centering an item taller than its container causes symmetric negative top and positive bottom coordinates, making top content permanently unscrollable.
+  - Backdrop click-to-close handler (`onclick="if(event.target===this)closeSettingsModal()"`) was also absent on `#settingsModal`.
+- **Solution & Rule:**
+  1. **Strict Modal Bounds Rule:**
+     - Every overlay dialog container in the application MUST declare `max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overflow-y: auto; -webkit-overflow-scrolling: touch;`.
+  2. **Sticky Header & Backdrop Escape:**
+     - The modal header containing the title and close button MUST use `position: sticky; top: -20px; z-index: 10;` so the close affordance is perpetually visible and clickable regardless of how far down the user scrolls.
+     - Always include backdrop click detection `onclick="if(event.target===this)closeModal()"` so users are never trapped.
+  3. **Automated Visual Layout Invariant:**
+     - Added automated layout assertions in `tests/visual-regression.test.mjs` verifying `cardTop >= 0`, `cardBottom <= viewport.height`, `cardHeight <= viewport.height`, `overflow-y: auto`, and non-zero scrollability at both 375x667 and 320x568 viewports.
+
 ### 2026-10-20: WCAG 2.1 AA Focus-Visible Rings & Screen Reader Live Region Announcer (v2.5.72)
 - **Date & Context:** 2026-10-20, Phase 131 WCAG 2.1 AA Accessibility & Screen Reader Live Regions (`v2.5.72`).
 - **Problem:**

@@ -1,62 +1,57 @@
 ---
-task_id: "none"
-status: "idle"
+task_id: "phase-132-mobile-settings-modal-overflow-fix"
+status: "completed"
 current_stage: "idle"
-iteration_count: 0
-pipeline: []
+iteration_count: 1
+pipeline:
+  - stage: "spec"
+    status: "completed"
+  - stage: "planning"
+    status: "completed"
+  - stage: "human_approval"
+    status: "completed"
+  - stage: "coding"
+    status: "completed"
+  - stage: "qa_verification"
+    status: "completed"
+  - stage: "code_review"
+    status: "completed"
+  - stage: "release"
+    status: "completed"
 ---
 
-### Feature / Task Specification: Phase 131 — WCAG 2.1 AA Accessibility Audit & Live Region Announcements (v2.5.72)
+### Feature / Bugfix Specification: Phase 132 — Mobile Settings Modal Viewport Overflow Fix
 
-#### 1. Goal & Scope Limits
-- **Objective:**
-  Implement accessibility improvements conforming to WCAG 2.1 AA across Money Superapp:
-  1. **Accessible Live Region Announcer (`MoneyApp.announce`):**
-     - Global announcer in `js/shared.js` that dynamically manages a `.sr-only` `aria-live` region (`#a11y-announcer`).
-     - Screen readers (NVDA, VoiceOver, JAWS) receive non-intrusive spoken updates for asynchronous and dynamic calculations.
-  2. **Live Regions & ARIA Roles on Calculated Totals:**
-     - Dynamic financial summary cards and KPI displays in `tax-calculator-base.html`, `remaining-money.html`, `debt-calculator.html`, and `dashboard.html` feature `aria-live="polite"` or `role="status"`.
-  3. **Focus-Visible & Screen-Reader Tokens:**
-     - Add universal `:focus-visible` ring styling in `css/theme.css` with 2px offset.
-     - Add `.sr-only` utility class in `css/theme.css` for visually-hidden, screen-reader-accessible labels.
-  4. **Automated WCAG 2.1 AA Static & Dynamic Test Suite:**
-     - Create `tests/a11y-wcag.test.mjs` verifying document metadata (lang, title, viewport), form control labeling, live region declarations, and `MoneyApp.announce` functionality.
-- **Target Files (<= 5 files, ~200 lines):**
-  1. `css/theme.css` (Add `:focus-visible` styles & `.sr-only` utility)
-  2. `js/shared.js` (Implement `MoneyApp.announce`)
-  3. `remaining-money.html` & `tax-calculator-base.html` (Add ARIA live attributes)
-  4. `tests/a11y-wcag.test.mjs` (Comprehensive WCAG 2.1 AA test suite)
-  5. `tests/smoke.test.mjs` (Contract assertion for `MoneyApp.announce`)
-- **Explicit Out of Scope:**
-  - Zero external npm libraries or heavy DOM parser dependencies (pure node regex / mock DOM).
-  - No alteration of visual styling for non-keyboard users.
+#### 1. Problem Statement & Root Cause Diagnosis
+- **Reported Bug:** On mobile viewports (e.g. 375x667, 320x568), opening the Settings & Data Management modal (`#settingsModal`) results in the modal being pushed out of the screen.
+- **Root Cause Analysis (Verified via Headless Chrome Measurement):**
+  - `#settingsModal` contains 9 comprehensive sections (Privacy banner, Google Drive sync, Export JSON/Vault, Import, Offline QR P2P, App Lock & Biometrics, Quick Tour, Storage Health, Cache Quota, Master Reset), resulting in an intrinsic content height of **1,595px** (and **1,854px** at 320px width).
+  - `#settingsModal` has `position: fixed; display: flex; align-items: center; justify-content: center; padding: 16px;`.
+  - The inner dialog card `div` lacked `max-height` (it was `none`) and lacked `overflow-y` (it was `visible`).
+  - Because Flexbox centers an overflowing item within the viewport, on a 667px high screen:
+    - `cardTop: -463.8px` (top 464px, including the header and close button, pushed above the screen).
+    - `cardBottom: 1130.8px` (bottom 464px pushed below the screen).
+    - The modal has no scrollbar and cannot be scrolled, completely trapping the user.
+    - Backdrop click-to-close handler was also missing (`onclick="if(event.target===this)closeSettingsModal()"`).
 
-#### 2. Architecture & Decision Alignment
-- **Affected Components:** `css/theme.css`, `js/shared.js`, `remaining-money.html`, `tax-calculator-base.html`, `tests/a11y-wcag.test.mjs`, `tests/smoke.test.mjs`.
-- **Relevant ADRs:**
-  - ADR-001 (Zero runtime dependencies, 100% offline-first privacy)
-  - ADR-002 (Modular architecture across 8 HTML tools)
+#### 2. Scope of Changes
+- **Target Files (<= 2 files, < 50 lines):**
+  1. `index.html`:
+     - Add `max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overflow-y: auto; -webkit-overflow-scrolling: touch;` to `#settingsModal > div`.
+     - Make the modal header (`#lbl-modal-title` & close button row) `position: sticky; top: -22px; background: #131E19; z-index: 10; padding-top: 4px;` so the close button and title remain anchored and accessible while scrolling through settings.
+     - Add backdrop click-to-close handler on `#settingsModal`: `onclick="if(event.target===this)closeSettingsModal()"`.
+     - Apply same preventive `max-height` and `overflow-y: auto` safeguards to `#qrExportModal` and `#qrImportModal`.
+  2. `tests/visual-regression.test.mjs`:
+     - Add automated layout invariant test asserting `#settingsModal` on mobile viewports (375x667 and 320x568):
+       - `rect.top >= 0`
+       - `rect.bottom <= window.innerHeight`
+       - `card.clientHeight <= window.innerHeight`
+       - `computedOverflowY === 'auto'`
+       - Zero horizontal overflow (`document.documentElement.scrollWidth <= window.innerWidth`).
 
 #### 3. Step-by-Step Implementation Plan
-- **Step 1:** In `css/theme.css`:
-  - Add `:focus-visible` and interactive element focus rings (`outline: 2px solid var(--core, #2F8B76); outline-offset: 2px;`).
-  - Add `.sr-only` class.
-- **Step 2:** In `js/shared.js`:
-  - Implement `MoneyApp.announce(message, priority = 'polite')`. Creates or retrieves `#a11y-announcer`, sets `aria-live`, and updates text content.
-- **Step 3:** In HTML tools (`tax-calculator-base.html`, `remaining-money.html`):
-  - Mark dynamic KPI summary cards with `aria-live="polite"` and `role="status"`.
-- **Step 4:** Create `tests/a11y-wcag.test.mjs` with assertions for WCAG 2.1 AA invariants and announcer tests.
-- **Step 5:** In `tests/smoke.test.mjs`:
-  - Add contract tests for `MoneyApp.announce`.
-- **Step 6:** QA & Debugger agent verification (`npm run lint`, `npm test`).
-- **Step 7:** Code & Security Reviewer adversarial audit.
-- **Step 8:** Release & Docs (bump v2.5.72, update lessons.md, commit, push).
-
-#### 4. Acceptance Criteria
-- [x] `css/theme.css` provides `:focus-visible` styles and `.sr-only` utility.
-- [x] `MoneyApp.announce(message, priority)` provides screen-reader announcement capability across browser and node environments.
-- [x] Dynamic KPI and tax calculation summary panels include `aria-live="polite"` or `role="status"`.
-- [x] `tests/a11y-wcag.test.mjs` passes with 0 failures, verifying all 8 HTML tools.
-- [x] `npm run lint` passes with 0 errors and 0 warnings.
-- [x] `npm test` passes 100% green.
-- [x] Released, bumped to v2.5.72, and pushed to `origin/master`.
+- **Step 1:** Edit `index.html` to update modal container styles and backdrop click handlers.
+- **Step 2:** Add automated mobile modal test assertions to `tests/visual-regression.test.mjs`.
+- **Step 3:** Run `npm test` and `npm run lint` to verify zero regressions.
+- **Step 4:** Perform independent code and security review.
+- **Step 5:** Record lessons in `.ai/memory/lessons.md` and bump version if needed.

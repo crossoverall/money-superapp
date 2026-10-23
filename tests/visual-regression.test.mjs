@@ -389,6 +389,77 @@ describe('Phase 117: Automated Visual Regression & Layout Invariant Suite', () =
       );
       assert.notEqual(layout.bottomNav.display, 'none', 'Bottom nav display must not be none at 320x568');
     });
+
+    it('validates mobile Settings & Data Management modal layout bounds and scrollability (375x667 and 320x568)', async (t) => {
+      if (!isChromeAvailable) {
+        t.skip('Chrome/Chromium binary not available on this platform');
+        return;
+      }
+
+      for (const vp of [
+        { width: 375, height: 667 },
+        { width: 320, height: 568 },
+      ]) {
+        await cdp.setViewport({ width: vp.width, height: vp.height, mobile: true, deviceScaleFactor: 1 });
+        await cdp.navigate(`http://127.0.0.1:${serverPort}/index.html`);
+        await cdp.waitFor(() => document.readyState === 'complete');
+
+        const metrics = await cdp.evaluate(`(() => {
+          openSettingsModal();
+          const modal = document.getElementById('settingsModal');
+          const card = modal.querySelector('div');
+          const rect = card.getBoundingClientRect();
+          const cardStyle = window.getComputedStyle(card);
+          
+          card.scrollTop = 9999;
+          const scrolledTop = card.scrollTop;
+
+          const resetBtn = document.getElementById('btn-master-reset');
+          const resetRect = resetBtn ? resetBtn.getBoundingClientRect() : null;
+
+          closeSettingsModal();
+
+          return {
+            windowHeight: window.innerHeight,
+            windowWidth: window.innerWidth,
+            cardTop: Math.round(rect.top),
+            cardBottom: Math.round(rect.bottom),
+            cardHeight: Math.round(rect.height),
+            cardOverflowY: cardStyle.overflowY,
+            cardMaxHeight: cardStyle.maxHeight,
+            scrolledTop,
+            resetVisibleWhenScrolled: resetRect ? resetRect.top >= 0 && resetRect.bottom <= window.innerHeight : false,
+            documentScrollWidth: document.documentElement.scrollWidth,
+          };
+        })()`);
+
+        assert.ok(
+          metrics.cardTop >= 0,
+          `Settings modal top (${metrics.cardTop}) must be >= 0 at ${vp.width}x${vp.height}`,
+        );
+        assert.ok(
+          metrics.cardBottom <= vp.height,
+          `Settings modal bottom (${metrics.cardBottom}) must be <= viewport height (${vp.height}) at ${vp.width}x${vp.height}`,
+        );
+        assert.ok(
+          metrics.cardHeight <= vp.height,
+          `Settings modal height (${metrics.cardHeight}) must be <= viewport height (${vp.height}) at ${vp.width}x${vp.height}`,
+        );
+        assert.equal(
+          metrics.cardOverflowY,
+          'auto',
+          `Settings modal overflow-y must be auto at ${vp.width}x${vp.height}`,
+        );
+        assert.ok(
+          metrics.scrolledTop > 0,
+          `Settings modal must be scrollable to reveal bottom items at ${vp.width}x${vp.height}`,
+        );
+        assert.ok(
+          metrics.documentScrollWidth <= vp.width,
+          `Document scrollWidth (${metrics.documentScrollWidth}) must be <= viewport width (${vp.width}) with modal open`,
+        );
+      }
+    });
   });
 
   describe('Suite 2: Tablet & Desktop Viewport Responsive Invariants', () => {
