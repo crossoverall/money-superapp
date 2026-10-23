@@ -1,5 +1,5 @@
 ---
-task_id: "phase-138-joint-tax-filing-optimizer"
+task_id: "phase-139-multi-profile-partition-architecture"
 status: "completed"
 current_stage: "release"
 iteration_count: 1
@@ -20,10 +20,11 @@ pipeline:
     status: "completed"
 ---
 
-### Feature Specification: Phase 138 — Joint Tax Filing & Spousal Exemption Optimizer (Pillar 5.2)
+### Feature Specification: Phase 139 — Multi-Profile Partition Architecture (Pillar 5.1 / v2.6.0 Milestone)
 
 #### 1. Goal & Requirements
-- **Goal:** Provide Thai married taxpayers an automated statutory comparison and optimization tool between separate and joint PIT filing under Section 57 ter of the Thai Revenue Code.
-- **Engine:** Added `optimizeSpousalTaxFiling({ spouseA, spouseB, isEN })` in `js/engines/thai-pit.js`. Computes separate vs joint tax, calculates savings in Baht, and outputs bilingual advisory recommendations.
-- **UI:** Added `#spousalTaxOptimizerCard` in `tax-calculator-base.html` and controller logic in `js/tax-calculator-base.js`.
-- **Quality Gates:** 100% bilingual parity, zero external dependencies, 797/797 tests passing.
+- **Goal:** Multi-profile data isolation across Personal, Family/Household, and Freelance/Business financial domains.
+- **Engine:** `js/engines/profile-partition.js` providing atomic partition swapping, cloning, export/import, and metrics.
+- **StorageDB:** Added `createPartitionedStorage` in `js/engines/storage-db.js`.
+- **UI:** Topbar switcher button + dropdown and Settings Modal management section in `index.html` & `js/app-shell.js`.
+- **Quality Gates:** 100% bilingual parity, zero external dependencies, 806/806 tests passing. Version bumped to `v2.6.0`.

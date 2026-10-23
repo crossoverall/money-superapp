@@ -15,6 +15,28 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-23: Multi-Profile Partition Architecture (Phase 139 / v2.6.0 Milestone)
+- **Date & Context:** 2026-10-23, Pillar 5.1 Multi-Profile Switching & Partition Architecture (`v2.6.0`).
+- **Problem:**
+  - Users managing personal finances alongside freelance/business cash flow or family budgets had no isolation mechanism without manually exporting/importing JSON files.
+  - Naive prefixing of all storage keys breaks existing tools that query raw `localStorage` directly (e.g. `remainingMoneyCalculator.state.v1`, `rebalanceCalculator.state.v1`).
+- **Solution & Invariants:**
+  1. **Partition Snapshot & Swap Engine (`js/engines/profile-partition.js`):**
+     - Manages built-in profiles (`personal`, `family`, `freelance`) and custom profiles with deep-copy cloning.
+     - Preserves global user settings (`theme`, `lang`, `activeTab`, `appLock`) while atomically swapping domain data keys (`remainingMoneyCalculator.*`, `rebalanceCalculator.*`, `moneySuperapp.*`) into/out of active storage and partition archives (`moneySuperapp.partition.<id>`).
+     - Backwards compatibility: Existing single-profile user data automatically snapshots into the `personal` partition on boot without any migration loss.
+  2. **StorageDB Integration (`js/engines/storage-db.js`):**
+     - Added `createPartitionedStorage(profileId)` and included `profile.` in allowed application prefixes.
+  3. **App Shell UI & Dropdown (`index.html` & `js/app-shell.js`):**
+     - Topbar profile switcher button `#btn-profile-switcher` with `#activeProfileIcon` and dynamic `#activeProfileName`.
+     - Dropdown menu `#profileDropdownMenu` with active indicators and quick navigation.
+     - Mobile layout invariant: `.profile-name-label` and `.profile-caret` are hidden on `<= 768px` viewports, preserving 0 horizontal blowout on 375x667 and 320x568.
+     - Settings Modal `#profileManagerCard` for adding, cloning, switching, and deleting profiles.
+  4. **Quality Gates & Invariants:**
+     - 100% bilingual symmetry between `translations.th` and `translations.en`.
+     - Unit tests in `tests/profile-partition.test.mjs` (9/9 passing).
+     - Full test suite passed across all 806 tests with 0 failures. Milestone `v2.6.0` achieved!
+
 ### 2026-10-23: Joint Tax Filing & Spousal Exemption Optimizer (Phase 138 / v2.5.79)
 - **Date & Context:** 2026-10-23, Pillar 5.2 Joint Tax Filing & Spousal Exemption Optimizer (`v2.5.79`).
 - **Problem:**

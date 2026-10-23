@@ -19,7 +19,7 @@
   /**
    * Allowed app prefixes for localStorage scoping and clean origin isolation.
    */
-  const APP_PREFIXES = ['moneySuperapp.', 'remainingMoneyCalculator.', 'rebalanceCalculator.'];
+  const APP_PREFIXES = ['moneySuperapp.', 'remainingMoneyCalculator.', 'rebalanceCalculator.', 'profile.'];
 
   function isAppKey(key) {
     if (typeof key !== 'string') return false;
@@ -484,6 +484,18 @@
       };
     }
 
+    function createPartitionedStorage(profileId) {
+      const pid = profileId || 'personal';
+      const prefix = `profile.${pid}.`;
+      return {
+        getItem: (k) => getItem(prefix + k),
+        setItem: (k, v) => setItem(prefix + k, v),
+        removeItem: (k) => removeItem(prefix + k),
+        hasItem: (k) => hasItem(prefix + k),
+        profileId: pid,
+      };
+    }
+
     return {
       getItem,
       setItem,
@@ -496,6 +508,7 @@
       exportAll,
       importAll,
       formatBytes,
+      createPartitionedStorage,
       isIndexedDBSupported: Boolean(customIDB),
       _fallbackMemory: fallbackMemory,
     };

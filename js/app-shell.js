@@ -119,6 +119,25 @@ const translations = {
     pullToRefreshText: '🔄 เลื่อนลงเพื่อซิงค์ข้อมูล (Pull to refresh)',
     pullToRefreshRelease: '🔄 ปล่อยเพื่อซิงค์ข้อมูล (Release to refresh)',
     pullToRefreshSyncing: '🔄 กำลังซิงค์ข้อมูล... (Syncing...)',
+    profileMgrTitle: 'โปรไฟล์การเงิน & แยกข้อมูล',
+    profileMgrDesc: 'แยกข้อมูลการเงินอย่างสมบูรณ์ระหว่าง ส่วนตัว, ครอบครัว, และธุรกิจฟรีแลนซ์',
+    btnAddProfile: 'เพิ่มโปรไฟล์',
+    createProfileHeader: 'สร้างโปรไฟล์ใหม่',
+    btnCancelProfile: 'ยกเลิก',
+    btnSaveProfile: 'บันทึก',
+    profileSwitchSuccess: 'สลับไปยังโปรไฟล์ {name} เรียบร้อยแล้ว',
+    profileClonedSuccess: 'คัดลอกโปรไฟล์ {name} เรียบร้อยแล้ว',
+    profileDeletedSuccess: 'ลบโปรไฟล์เรียบร้อยแล้ว',
+    profileDeleteConfirm: 'คุณแน่ใจหรือไม่ว่าต้องการลบโปรไฟล์ {name} และข้อมูลทั้งหมดในโปรไฟล์นี้?',
+    profileDefaultBadge: 'ค่าเริ่มต้น',
+    profileActiveBadge: 'ใช้งานอยู่',
+    btnProfileSwitch: 'สลับใช้',
+    btnProfileClone: 'คัดลอก',
+    btnProfileDelete: 'ลบ',
+    btnProfileExport: 'ส่งออก',
+    profileItemKeys: 'รายการข้อมูล',
+    profileManageBtn: '⚙️ จัดการโปรไฟล์',
+    profileSwitcherTitle: 'โปรไฟล์การเงิน (Profile Switcher)',
   },
   en: {
     skipLink: 'Skip to main content',
@@ -234,6 +253,25 @@ const translations = {
     pullToRefreshText: '🔄 Pull down to sync data',
     pullToRefreshRelease: '🔄 Release to refresh',
     pullToRefreshSyncing: '🔄 Syncing data...',
+    profileMgrTitle: 'Multi-Profile & Data Partitioning',
+    profileMgrDesc: 'Complete financial data isolation across Personal, Family, and Business domains',
+    btnAddProfile: 'Add Profile',
+    createProfileHeader: 'Create New Profile',
+    btnCancelProfile: 'Cancel',
+    btnSaveProfile: 'Save',
+    profileSwitchSuccess: 'Switched to {name} profile successfully',
+    profileClonedSuccess: 'Cloned profile {name} successfully',
+    profileDeletedSuccess: 'Profile deleted successfully',
+    profileDeleteConfirm: 'Are you sure you want to delete profile {name} and all its data?',
+    profileDefaultBadge: 'Default',
+    profileActiveBadge: 'Active',
+    btnProfileSwitch: 'Switch',
+    btnProfileClone: 'Clone',
+    btnProfileDelete: 'Delete',
+    btnProfileExport: 'Export',
+    profileItemKeys: 'records',
+    profileManageBtn: '⚙️ Manage Profiles',
+    profileSwitcherTitle: 'Financial Profile Switcher',
   },
 };
 
@@ -529,6 +567,9 @@ function applyLang(lang) {
   }
   if (typeof runStorageHealthCheck === 'function') {
     runStorageHealthCheck(false);
+  }
+  if (typeof updateProfileUI === 'function') {
+    updateProfileUI(lang);
   }
 
   updateGoogleUI();
@@ -1390,9 +1431,329 @@ if (typeof window !== 'undefined') {
   window.MoneyApp.purgeStaleCaches = purgeStaleCaches;
 }
 
+// Phase 139: Multi-Profile & Partition UI Controller
+function getPartitionEngine() {
+  return (
+    window.MoneyApp?.ProfilePartition ||
+    (typeof globalThis !== 'undefined' ? globalThis.MoneyApp?.ProfilePartition : null)
+  );
+}
+
+function updateProfileUI(currentLang) {
+  const partition = getPartitionEngine();
+  if (!partition) return;
+
+  const lang = currentLang || getLang();
+  const t = translations[lang] || translations.th;
+
+  try {
+    const { activeProfile, profiles } = partition.initProfiles();
+
+    // Topbar Icon and Label
+    const iconEl = document.getElementById('activeProfileIcon');
+    if (iconEl) iconEl.textContent = activeProfile.icon || '👤';
+
+    const nameEl = document.getElementById('activeProfileName');
+    if (nameEl) {
+      nameEl.textContent = lang === 'th' ? activeProfile.nameTh || activeProfile.name : activeProfile.name;
+    }
+
+    const switcherBtn = document.getElementById('btn-profile-switcher');
+    if (switcherBtn) {
+      switcherBtn.title = t.profileSwitcherTitle || 'Financial Profile Switcher';
+      switcherBtn.setAttribute('aria-label', `${t.profileSwitcherTitle || 'Profile'}: ${activeProfile.name}`);
+    }
+
+    // Topbar Dropdown Menu
+    const dropdownMenu = document.getElementById('profileDropdownMenu');
+    if (dropdownMenu) {
+      let html = '';
+      for (const p of profiles) {
+        const isActive = p.id === activeProfile.id;
+        const displayName = lang === 'th' ? p.nameTh || p.name : p.name;
+        html += `
+          <button class="profile-menu-item ${isActive ? 'active' : ''}" onclick="switchAppProfile('${p.id}')" role="menuitem">
+            <span class="profile-item-meta">
+              <span>${p.icon || '📁'}</span>
+              <span>${displayName}</span>
+            </span>
+            ${isActive ? '<span style="font-size:12px; font-weight:700;">✓</span>' : ''}
+          </button>
+        `;
+      }
+      html += `
+        <div class="profile-menu-divider"></div>
+        <button class="profile-menu-item" onclick="openProfileManagerFromDropdown()" role="menuitem">
+          <span class="profile-item-meta">
+            <span>⚙️</span>
+            <span>${t.profileManageBtn || 'Manage Profiles'}</span>
+          </span>
+        </button>
+      `;
+      dropdownMenu.innerHTML = html;
+    }
+
+    // Update Settings Modal list if visible
+    const settingsModal = document.getElementById('settingsModal');
+    if (settingsModal && settingsModal.style.display !== 'none') {
+      updateProfileSettingsUI(lang);
+    }
+  } catch (_e) {}
+}
+
+function toggleProfileMenu(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('profileDropdownMenu');
+  const btn = document.getElementById('btn-profile-switcher');
+  if (!menu) return;
+
+  const isHidden = menu.style.display === 'none' || !menu.style.display;
+  if (isHidden) {
+    updateProfileUI();
+    menu.style.display = 'flex';
+    if (btn) btn.setAttribute('aria-expanded', 'true');
+  } else {
+    menu.style.display = 'none';
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  }
+}
+
+function openProfileManagerFromDropdown() {
+  const menu = document.getElementById('profileDropdownMenu');
+  if (menu) menu.style.display = 'none';
+  const btn = document.getElementById('btn-profile-switcher');
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+
+  openSettingsModal();
+  const card = document.getElementById('profileManagerCard');
+  if (card) {
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+function updateProfileSettingsUI(currentLang) {
+  const partition = getPartitionEngine();
+  const container = document.getElementById('profileListContainer');
+  if (!partition || !container) return;
+
+  const lang = currentLang || getLang();
+  const t = translations[lang] || translations.th;
+  const profiles = partition.listProfiles();
+  const activeProfile = partition.getActiveProfile();
+
+  let html = '';
+  for (const p of profiles) {
+    const isActive = p.id === activeProfile.id;
+    const displayName = lang === 'th' ? p.nameTh || p.name : p.name;
+    const desc = lang === 'th' ? p.descriptionTh || p.description || '' : p.description || '';
+    const metrics = partition.getProfileMetrics(p.id);
+
+    html += `
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid ${isActive ? 'var(--core, #2F8B76)' : '#24352C'}; border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 18px; line-height: 1;">${p.icon || '📁'}</span>
+            <div>
+              <div style="font-weight: 700; font-size: 13px; color: #EAF2EE; display: flex; align-items: center; gap: 6px;">
+                <span>${displayName}</span>
+                ${p.isDefault ? `<span style="font-size: 10px; padding: 1px 6px; border-radius: 999px; background: rgba(255,255,255,0.08); color: #8FA69C;">${t.profileDefaultBadge || 'Default'}</span>` : ''}
+                ${isActive ? `<span style="font-size: 10px; padding: 1px 6px; border-radius: 999px; background: rgba(47, 139, 118, 0.25); color: #4FA894; font-weight: 700;">${t.profileActiveBadge || 'Active'}</span>` : ''}
+              </div>
+              <div style="font-size: 11px; color: #8FA69C; margin-top: 1px;">
+                ${desc ? `<span>${desc} • </span>` : ''}<span>${metrics.keyCount} ${t.profileItemKeys || 'records'} (${metrics.formattedSize})</span>
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 4px; align-items: center;">
+            ${
+              !isActive
+                ? `
+              <button onclick="switchAppProfile('${p.id}')" style="background: var(--core, #2F8B76); color: #fff; border: none; padding: 4px 8px; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer;">
+                ${t.btnProfileSwitch || 'Switch'}
+              </button>
+            `
+                : ''
+            }
+            <button onclick="cloneAppProfile('${p.id}')" title="${t.btnProfileClone || 'Clone'}" style="background: none; border: 1px solid #24352C; color: #8FA69C; padding: 4px 8px; border-radius: 5px; font-size: 11px; cursor: pointer;">
+              ${t.btnProfileClone || 'Clone'}
+            </button>
+            ${
+              !p.isDefault && !isActive
+                ? `
+              <button onclick="deleteAppProfile('${p.id}')" title="${t.btnProfileDelete || 'Delete'}" style="background: none; border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; padding: 4px 7px; border-radius: 5px; font-size: 11px; cursor: pointer;">
+                ${t.btnProfileDelete || 'Delete'}
+              </button>
+            `
+                : ''
+            }
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  container.innerHTML = html;
+}
+
+function switchAppProfile(profileId) {
+  const partition = getPartitionEngine();
+  if (!partition) return;
+
+  const lang = getLang();
+  const t = translations[lang] || translations.th;
+
+  try {
+    partition.switchProfile(profileId);
+    const target = partition.getProfileById(profileId);
+    const name = target ? (lang === 'th' ? target.nameTh || target.name : target.name) : profileId;
+
+    // Close menu
+    const menu = document.getElementById('profileDropdownMenu');
+    if (menu) menu.style.display = 'none';
+    const btn = document.getElementById('btn-profile-switcher');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+
+    updateProfileUI(lang);
+
+    const msg = (t.profileSwitchSuccess || 'Switched profile to {name}').replace('{name}', name);
+    if (typeof MoneyApp !== 'undefined' && MoneyApp.announce) {
+      MoneyApp.announce(msg);
+    }
+
+    // Reload active child tool iframe to reflect newly activated partition
+    const appFrame = document.getElementById('app');
+    if (appFrame?.contentWindow) {
+      try {
+        appFrame.contentWindow.location.reload();
+      } catch (_e) {
+        const curSrc = appFrame.getAttribute('src');
+        if (curSrc) appFrame.setAttribute('src', curSrc);
+      }
+    }
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+function toggleNewProfileForm() {
+  const form = document.getElementById('newProfileFormContainer');
+  if (!form) return;
+  const isHidden = form.style.display === 'none' || !form.style.display;
+  form.style.display = isHidden ? 'block' : 'none';
+  if (isHidden) {
+    const input = document.getElementById('newProfileName');
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
+  }
+}
+
+function handleCreateProfileSubmit() {
+  const partition = getPartitionEngine();
+  if (!partition) return;
+
+  const nameInput = document.getElementById('newProfileName');
+  const iconInput = document.getElementById('newProfileIcon');
+  const name = nameInput ? nameInput.value.trim() : '';
+  const icon = iconInput ? iconInput.value : '📁';
+
+  if (!name) {
+    if (nameInput) nameInput.focus();
+    return;
+  }
+
+  try {
+    partition.createProfile({
+      name,
+      nameTh: name,
+      icon,
+      type: 'custom',
+    });
+    toggleNewProfileForm();
+    updateProfileUI();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+function cloneAppProfile(sourceProfileId) {
+  const partition = getPartitionEngine();
+  if (!partition) return;
+
+  const lang = getLang();
+  const t = translations[lang] || translations.th;
+  const source = partition.getProfileById(sourceProfileId);
+  if (!source) return;
+
+  try {
+    const cloned = partition.cloneProfile(sourceProfileId, {
+      name: `${source.name} (Copy)`,
+      nameTh: `${source.nameTh || source.name} (สำเนา)`,
+    });
+    updateProfileUI(lang);
+    const msg = (t.profileClonedSuccess || 'Cloned profile {name}').replace('{name}', cloned.name);
+    if (typeof MoneyApp !== 'undefined' && MoneyApp.announce) {
+      MoneyApp.announce(msg);
+    }
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+function deleteAppProfile(profileId) {
+  const partition = getPartitionEngine();
+  if (!partition) return;
+
+  const lang = getLang();
+  const t = translations[lang] || translations.th;
+  const target = partition.getProfileById(profileId);
+  if (!target) return;
+
+  const displayName = lang === 'th' ? target.nameTh || target.name : target.name;
+  const confirmMsg = (t.profileDeleteConfirm || 'Delete profile {name}?').replace('{name}', displayName);
+
+  if (typeof window !== 'undefined' && window.confirm && !window.confirm(confirmMsg)) {
+    return;
+  }
+
+  try {
+    partition.deleteProfile(profileId);
+    updateProfileUI(lang);
+    const msg = t.profileDeletedSuccess || 'Profile deleted successfully';
+    if (typeof MoneyApp !== 'undefined' && MoneyApp.announce) {
+      MoneyApp.announce(msg);
+    }
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.toggleProfileMenu = toggleProfileMenu;
+  window.updateProfileUI = updateProfileUI;
+  window.updateProfileSettingsUI = updateProfileSettingsUI;
+  window.switchAppProfile = switchAppProfile;
+  window.toggleNewProfileForm = toggleNewProfileForm;
+  window.handleCreateProfileSubmit = handleCreateProfileSubmit;
+  window.cloneAppProfile = cloneAppProfile;
+  window.deleteAppProfile = deleteAppProfile;
+  window.openProfileManagerFromDropdown = openProfileManagerFromDropdown;
+
+  document.addEventListener('click', (e) => {
+    const container = document.getElementById('profileSwitcherContainer');
+    const menu = document.getElementById('profileDropdownMenu');
+    if (menu && container && !container.contains(e.target)) {
+      menu.style.display = 'none';
+      const btn = document.getElementById('btn-profile-switcher');
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+    }
+  });
+}
+
 function openSettingsModal() {
   updateGoogleUI();
   if (typeof updateAppLockSettingsUI === 'function') updateAppLockSettingsUI();
+  if (typeof updateProfileSettingsUI === 'function') updateProfileSettingsUI();
   runStorageHealthCheck(false);
   if (typeof updateStorageQuotaDisplay === 'function') updateStorageQuotaDisplay();
   document.getElementById('settingsModal').style.display = 'flex';

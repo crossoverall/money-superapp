@@ -193,16 +193,16 @@ flowchart LR
 | **Phase 132** | `v2.5.73` | Mobile Settings modal viewport overflow & scroll trapping fix | Level 1 | ✅ **Shipped** (`a5dbdd8`) |
 | **Phase 133** | `v2.5.74` | Rebalance quick-apply suggested top-up with budget deduction | Level 2 | ✅ **Shipped** (`86a56e6`) |
 | **Phase 134** | `v2.5.75` | Automated Asset Size & Zero-Dependency Budget Gate (`test:budget`) | Level 1 | ✅ **Shipped** (`315eed6`) |
-| **Phase 135** | `v2.5.76` | Easy E-Receipt & Tax Invoice Deduction Tracker (Pillar 2.3) | Level 2 | ✅ **Shipped** |
-| **Phase 136** | `v2.5.77` | Interactive Cash Flow Waterfall & Category Filtering (Pillar 3.2) | Level 2 | ⏳ Planned |
-| **Phase 137** | `v2.5.78` | Native Barcode / QR Camera Scanner for P2P Sync (Pillar 1.3) | Level 2 | ⏳ Planned |
-| **Phase 138** | `v2.5.79` | Joint Tax Filing & Spousal Exemption Optimizer (Pillar 5.2) | Level 2 | ⏳ Planned |
-| **Phase 139** | `v2.6.0`  | Multi-profile partition architecture (Personal / Family / Freelance) | Level 3 | ⏳ Planned |
+| **Phase 135** | `v2.5.76` | Easy E-Receipt & Tax Invoice Deduction Tracker (Pillar 2.3) | Level 2 | ✅ **Shipped** (`bd67179`) |
+| **Phase 136** | `v2.5.77` | Interactive Cash Flow Waterfall & Category Filtering (Pillar 3.2) | Level 2 | ✅ **Shipped** (`2dd1d80`) |
+| **Phase 137** | `v2.5.78` | Native Barcode / QR Camera Scanner for P2P Sync (Pillar 1.3) | Level 2 | ✅ **Shipped** (`8efd71a`) |
+| **Phase 138** | `v2.5.79` | Joint Tax Filing & Spousal Exemption Optimizer (Pillar 5.2) | Level 2 | ✅ **Shipped** (`dea1b3a`) |
+| **Phase 139** | `v2.6.0`  | Multi-profile partition architecture (Personal / Family / Freelance) | Level 3 | ✅ **Shipped** |
 
 ---
 
 ## Status Summary
 
 - **Previous Plan (`improvement-plan.md`):** **0 items left** (100% completed up through v2.5.63).
-- **Completed in this Session:** **Phases 123–131 (v2.5.64 – v2.5.72)** — 9 phases shipped & pushed.
-- **Remaining in Plan (`plan.md`):** **1 phase left** (Phase 132, targeting v2.6.0).
+- **All Improvement Roadmap Phases (Phases 123–139):** **100% Completed & Shipped (v2.6.0 Milestone Reached)**.
+- **Remaining in Plan (`plan.md`):** **0 phases left** (All 139 phases across 6 Pillars 100% complete).
