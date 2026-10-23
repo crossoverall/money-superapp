@@ -15,6 +15,24 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-23: Easy E-Receipt & Tax Invoice Deduction Tracker (Phase 135 / v2.5.76)
+- **Date & Context:** 2026-10-23, Pillar 2.3 Easy E-Receipt & e-Tax Invoice Deduction Tracker (`v2.5.76`).
+- **Problem:**
+  - Thai government tax stimulus ("Easy E-Receipt") allows up to 50,000 THB total deduction, but imposes a strict 20,000 THB sub-cap on Non-VAT electronic receipts (books, e-books, OTOP).
+  - Taxpayers manually grouping receipts often over-claim non-VAT receipts or miscalculate remaining headroom for VAT purchases.
+  - Adding hardcoded Thai strings in HTML without `data-i18n` triggers bilingual parity failures in English mode (`tests/bilingual-parity.test.mjs`).
+- **Solution & Invariants:**
+  1. **Dual Sub-Cap Statutory Engine (`evaluateEasyEReceiptDeduction`):**
+     - `effectiveNonVat = Math.min(nonVat, 20000)`.
+     - `effectiveVat = Math.min(vat, 50000 - effectiveNonVat)`.
+     - `totalEffective = effectiveVat + effectiveNonVat` (strictly <= 50,000 THB).
+     - Returns utilization percentage, remaining headroom, and marginal tax savings estimate.
+  2. **Interactive UI & Visual Quota Meter:**
+     - Dynamic progress bar in `tax-calculator-base.html` showing real-time utilization % and remaining quota.
+     - Synchronized sub-inputs for VAT vs Non-VAT stores that auto-aggregate into the main deduction field.
+  3. **Strict Bilingual DOM Parity:**
+     - Dynamic text containers start empty in HTML so English mode headless tests find zero untranslated Thai elements.
+
 ### 2026-10-23: Automated Asset Size & Zero-Dependency Budget Gate (Phase 134 / v2.5.75)
 - **Date & Context:** 2026-10-23, Pillar 6.2 Architectural Resilience & Zero-Dependency Budget Gate (`v2.5.75`).
 - **Problem:**

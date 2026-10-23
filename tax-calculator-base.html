@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="version" content="2.5.75">
+    <meta name="version" content="2.5.76">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self';">
     <script>
       try {
@@ -356,13 +356,44 @@
                         <input type="number" id="thaiEsgDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:outline-none text-sm" oninput="calculateTax()" aria-label="กองทุน ThaiESG">
                         <div id="warn-thaiesg" style="display:none; color:#d97706; font-size:11px; margin-top:3px; font-weight:500;"></div>
                     </div>
-                    <div>
+                    <div class="rounded-lg p-2.5 border" style="background:var(--panel); border-color:var(--line);">
                         <div class="flex items-center justify-between mb-1">
                             <label class="block text-xs font-medium text-gray-600" id="lbl-easyreceipt-deduct" data-i18n="lbl-easyreceipt-deduct">มาตรการ Easy E-Receipt (สูงสุด 50,000 บาท/ปี)</label>
                             <span class="text-xs text-gray-400 cursor-help" title="Easy E-Receipt: ค่าซื้อสินค้าหรือบริการที่มีใบกำกับภาษีอิเล็กทรอนิกส์ (e-Tax Invoice & e-Receipt) สูงสุด 50,000 บาท" id="tip-easyreceipt">ℹ️</span>
                         </div>
-                        <input type="number" id="easyReceiptDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:outline-none text-sm" oninput="calculateTax()" aria-label="มาตรการ Easy E-Receipt">
+                        <input type="number" id="easyReceiptDeduct" placeholder="0" class="w-full px-3 py-1.5 border rounded-lg focus:outline-none text-sm" oninput="handleEasyReceiptMainInput()" aria-label="มาตรการ Easy E-Receipt">
                         <div id="warn-easyreceipt" style="display:none; color:#d97706; font-size:11px; margin-top:3px; font-weight:500;"></div>
+
+                        <!-- Easy E-Receipt Quota Meter -->
+                        <div id="easyreceipt-meter-wrap" class="mt-2" style="display:none;">
+                            <div class="flex justify-between items-center text-[10px] text-gray-500 mb-1">
+                                <span id="lbl-easyreceipt-meter" data-i18n="lbl-easyreceipt-meter">โควตา Easy E-Receipt ที่ใช้ไป</span>
+                                <span id="val-easyreceipt-utilization" class="font-bold text-emerald-600">0% (0 / 50,000 ฿)</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden" style="background:var(--line);">
+                                <div id="bar-easyreceipt-meter" class="h-1.5 rounded-full bg-emerald-500 transition-all duration-300" style="width: 0%;"></div>
+                            </div>
+                            <div class="flex justify-between items-center text-[10px] text-gray-400 mt-1">
+                                <span id="txt-easyreceipt-rem"></span>
+                                <span id="txt-easyreceipt-savings" class="text-emerald-600 font-medium"></span>
+                            </div>
+                        </div>
+
+                        <!-- Category Breakdown Toggle -->
+                        <details class="mt-2 text-xs" id="details-easyreceipt-breakdown">
+                            <summary class="cursor-pointer text-gray-500 hover:text-emerald-600 select-none flex items-center gap-1 text-[11px]" id="lbl-easyreceipt-breakdown" data-i18n="lbl-easyreceipt-breakdown">🏷️ แยกตามประเภทร้านค้า (VAT vs ไม่จด VAT)</summary>
+                            <div class="space-y-2 mt-2 pt-2 border-t border-dashed" style="border-top-color:var(--line);">
+                                <div>
+                                    <label class="block text-[11px] text-gray-500 mb-0.5" id="lbl-easyreceipt-vat" data-i18n="lbl-easyreceipt-vat">1. ร้านค้าจด VAT (e-Tax Invoice สูงสุด 50,000 บาท)</label>
+                                    <input type="number" id="easyReceiptVat" placeholder="0" class="w-full px-2.5 py-1 border rounded text-xs focus:outline-none" oninput="handleEasyReceiptSubInput()" aria-label="e-Tax Invoice ร้านจด VAT">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-gray-500 mb-0.5" id="lbl-easyreceipt-nonvat" data-i18n="lbl-easyreceipt-nonvat">2. ร้านไม่จด VAT: หนังสือ/OTOP (e-Receipt สูงสุด 20,000 บาท)</label>
+                                    <input type="number" id="easyReceiptNonVat" placeholder="0" class="w-full px-2.5 py-1 border rounded text-xs focus:outline-none" oninput="handleEasyReceiptSubInput()" aria-label="e-Receipt ร้านไม่จด VAT">
+                                    <div id="warn-easyreceipt-nonvat" style="display:none; color:#d97706; font-size:10px; margin-top:2px;"></div>
+                                </div>
+                            </div>
+                        </details>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1" id="lbl-ins-deduct" data-i18n="lbl-ins-deduct">เบี้ยประกันชีวิต + สุขภาพ (สูงสุด 100,000 บาท/ปี)</label>
@@ -1076,7 +1107,7 @@
                     <span id="lbl-reset-tax" data-i18n="lbl-reset-tax">ล้างข้อมูล</span>
                 </button>
             </div>
-            <p class="text-xs text-gray-400">v2.5.75</p>
+            <p class="text-xs text-gray-400">v2.5.76</p>
         </div>
     </div>
 

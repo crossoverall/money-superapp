@@ -272,6 +272,70 @@
   }
 
   /**
+   * @typedef {Object} EasyEReceiptResult
+   * @property {number} vatAmount - Spent on electronic tax invoice (VAT registered)
+   * @property {number} nonVatAmount - Spent on electronic receipt (Non-VAT e.g. books, OTOP)
+   * @property {number} effectiveVat - Deductible VAT portion
+   * @property {number} effectiveNonVat - Deductible Non-VAT portion (capped at 20,000)
+   * @property {number} totalEffective - Combined deductible amount (capped at 50,000)
+   * @property {number} maxTotalCap - Combined ceiling (50,000)
+   * @property {number} maxNonVatCap - Non-VAT sub-ceiling (20,000)
+   * @property {number} remainingRoom - Remaining allowance headroom to reach 50,000
+   * @property {number} utilizationPct - Percentage of 50,000 allowance used (0 - 100)
+   * @property {boolean} isCapped - True if total or non-VAT exceeded ceiling
+   * @property {number} excessAmount - Total non-deductible excess spent
+   */
+
+  /**
+   * Evaluates Thai Easy E-Receipt / e-Tax Invoice government economic stimulus tax deduction.
+   * Statutory rules:
+   * - Total ceiling: 50,000 THB combined.
+   * - Non-VAT store ceiling (books, e-books, OTOP e-receipts): 20,000 THB max.
+   * - VAT store ceiling (e-Tax Invoice): up to remaining room within 50,000 THB.
+   *
+   * @param {number|string|Object} input - Total amount, or { vatAmount, nonVatAmount }
+   * @returns {EasyEReceiptResult}
+   */
+  function evaluateEasyEReceiptDeduction(input) {
+    var vat = 0;
+    var nonVat = 0;
+
+    if (input != null && typeof input === 'object') {
+      vat = Math.max(0, Number(input.vatAmount || input.eTaxInvoice || 0) || 0);
+      nonVat = Math.max(0, Number(input.nonVatAmount || input.eReceipt || 0) || 0);
+    } else {
+      vat = Math.max(0, Number(input) || 0);
+      nonVat = 0;
+    }
+
+    var maxTotalCap = 50000;
+    var maxNonVatCap = 20000;
+
+    var effectiveNonVat = Math.min(nonVat, maxNonVatCap);
+    var remainingCapForVat = maxTotalCap - effectiveNonVat;
+    var effectiveVat = Math.min(vat, remainingCapForVat);
+    var totalEffective = effectiveVat + effectiveNonVat;
+    var remainingRoom = Math.max(0, maxTotalCap - totalEffective);
+    var utilizationPct = parseFloat(((totalEffective / maxTotalCap) * 100).toFixed(1));
+    var isCapped = vat + nonVat > maxTotalCap || nonVat > maxNonVatCap;
+    var excessAmount = Math.max(0, vat + nonVat - totalEffective);
+
+    return {
+      vatAmount: vat,
+      nonVatAmount: nonVat,
+      effectiveVat: effectiveVat,
+      effectiveNonVat: effectiveNonVat,
+      totalEffective: totalEffective,
+      maxTotalCap: maxTotalCap,
+      maxNonVatCap: maxNonVatCap,
+      remainingRoom: remainingRoom,
+      utilizationPct: utilizationPct,
+      isCapped: isCapped,
+      excessAmount: excessAmount,
+    };
+  }
+
+  /**
    * @typedef {Object} ThaiEFilingChecklistItem
    * @property {string} id - Checklist requirement identifier
    * @property {boolean} completed - True if requirement is verified
@@ -421,7 +485,7 @@
     var salary = Number(p.salary) || 0;
     var bonus = Number(p.bonus) || 0;
     var yearlyIncome = Number(p.yearlyIncome) || 0;
-    var income401 = salary * 12 + bonus + yearlyIncome;
+    var income401 = Number(p.income401) || salary * 12 + bonus + yearlyIncome;
     var income402 = Number(p.freelance402) || 0;
     var dividend404b = Number(p.dividend404b) || 0;
     var citRate = typeof p.dividendCitRate === 'number' ? p.dividendCitRate : 0.2;
@@ -491,7 +555,15 @@
     var totalDonationAllowable = Math.min(maxDonationCap, donationEdu + donationGeneral);
     var groupD = totalDonationAllowable;
 
-    var totalDeductions = groupA + groupB + groupC + groupD;
+    // Group E: Economic stimulus & special measures (Easy E-Receipt / e-Tax Invoice)
+    var easyReceiptInput = p.easyReceipt || {
+      vatAmount: p.easyReceiptVat != null ? p.easyReceiptVat : p.easyReceiptDeduct,
+      nonVatAmount: p.easyReceiptNonVat || 0,
+    };
+    var easyReceiptEval = evaluateEasyEReceiptDeduction(easyReceiptInput);
+    var groupE = easyReceiptEval.totalEffective;
+
+    var totalDeductions = groupA + groupB + groupC + groupD + groupE;
     var netTaxableIncome = Math.max(0, incomeAfterExpense - totalDeductions);
 
     // Progressive Tax Calculation
@@ -548,6 +620,7 @@
         groupB: groupB,
         groupC: groupC,
         groupD: groupD,
+        groupE: groupE,
         totalDeductions: totalDeductions,
       },
       netTaxableIncome: netTaxableIncome,
@@ -562,6 +635,7 @@
       installment3Months: installmentAmount,
       retirementPool: retirementPool,
       thaiEsg: thaiEsgEval,
+      easyReceipt: easyReceiptEval,
     };
   }
 
@@ -769,6 +843,7 @@
   MoneyApp.calculateTaxBracketStepDown = calculateTaxBracketStepDown;
   MoneyApp.calculateRetirementCeilingPool = calculateRetirementCeilingPool;
   MoneyApp.evaluateThaiEsgDeduction = evaluateThaiEsgDeduction;
+  MoneyApp.evaluateEasyEReceiptDeduction = evaluateEasyEReceiptDeduction;
   MoneyApp.evaluateEFilingPreFlightChecklist = evaluateEFilingPreFlightChecklist;
   MoneyApp.calculateThaiEFilingWorksheet = calculateThaiEFilingWorksheet;
   MoneyApp.calculateThaiDividendTaxCredit = calculateThaiDividendTaxCredit;
@@ -791,6 +866,9 @@
     }
     if (typeof global.evaluateThaiEsgDeduction === 'undefined') {
       global.evaluateThaiEsgDeduction = evaluateThaiEsgDeduction;
+    }
+    if (typeof global.evaluateEasyEReceiptDeduction === 'undefined') {
+      global.evaluateEasyEReceiptDeduction = evaluateEasyEReceiptDeduction;
     }
     if (typeof global.evaluateEFilingPreFlightChecklist === 'undefined') {
       global.evaluateEFilingPreFlightChecklist = evaluateEFilingPreFlightChecklist;

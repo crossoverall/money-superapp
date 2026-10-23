@@ -1,5 +1,5 @@
 ---
-task_id: "phase-134-asset-size-zero-dep-budget-gate"
+task_id: "phase-135-easy-e-receipt-tracker"
 status: "completed"
 current_stage: "idle"
 iteration_count: 1
@@ -20,24 +20,35 @@ pipeline:
     status: "completed"
 ---
 
-### Feature Specification: Phase 134 — Automated Asset Size & Zero-Dependency Budget Gate (Pillar 6.2)
+### Feature Specification: Phase 135 — Easy E-Receipt & Tax Invoice Deduction Tracker (Pillar 2.3)
 
 #### 1. Goal & Requirements
-- **Goal:** Provide automated continuous verification that:
-  1. `package.json` contains strictly 0 runtime dependencies (`dependencies` is empty or undefined), enforcing ADR-001 permanent client-side autonomy.
-  2. The standalone bundle for every HTML tool (HTML + inline scripts + linked JS/CSS entry points) stays within strict performance budgets (<250KB per entry point uncompressed, and total critical shell assets stay lean).
-  3. No external script or stylesheet CDNs (`https://`, `http://`, `//`) are referenced anywhere across all 8 HTML tools, guaranteeing 100% offline-first PWA compliance.
-  4. Service worker `sw.js` cache manifest stays 100% synchronized with actual disk assets so zero 404s or stale references can ever be shipped.
-  5. Add `npm run test:budget` script or integrate directly into the automated CI test suite.
+- **Goal:** Implement comprehensive Thai Easy E-Receipt & e-Tax Invoice deduction engine and interactive tracker:
+  1. `js/engines/thai-pit.js`: Implement `evaluateEasyEReceiptDeduction({ vatAmount, nonVatAmount })` with strict statutory limits:
+     - Combined maximum ceiling: 50,000 THB.
+     - Non-VAT store ceiling (books, e-books, OTOP e-receipts): 20,000 THB max.
+     - VAT store ceiling (e-Tax Invoice): up to 50,000 THB (capped at remaining headroom).
+     - Returns utilization percentage, allowable deduction, non-deductible excess, and remaining room.
+  2. Integrate into `calculateThaiEFilingWorksheet` in `js/engines/thai-pit.js` under stimulus deductions.
+  3. `tax-calculator-base.html` & `js/tax-calculator-base.js`:
+     - Provide dual breakdown inputs (e-Tax Invoice VAT vs e-Receipt Non-VAT) alongside the aggregate input.
+     - Interactive deduction progress meter with 20k non-VAT sub-cap and 50k total cap markers.
+     - Marginal tax bracket savings calculation.
+  4. Bilingual translations in `translations.th` and `translations.en`.
+  5. Dedicated test suite `tests/easy-e-receipt.test.mjs` + type contract verification.
 
 #### 2. Architecture & Decision Alignment
 - **Affected Files:**
-  - `tests/asset-budget.test.mjs`: New dedicated test suite testing runtime dependency absence, per-tool payload budgets, zero external CDN link invariants, and SW cache manifest integrity.
-  - `package.json`: Add `"test:budget": "node --test tests/asset-budget.test.mjs"`.
+  - `js/engines/thai-pit.js`: Implement `evaluateEasyEReceiptDeduction` and export via `MoneyApp`.
+  - `tax-calculator-base.html`: Add sub-inputs for VAT vs Non-VAT e-receipts and visual progress meter.
+  - `js/tax-calculator-base.js`: Wire input synchronization, progress meter rendering, and translations.
+  - `tests/easy-e-receipt.test.mjs`: Dedicated test suite testing mathematical boundaries, sub-cap rules, and UI synchronization.
+  - `tests/type-contracts.test.mjs`: Type contract verification for `evaluateEasyEReceiptDeduction`.
 
 #### 3. Step-by-Step Implementation Plan
-- **Step 1:** Author `tests/asset-budget.test.mjs` verifying ADR-001 zero dependencies, per-page payload budgets, offline self-containment, and SW sync.
-- **Step 2:** Update `package.json` with `test:budget` script.
-- **Step 3:** Run `npm run lint` and `npm test` across all 756+ tests to verify green baseline.
-- **Step 4:** Execute Code & Security Review.
-- **Step 5:** Record lessons in `.ai/memory/lessons.md`, bump patch version, and git push.
+- **Step 1:** Implement `evaluateEasyEReceiptDeduction` and update `calculateThaiEFilingWorksheet` in `js/engines/thai-pit.js`.
+- **Step 2:** Update `tax-calculator-base.html` with dual breakdown fields and visual ceiling meter.
+- **Step 3:** Update `js/tax-calculator-base.js` with calculation logic, input handlers, and bilingual translations.
+- **Step 4:** Author `tests/easy-e-receipt.test.mjs` and update `tests/type-contracts.test.mjs`.
+- **Step 5:** Run `npm run lint` and `npm test` across all 776+ tests.
+- **Step 6:** Review code and security, document lessons in `.ai/memory/lessons.md`, bump version to `v2.5.76`, and git push.

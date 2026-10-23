@@ -40,6 +40,10 @@ const translations = {
     'lbl-fund-deduct': 'กองทุนเพื่อการเกษียณ: SSF / RMF (รวม PVD ไม่เกิน 5 แสนบาท/ปี)',
     'lbl-thaiesg-deduct': 'กองทุนรวมไทยเพื่อความยั่งยืน ThaiESG (ไม่เกิน 300,000 บาท/ปี)',
     'lbl-easyreceipt-deduct': 'โครงการ Easy E-Receipt (สูงสุด 50,000 บาท/ปี)',
+    'lbl-easyreceipt-meter': 'โควตา Easy E-Receipt ที่ใช้ไป',
+    'lbl-easyreceipt-breakdown': '🏷️ แยกตามประเภทร้านค้า (VAT vs ไม่จด VAT)',
+    'lbl-easyreceipt-vat': '1. ร้านค้าจด VAT (e-Tax Invoice สูงสุด 50,000 บาท)',
+    'lbl-easyreceipt-nonvat': '2. ร้านไม่จด VAT: หนังสือ/OTOP (e-Receipt สูงสุด 20,000 บาท)',
     'lbl-ins-deduct': 'เบี้ยประกันชีวิตและสุขภาพ (ไม่เกิน 100,000 บาท/ปี)',
     'lbl-mortgage-deduct': 'ดอกเบี้ยเงินกู้ยืมเพื่อซื้อที่อยู่อาศัย (ไม่เกิน 100,000 บาท/ปี)',
     'lbl-other-deduct': 'ลดหย่อนอื่นๆ เช่น บิดามารดา บุตร เงินบริจาค (บาท/ปี)',
@@ -245,6 +249,10 @@ const translations = {
     'lbl-fund-deduct': 'Retirement Funds: SSF / RMF (incl. PVD max 500k THB/yr)',
     'lbl-thaiesg-deduct': 'ThaiESG Fund (max 300k THB/yr)',
     'lbl-easyreceipt-deduct': 'Easy E-Receipt Scheme (max 50,000 THB/yr)',
+    'lbl-easyreceipt-meter': 'Easy E-Receipt Quota Utilized',
+    'lbl-easyreceipt-breakdown': '🏷️ Breakdown by Merchant Type (VAT vs Non-VAT)',
+    'lbl-easyreceipt-vat': '1. VAT Merchants (e-Tax Invoice max 50,000 THB)',
+    'lbl-easyreceipt-nonvat': '2. Non-VAT Merchants: Books/OTOP (e-Receipt max 20,000 THB)',
     'lbl-ins-deduct': 'Life & Health Insurance (max 100k THB/yr)',
     'lbl-mortgage-deduct': 'Mortgage loan interest (max 100k THB/yr)',
     'lbl-other-deduct': 'Other deductions (parents, children, donation) (THB/yr)',
@@ -585,6 +593,10 @@ function saveState() {
     thaiEsgDeduct: document.getElementById('thaiEsgDeduct') ? document.getElementById('thaiEsgDeduct').value : '',
     easyReceiptDeduct: document.getElementById('easyReceiptDeduct')
       ? document.getElementById('easyReceiptDeduct').value
+      : '',
+    easyReceiptVat: document.getElementById('easyReceiptVat') ? document.getElementById('easyReceiptVat').value : '',
+    easyReceiptNonVat: document.getElementById('easyReceiptNonVat')
+      ? document.getElementById('easyReceiptNonVat').value
       : '',
     insuranceDeduct: document.getElementById('insuranceDeduct').value,
     mortgageDeduct: document.getElementById('mortgageDeduct').value,
@@ -1187,6 +1199,23 @@ window.setDividendPreset = setDividendPreset;
 window.toggleApplyDividendToTax = toggleApplyDividendToTax;
 window.updateDividendTaxCreditUI = updateDividendTaxCreditUI;
 
+function handleEasyReceiptMainInput() {
+  calculateTax();
+}
+
+function handleEasyReceiptSubInput() {
+  const v = parseNum(document.getElementById('easyReceiptVat')?.value) || 0;
+  const nv = parseNum(document.getElementById('easyReceiptNonVat')?.value) || 0;
+  const mainInput = document.getElementById('easyReceiptDeduct');
+  if (mainInput) {
+    mainInput.value = v + nv > 0 ? v + nv : '';
+  }
+  calculateTax();
+}
+
+window.handleEasyReceiptMainInput = handleEasyReceiptMainInput;
+window.handleEasyReceiptSubInput = handleEasyReceiptSubInput;
+
 function calculateTax() {
   saveState();
 
@@ -1374,18 +1403,73 @@ function calculateTax() {
     }
   }
 
-  // 5. Easy E-Receipt: สูงสุด 50,000 บาท
-  const effectiveEasyReceipt = Math.min(easyReceiptDeduct, 50000);
+  // 5. Easy E-Receipt: สูงสุด 50,000 บาท (VAT max 50,000 / Non-VAT max 20,000)
+  const easyVat = parseNum(document.getElementById('easyReceiptVat')?.value);
+  const easyNonVat = parseNum(document.getElementById('easyReceiptNonVat')?.value);
+  const easyInput =
+    easyVat > 0 || easyNonVat > 0 ? { vatAmount: easyVat, nonVatAmount: easyNonVat } : easyReceiptDeduct;
+  const easyReceiptEval =
+    typeof MoneyApp !== 'undefined' && typeof MoneyApp.evaluateEasyEReceiptDeduction === 'function'
+      ? MoneyApp.evaluateEasyEReceiptDeduction(easyInput)
+      : {
+          vatAmount: easyVat,
+          nonVatAmount: easyNonVat,
+          effectiveVat: Math.min(easyVat, 50000 - Math.min(easyNonVat, 20000)),
+          effectiveNonVat: Math.min(easyNonVat, 20000),
+          totalEffective: Math.min(easyReceiptDeduct, 50000),
+          remainingRoom: Math.max(0, 50000 - Math.min(easyReceiptDeduct, 50000)),
+          utilizationPct: parseFloat(((Math.min(easyReceiptDeduct, 50000) / 50000) * 100).toFixed(1)),
+          isCapped: easyReceiptDeduct > 50000,
+          excessAmount: Math.max(0, easyReceiptDeduct - 50000),
+        };
+  const effectiveEasyReceipt = easyReceiptEval.totalEffective;
+
   const warnEasyReceiptEl = document.getElementById('warn-easyreceipt');
   if (warnEasyReceiptEl) {
-    if (easyReceiptDeduct > 50000) {
+    if (easyReceiptEval.isCapped) {
       warnEasyReceiptEl.textContent =
         LANG === 'en'
-          ? `⚠️ Capped at 50,000 THB (excess of ${formatMoney(easyReceiptDeduct - 50000)} THB not deductible)`
-          : `⚠️ ใช้สิทธิ์ได้สูงสุด 50,000 บาท (ส่วนเกิน ${formatMoney(easyReceiptDeduct - 50000)} บาท ไม่นำมาลดหย่อน)`;
+          ? `⚠️ Capped at 50,000 THB (excess of ${formatMoney(easyReceiptEval.excessAmount)} THB not deductible)`
+          : `⚠️ ใช้สิทธิ์ได้สูงสุด 50,000 บาท (ส่วนเกิน ${formatMoney(easyReceiptEval.excessAmount)} บาท ไม่นำมาลดหย่อน)`;
       warnEasyReceiptEl.style.display = 'block';
     } else {
       warnEasyReceiptEl.style.display = 'none';
+    }
+  }
+
+  const warnNonVatEl = document.getElementById('warn-easyreceipt-nonvat');
+  if (warnNonVatEl) {
+    if (easyNonVat > 20000) {
+      warnNonVatEl.textContent =
+        LANG === 'en'
+          ? `⚠️ Non-VAT e-Receipts capped at 20,000 THB (excess: ${formatMoney(easyNonVat - 20000)} THB)`
+          : `⚠️ ใบเสร็จร้านไม่จด VAT ใช้ได้สูงสุด 20,000 บาท (ส่วนเกิน ${formatMoney(easyNonVat - 20000)} บาท)`;
+      warnNonVatEl.style.display = 'block';
+    } else {
+      warnNonVatEl.style.display = 'none';
+    }
+  }
+
+  // Update meter
+  const meterWrap = document.getElementById('easyreceipt-meter-wrap');
+  if (meterWrap) {
+    if (easyReceiptDeduct > 0 || easyVat > 0 || easyNonVat > 0) {
+      meterWrap.style.display = 'block';
+      const barMeterEl = document.getElementById('bar-easyreceipt-meter');
+      if (barMeterEl) barMeterEl.style.width = `${Math.min(100, easyReceiptEval.utilizationPct)}%`;
+      const utilEl = document.getElementById('val-easyreceipt-utilization');
+      if (utilEl) {
+        utilEl.textContent = `${easyReceiptEval.utilizationPct}% (${formatMoney(easyReceiptEval.totalEffective)} / 50,000 ฿)`;
+      }
+      const remEl = document.getElementById('txt-easyreceipt-rem');
+      if (remEl) {
+        remEl.textContent =
+          LANG === 'en'
+            ? `Remaining: ${formatMoney(easyReceiptEval.remainingRoom)} THB`
+            : `สิทธิ์คงเหลือ: ${formatMoney(easyReceiptEval.remainingRoom)} บาท`;
+      }
+    } else {
+      meterWrap.style.display = 'none';
     }
   }
 
@@ -1400,6 +1484,20 @@ function calculateTax() {
   const wf = computeTaxWaterfall(netIncome);
   const tax = wf.totalTax;
   const isEn = LANG === 'en';
+
+  const savingsEl = document.getElementById('txt-easyreceipt-savings');
+  if (savingsEl) {
+    if (effectiveEasyReceipt > 0) {
+      const topRate = wf.topMarginalRate || 0;
+      const estSavings = Math.round(effectiveEasyReceipt * topRate);
+      savingsEl.textContent =
+        LANG === 'en'
+          ? `Est. tax savings: ~${formatMoney(estSavings)} THB`
+          : `ประหยัดภาษี: ~${formatMoney(estSavings)} บาท`;
+    } else {
+      savingsEl.textContent = '';
+    }
+  }
 
   // 1. Effective Tax Rate
   const effEl = document.getElementById('txt-effective-tax-rate');
@@ -3016,3 +3114,5 @@ window.generateTaxDossierCSV = generateTaxDossierCSV;
 window.openDriveModal = openDriveModal;
 window.closeDriveModal = closeDriveModal;
 window.saveToGoogleDrive = saveToGoogleDrive;
+window.handleEasyReceiptMainInput = handleEasyReceiptMainInput;
+window.handleEasyReceiptSubInput = handleEasyReceiptSubInput;

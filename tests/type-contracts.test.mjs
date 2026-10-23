@@ -183,6 +183,24 @@ describe('Pillar 6 Type Contracts Verification Suite (Core Engines Batch 1)', ()
       assert.strictEqual(typeof res.holdingYears, 'number');
     });
 
+    it('evaluateEasyEReceiptDeduction conforms to EasyEReceiptResult schema', () => {
+      const res = MoneyApp.evaluateEasyEReceiptDeduction({ vatAmount: 35000, nonVatAmount: 25000 });
+      assert.ok(res && typeof res === 'object');
+      assert.strictEqual(typeof res.vatAmount, 'number');
+      assert.strictEqual(typeof res.nonVatAmount, 'number');
+      assert.strictEqual(typeof res.effectiveVat, 'number');
+      assert.strictEqual(typeof res.effectiveNonVat, 'number');
+      assert.strictEqual(typeof res.totalEffective, 'number');
+      assert.strictEqual(typeof res.maxTotalCap, 'number');
+      assert.strictEqual(typeof res.maxNonVatCap, 'number');
+      assert.strictEqual(typeof res.remainingRoom, 'number');
+      assert.strictEqual(typeof res.utilizationPct, 'number');
+      assert.strictEqual(typeof res.isCapped, 'boolean');
+      assert.strictEqual(typeof res.excessAmount, 'number');
+      assert.strictEqual(res.effectiveNonVat, 20000);
+      assert.strictEqual(res.totalEffective, 50000);
+    });
+
     it('calculateThaiDividendTaxCredit conforms to ThaiDividendTaxCreditResult schema', () => {
       const res = MoneyApp.calculateThaiDividendTaxCredit({
         dividends: 100000,
