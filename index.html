@@ -1151,10 +1151,24 @@
     <!-- Camera Video Viewport (if supported) -->
     <div id="qrCameraContainer" style="position: relative; width: 100%; height: 210px; background: #000000; border-radius: 10px; overflow: hidden; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid #24352C;">
       <video id="qrScanVideo" playsinline autoplay muted style="width: 100%; height: 100%; object-fit: cover;"></video>
-      <div id="qrCameraOverlay" style="position: absolute; border: 2px dashed #4FA894; width: 150px; height: 150px; border-radius: 12px; pointer-events: none; box-shadow: 0 0 0 9999px rgba(0,0,0,0.35);"></div>
+      <div id="qrCameraOverlay" style="position: absolute; border: 2px dashed #4FA894; width: 150px; height: 150px; border-radius: 12px; pointer-events: none; box-shadow: 0 0 0 9999px rgba(0,0,0,0.35); transition: border-color 0.2s ease;"></div>
       <div id="qrCameraFallbackNotice" style="display: none; padding: 14px; text-align: center; color: #94a3b8; font-size: 11.5px;" data-i18n="qrCameraFallback">
-        📷 กล้องไม่พร้อมใช้งาน หรือเบราว์เซอร์ไม่รองรับ BarcodeDetector คุณสามารถวางโค้ด JSON ชิ้นส่วนด้านล่างเพื่อนำเข้าได้
+        📷 กล้องไม่พร้อมใช้งาน หรือเบราว์เซอร์ไม่รองรับ BarcodeDetector คุณสามารถวางโค้ด JSON ชิ้นส่วนด้านล่าง
       </div>
+    </div>
+
+    <!-- Camera Controls & Image Picker -->
+    <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+      <button type="button" onclick="toggleQrCameraFacing()" id="btn-qr-switch-camera" style="display: none; background: #1e293b; color: #e2e8f0; border: 1px solid #334155; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;">
+        <span id="lbl-btn-qr-switch-camera" data-i18n="qrBtnSwitchCamera">🔄 สลับกล้อง</span>
+      </button>
+      <button type="button" onclick="toggleQrCameraTorch()" id="btn-qr-torch" style="display: none; background: #1e293b; color: #e2e8f0; border: 1px solid #334155; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;">
+        <span id="lbl-btn-qr-torch" data-i18n="qrBtnTorch">💡 ไฟฉาย</span>
+      </button>
+      <input type="file" id="qrImageFileInput" accept="image/*" style="display: none;" onchange="handleQrImageUpload(this)">
+      <button type="button" onclick="document.getElementById('qrImageFileInput').click()" id="btn-qr-pick-image" style="background: #0284c7; color: #ffffff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;">
+        <span id="lbl-btn-qr-pick-image" data-i18n="qrBtnPickImage">🖼️ เลือกรูปภาพ QR</span>
+      </button>
     </div>
 
     <!-- Chunk Ingestion Progress Tracker -->

@@ -15,6 +15,25 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-23: Native Barcode / QR Camera Scanner for P2P Device Migration (Phase 137 / v2.5.78)
+- **Date & Context:** 2026-10-23, Pillar 1.3 Native Barcode / QR Camera Scanner for P2P Sync (`v2.5.78`).
+- **Problem:**
+  - P2P offline transfer relied on camera streams with no camera flip, no torch support, and no image file upload fallback for devices with camera access restrictions or legacy browser environments.
+  - In unit tests loaded in `node:vm` contexts, timer APIs (`setTimeout`, `clearTimeout`) and global audio constructors must be explicitly mapped on the sandbox object to prevent silent catch failures.
+- **Solution & Invariants:**
+  1. **Native Barcode & Image Decoder Engine (`js/engines/p2p-sync.js`):**
+     - Implemented `isBarcodeDetectorSupported()`, `createBarcodeDetector()`, and `scanQrFromSource(detector, source)` supporting video elements, canvas elements, Image elements, and ImageBitmaps.
+     - Added native zero-dependency audio feedback via `playScanFeedbackChime()` using Web Audio API oscillator synthesis (sine wave ramp, 0 external audio assets).
+  2. **Camera Controls & Image File Ingestion (`index.html` & `js/app-shell.js`):**
+     - Added rear/front camera toggle (`toggleQrCameraFacing`) and flashlight toggle (`toggleQrCameraTorch`).
+     - Added native image file picker (`handleQrImageUpload`) to decode QR screenshots directly using `createImageBitmap` and `BarcodeDetector`.
+     - Multi-sensory capture feedback: green flash border on `#qrCameraOverlay`, audio chime, and haptic vibration (`navigator.vibrate?.(50)`).
+  3. **Quality Gates & Invariants:**
+     - 100% key symmetry between Thai and English in `translations.th` and `translations.en`.
+     - Added unit tests in `tests/p2p-scanner.test.mjs` (5/5 passing).
+     - Full test suite passed across all 793 tests (0 failures).
+
+
 ### 2026-10-23: Interactive Cash Flow Waterfall & Category Filtering (Phase 136 / v2.5.77)
 - **Date & Context:** 2026-10-23, Pillar 3.2 Interactive Cash Flow Waterfall & Category Filtering (`v2.5.77`).
 - **Problem:**

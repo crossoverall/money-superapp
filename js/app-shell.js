@@ -102,6 +102,10 @@ const translations = {
     badgeOnboardDrive: '☁️ ซิงค์ Google Drive ได้',
     badgeOnboardKeys: '⌨️ คีย์ลัด Alt+1..7',
     qrCameraFallback: '📷 กล้องไม่พร้อมใช้งาน หรือเบราว์เซอร์ไม่รองรับ BarcodeDetector คุณสามารถวางโค้ด JSON ชิ้นส่วนด้านล่าง',
+    qrBtnSwitchCamera: '🔄 สลับกล้อง',
+    qrBtnTorch: '💡 ไฟฉาย',
+    qrBtnPickImage: '🖼️ เลือกรูปภาพ QR',
+    qrImageDecodeError: '⚠️ ไม่พบ QR Code ในรูปภาพที่เลือก กรุณาลองใหม่อีกครั้ง',
     cacheQuotaTitle: 'โควต้าพื้นที่และแคชออฟไลน์ (Storage & Cache Quota)',
     cacheQuotaDesc: 'ตรวจสอบขนาดพื้นที่จัดเก็บในอุปกรณ์และสถานะแคชออฟไลน์ของระบบ',
     cacheVersionLabel: 'เวอร์ชันแคชที่ใช้งาน:',
@@ -213,6 +217,10 @@ const translations = {
     badgeOnboardDrive: '☁️ Optional Google Drive Sync',
     badgeOnboardKeys: '⌨️ Shortcuts Alt+1..7',
     qrCameraFallback: '📷 Camera unavailable or BarcodeDetector not supported. You can paste slice JSON below.',
+    qrBtnSwitchCamera: '🔄 Flip Camera',
+    qrBtnTorch: '💡 Flashlight',
+    qrBtnPickImage: '🖼️ Pick QR Image',
+    qrImageDecodeError: '⚠️ No valid QR code detected in the selected image. Please try again.',
     cacheQuotaTitle: 'Storage Quota & Offline Cache',
     cacheQuotaDesc: 'Monitor device storage quota usage and offline cache health',
     cacheVersionLabel: 'Active Cache Version:',
@@ -499,6 +507,12 @@ function applyLang(lang) {
     document.getElementById('badge-onboard-keys').textContent = t.badgeOnboardKeys;
   if (document.getElementById('qrCameraFallbackNotice'))
     document.getElementById('qrCameraFallbackNotice').textContent = t.qrCameraFallback;
+  if (document.getElementById('lbl-btn-qr-switch-camera'))
+    document.getElementById('lbl-btn-qr-switch-camera').textContent = t.qrBtnSwitchCamera;
+  if (document.getElementById('lbl-btn-qr-torch'))
+    document.getElementById('lbl-btn-qr-torch').textContent = t.qrBtnTorch;
+  if (document.getElementById('lbl-btn-qr-pick-image'))
+    document.getElementById('lbl-btn-qr-pick-image').textContent = t.qrBtnPickImage;
 
   if (document.getElementById('lbl-pwa-install'))
     document.getElementById('lbl-pwa-install').textContent = t.pwaInstallBtn;
@@ -1702,17 +1716,30 @@ function copyQrCurrentChunk() {
   }
 }
 
-async function openQrImportModal() {
-  qrImportedChunks = {};
-  qrImportExpectedTotal = 0;
-  qrImportSessionId = null;
-  updateQrImportUI();
+let qrCameraFacing = 'environment';
+let qrTorchEnabled = false;
 
-  const modal = document.getElementById('qrImportModal');
-  if (modal) modal.style.display = 'flex';
-
+async function initQrCamera() {
   const video = document.getElementById('qrScanVideo');
   const fallback = document.getElementById('qrCameraFallbackNotice');
+  const btnSwitch = document.getElementById('btn-qr-switch-camera');
+  const btnTorch = document.getElementById('btn-qr-torch');
+
+  if (qrScanInterval) {
+    clearInterval(qrScanInterval);
+    qrScanInterval = null;
+  }
+  if (qrScanStream) {
+    qrScanStream.getTracks().forEach((track) => {
+      track.stop();
+    });
+    qrScanStream = null;
+  }
+  qrTorchEnabled = false;
+  if (btnTorch) {
+    btnTorch.style.background = '#1e293b';
+    btnTorch.style.color = '#e2e8f0';
+  }
 
   if (
     typeof navigator !== 'undefined' &&
@@ -1724,22 +1751,46 @@ async function openQrImportModal() {
       if (fallback) fallback.style.display = 'none';
       if (video) video.style.display = 'block';
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
+        video: { facingMode: qrCameraFacing },
       });
       qrScanStream = stream;
       if (video) {
         video.srcObject = stream;
         await video.play();
       }
+      if (btnSwitch) btnSwitch.style.display = 'inline-block';
+
+      const track = stream.getVideoTracks()[0];
+      const caps = track?.getCapabilities ? track.getCapabilities() : null;
+      if (btnTorch) {
+        btnTorch.style.display = caps?.torch ? 'inline-block' : 'none';
+      }
+
       startBarcodeScannerLoop(video);
     } catch (_err) {
       if (fallback) fallback.style.display = 'block';
       if (video) video.style.display = 'none';
+      if (btnSwitch) btnSwitch.style.display = 'none';
+      if (btnTorch) btnTorch.style.display = 'none';
     }
   } else {
     if (fallback) fallback.style.display = 'block';
     if (video) video.style.display = 'none';
+    if (btnSwitch) btnSwitch.style.display = 'none';
+    if (btnTorch) btnTorch.style.display = 'none';
   }
+}
+
+async function openQrImportModal() {
+  qrImportedChunks = {};
+  qrImportExpectedTotal = 0;
+  qrImportSessionId = null;
+  updateQrImportUI();
+
+  const modal = document.getElementById('qrImportModal');
+  if (modal) modal.style.display = 'flex';
+
+  await initQrCamera();
 }
 
 function closeQrImportModal() {
@@ -1753,8 +1804,80 @@ function closeQrImportModal() {
     });
     qrScanStream = null;
   }
+  qrTorchEnabled = false;
+  const btnTorch = document.getElementById('btn-qr-torch');
+  if (btnTorch) {
+    btnTorch.style.display = 'none';
+    btnTorch.style.background = '#1e293b';
+    btnTorch.style.color = '#e2e8f0';
+  }
+  const btnSwitch = document.getElementById('btn-qr-switch-camera');
+  if (btnSwitch) btnSwitch.style.display = 'none';
+
   const modal = document.getElementById('qrImportModal');
   if (modal) modal.style.display = 'none';
+}
+
+async function toggleQrCameraFacing() {
+  qrCameraFacing = qrCameraFacing === 'environment' ? 'user' : 'environment';
+  await initQrCamera();
+}
+
+async function toggleQrCameraTorch() {
+  const track = qrScanStream?.getVideoTracks?.()[0];
+  if (!track) return;
+  try {
+    qrTorchEnabled = !qrTorchEnabled;
+    await track.applyConstraints({
+      advanced: [{ torch: qrTorchEnabled }],
+    });
+    const btnTorch = document.getElementById('btn-qr-torch');
+    if (btnTorch) {
+      btnTorch.style.background = qrTorchEnabled ? '#f59e0b' : '#1e293b';
+      btnTorch.style.color = qrTorchEnabled ? '#000000' : '#e2e8f0';
+    }
+  } catch (_e) {}
+}
+
+async function handleQrImageUpload(input) {
+  if (!input?.files || input.files.length === 0) return;
+  const file = input.files[0];
+  input.value = '';
+  const isEn = getLang() === 'en';
+  try {
+    const detector =
+      MoneyApp.createBarcodeDetector?.() ||
+      (typeof window.BarcodeDetector !== 'undefined' ? new window.BarcodeDetector({ formats: ['qr_code'] }) : null);
+    if (!detector) {
+      alert(isEn ? 'BarcodeDetector API is not supported on this browser.' : 'เบราว์เซอร์ไม่รองรับระบบตรวจจับ Barcode / QR');
+      return;
+    }
+    const bitmap = await createImageBitmap(file);
+    const barcodes = await detector.detect(bitmap);
+    if (barcodes && barcodes.length > 0) {
+      let captured = false;
+      for (const code of barcodes) {
+        if (code.rawValue) {
+          const ok = handleScannedChunkString(code.rawValue);
+          if (ok) captured = true;
+        }
+      }
+      if (captured) {
+        if (MoneyApp.playScanFeedbackChime) {
+          MoneyApp.playScanFeedbackChime({ frequency: 1046, duration: 0.1 });
+        }
+      } else {
+        alert(
+          isEn ? 'Detected QR code does not contain a valid sync chunk.' : 'ตรวจพบ QR Code แต่ข้อมูลไม่ใช่ชิ้นส่วนซิงค์ของแอป',
+        );
+      }
+    } else {
+      alert(t.qrImageDecodeError || (isEn ? 'No QR code detected in this image.' : 'ไม่พบ QR Code ในรูปภาพนี้'));
+    }
+  } catch (err) {
+    console.error('QR image decode failed:', err);
+    alert(isEn ? 'Failed to process image file.' : 'ไม่สามารถอ่านไฟล์รูปภาพได้');
+  }
 }
 
 function startBarcodeScannerLoop(video) {
@@ -1792,6 +1915,23 @@ function handleScannedChunkString(rawStr) {
     qrImportExpectedTotal = chunk.t;
     qrImportedChunks[chunk.c] = chunk;
     updateQrImportUI();
+
+    // Trigger visual, audio, and haptic feedback
+    const overlay = document.getElementById('qrCameraOverlay');
+    if (overlay) {
+      overlay.style.borderColor = '#10b981';
+      setTimeout(() => {
+        if (overlay) overlay.style.borderColor = '#4FA894';
+      }, 250);
+    }
+    if (typeof MoneyApp !== 'undefined' && MoneyApp.playScanFeedbackChime) {
+      MoneyApp.playScanFeedbackChime({ frequency: 880, duration: 0.08 });
+    }
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      try {
+        navigator.vibrate(50);
+      } catch (_v) {}
+    }
 
     const assembleFn = (typeof MoneyApp !== 'undefined' && MoneyApp.assembleChunks) || window.assembleChunks;
     const chunkList = Object.values(qrImportedChunks);
@@ -1915,6 +2055,10 @@ window.copyQrCurrentChunk = copyQrCurrentChunk;
 window.openQrImportModal = openQrImportModal;
 window.closeQrImportModal = closeQrImportModal;
 window.processManualQrChunk = processManualQrChunk;
+window.toggleQrCameraFacing = toggleQrCameraFacing;
+window.toggleQrCameraTorch = toggleQrCameraTorch;
+window.handleQrImageUpload = handleQrImageUpload;
+window.handleScannedChunkString = handleScannedChunkString;
 window.handleScannedChunkString = handleScannedChunkString;
 
 // --- Phase 70: Biometric / PIN App Lock & Session Privacy Guard Subsystem ---

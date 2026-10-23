@@ -725,6 +725,98 @@
     };
   }
 
+  /**
+   * Checks whether the standard BarcodeDetector API is natively supported in the current environment.
+   *
+   * @returns {boolean} True if BarcodeDetector is available
+   */
+  function isBarcodeDetectorSupported() {
+    const detector =
+      (typeof global !== 'undefined' && global.BarcodeDetector) ||
+      (typeof window !== 'undefined' && window.BarcodeDetector);
+    return typeof detector !== 'undefined';
+  }
+
+  /**
+   * Creates a configured BarcodeDetector instance for QR code scanning.
+   *
+   * @param {Array<string>} [formats=['qr_code']] - Barcode formats to detect
+   * @returns {Object|null} BarcodeDetector instance or null if unsupported
+   */
+  function createBarcodeDetector(formats = ['qr_code']) {
+    const Detector =
+      (typeof global !== 'undefined' && global.BarcodeDetector) ||
+      (typeof window !== 'undefined' && window.BarcodeDetector);
+    if (!Detector) return null;
+    try {
+      return new Detector({ formats });
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  /**
+   * Safely scans a video, canvas, image, or ImageBitmap source using BarcodeDetector.
+   *
+   * @param {Object} detector - BarcodeDetector instance
+   * @param {CanvasImageSource|ImageBitmap|HTMLVideoElement|HTMLImageElement} source - Visual source to inspect
+   * @returns {Promise<Array<{ rawValue: string, format: string, boundingBox: Object|null }>>} Detected barcodes
+   */
+  async function scanQrFromSource(detector, source) {
+    if (!detector || typeof detector.detect !== 'function' || source == null) return [];
+    try {
+      const barcodes = await detector.detect(source);
+      return (barcodes || []).map((b) => ({
+        rawValue: b.rawValue || '',
+        format: b.format || 'qr_code',
+        boundingBox: b.boundingBox || null,
+      }));
+    } catch (_e) {
+      return [];
+    }
+  }
+
+  /**
+   * Plays a native zero-dependency audio chime on slice capture via Web Audio API.
+   *
+   * @param {{ frequency?: number, duration?: number }} [options] - Audio synthesis options
+   * @returns {boolean} True if audio feedback was triggered successfully
+   */
+  function playScanFeedbackChime({ frequency = 880, duration = 0.08 } = {}) {
+    const win =
+      (typeof global !== 'undefined' && global) ||
+      (typeof window !== 'undefined' && window) ||
+      (typeof globalThis !== 'undefined' && globalThis) ||
+      null;
+    if (!win) return false;
+    try {
+      const AudioCtx = win.AudioContext || win.webkitAudioContext;
+      if (!AudioCtx) return false;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(frequency, ctx.currentTime);
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+      setTimeout(
+        () => {
+          try {
+            ctx.close();
+          } catch (_e) {}
+        },
+        Math.round(duration * 1000) + 100,
+      );
+      return true;
+    } catch (_e) {
+      return false;
+    }
+  }
+
   // Export on MoneyApp namespace
   global.MoneyApp = global.MoneyApp || {};
   var MoneyApp = global.MoneyApp;
@@ -742,10 +834,19 @@
   MoneyApp.generateQrSvg = renderQrSvg;
   MoneyApp.chunkPayload = chunkPayload;
   MoneyApp.assembleChunks = assembleChunks;
+  MoneyApp.isBarcodeDetectorSupported = isBarcodeDetectorSupported;
+  MoneyApp.createBarcodeDetector = createBarcodeDetector;
+  MoneyApp.scanQrFromSource = scanQrFromSource;
+  MoneyApp.playScanFeedbackChime = playScanFeedbackChime;
 
   if (typeof global !== 'undefined') {
     if (typeof global.generateQrSvg === 'undefined') global.generateQrSvg = renderQrSvg;
     if (typeof global.chunkPayload === 'undefined') global.chunkPayload = chunkPayload;
     if (typeof global.assembleChunks === 'undefined') global.assembleChunks = assembleChunks;
+    if (typeof global.isBarcodeDetectorSupported === 'undefined')
+      global.isBarcodeDetectorSupported = isBarcodeDetectorSupported;
+    if (typeof global.createBarcodeDetector === 'undefined') global.createBarcodeDetector = createBarcodeDetector;
+    if (typeof global.scanQrFromSource === 'undefined') global.scanQrFromSource = scanQrFromSource;
+    if (typeof global.playScanFeedbackChime === 'undefined') global.playScanFeedbackChime = playScanFeedbackChime;
   }
 })(typeof window !== 'undefined' ? window : globalThis);
