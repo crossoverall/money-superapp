@@ -1,5 +1,5 @@
 ---
-task_id: "phase-132-mobile-settings-modal-overflow-fix"
+task_id: "phase-133-rebalance-apply-suggested-allocation"
 status: "completed"
 current_stage: "idle"
 iteration_count: 1
@@ -20,38 +20,46 @@ pipeline:
     status: "completed"
 ---
 
-### Feature / Bugfix Specification: Phase 132 — Mobile Settings Modal Viewport Overflow Fix
+### Feature Specification: Phase 133 — Rebalance Quick-Apply Suggested Allocation & Budget Deduction
 
-#### 1. Problem Statement & Root Cause Diagnosis
-- **Reported Bug:** On mobile viewports (e.g. 375x667, 320x568), opening the Settings & Data Management modal (`#settingsModal`) results in the modal being pushed out of the screen.
-- **Root Cause Analysis (Verified via Headless Chrome Measurement):**
-  - `#settingsModal` contains 9 comprehensive sections (Privacy banner, Google Drive sync, Export JSON/Vault, Import, Offline QR P2P, App Lock & Biometrics, Quick Tour, Storage Health, Cache Quota, Master Reset), resulting in an intrinsic content height of **1,595px** (and **1,854px** at 320px width).
-  - `#settingsModal` has `position: fixed; display: flex; align-items: center; justify-content: center; padding: 16px;`.
-  - The inner dialog card `div` lacked `max-height` (it was `none`) and lacked `overflow-y` (it was `visible`).
-  - Because Flexbox centers an overflowing item within the viewport, on a 667px high screen:
-    - `cardTop: -463.8px` (top 464px, including the header and close button, pushed above the screen).
-    - `cardBottom: 1130.8px` (bottom 464px pushed below the screen).
-    - The modal has no scrollbar and cannot be scrolled, completely trapping the user.
-    - Backdrop click-to-close handler was also missing (`onclick="if(event.target===this)closeSettingsModal()"`).
+#### 1. Goal & Requirements
+- **User Requirement:**
+  In the Rebalance tool (`rebalance.html`), provide an inline action button (check button `[✓]`) on each asset's suggested top-up row.
+  - When clicked:
+    1. Adds the calculated suggested top-up amount directly into that asset's holding value (`a.value += appliedAmount`).
+    2. If units and price are tracked (`a.units > 0 && a.lastPrice > 0`), proportionally increments `a.units` based on effective price in THB.
+    3. Subtracts the applied amount from the top-up budget at the top of the page (`state.totalBudget -= appliedAmount`), updating the budget input field.
+    4. Triggers re-computation (`compute()`), causing the applied asset's suggested top-up to disappear/adjust to 0 and redistributing remaining budget across remaining shortfalls.
+    5. Saves state (`saveState()`) and pushes the previous state to the Undo manager (`undoMgr.push(captureSnapshot())`) so users can undo (`Ctrl+Z` / Undo button).
+    6. Announces action to assistive technology via `MoneyApp.announce`.
 
-#### 2. Scope of Changes
-- **Target Files (<= 2 files, < 50 lines):**
-  1. `index.html`:
-     - Add `max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overflow-y: auto; -webkit-overflow-scrolling: touch;` to `#settingsModal > div`.
-     - Make the modal header (`#lbl-modal-title` & close button row) `position: sticky; top: -22px; background: #131E19; z-index: 10; padding-top: 4px;` so the close button and title remain anchored and accessible while scrolling through settings.
-     - Add backdrop click-to-close handler on `#settingsModal`: `onclick="if(event.target===this)closeSettingsModal()"`.
-     - Apply same preventive `max-height` and `overflow-y: auto` safeguards to `#qrExportModal` and `#qrImportModal`.
-  2. `tests/visual-regression.test.mjs`:
-     - Add automated layout invariant test asserting `#settingsModal` on mobile viewports (375x667 and 320x568):
-       - `rect.top >= 0`
-       - `rect.bottom <= window.innerHeight`
-       - `card.clientHeight <= window.innerHeight`
-       - `computedOverflowY === 'auto'`
-       - Zero horizontal overflow (`document.documentElement.scrollWidth <= window.innerWidth`).
+#### 2. Architecture & Decision Alignment
+- **Affected Components:**
+  - `rebalance.html`: Add `.btn-apply-suggestion` styles matching Core, Ballast, and Satellite theme accent colors with high-contrast hover and focus-visible states.
+  - `js/rebalance.js`:
+    - Add `btnApplySuggestion` bilingual translations to `th` and `en` (ensuring 100% key symmetry).
+    - Implement `applySuggestedAllocation(bucketId, idx, amount)`.
+    - In `compute()`, render the check button `[✓]` next to `radd` when `add > 0.5` and bind click handlers.
+    - Expose `applySuggestedAllocation` on `window.MoneyApp` for modular testability.
+  - `tests/rebalance-apply-suggestion.test.mjs`:
+    - New dedicated test suite testing math invariants, budget deduction, units update, undo reversion, and DOM interactions.
+- **Constraints & Out of Scope:**
+  - Zero external npm libraries or runtime dependencies (ADR-001).
+  - Never allow negative budgets (`Math.max(0, ...)`).
+  - Maintain 100% translation symmetry in `js/rebalance.js`.
 
 #### 3. Step-by-Step Implementation Plan
-- **Step 1:** Edit `index.html` to update modal container styles and backdrop click handlers.
-- **Step 2:** Add automated mobile modal test assertions to `tests/visual-regression.test.mjs`.
-- **Step 3:** Run `npm test` and `npm run lint` to verify zero regressions.
-- **Step 4:** Perform independent code and security review.
-- **Step 5:** Record lessons in `.ai/memory/lessons.md` and bump version if needed.
+- **Step 1:** In `rebalance.html`, add CSS styling for `.btn-apply-suggestion` adhering to the Core/Ballast/Satellite design tokens.
+- **Step 2:** In `js/rebalance.js`:
+  - Add bilingual translation keys `btnApplySuggestion` to `translations.th` and `translations.en`.
+  - Implement `applySuggestedAllocation(bucketId, idx, amount)`.
+  - In `compute()`, render `.btn-apply-suggestion` beside `radd` for non-excluded assets where `add > 0.5`.
+  - Attach click event listener to invoke `applySuggestedAllocation`.
+- **Step 3:** Create `tests/rebalance-apply-suggestion.test.mjs` verifying:
+  - Applying suggestion increments asset value accurately.
+  - Total budget is decremented by exact applied amount.
+  - Subsequent `compute()` clears or recalculates the applied asset's suggested top-up.
+  - Proportional units incrementation works when units and price are tracked.
+  - Calling `undoMgr.undo()` reverts both asset value and total budget.
+- **Step 4:** Run `npm test` and `npm run lint` across all 748+ tests to verify zero regressions.
+- **Step 5:** Complete Code & Security Review, bump version, and update `.ai/memory/lessons.md`.

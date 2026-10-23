@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="2.5.73">
+<meta name="version" content="2.5.74">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self';">
 <script>
   try {
@@ -197,6 +197,53 @@
   .bucket-panel.core .radd{ color: var(--core); }
   .bucket-panel.ballast .radd{ color: var(--ballast); }
   .bucket-panel.satellite .radd{ color: var(--satellite); }
+
+  .btn-apply-suggestion{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    border: 1px solid var(--core);
+    background: rgba(47,139,118,0.12);
+    color: var(--core);
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 6px;
+    transition: all 0.15s ease;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .btn-apply-suggestion:hover{
+    background: var(--core);
+    color: #fff;
+    transform: scale(1.06);
+  }
+  .bucket-panel.ballast .btn-apply-suggestion{
+    border-color: var(--ballast);
+    background: rgba(29,107,138,0.12);
+    color: var(--ballast);
+  }
+  .bucket-panel.ballast .btn-apply-suggestion:hover{
+    background: var(--ballast);
+    color: #fff;
+  }
+  .bucket-panel.satellite .btn-apply-suggestion{
+    border-color: var(--satellite);
+    background: var(--satellite-dim);
+    color: var(--satellite);
+  }
+  .bucket-panel.satellite .btn-apply-suggestion:hover{
+    background: var(--satellite);
+    color: #fff;
+  }
+  .btn-apply-suggestion:focus-visible{
+    outline: 2px solid var(--core);
+    outline-offset: 2px;
+  }
 
   .capped-note{ font-size: 11px; color: var(--warn); margin-top: 10px; background: var(--warn-dim); padding: 8px 10px; border-radius: 8px; line-height:1.5; }
 
@@ -890,7 +937,7 @@
       <button class="reset-btn" id="resetBtn" data-i18n="resetBtn">ล้างข้อมูลที่บันทึกไว้</button>
     </div>
   </div>
-  <p class="version-tag">v2.5.73</p>
+  <p class="version-tag">v2.5.74</p>
 
   <!-- API Settings Modal -->
   <div id="apiSettingsModal" role="dialog" aria-modal="true" aria-labelledby="lblModalTitle" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; align-items:center; justify-content:center; backdrop-filter:blur(2px);">

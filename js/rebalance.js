@@ -33,6 +33,7 @@ const translations = {
     btnTestApi: '🧪 ทดสอบการเชื่อมต่อ',
     btnCancelModal: 'ยกเลิก',
     btnSaveModal: 'บันทึก',
+    btnApplySuggestion: 'นำยอดแนะนำไปเติมในพอร์ต',
     lblUndo: 'เลิกทำ (Undo)',
     lblDivTitle: '🌐 การกระจายความเสี่ยง & ความสัมพันธ์ของสินทรัพย์ (Risk Diversification)',
     lblGoldTitle: 'คำนวณกำไร/ขาดทุนทองคำ & แปลงหน่วยน้ำหนักบาท (Thai Gold DCA)',
@@ -158,6 +159,7 @@ const translations = {
     btnTestApi: '🧪 Test Connection',
     btnCancelModal: 'Cancel',
     btnSaveModal: 'Save',
+    btnApplySuggestion: 'Apply suggested top-up to holding',
     lblUndo: 'Undo',
     lblDivTitle: '🌐 Asset Class Correlation & Risk Diversification',
     lblGoldTitle: 'Physical Thai Gold DCA & Weight Converter (96.5%)',
@@ -1054,6 +1056,53 @@ function applyMinBudget(amt) {
   compute();
   saveState();
   updateUndoUI();
+}
+
+function applySuggestedAllocation(bucketId, idx, amount) {
+  const b = state.buckets.find((bk) => bk.id === bucketId);
+  if (!b?.assets?.[idx]) return;
+  const a = b.assets[idx];
+
+  const applyVal = Math.round(Number(amount));
+  if (Number.isNaN(applyVal) || applyVal <= 0) return;
+
+  undoMgr.push(captureSnapshot());
+
+  // 1. Add suggested allocation to asset holding value
+  a.value = Math.round((a.value || 0) + applyVal);
+
+  // 2. If units and price are tracked, update units proportionally
+  if (a.units != null && a.units > 0 && a.lastPrice != null && a.lastPrice > 0) {
+    const curr = a.currency || (isThaiAssetSymbol(a.ticker) ? 'THB' : 'USD');
+    const rate = getFxRate(curr);
+    if (rate > 0) {
+      const addedUnits = applyVal / (a.lastPrice * rate);
+      const isCrypto = a.ticker && isCryptoSymbol(a.ticker.toUpperCase().trim());
+      const precision = isCrypto ? 6 : 4;
+      a.units = parseFloat((a.units + addedUnits).toFixed(precision));
+    }
+  }
+
+  // 3. Deduct applied amount from total budget (clamped at 0)
+  state.totalBudget = Math.max(0, Math.round((state.totalBudget || 0) - applyVal));
+  if (totalBudgetEl) {
+    totalBudgetEl.value = fmtPlain(state.totalBudget);
+  }
+
+  // 4. Re-render asset rows and recalculate allocations
+  renderBuckets();
+  compute();
+  saveState();
+  updateUndoUI();
+
+  // 5. Screen reader accessibility announcement
+  if (typeof MoneyApp !== 'undefined' && typeof MoneyApp.announce === 'function') {
+    const msg =
+      LANG === 'en'
+        ? `Applied ${fmt(applyVal)} to ${a.name}. Remaining budget: ${fmt(state.totalBudget)}.`
+        : `เพิ่ม ${fmt(applyVal)} เข้า ${a.name} แล้ว งบคงเหลือ: ${fmt(state.totalBudget)} บาท`;
+    MoneyApp.announce(msg);
+  }
 }
 
 function renderSplit() {
@@ -2121,12 +2170,23 @@ function compute() {
           <div class="rmeta">${isExcluded ? `(${t('assetExcluded')})` : `${t('rmeta', `${fmt(a.value)} ($${fmtUSD(usdVal)})`, a.weight)} (${LANG === 'en' ? 'Current' : 'ปัจจุบัน'}: ${currPct.toFixed(1)}%)`}</div>
         </div>
         <div class="result-right">
-          <div class="radd ${add <= 0.5 ? 'zero' : ''}">${addText}</div>
+          <div style="display:flex; align-items:center; justify-content:flex-end;">
+            <div class="radd ${add <= 0.5 ? 'zero' : ''}">${addText}</div>
+            ${!isExcluded && add > 0.5 ? `<button type="button" class="btn-apply-suggestion" data-bucket="${bucket.id}" data-idx="${i}" data-amount="${Math.round(add)}" title="${t('btnApplySuggestion')}" aria-label="${t('btnApplySuggestion')} - ${escapeAttr(a.name)}: +${fmt(add)}">✓</button>` : ''}
+          </div>
           ${isBelowMin ? `<div class="below-min-badge" title="${LANG === 'en' ? 'Below minimum trade threshold' : 'ต่ำกว่ายอดซื้อขั้นต่ำ'}">⚠️ &lt; ${fmt(minTrade)}</div>` : ''}
           <div class="rnewpct">${isExcluded ? '—' : t('rnewpct', newPct.toFixed(1))}</div>
         </div>
       `;
       resultsEl.appendChild(row);
+
+      const applyBtn = row.querySelector('.btn-apply-suggestion');
+      if (applyBtn) {
+        applyBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          applySuggestedAllocation(bucket.id, i, add);
+        });
+      }
     });
 
     const totalAllocated = x.reduce((s, v) => s + Math.max(v, 0), 0);
@@ -2999,6 +3059,7 @@ if (typeof window !== 'undefined') {
   window.updateGlidepathUI = updateGlidepathUI;
   window.applyGlidepathSplitToPortfolio = applyGlidepathSplitToPortfolio;
   window.resetRebalanceLayout = resetRebalanceLayout;
+  window.applySuggestedAllocation = applySuggestedAllocation;
 }
 
 let rebalanceLayoutManager = null;
@@ -3214,3 +3275,4 @@ window.generateRebalanceOrdersCSV = generateRebalanceOrdersCSV;
 window.openDriveModal = openDriveModal;
 window.closeDriveModal = closeDriveModal;
 window.saveToGoogleDrive = saveToGoogleDrive;
+window.applySuggestedAllocation = applySuggestedAllocation;

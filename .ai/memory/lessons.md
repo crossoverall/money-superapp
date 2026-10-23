@@ -15,6 +15,29 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-23: Rebalance Suggested Allocation Quick-Apply & Budget Deduction (Phase 133 / v2.5.74)
+- **Date & Context:** 2026-10-23, Portfolio Rebalancer Quick-Apply Suggested Allocation & Budget Deduction (`v2.5.74`).
+- **Problem:**
+  - In `rebalance.html`, users calculating top-up allocations for multi-asset portfolios had to manually read suggested allocation numbers (e.g. `+1,500 ฿`) and manually re-type them into the asset's holding value input field (`5,000` -> `6,500`), then manually subtract that amount from the top-up budget field at the top of the page (`10,000` -> `8,500`).
+  - This manual process was error-prone, friction-heavy, and failed to recalculate remaining budget redistribution across shortfalls automatically.
+- **Root Cause & Nuances:**
+  - Portfolio assets may track units and last prices in addition to total THB value. Updating `a.value` alone causes a mismatch between `a.value` and `a.units * a.lastPrice * fxRate`.
+  - Rebalancer uses an undo manager (`MoneyApp.createUndoManager`). Failing to snapshot state before applying the suggestion breaks `Ctrl+Z` / Undo button functionality.
+  - When snapshots are restored via `JSON.parse(JSON.stringify(snap.buckets))`, tests holding stale array references will see un-reverted objects unless querying the fresh `state.buckets` reference.
+- **Solution & Rule:**
+  1. **Atomic Allocation Application (`applySuggestedAllocation`):**
+     - First push to undo stack: `undoMgr.push(captureSnapshot())`.
+     - Increment `a.value += applyVal`.
+     - Proportionally increment `a.units` when `units > 0 && lastPrice > 0`: `addedUnits = applyVal / (a.lastPrice * fxRate)`.
+     - Deduct from budget clamped at 0: `state.totalBudget = Math.max(0, Math.round((state.totalBudget || 0) - applyVal))`.
+     - Re-render asset rows (`renderBuckets()`), re-calculate allocations (`compute()`), persist state (`saveState()`), update undo UI (`updateUndoUI()`), and announce change to assistive tech (`MoneyApp.announce(...)`).
+  2. **Clean Dynamic Affordance:**
+     - Render check button `[✓]` (`.btn-apply-suggestion`) beside `radd` only when `!isExcluded && add > 0.5`.
+     - Once applied, subsequent `compute()` clears the shortfall (`add <= 0.5`), removing the button naturally and redistributing remaining budget across remaining shortfalls.
+  3. **Bilingual Parity & Accessibility:**
+     - Both `th` and `en` dictionaries define `btnApplySuggestion`.
+     - Semantic `<button type="button">` with descriptive `aria-label`, `title`, and `:focus-visible` focus ring.
+
 ### 2026-10-23: Mobile Modal Viewport Centering & Flexbox Overflow Trapping (Phase 132 / v2.5.73)
 - **Date & Context:** 2026-10-23, Mobile Settings & Data Management Modal Viewport Overflow Fix (`v2.5.73`).
 - **Problem:**
