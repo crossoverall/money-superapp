@@ -1,5 +1,5 @@
 ---
-task_id: "phase-133-rebalance-apply-suggested-allocation"
+task_id: "phase-134-asset-size-zero-dep-budget-gate"
 status: "completed"
 current_stage: "idle"
 iteration_count: 1
@@ -20,46 +20,24 @@ pipeline:
     status: "completed"
 ---
 
-### Feature Specification: Phase 133 — Rebalance Quick-Apply Suggested Allocation & Budget Deduction
+### Feature Specification: Phase 134 — Automated Asset Size & Zero-Dependency Budget Gate (Pillar 6.2)
 
 #### 1. Goal & Requirements
-- **User Requirement:**
-  In the Rebalance tool (`rebalance.html`), provide an inline action button (check button `[✓]`) on each asset's suggested top-up row.
-  - When clicked:
-    1. Adds the calculated suggested top-up amount directly into that asset's holding value (`a.value += appliedAmount`).
-    2. If units and price are tracked (`a.units > 0 && a.lastPrice > 0`), proportionally increments `a.units` based on effective price in THB.
-    3. Subtracts the applied amount from the top-up budget at the top of the page (`state.totalBudget -= appliedAmount`), updating the budget input field.
-    4. Triggers re-computation (`compute()`), causing the applied asset's suggested top-up to disappear/adjust to 0 and redistributing remaining budget across remaining shortfalls.
-    5. Saves state (`saveState()`) and pushes the previous state to the Undo manager (`undoMgr.push(captureSnapshot())`) so users can undo (`Ctrl+Z` / Undo button).
-    6. Announces action to assistive technology via `MoneyApp.announce`.
+- **Goal:** Provide automated continuous verification that:
+  1. `package.json` contains strictly 0 runtime dependencies (`dependencies` is empty or undefined), enforcing ADR-001 permanent client-side autonomy.
+  2. The standalone bundle for every HTML tool (HTML + inline scripts + linked JS/CSS entry points) stays within strict performance budgets (<250KB per entry point uncompressed, and total critical shell assets stay lean).
+  3. No external script or stylesheet CDNs (`https://`, `http://`, `//`) are referenced anywhere across all 8 HTML tools, guaranteeing 100% offline-first PWA compliance.
+  4. Service worker `sw.js` cache manifest stays 100% synchronized with actual disk assets so zero 404s or stale references can ever be shipped.
+  5. Add `npm run test:budget` script or integrate directly into the automated CI test suite.
 
 #### 2. Architecture & Decision Alignment
-- **Affected Components:**
-  - `rebalance.html`: Add `.btn-apply-suggestion` styles matching Core, Ballast, and Satellite theme accent colors with high-contrast hover and focus-visible states.
-  - `js/rebalance.js`:
-    - Add `btnApplySuggestion` bilingual translations to `th` and `en` (ensuring 100% key symmetry).
-    - Implement `applySuggestedAllocation(bucketId, idx, amount)`.
-    - In `compute()`, render the check button `[✓]` next to `radd` when `add > 0.5` and bind click handlers.
-    - Expose `applySuggestedAllocation` on `window.MoneyApp` for modular testability.
-  - `tests/rebalance-apply-suggestion.test.mjs`:
-    - New dedicated test suite testing math invariants, budget deduction, units update, undo reversion, and DOM interactions.
-- **Constraints & Out of Scope:**
-  - Zero external npm libraries or runtime dependencies (ADR-001).
-  - Never allow negative budgets (`Math.max(0, ...)`).
-  - Maintain 100% translation symmetry in `js/rebalance.js`.
+- **Affected Files:**
+  - `tests/asset-budget.test.mjs`: New dedicated test suite testing runtime dependency absence, per-tool payload budgets, zero external CDN link invariants, and SW cache manifest integrity.
+  - `package.json`: Add `"test:budget": "node --test tests/asset-budget.test.mjs"`.
 
 #### 3. Step-by-Step Implementation Plan
-- **Step 1:** In `rebalance.html`, add CSS styling for `.btn-apply-suggestion` adhering to the Core/Ballast/Satellite design tokens.
-- **Step 2:** In `js/rebalance.js`:
-  - Add bilingual translation keys `btnApplySuggestion` to `translations.th` and `translations.en`.
-  - Implement `applySuggestedAllocation(bucketId, idx, amount)`.
-  - In `compute()`, render `.btn-apply-suggestion` beside `radd` for non-excluded assets where `add > 0.5`.
-  - Attach click event listener to invoke `applySuggestedAllocation`.
-- **Step 3:** Create `tests/rebalance-apply-suggestion.test.mjs` verifying:
-  - Applying suggestion increments asset value accurately.
-  - Total budget is decremented by exact applied amount.
-  - Subsequent `compute()` clears or recalculates the applied asset's suggested top-up.
-  - Proportional units incrementation works when units and price are tracked.
-  - Calling `undoMgr.undo()` reverts both asset value and total budget.
-- **Step 4:** Run `npm test` and `npm run lint` across all 748+ tests to verify zero regressions.
-- **Step 5:** Complete Code & Security Review, bump version, and update `.ai/memory/lessons.md`.
+- **Step 1:** Author `tests/asset-budget.test.mjs` verifying ADR-001 zero dependencies, per-page payload budgets, offline self-containment, and SW sync.
+- **Step 2:** Update `package.json` with `test:budget` script.
+- **Step 3:** Run `npm run lint` and `npm test` across all 756+ tests to verify green baseline.
+- **Step 4:** Execute Code & Security Review.
+- **Step 5:** Record lessons in `.ai/memory/lessons.md`, bump patch version, and git push.

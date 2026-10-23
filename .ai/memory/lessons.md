@@ -15,6 +15,17 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-23: Automated Asset Size & Zero-Dependency Budget Gate (Phase 134 / v2.5.75)
+- **Date & Context:** 2026-10-23, Pillar 6.2 Architectural Resilience & Zero-Dependency Budget Gate (`v2.5.75`).
+- **Problem:**
+  - As features expand across 23 domain engines and 8 standalone tools, without automated budget gating, unmonitored file growth, accidental CDN links, or runtime NPM dependencies can creep into the codebase unnoticed.
+- **Solution & Invariants:**
+  1. **Strict ADR-001 Invariant:** `package.json` must declare 0 runtime dependencies (`dependencies` is empty or undefined). Only approved developer lint/format tooling (`@biomejs/biome`) is allowed.
+  2. **100% Offline-First Self-Containment:** All 8 HTML tools are verified to contain zero external stylesheet or script CDN references (`http://`, `https://`, `//`).
+  3. **Dual Payload Budget:** Enforced per-tool ceilings of <950KB uncompressed total and <220KB gzipped over-the-wire transfer budget.
+  4. **SW Freshness:** `sw.js` `CACHE_NAME` must strictly match `package.json` version and every listed asset in `ASSETS_TO_CACHE` must exist on disk.
+  5. **Continuous CI Script:** Added `npm run test:budget` running `tests/asset-budget.test.mjs`.
+
 ### 2026-10-23: Rebalance Suggested Allocation Quick-Apply & Budget Deduction (Phase 133 / v2.5.74)
 - **Date & Context:** 2026-10-23, Portfolio Rebalancer Quick-Apply Suggested Allocation & Budget Deduction (`v2.5.74`).
 - **Problem:**

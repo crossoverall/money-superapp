@@ -189,8 +189,15 @@ flowchart LR
 | **Phase 128** | `v2.5.69` | Mobile swipe gestures between tools + App Badging API | Level 2 | ✅ **Shipped** (`fee3b99`) |
 | **Phase 129** | `v2.5.70` | IndexedDB tiered persistence engine (`js/engines/storage-db.js`) | Level 2 | ✅ **Shipped** (`7de6b9e`) |
 | **Phase 130** | `v2.5.71` | Sequence of Returns Risk & Dynamic SWR retirement simulator | Level 2 | ✅ **Shipped** (`f5cb9c3`) |
-| **Phase 131** | `v2.5.72` | WCAG 2.1 AA accessibility audit & live region announcements | Level 2 | ✅ **Shipped** |
-| **Phase 132** | `v2.6.0`  | Multi-profile partition architecture (Personal / Family / Freelance) | Level 3 | ⏳ Planned |
+| **Phase 131** | `v2.5.72` | WCAG 2.1 AA accessibility audit & live region announcements | Level 2 | ✅ **Shipped** (`0775667`) |
+| **Phase 132** | `v2.5.73` | Mobile Settings modal viewport overflow & scroll trapping fix | Level 1 | ✅ **Shipped** (`a5dbdd8`) |
+| **Phase 133** | `v2.5.74` | Rebalance quick-apply suggested top-up with budget deduction | Level 2 | ✅ **Shipped** (`86a56e6`) |
+| **Phase 134** | `v2.5.75` | Automated Asset Size & Zero-Dependency Budget Gate (`test:budget`) | Level 1 | ✅ **Shipped** |
+| **Phase 135** | `v2.5.76` | Easy E-Receipt & Tax Invoice Deduction Tracker (Pillar 2.3) | Level 2 | ⏳ Planned |
+| **Phase 136** | `v2.5.77` | Interactive Cash Flow Waterfall & Category Filtering (Pillar 3.2) | Level 2 | ⏳ Planned |
+| **Phase 137** | `v2.5.78` | Native Barcode / QR Camera Scanner for P2P Sync (Pillar 1.3) | Level 2 | ⏳ Planned |
+| **Phase 138** | `v2.5.79` | Joint Tax Filing & Spousal Exemption Optimizer (Pillar 5.2) | Level 2 | ⏳ Planned |
+| **Phase 139** | `v2.6.0`  | Multi-profile partition architecture (Personal / Family / Freelance) | Level 3 | ⏳ Planned |
 
 ---
 
