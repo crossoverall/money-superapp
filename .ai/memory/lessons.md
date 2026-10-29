@@ -15,6 +15,24 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-29: Goal-Based Savings Planner UI & Cash Flow Surplus Bridge (Phase 145 / v2.6.6)
+- **Date & Context:** 2026-10-29, Pillar 2.1 Goal-Based Savings Planner UI & Cross-Tool Bridge (`v2.6.6`).
+- **Problem:**
+  - Following the creation of the mathematical calculation engine (`MoneyApp.SavingsGoals`), users required an interactive UI in `dashboard.html` to visualize their goals, add/edit target accounts, and simulate multi-goal monthly surplus allocation.
+  - Users calculating monthly cash flow surplus in `remaining-money.html` had no explicit, decoupled mechanism to bridge investable remaining funds into their savings targets without manual typing.
+- **Solution & Invariants:**
+  1. **Dashboard Goal Tracker (`#savingsGoalsSection`):**
+     - Renders active sinking-fund goals with category emojis, priority tags, progress percentage, current vs target amounts, timeline horizon, and required monthly contributions.
+     - Implemented `#goalEditorModal` supporting add, edit, and delete operations with live persistence to `moneySuperapp.savingsGoals.v1`.
+     - Integrated interactive strategy selector (`priority`, `proportional`, `balanced`) and allocation simulator with strict capital conservation feedback.
+  2. **Cross-Tool Decoupled Bridge (Bridge 13):**
+     - Registered `savings_goals_budget` in `js/engines/bridge.js` `LEGACY_ACTION_MAP` targeting `dashboard` and key `moneySuperapp.pendingGoalsBudget`.
+     - Added `#btnBridgeSurplusGoals` in `remaining-money.html` dispatching available cash flow surplus via `MoneyApp.Bridge.send('dashboard', 'savings_goals_budget', amount)` and switching tab to `dashboard`.
+     - `dashboard.js` automatically consumes incoming budget via `MoneyApp.Bridge.receive('savings_goals_budget')` and simulates allocation across goals.
+  3. **Quality Gates & Parity:**
+     - 100% dictionary key symmetry between Thai and English in `js/dashboard.js` and `js/remaining-money.js`.
+     - Unit and integration tests added in `tests/integration-bridges.test.mjs` and `tests/smoke.test.mjs`. All 843 tests pass. Version bumped to `v2.6.6`.
+
 ### 2026-10-29: Goal-Based Savings Planner Engine & Annuity Sinking Fund Math (Phase 144 / v2.6.5)
 - **Date & Context:** 2026-10-29, Pillar 2.1 Goal-Based Savings Planner Engine (`v2.6.5`).
 - **Problem:**

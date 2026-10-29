@@ -1,5 +1,5 @@
 ---
-task_id: "phase-144-savings-goals-engine"
+task_id: "phase-145-savings-goals-ui-and-bridge"
 status: "in_progress"
 current_stage: "coding"
 iteration_count: 0
@@ -20,19 +20,25 @@ pipeline:
     status: "pending"
 ---
 
-### Feature Specification: Phase 144 — Goal-Based Savings Planner Engine (Pillar 2.1 / v2.6.5)
+### Feature Specification: Phase 145 — Goal-Based Savings Planner UI & Cross-Tool Surplus Bridge (Pillar 2.1 / v2.6.6)
 
 #### 1. Goal & Requirements
-- Build `js/engines/savings-goals.js` (`MoneyApp.SavingsGoals`):
-  - Goal schema validation, creation, cloning, and serialization (`moneySuperapp.savingsGoals.v1`).
-  - Required monthly contribution calculation using annuity sinking-fund compounding formula and 0% interest fallback.
-  - Multi-goal monthly surplus allocation with `'priority'`, `'proportional'`, and `'balanced'` strategies.
-  - Month-by-month compound balance trajectory simulation (principal vs interest earned).
-- Add full unit test suite `tests/savings-goals.test.mjs`.
-- Register in `sw.js` (`ASSETS_TO_CACHE`), `index.html`, and `tests/smoke.test.mjs`.
-- Maintain strict ADR-001 zero-dependency compliance and conservation of capital invariants.
+- **Dashboard UI (`dashboard.html` & `js/dashboard.js`):**
+  - Add `#savingsGoalsSection` in `panelGoals` rendering active sinking-fund goals from `MoneyApp.SavingsGoals`.
+  - Display progress bars, required monthly contributions, and allocation strategy switcher (`priority`, `proportional`, `balanced`).
+  - Add goal editor modal `#goalEditorModal` for adding/editing/deleting custom goals.
+  - Ingest bridged monthly surplus via `Bridge.receive('savings_goals_budget')` or `moneySuperapp.pendingGoalsBudget`.
+- **Remaining Money Bridge (`remaining-money.html` & `js/remaining-money.js`):**
+  - Add `#btnBridgeSurplusGoals` in the surplus simulator section.
+  - Sends available cash flow surplus to Dashboard savings goals and navigates to Dashboard.
+- **Bilingual & Accessibility Parity:**
+  - 100% dictionary key symmetry between Thai and English.
+  - Full WCAG 2.1 AA keyboard support and screen reader announcements.
+- **Automated Tests:**
+  - Test bridge execution in `tests/integration-bridges.test.mjs`.
+  - Smoke tests in `tests/smoke.test.mjs`.
 
 #### 2. Acceptance Criteria
-- Unit test suite covers sinking fund math, surplus allocation conservation, and trajectory simulation.
-- `npm run lint` and `npm run test:budget` pass with 0 errors.
-- Version bumped to `v2.6.5`.
+- User can add, view, and allocate monthly surplus across savings goals.
+- Clicking "Send Surplus to Goals" in Remaining Money successfully bridges surplus and displays allocation in Dashboard.
+- All tests pass (842+ passing). Version bumped to `v2.6.6`.

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="version" content="2.6.5">
+  <meta name="version" content="2.6.6">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self';">
   <script>
     try {
@@ -638,6 +638,68 @@
           <div style="font-size:10px; color:var(--ink-faint); margin-top:8px; line-height:1.4;" id="lbl-mc-expl">
             💡 <strong>ลำดับผลตอบแทน (Sequence of Returns):</strong> จำลองผลตอบแทนแบบสุ่ม 500 สถานการณ์อิงความผันผวนตลาดจริง (SD 10%) โดยปรับอัตราการถอนตามเงินเฟ้อ 2.5%/ปี เพื่อทดสอบว่าเงินจะหมดก่อนครบ 30 ปีหรือไม่
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Short & Medium-Term Savings Goals Section -->
+    <div id="savingsGoalsSection" style="margin-top:14px; padding-top:14px; border-top:1px dashed var(--line);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+        <div>
+          <span style="font-size:12px; font-weight:700; color:var(--ink);" id="lbl-savings-goals-title">🎯 แผนเป้าหมายการออมระยะสั้น-กลาง (Savings Goals Planner)</span>
+          <div style="font-size:10px; color:var(--ink-faint);" id="lbl-savings-goals-subtitle">คำนวณเงินออมต่อเดือนและจำลองการจัดสรรเงินคงเหลือสุทธิ</div>
+        </div>
+        <button type="button" class="action-btn" id="btnOpenAddGoalModal" onclick="openGoalEditorModal()" style="padding:4px 10px; font-size:11px;" aria-label="Add new savings goal">
+          <span id="lbl-btn-add-goal">+ เพิ่มเป้าหมาย</span>
+        </button>
+      </div>
+
+      <!-- Active Goals List Container -->
+      <div id="savingsGoalsList" style="display:grid; gap:10px; margin-bottom:12px;">
+        <!-- Populated dynamically via renderSavingsGoals() -->
+      </div>
+
+      <!-- Surplus Allocation Simulator Card -->
+      <div style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px;">
+        <div style="font-size:11.5px; font-weight:700; color:var(--ink); margin-bottom:8px;" id="lbl-goals-sim-title">
+          ⚡ จำลองการจัดสรรเงินคงเหลือรายเดือน (Surplus Allocation Simulator)
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; align-items:end; margin-bottom:10px;">
+          <div>
+            <label for="inpGoalsSurplus" style="display:block; font-size:10.5px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-goals-surplus-inp">
+              เงินคงเหลือรายเดือนที่นำมาจัดสรร (บาท):
+            </label>
+            <input type="number" id="inpGoalsSurplus" min="0" step="500" placeholder="0" inputmode="decimal" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:13px; font-weight:600; color:var(--ink); outline:none;">
+          </div>
+
+          <div>
+            <div style="font-size:10.5px; font-weight:600; color:var(--ink-faint); margin-bottom:4px;" id="lbl-goals-strategy-title">
+              กลยุทธ์การจัดสรร (Strategy):
+            </div>
+            <div style="display:inline-flex; gap:4px; width:100%;" role="group" aria-label="Goal Allocation Strategy">
+              <button type="button" class="goal-strat-btn active" id="btnGoalStratPriority" data-strategy="priority" onclick="selectGoalStrategy('priority')" style="flex:1; padding:6px 8px; font-size:10px; border-radius:6px; border:1px solid var(--line); cursor:pointer; background:var(--primary); color:#fff; font-weight:600;">
+                <span id="lbl-strat-priority">ความสำคัญ (Priority)</span>
+              </button>
+              <button type="button" class="goal-strat-btn" id="btnGoalStratProportional" data-strategy="proportional" onclick="selectGoalStrategy('proportional')" style="flex:1; padding:6px 8px; font-size:10px; border-radius:6px; border:1px solid var(--line); cursor:pointer; background:var(--panel); color:var(--ink); font-weight:600;">
+                <span id="lbl-strat-proportional">ตามสัดส่วน (Proportional)</span>
+              </button>
+              <button type="button" class="goal-strat-btn" id="btnGoalStratBalanced" data-strategy="balanced" onclick="selectGoalStrategy('balanced')" style="flex:1; padding:6px 8px; font-size:10px; border-radius:6px; border:1px solid var(--line); cursor:pointer; background:var(--panel); color:var(--ink); font-weight:600;">
+                <span id="lbl-strat-balanced">เท่ากัน (Balanced)</span>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <button type="button" class="action-btn" id="btnSimulateGoalAllocation" onclick="simulateGoalAllocation()" style="width:100%; padding:7px 12px; font-size:11px; font-weight:700; background:var(--accent, #3b82f6); color:#fff; border-color:var(--accent, #3b82f6); cursor:pointer; border-radius:8px;">
+              <span id="lbl-btn-simulate-goals">🚀 จำลองการจัดสรร</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Allocation Results Container -->
+        <div id="goalAllocationResults" style="display:none; font-size:11px; margin-top:8px; padding-top:8px; border-top:1px dashed var(--line);">
+          <!-- Populated by simulateGoalAllocation() -->
         </div>
       </div>
     </div>
@@ -1391,6 +1453,77 @@
     </div>
   </div>
 
+  <!-- Goal Editor Modal (Add/Edit Savings Goal) -->
+  <div id="goalEditorModal" role="dialog" aria-modal="true" aria-labelledby="goalEditorModalTitle" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; display:none; align-items:center; justify-content:center; backdrop-filter:blur(2px);" onclick="if(event.target===this)closeGoalEditorModal()">
+    <div style="background:var(--panel); border:1px solid var(--line); border-radius:16px; width:92%; max-width:440px; padding:20px; box-shadow:0 12px 30px rgba(0,0,0,0.3); color:var(--ink); font-family:inherit;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; border-bottom:1px solid var(--line); padding-bottom:12px;">
+        <h3 id="goalEditorModalTitle" style="margin:0; font-size:16px; font-weight:700; display:flex; align-items:center; gap:6px;">
+          <span>🎯</span>
+          <span id="lblGoalEditorTitle">เพิ่ม / แก้ไขเป้าหมายการออม</span>
+        </h3>
+        <button type="button" id="btnCloseGoalEditorX" onclick="closeGoalEditorModal()" style="background:none; border:none; font-size:22px; line-height:1; color:var(--ink-faint); cursor:pointer; padding:0 4px;" aria-label="Close">&times;</button>
+      </div>
+
+      <input type="hidden" id="inpGoalEditId" value="">
+
+      <div style="margin-bottom:12px;">
+        <label for="inpGoalEditName" style="display:block; font-size:11px; font-weight:700; margin-bottom:4px;" id="lblModalGoalName">ชื่อเป้าหมาย (Goal Name)</label>
+        <input type="text" id="inpGoalEditName" placeholder="เช่น เงินดาวน์บ้าน, ท่องเที่ยวญี่ปุ่น" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:13px; font-weight:600; color:var(--ink); outline:none;">
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+        <div>
+          <label for="inpGoalEditTarget" style="display:block; font-size:11px; font-weight:700; margin-bottom:4px;" id="lblModalGoalTarget">เป้าหมาย (บาท)</label>
+          <input type="number" id="inpGoalEditTarget" min="0" step="1000" placeholder="100000" inputmode="decimal" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:13px; font-weight:600; color:var(--ink); outline:none;">
+        </div>
+        <div>
+          <label for="inpGoalEditCurrent" style="display:block; font-size:11px; font-weight:700; margin-bottom:4px;" id="lblModalGoalCurrent">สะสมแล้ว (บาท)</label>
+          <input type="number" id="inpGoalEditCurrent" min="0" step="500" placeholder="0" inputmode="decimal" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:13px; font-weight:600; color:var(--ink); outline:none;">
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+        <div>
+          <label for="inpGoalEditMonths" style="display:block; font-size:11px; font-weight:700; margin-bottom:4px;" id="lblModalGoalMonths">ระยะเวลา (เดือน)</label>
+          <input type="number" id="inpGoalEditMonths" min="1" max="360" step="1" placeholder="12" inputmode="decimal" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:13px; font-weight:600; color:var(--ink); outline:none;">
+        </div>
+        <div>
+          <label for="inpGoalEditRate" style="display:block; font-size:11px; font-weight:700; margin-bottom:4px;" id="lblModalGoalRate">ผลตอบแทนคาดหวัง (%/ปี)</label>
+          <input type="number" id="inpGoalEditRate" min="0" max="25" step="0.1" placeholder="1.5" inputmode="decimal" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:13px; font-weight:600; color:var(--ink); outline:none;">
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;">
+        <div>
+          <label for="inpGoalEditPriority" style="display:block; font-size:11px; font-weight:700; margin-bottom:4px;" id="lblModalGoalPriority">ลำดับความสำคัญ (Priority)</label>
+          <select id="inpGoalEditPriority" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:13px; font-weight:600; color:var(--ink); outline:none;">
+            <option value="1">1 - สำคัญสูงสุด (High)</option>
+            <option value="2">2 - สำคัญปานกลาง (Medium)</option>
+            <option value="3">3 - สำคัญทั่วไป (Low)</option>
+          </select>
+        </div>
+        <div>
+          <label for="inpGoalEditCategory" style="display:block; font-size:11px; font-weight:700; margin-bottom:4px;" id="lblModalGoalCategory">หมวดหมู่ (Category)</label>
+          <select id="inpGoalEditCategory" style="width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:13px; font-weight:600; color:var(--ink); outline:none;">
+            <option value="emergency">🛡️ สำรองฉุกเฉิน (Emergency)</option>
+            <option value="travel">✈️ ท่องเที่ยว (Travel)</option>
+            <option value="house">🏠 ที่อยู่อาศัย (Housing)</option>
+            <option value="education">🎓 การศึกษา (Education)</option>
+            <option value="other">🎯 อื่นๆ (Other)</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--line); padding-top:14px;">
+        <button type="button" id="btnDeleteGoalEditor" onclick="deleteGoalFromEditor()" class="reset-btn" style="font-size:12px; display:none; color:var(--danger); border-color:var(--danger);">ลบเป้าหมาย</button>
+        <div style="display:flex; gap:8px; margin-left:auto;">
+          <button type="button" id="btnCloseGoalEditor" onclick="closeGoalEditorModal()" class="action-btn" style="padding:6px 12px; font-size:12px;">ยกเลิก</button>
+          <button type="button" id="btnSaveGoalEditor" onclick="saveGoalFromEditor()" class="action-btn" style="background:var(--ok); border-color:var(--ok); color:#fff; padding:6px 16px; font-size:12px; font-weight:700;">บันทึก</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Google Drive Export Modal -->
   <div id="driveExportModal" role="dialog" aria-modal="true" aria-labelledby="driveModalTitle" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; display:none; align-items:center; justify-content:center; backdrop-filter:blur(2px);" onclick="if(event.target===this)closeDriveModal()">
     <div style="background:var(--panel); border:1px solid var(--line); border-radius:16px; width:92%; max-width:500px; padding:20px; box-shadow:0 12px 30px rgba(0,0,0,0.3); color:var(--ink); font-family:inherit; max-height:90vh; overflow-y:auto;">
@@ -1432,7 +1565,7 @@
     </div>
   </div>
 
-  <p class="version-tag">Money Superapp v2.6.5</p>
+  <p class="version-tag">Money Superapp v2.6.6</p>
 
 <script src="js/engines/thai-pit.js"></script>
 <script src="js/engines/thai-tax-calendar.js"></script>
@@ -1460,6 +1593,7 @@
 <script src="js/i18n/en.js"></script>
 <script src="js/shared.js"></script>
 <script src="js/engines/dashboard-viz.js"></script>
+<script src="js/engines/savings-goals.js"></script>
 <script src="js/dashboard.js"></script>
 
   <div id="print-footer" class="print-only" style="display:none;">

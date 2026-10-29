@@ -3547,4 +3547,100 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.strictEqual(SG.STORAGE_KEY, 'moneySuperapp.savingsGoals.v1', 'STORAGE_KEY must match v1 namespace');
     });
   });
+
+  describe('Phase 145: Goal-based savings planner UI & cash flow surplus bridge integration', () => {
+    it('verifies dashboard.html contains savingsGoalsSection, goalEditorModal, and script tag', () => {
+      const dashHtml = fs.readFileSync(path.join(ROOT_DIR, 'dashboard.html'), 'utf8');
+
+      assert.ok(
+        dashHtml.includes('<script src="js/engines/savings-goals.js"></script>'),
+        'dashboard.html must load js/engines/savings-goals.js',
+      );
+      assert.ok(dashHtml.includes('id="savingsGoalsSection"'), 'dashboard.html must have #savingsGoalsSection');
+      assert.ok(dashHtml.includes('id="savingsGoalsList"'), 'dashboard.html must have #savingsGoalsList');
+      assert.ok(dashHtml.includes('id="inpGoalsSurplus"'), 'dashboard.html must have #inpGoalsSurplus');
+      assert.ok(dashHtml.includes('id="btnGoalStratPriority"'), 'dashboard.html must have #btnGoalStratPriority');
+      assert.ok(
+        dashHtml.includes('id="btnGoalStratProportional"'),
+        'dashboard.html must have #btnGoalStratProportional',
+      );
+      assert.ok(dashHtml.includes('id="btnGoalStratBalanced"'), 'dashboard.html must have #btnGoalStratBalanced');
+      assert.ok(
+        dashHtml.includes('id="btnSimulateGoalAllocation"'),
+        'dashboard.html must have #btnSimulateGoalAllocation',
+      );
+      assert.ok(dashHtml.includes('id="goalAllocationResults"'), 'dashboard.html must have #goalAllocationResults');
+      assert.ok(dashHtml.includes('id="goalEditorModal"'), 'dashboard.html must have #goalEditorModal');
+      assert.ok(dashHtml.includes('id="inpGoalEditName"'), 'goalEditorModal must have #inpGoalEditName');
+      assert.ok(dashHtml.includes('id="inpGoalEditTarget"'), 'goalEditorModal must have #inpGoalEditTarget');
+      assert.ok(dashHtml.includes('id="inpGoalEditCurrent"'), 'goalEditorModal must have #inpGoalEditCurrent');
+      assert.ok(dashHtml.includes('id="btnSaveGoalEditor"'), 'goalEditorModal must have #btnSaveGoalEditor');
+    });
+
+    it('verifies remaining-money.html and js/remaining-money.js provide bridgeSurplusToGoals UI and handler', () => {
+      const remHtml = fs.readFileSync(path.join(ROOT_DIR, 'remaining-money.html'), 'utf8');
+      assert.ok(
+        remHtml.includes('id="btnBridgeSurplusGoals"'),
+        'remaining-money.html must have #btnBridgeSurplusGoals',
+      );
+      assert.ok(remHtml.includes('id="btnBridgeSurplusDca"'), 'remaining-money.html must have #btnBridgeSurplusDca');
+
+      const remJs = fs.readFileSync(path.join(ROOT_DIR, 'js/remaining-money.js'), 'utf8');
+      assert.ok(
+        remJs.includes('function bridgeSurplusToGoals'),
+        'js/remaining-money.js must define bridgeSurplusToGoals()',
+      );
+      assert.ok(remJs.includes('savings_goals_budget'), 'bridgeSurplusToGoals must send savings_goals_budget action');
+      assert.ok(remJs.includes('moneySuperapp.pendingGoalsBudget'), 'bridgeSurplusToGoals must set pendingGoalsBudget');
+      assert.ok(remJs.includes('lblBridgeGoals:'), 'js/remaining-money.js must have lblBridgeGoals translation key');
+    });
+
+    it('verifies js/dashboard.js provides savings goals management and symmetrical translations', () => {
+      const dashJs = fs.readFileSync(path.join(ROOT_DIR, 'js/dashboard.js'), 'utf8');
+
+      assert.ok(dashJs.includes('function renderSavingsGoals'), 'js/dashboard.js must define renderSavingsGoals()');
+      assert.ok(
+        dashJs.includes('function simulateGoalAllocation'),
+        'js/dashboard.js must define simulateGoalAllocation()',
+      );
+      assert.ok(dashJs.includes('function openGoalEditorModal'), 'js/dashboard.js must define openGoalEditorModal()');
+      assert.ok(dashJs.includes('function closeGoalEditorModal'), 'js/dashboard.js must define closeGoalEditorModal()');
+      assert.ok(dashJs.includes('function saveGoalFromEditor'), 'js/dashboard.js must define saveGoalFromEditor()');
+      assert.ok(dashJs.includes('function deleteGoal'), 'js/dashboard.js must define deleteGoal()');
+      assert.ok(
+        dashJs.includes('function initSavingsGoalsBridge'),
+        'js/dashboard.js must define initSavingsGoalsBridge()',
+      );
+
+      // Bilingual symmetry verification
+      const requiredKeys = [
+        'savingsGoalsTitle',
+        'savingsGoalsSubtitle',
+        'btnAddGoal',
+        'goalsSimTitle',
+        'goalsSurplusInp',
+        'goalsStrategyTitle',
+        'stratPriority',
+        'stratProportional',
+        'stratBalanced',
+        'btnSimulateGoals',
+        'lblGoalEditorTitleAdd',
+        'lblGoalEditorTitleEdit',
+        'lblModalGoalName',
+        'lblModalGoalTarget',
+        'lblModalGoalCurrent',
+        'lblModalGoalMonths',
+        'lblModalGoalRate',
+        'lblModalGoalPriority',
+        'lblModalGoalCategory',
+        'btnDeleteGoal',
+        'btnSaveGoal',
+        'btnCloseGoalEditor',
+      ];
+
+      for (const k of requiredKeys) {
+        assert.ok(dashJs.includes(`${k}:`), `js/dashboard.js must define translation key ${k}`);
+      }
+    });
+  });
 });

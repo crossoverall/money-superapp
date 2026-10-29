@@ -22,6 +22,7 @@ const enginesCode = [
   readFileSync(resolve(__dirname, '../js/engines/vault-crypto.js'), 'utf8'),
   readFileSync(resolve(__dirname, '../js/engines/p2p-sync.js'), 'utf8'),
   readFileSync(resolve(__dirname, '../js/engines/bridge.js'), 'utf8'),
+  readFileSync(resolve(__dirname, '../js/engines/savings-goals.js'), 'utf8'),
 ].join(';\n');
 
 function createMockEnvironment(initialStorage = {}) {
@@ -384,6 +385,79 @@ describe('Cross-Tool Integration Bridges & Storage Contracts', () => {
       assert.equal(parsed.candidate.expenses[1].value, 2340.5);
       assert.equal(parsed.summary.totalInflow, 65000);
       assert.equal(parsed.summary.totalOutflow, 20840.5);
+    });
+  });
+
+  describe('Bridge 13: Remaining Money -> Dashboard (moneySuperapp.pendingGoalsBudget / savings_goals_budget)', () => {
+    it('dispatches surplus budget from Remaining Money and receives envelope in Dashboard', () => {
+      const { MoneyApp, storage } = createMockEnvironment();
+
+      const surplusAmount = 15000;
+      const envelope = MoneyApp.Bridge.send('dashboard', 'savings_goals_budget', surplusAmount, {
+        source: 'remaining-money',
+      });
+
+      assert.equal(envelope.version, 1);
+      assert.equal(envelope.source, 'remaining-money');
+      assert.equal(envelope.target, 'dashboard');
+      assert.equal(envelope.action, 'savings_goals_budget');
+      assert.equal(envelope.payload, 15000);
+
+      // Verifies standardized envelope and legacy fallback key are synchronized
+      assert.equal(storage.getItem('moneySuperapp.pendingGoalsBudget'), '15000');
+      assert.ok(storage.getItem('moneySuperapp.bridge.dashboard.savings_goals_budget'));
+
+      let receivedBudget = null;
+      let receivedEnvelope = null;
+
+      const consumed = MoneyApp.Bridge.receive(
+        'savings_goals_budget',
+        (payload, env) => {
+          receivedBudget = payload;
+          receivedEnvelope = env;
+        },
+        { target: 'dashboard' },
+      );
+
+      assert.equal(consumed, true);
+      assert.equal(receivedBudget, 15000);
+      assert.equal(receivedEnvelope.source, 'remaining-money');
+
+      // Verifies consume-once cleanup
+      assert.equal(storage.getItem('moneySuperapp.bridge.dashboard.savings_goals_budget'), null);
+      assert.equal(storage.getItem('moneySuperapp.pendingGoalsBudget'), null);
+    });
+
+    it('gracefully handles legacy pendingGoalsBudget fallback key', () => {
+      const { MoneyApp, storage } = createMockEnvironment({
+        'moneySuperapp.pendingGoalsBudget': '25000',
+      });
+
+      let receivedBudget = null;
+      const consumed = MoneyApp.Bridge.receive(
+        'savings_goals_budget',
+        (payload) => {
+          receivedBudget = payload;
+        },
+        { target: 'dashboard' },
+      );
+
+      assert.equal(consumed, true);
+      assert.equal(receivedBudget, '25000');
+      assert.equal(storage.getItem('moneySuperapp.pendingGoalsBudget'), null);
+    });
+
+    it('allocates bridged surplus across active savings goals with capital conservation', () => {
+      const { MoneyApp } = createMockEnvironment();
+
+      const goals = MoneyApp.SavingsGoals.loadGoals();
+      const bridgedSurplus = 20000;
+
+      const allocation = MoneyApp.SavingsGoals.allocateMonthlySurplus(goals, bridgedSurplus, 'priority');
+
+      assert.ok(allocation.totalAllocated <= bridgedSurplus);
+      assert.equal(allocation.totalAllocated + allocation.unallocated, bridgedSurplus);
+      assert.ok(allocation.length > 0);
     });
   });
 });

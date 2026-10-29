@@ -216,6 +216,39 @@ const translations = {
     btnOpenSheets: 'เปิด Google Sheets',
     driveGuide:
       '💡 เคล็ดลับ: เมื่อเลือก CSV ระบบจะเตรียมไฟล์ที่พร้อมเปิดด้วย Google Sheets ได้ทันที หากเปิดบนมือถือสามารถกดบันทึกลง Google Drive ได้โดยตรง',
+    savingsGoalsTitle: '🎯 แผนเป้าหมายการออมระยะสั้น-กลาง (Savings Goals Planner)',
+    savingsGoalsSubtitle: 'คำนวณเงินออมต่อเดือนและจำลองการจัดสรรเงินคงเหลือสุทธิ',
+    btnAddGoal: '+ เพิ่มเป้าหมาย',
+    goalsSimTitle: '⚡ จำลองการจัดสรรเงินคงเหลือรายเดือน (Surplus Allocation Simulator)',
+    goalsSurplusInp: 'เงินคงเหลือรายเดือนที่นำมาจัดสรร (บาท):',
+    goalsStrategyTitle: 'กลยุทธ์การจัดสรร (Strategy):',
+    stratPriority: 'ความสำคัญ (Priority)',
+    stratProportional: 'ตามสัดส่วน (Proportional)',
+    stratBalanced: 'เท่ากัน (Balanced)',
+    btnSimulateGoals: '🚀 จำลองการจัดสรร',
+    lblGoalEditorTitleAdd: 'เพิ่มเป้าหมายการออมใหม่',
+    lblGoalEditorTitleEdit: 'แก้ไขเป้าหมายการออม',
+    lblModalGoalName: 'ชื่อเป้าหมาย (Goal Name)',
+    lblModalGoalTarget: 'เป้าหมาย (บาท)',
+    lblModalGoalCurrent: 'สะสมแล้ว (บาท)',
+    lblModalGoalMonths: 'ระยะเวลา (เดือน)',
+    lblModalGoalRate: 'ผลตอบแทนคาดหวัง (%/ปี)',
+    lblModalGoalPriority: 'ลำดับความสำคัญ (Priority)',
+    lblModalGoalCategory: 'หมวดหมู่ (Category)',
+    btnDeleteGoal: 'ลบเป้าหมาย',
+    btnSaveGoal: 'บันทึก',
+    btnCloseGoalEditor: 'ยกเลิก',
+    emptySavingsGoals: 'ยังไม่มีเป้าหมายการออม — กดปุ่ม + เพื่อเริ่มต้นสร้างเป้าหมาย',
+    goalItemCurrent: 'สะสมแล้ว: ',
+    goalItemTarget: 'เป้าหมาย: ',
+    goalItemMonths: 'ระยะเวลา: ',
+    goalItemReqMonthly: 'ต้องออม: ',
+    goalItemReqPerMonth: 'บาท/เดือน',
+    goalAllocatedTotal: 'จัดสรรแล้ว: ',
+    goalAllocatedRemaining: 'เงินคงเหลือที่ไม่ได้จัดสรร: ',
+    goalStatusAchieved: '🎉 สำเร็จแล้ว',
+    goalAlertMissingName: 'กรุณาระบุชื่อเป้าหมายและยอดเป้าหมายให้ถูกต้อง',
+    goalConfirmDelete: 'คุณแน่ใจหรือไม่ว่าต้องการลบเป้าหมายนี้?',
   },
   en: {
     title: 'Financial Dashboard',
@@ -434,6 +467,39 @@ const translations = {
     btnOpenSheets: 'Open Google Sheets',
     driveGuide:
       '💡 Tip: When exporting as CSV, the file is ready for Google Sheets. On mobile devices, you can tap to upload directly to Google Drive via native share.',
+    savingsGoalsTitle: '🎯 Short & Medium-Term Savings Goals Planner',
+    savingsGoalsSubtitle: 'Compute monthly required savings and simulate surplus distribution',
+    btnAddGoal: '+ Add Goal',
+    goalsSimTitle: '⚡ Monthly Surplus Allocation Simulator',
+    goalsSurplusInp: 'Monthly Surplus Budget (THB):',
+    goalsStrategyTitle: 'Allocation Strategy:',
+    stratPriority: 'Priority',
+    stratProportional: 'Proportional',
+    stratBalanced: 'Balanced',
+    btnSimulateGoals: '🚀 Simulate Allocation',
+    lblGoalEditorTitleAdd: 'Add New Savings Goal',
+    lblGoalEditorTitleEdit: 'Edit Savings Goal',
+    lblModalGoalName: 'Goal Name',
+    lblModalGoalTarget: 'Target Amount (THB)',
+    lblModalGoalCurrent: 'Current Amount (THB)',
+    lblModalGoalMonths: 'Horizon (Months)',
+    lblModalGoalRate: 'Expected Return (%/yr)',
+    lblModalGoalPriority: 'Priority Level',
+    lblModalGoalCategory: 'Category',
+    btnDeleteGoal: 'Delete Goal',
+    btnSaveGoal: 'Save Goal',
+    btnCloseGoalEditor: 'Cancel',
+    emptySavingsGoals: 'No savings goals configured — click + to create one',
+    goalItemCurrent: 'Current: ',
+    goalItemTarget: 'Target: ',
+    goalItemMonths: 'Horizon: ',
+    goalItemReqMonthly: 'Required: ',
+    goalItemReqPerMonth: 'THB/mo',
+    goalAllocatedTotal: 'Total Allocated: ',
+    goalAllocatedRemaining: 'Unallocated Surplus: ',
+    goalStatusAchieved: '🎉 Achieved',
+    goalAlertMissingName: 'Please enter a valid goal name and target amount',
+    goalConfirmDelete: 'Are you sure you want to delete this goal?',
   },
 };
 
@@ -630,6 +696,27 @@ function applyLocalization() {
     'lbl-dossier-sub-insgap': t.dossierSubInsGap,
     'lbl-dossier-sub-taxann': t.dossierSubTaxAnn,
     'lbl-dossier-sub-taxwith': t.dossierSubTaxWith,
+    'lbl-savings-goals-title': t.savingsGoalsTitle,
+    'lbl-savings-goals-subtitle': t.savingsGoalsSubtitle,
+    'lbl-btn-add-goal': t.btnAddGoal,
+    'lbl-goals-sim-title': t.goalsSimTitle,
+    'lbl-goals-surplus-inp': t.goalsSurplusInp,
+    'lbl-goals-strategy-title': t.goalsStrategyTitle,
+    'lbl-strat-priority': t.stratPriority,
+    'lbl-strat-proportional': t.stratProportional,
+    'lbl-strat-balanced': t.stratBalanced,
+    'lbl-btn-simulate-goals': t.btnSimulateGoals,
+    lblModalGoalName: t.lblModalGoalName,
+    lblModalGoalTarget: t.lblModalGoalTarget,
+    lblModalGoalCurrent: t.lblModalGoalCurrent,
+    lblModalGoalMonths: t.lblModalGoalMonths,
+    lblModalGoalRate: t.lblModalGoalRate,
+    lblModalGoalPriority: t.lblModalGoalPriority,
+    lblModalGoalCategory: t.lblModalGoalCategory,
+    btnDeleteGoalEditor: t.btnDeleteGoal,
+    btnSaveGoalEditor: t.btnSaveGoal,
+    btnCloseGoalEditor: t.btnCloseGoalEditor,
+    lblGoalEditorTitle: t.lblGoalEditorTitleAdd,
   };
 
   const selEdu = document.getElementById('selEduTrack');
@@ -647,6 +734,41 @@ function applyLocalization() {
       selEdu.options[3].text = 'มหาวิทยาลัยนานาชาติในไทย (~650,000 บ./ปี)';
       selEdu.options[4].text = 'มหาวิทยาลัยต่างประเทศ (~1,800,000 บ./ปี)';
     }
+  }
+
+  const selPrio = document.getElementById('inpGoalEditPriority');
+  if (selPrio?.options && selPrio.options.length >= 3) {
+    if (LANG === 'en') {
+      selPrio.options[0].text = '1 - High Priority';
+      selPrio.options[1].text = '2 - Medium Priority';
+      selPrio.options[2].text = '3 - Low Priority';
+    } else {
+      selPrio.options[0].text = '1 - สำคัญสูงสุด (High)';
+      selPrio.options[1].text = '2 - สำคัญปานกลาง (Medium)';
+      selPrio.options[2].text = '3 - สำคัญทั่วไป (Low)';
+    }
+  }
+
+  const selCat = document.getElementById('inpGoalEditCategory');
+  if (selCat?.options && selCat.options.length >= 5) {
+    if (LANG === 'en') {
+      selCat.options[0].text = '🛡️ Emergency Reserve';
+      selCat.options[1].text = '✈️ Travel & Vacation';
+      selCat.options[2].text = '🏠 Housing & Property';
+      selCat.options[3].text = '🎓 Education';
+      selCat.options[4].text = '🎯 Other';
+    } else {
+      selCat.options[0].text = '🛡️ สำรองฉุกเฉิน (Emergency)';
+      selCat.options[1].text = '✈️ ท่องเที่ยว (Travel)';
+      selCat.options[2].text = '🏠 ที่อยู่อาศัย (Housing)';
+      selCat.options[3].text = '🎓 การศึกษา (Education)';
+      selCat.options[4].text = '🎯 อื่นๆ (Other)';
+    }
+  }
+
+  const inpGoalName = document.getElementById('inpGoalEditName');
+  if (inpGoalName) {
+    inpGoalName.placeholder = LANG === 'en' ? 'e.g. House Down Payment, Japan Vacation' : 'เช่น เงินดาวน์บ้าน, ท่องเที่ยวญี่ปุ่น';
   }
 
   const mcExplEl = document.getElementById('lbl-mc-expl');
@@ -3057,6 +3179,428 @@ function saveGoalsFromModal() {
   renderFinancialGoals();
 }
 
+// --- Phase 145: Savings Goals Planner & Surplus Allocation ---
+let currentGoalStrategy = 'priority';
+
+const formatMoneyFn = (n) => {
+  if (typeof formatMoney === 'function') return formatMoney(n);
+  if (typeof window !== 'undefined' && typeof window.formatMoney === 'function') return window.formatMoney(n);
+  return Number(n || 0).toLocaleString();
+};
+
+function formatGoalDisplayName(name, isEn) {
+  if (!name) return '';
+  if (!isEn) return name;
+  const match = name.match(/\(([^)]+)\)$/);
+  if (match?.[1] && !/[\u0E01-\u0E3A\u0E40-\u0E4E\u0E50-\u0E59]/.test(match[1])) {
+    return match[1].trim();
+  }
+  return name;
+}
+
+function selectGoalStrategy(strategy) {
+  currentGoalStrategy = strategy || 'priority';
+  const stratButtons = [
+    { id: 'btnGoalStratPriority', strat: 'priority' },
+    { id: 'btnGoalStratProportional', strat: 'proportional' },
+    { id: 'btnGoalStratBalanced', strat: 'balanced' },
+  ];
+  stratButtons.forEach((b) => {
+    const el = document.getElementById(b.id);
+    if (!el) return;
+    if (b.strat === currentGoalStrategy) {
+      el.classList.add('active');
+      el.style.background = 'var(--primary)';
+      el.style.color = '#fff';
+    } else {
+      el.classList.remove('active');
+      el.style.background = 'var(--panel)';
+      el.style.color = 'var(--ink)';
+    }
+  });
+
+  const surplusInp = document.getElementById('inpGoalsSurplus');
+  const val = parseNum(surplusInp?.value || 0);
+  if (val > 0) {
+    simulateGoalAllocation();
+  }
+}
+
+function getGoalCategoryIcon(category) {
+  const cat = String(category || '').toLowerCase();
+  switch (cat) {
+    case 'emergency':
+      return '🛡️';
+    case 'travel':
+      return '✈️';
+    case 'house':
+      return '🏠';
+    case 'education':
+      return '🎓';
+    default:
+      return '🎯';
+  }
+}
+
+function getGoalPriorityLabel(priority, isEn) {
+  const p = Number(priority) || 1;
+  if (isEn) {
+    if (p === 1) return 'High';
+    if (p === 2) return 'Med';
+    return 'Low';
+  }
+  if (p === 1) return 'สำคัญสูง';
+  if (p === 2) return 'ปานกลาง';
+  return 'ทั่วไป';
+}
+
+function renderSavingsGoals() {
+  const listEl = document.getElementById('savingsGoalsList');
+  if (!listEl) return;
+  const isEn = LANG === 'en';
+  const t = translations[LANG] || translations.th;
+  const safeEscape =
+    typeof escapeHtml === 'function'
+      ? escapeHtml
+      : typeof window !== 'undefined' && typeof window.escapeHtml === 'function'
+        ? window.escapeHtml
+        : (s) =>
+            String(s ?? '')
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;');
+
+  const SG = window.MoneyApp?.SavingsGoals;
+  const goals = SG?.loadGoals ? SG.loadGoals() : [];
+
+  if (!goals || goals.length === 0) {
+    listEl.innerHTML = `
+      <div style="background:var(--panel-2); border:1px dashed var(--line); border-radius:10px; padding:16px; text-align:center; color:var(--ink-faint); font-size:11px;">
+        ${safeEscape(t.emptySavingsGoals || 'No savings goals')}
+      </div>
+    `;
+    return;
+  }
+
+  const itemsHtml = goals
+    .map((g) => {
+      const reqMonthly = SG?.computeRequiredMonthlyContribution
+        ? SG.computeRequiredMonthlyContribution(g)
+        : g.requiredMonthly || 0;
+
+      const target = Math.max(0, Number(g.targetAmount) || 0);
+      const current = Math.max(0, Number(g.currentAmount) || 0);
+      const pct = target > 0 ? Math.min(100, Math.round((current / target) * 1000) / 10) : 0;
+      const isCompleted = target > 0 && current >= target;
+      const icon = getGoalCategoryIcon(g.category);
+      const prioText = getGoalPriorityLabel(g.priority, isEn);
+
+      const statusBadge = isCompleted
+        ? `<span style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--ok-dim, rgba(16,185,129,0.15)); color:var(--ok, #10b981); border:1px solid var(--ok, #10b981);">${t.goalStatusAchieved || '🎉 Achieved'}</span>`
+        : `<span style="font-size:10px; font-weight:700; padding:2px 6px; border-radius:6px; background:var(--panel); border:1px solid var(--line); color:var(--ink-dim);">P${g.priority} (${prioText})</span>`;
+
+      return `
+        <div class="savings-goal-item" data-goal-id="${safeEscape(g.id)}" style="background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:4px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:14px;">${icon}</span>
+              <span style="font-size:12px; font-weight:700; color:var(--ink);">${safeEscape(formatGoalDisplayName(g.name, isEn))}</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              ${statusBadge}
+              <button type="button" class="action-btn" onclick="openGoalEditorModal('${safeEscape(g.id)}')" style="padding:2px 6px; font-size:10px;" title="${isEn ? 'Edit' : 'แก้ไข'}">✏️</button>
+              <button type="button" class="action-btn" onclick="deleteGoal('${safeEscape(g.id)}')" style="padding:2px 6px; font-size:10px; color:var(--danger);" title="${isEn ? 'Delete' : 'ลบ'}">🗑️</button>
+            </div>
+          </div>
+
+          <div style="height:8px; background:var(--panel); border-radius:999px; overflow:hidden; border:1px solid var(--line); margin-bottom:6px;">
+            <div style="height:100%; width:${pct}%; background:${isCompleted ? 'var(--ok, #10b981)' : 'var(--accent, #3b82f6)'}; border-radius:999px; transition:width 0.4s ease;"></div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--ink-faint); margin-bottom:4px; flex-wrap:wrap; gap:4px;">
+            <span>${t.goalItemCurrent || 'Current: '}<strong style="color:var(--ink);">${formatMoneyFn(current)}</strong></span>
+            <span>${t.goalItemTarget || 'Target: '}<strong style="color:var(--ink);">${formatMoneyFn(target)}</strong> (${pct}%)</span>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:10.5px; border-top:1px dashed var(--line); padding-top:6px; margin-top:6px; flex-wrap:wrap; gap:4px;">
+            <span style="color:var(--ink-faint);">${t.goalItemMonths || 'Horizon: '}<strong>${g.targetMonths} ${t.monthsUnit}</strong></span>
+            <span style="font-weight:700; color:var(--primary); background:var(--panel); padding:2px 8px; border-radius:6px; border:1px solid var(--line);">
+              ${t.goalItemReqMonthly || 'Required: '} ${formatMoneyFn(reqMonthly)} ${t.goalItemReqPerMonth || 'THB/mo'}
+            </span>
+          </div>
+        </div>
+      `;
+    })
+    .join('');
+
+  listEl.innerHTML = itemsHtml;
+}
+
+function simulateGoalAllocation() {
+  const surplusInp = document.getElementById('inpGoalsSurplus');
+  const resultsEl = document.getElementById('goalAllocationResults');
+  if (!resultsEl) return;
+
+  const surplus = Math.max(0, parseNum(surplusInp?.value || 0));
+  const t = translations[LANG] || translations.th;
+  const isEn = LANG === 'en';
+  const safeEscape =
+    typeof escapeHtml === 'function'
+      ? escapeHtml
+      : typeof window !== 'undefined' && typeof window.escapeHtml === 'function'
+        ? window.escapeHtml
+        : (s) =>
+            String(s ?? '')
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;');
+
+  const SG = window.MoneyApp?.SavingsGoals;
+  if (!SG?.loadGoals || !SG?.allocateMonthlySurplus) return;
+
+  const goals = SG.loadGoals();
+  if (!goals || goals.length === 0) return;
+
+  const allocations = SG.allocateMonthlySurplus(goals, surplus, currentGoalStrategy);
+
+  resultsEl.style.display = 'block';
+
+  const breakdownRows = allocations
+    .map((item) => {
+      const isCompleted = item.isCompleted;
+      const allocBadge =
+        item.allocated > 0
+          ? `<strong style="color:var(--ok, #10b981);">+${formatMoneyFn(item.allocated)}</strong>`
+          : `<span style="color:var(--ink-dim);">-</span>`;
+
+      return `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px solid var(--line); font-size:10.5px;">
+          <div>
+            <strong style="color:var(--ink);">${safeEscape(formatGoalDisplayName(item.name, isEn))}</strong>
+            <span style="font-size:9.5px; color:var(--ink-faint); margin-left:4px;">(${formatMoneyFn(item.currentAmount)} ➔ ${formatMoneyFn(item.newCurrentAmount)})</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            ${allocBadge}
+            <span style="font-size:10px; font-weight:600; padding:1px 6px; border-radius:4px; background:var(--panel); border:1px solid var(--line);">
+              ${item.progressPct}% ${isCompleted ? '🎉' : ''}
+            </span>
+          </div>
+        </div>
+      `;
+    })
+    .join('');
+
+  resultsEl.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-weight:700;">
+      <span style="color:var(--ok, #10b981);">${t.goalAllocatedTotal || 'Total Allocated: '} ${formatMoneyFn(allocations.totalAllocated)} ${isEn ? 'THB' : 'บาท'}</span>
+      <span style="color:var(--ink-dim);">${t.goalAllocatedRemaining || 'Unallocated: '} ${formatMoneyFn(allocations.unallocated)} ${isEn ? 'THB' : 'บาท'}</span>
+    </div>
+    <div style="display:grid; gap:2px;">
+      ${breakdownRows}
+    </div>
+  `;
+}
+
+function openGoalEditorModal(goalId) {
+  const modal = document.getElementById('goalEditorModal');
+  const titleEl = document.getElementById('lblGoalEditorTitle');
+  const btnDelete = document.getElementById('btnDeleteGoalEditor');
+  const inpId = document.getElementById('inpGoalEditId');
+  const inpName = document.getElementById('inpGoalEditName');
+  const inpTarget = document.getElementById('inpGoalEditTarget');
+  const inpCurrent = document.getElementById('inpGoalEditCurrent');
+  const inpMonths = document.getElementById('inpGoalEditMonths');
+  const inpRate = document.getElementById('inpGoalEditRate');
+  const inpPriority = document.getElementById('inpGoalEditPriority');
+  const inpCategory = document.getElementById('inpGoalEditCategory');
+
+  const t = translations[LANG] || translations.th;
+  const SG = window.MoneyApp?.SavingsGoals;
+
+  if (goalId) {
+    const goals = SG?.loadGoals ? SG.loadGoals() : [];
+    const goal = goals.find((g) => g.id === goalId);
+    if (goal) {
+      if (inpId) inpId.value = goal.id;
+      if (inpName) inpName.value = goal.name;
+      if (inpTarget) inpTarget.value = goal.targetAmount;
+      if (inpCurrent) inpCurrent.value = goal.currentAmount;
+      if (inpMonths) inpMonths.value = goal.targetMonths;
+      if (inpRate) inpRate.value = goal.annualRatePct ?? 1.5;
+      if (inpPriority) inpPriority.value = goal.priority ?? 1;
+      if (inpCategory) inpCategory.value = goal.category ?? 'other';
+
+      if (titleEl) titleEl.textContent = t.lblGoalEditorTitleEdit || 'Edit Goal';
+      if (btnDelete) btnDelete.style.display = 'block';
+    }
+  } else {
+    if (inpId) inpId.value = '';
+    if (inpName) inpName.value = '';
+    if (inpTarget) inpTarget.value = '';
+    if (inpCurrent) inpCurrent.value = '0';
+    if (inpMonths) inpMonths.value = '12';
+    if (inpRate) inpRate.value = '1.5';
+    if (inpPriority) inpPriority.value = '1';
+    if (inpCategory) inpCategory.value = 'other';
+
+    if (titleEl) titleEl.textContent = t.lblGoalEditorTitleAdd || 'Add Goal';
+    if (btnDelete) btnDelete.style.display = 'none';
+  }
+
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeGoalEditorModal() {
+  const modal = document.getElementById('goalEditorModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function saveGoalFromEditor() {
+  const inpId = document.getElementById('inpGoalEditId');
+  const inpName = document.getElementById('inpGoalEditName');
+  const inpTarget = document.getElementById('inpGoalEditTarget');
+  const inpCurrent = document.getElementById('inpGoalEditCurrent');
+  const inpMonths = document.getElementById('inpGoalEditMonths');
+  const inpRate = document.getElementById('inpGoalEditRate');
+  const inpPriority = document.getElementById('inpGoalEditPriority');
+  const inpCategory = document.getElementById('inpGoalEditCategory');
+
+  const t = translations[LANG] || translations.th;
+  const name = inpName ? inpName.value.trim() : '';
+  const target = Math.max(0, parseNum(inpTarget?.value || 0));
+  if (!name || target <= 0) {
+    alert(t.goalAlertMissingName || 'Please enter valid goal name and target amount');
+    return;
+  }
+
+  const current = Math.max(0, parseNum(inpCurrent?.value || 0));
+  const months = Math.max(1, Math.round(parseNum(inpMonths?.value || 12)));
+  const rate = Math.max(0, parseNum(inpRate?.value || 1.5));
+  const priority = Math.max(1, Math.round(parseNum(inpPriority?.value || 1)));
+  const category = inpCategory ? inpCategory.value : 'other';
+
+  const SG = window.MoneyApp?.SavingsGoals;
+  if (!SG) return;
+
+  const goals = SG.loadGoals ? SG.loadGoals() : [];
+  const id = inpId ? inpId.value.trim() : '';
+
+  if (id) {
+    const idx = goals.findIndex((g) => g.id === id);
+    if (idx !== -1) {
+      goals[idx] = SG.createGoal({
+        ...goals[idx],
+        name,
+        targetAmount: target,
+        currentAmount: current,
+        targetMonths: months,
+        annualRatePct: rate,
+        priority,
+        category,
+        updatedAt: new Date().toISOString(),
+      });
+    }
+  } else {
+    const newGoal = SG.createGoal({
+      name,
+      targetAmount: target,
+      currentAmount: current,
+      targetMonths: months,
+      annualRatePct: rate,
+      priority,
+      category,
+    });
+    goals.push(newGoal);
+  }
+
+  SG.saveGoals(null, goals);
+  renderSavingsGoals();
+  closeGoalEditorModal();
+}
+
+function deleteGoal(goalId) {
+  if (!goalId) return;
+  const t = translations[LANG] || translations.th;
+  if (!confirm(t.goalConfirmDelete || 'Are you sure you want to delete this goal?')) {
+    return;
+  }
+  const SG = window.MoneyApp?.SavingsGoals;
+  if (!SG) return;
+
+  let goals = SG.loadGoals ? SG.loadGoals() : [];
+  goals = goals.filter((g) => g.id !== goalId);
+  SG.saveGoals(null, goals);
+  renderSavingsGoals();
+}
+
+function deleteGoalFromEditor() {
+  const inpId = document.getElementById('inpGoalEditId');
+  const id = inpId ? inpId.value.trim() : '';
+  if (id) {
+    deleteGoal(id);
+    closeGoalEditorModal();
+  }
+}
+
+function initSavingsGoalsBridge() {
+  const handleBudget = (val) => {
+    let amount = 0;
+    if (typeof val === 'number') {
+      amount = val;
+    } else if (typeof val === 'string') {
+      amount = parseFloat(val) || 0;
+    } else if (typeof val === 'object' && val !== null) {
+      amount = Number(val.amount || val.budget || val.surplus) || 0;
+    }
+    if (amount > 0) {
+      const inp = document.getElementById('inpGoalsSurplus');
+      if (inp) {
+        inp.value = amount;
+        simulateGoalAllocation();
+      }
+    }
+  };
+
+  let consumed = false;
+  if (window.MoneyApp?.Bridge?.receive) {
+    consumed = window.MoneyApp.Bridge.receive('savings_goals_budget', handleBudget);
+  }
+  if (!consumed) {
+    try {
+      const raw = localStorage.getItem('moneySuperapp.pendingGoalsBudget');
+      if (raw !== null) {
+        localStorage.removeItem('moneySuperapp.pendingGoalsBudget');
+        handleBudget(raw);
+      }
+    } catch (_e) {}
+  }
+
+  // Cross-tab real-time listener
+  if (window.MoneyApp?.Bridge?.on) {
+    try {
+      window.MoneyApp.Bridge.on('savings_goals_budget', (envelope) => {
+        if (envelope?.payload) {
+          handleBudget(envelope.payload);
+        }
+      });
+    } catch (_e) {}
+  }
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'moneySuperapp.pendingGoalsBudget' && e.newValue) {
+        try {
+          const val = e.newValue;
+          localStorage.removeItem('moneySuperapp.pendingGoalsBudget');
+          handleBudget(val);
+        } catch (_err) {}
+      }
+    });
+  }
+}
+
 function jumpToTab(tabId) {
   try {
     if (window.parent && window.parent !== window) {
@@ -3515,6 +4059,8 @@ function hideChartTooltip() {
 // Initialize
 renderDashboardKPIs();
 renderFinancialGoals();
+renderSavingsGoals();
+initSavingsGoalsBridge();
 initInsuranceAdequacy();
 initThreeBucketsCalculator();
 initChildEducationPlanner();
@@ -3899,6 +4445,7 @@ function refreshDashboard() {
   applyLocalization();
   renderDashboardKPIs();
   renderFinancialGoals();
+  renderSavingsGoals();
   updateInsuranceAdequacy();
   updateThreeBucketsCalculator();
   updateChildEducationPlanner();
@@ -4140,6 +4687,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     closeGoalsModal();
     closeDriveModal();
+    closeGoalEditorModal();
   }
 });
 
@@ -4148,3 +4696,12 @@ window.generateDashboardDossierCSV = generateDashboardDossierCSV;
 window.openDriveModal = openDriveModal;
 window.closeDriveModal = closeDriveModal;
 window.saveToGoogleDrive = saveToGoogleDrive;
+window.openGoalEditorModal = openGoalEditorModal;
+window.closeGoalEditorModal = closeGoalEditorModal;
+window.saveGoalFromEditor = saveGoalFromEditor;
+window.deleteGoal = deleteGoal;
+window.deleteGoalFromEditor = deleteGoalFromEditor;
+window.selectGoalStrategy = selectGoalStrategy;
+window.simulateGoalAllocation = simulateGoalAllocation;
+window.renderSavingsGoals = renderSavingsGoals;
+window.initSavingsGoalsBridge = initSavingsGoalsBridge;

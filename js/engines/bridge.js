@@ -21,6 +21,7 @@
     bank_statement: { target: 'remaining-money', key: 'moneySuperapp.pendingBankStatement', isJson: false },
     insurance_premium: { target: 'remaining-money', key: 'moneySuperapp.pendingInsurancePremium', isJson: true },
     dca_budget: { target: 'remaining-money', key: 'moneySuperapp.pendingDcaBudget', isJson: true },
+    savings_goals_budget: { target: 'dashboard', key: 'moneySuperapp.pendingGoalsBudget', isJson: false },
   };
 
   function getCurrentToolName() {

@@ -80,6 +80,7 @@ const translations = {
     lblSimDebt: 'เร่งปลดหนี้',
     lblSimDca: 'ลงทุนสม่ำเสมอ DCA',
     lblBridgeDca: 'ส่งยอด DCA ไป Rebalance พอร์ต ➔',
+    lblBridgeGoals: '🎯 ส่งยอดคงเหลือไปยังเป้าหมายการออม ➔',
     copiedSuccess: '✓ คัดลอกแล้ว!',
     lblImport: 'นำเข้าข้อมูล',
     importModalTitle: 'ตรวจสอบข้อมูลที่นำเข้า',
@@ -221,6 +222,7 @@ const translations = {
     lblSimDebt: 'Debt Payoff',
     lblSimDca: 'DCA Investment',
     lblBridgeDca: 'Bridge DCA to Portfolio Rebalance ➔',
+    lblBridgeGoals: '🎯 Send Surplus to Goals ➔',
     copiedSuccess: '✓ Copied!',
     lblImport: 'Import Data',
     importModalTitle: 'Import Data Preview',
@@ -568,6 +570,8 @@ if (LANG === 'en') {
   if (sDca) sDca.textContent = EN.lblSimDca;
   const bDca = document.getElementById('lblBridgeDca');
   if (bDca) bDca.textContent = EN.lblBridgeDca;
+  const bGoals = document.getElementById('lblBridgeGoals');
+  if (bGoals) bGoals.textContent = EN.lblBridgeGoals;
 
   const tmplBtn = document.getElementById('lblTemplates');
   if (tmplBtn) tmplBtn.textContent = EN.lblTemplates;
@@ -2561,6 +2565,26 @@ function bridgeSurplusDcaToRebalance() {
   }
 }
 
+function bridgeSurplusToGoals() {
+  const surplus = lastCashflowTotals.remaining;
+  if (surplus <= 0) return;
+  const amount = surplus;
+  try {
+    if (window.MoneyApp?.Bridge?.send) {
+      window.MoneyApp.Bridge.send('dashboard', 'savings_goals_budget', amount);
+    }
+  } catch (_e) {}
+  try {
+    localStorage.setItem('moneySuperapp.pendingGoalsBudget', String(amount));
+  } catch (_e) {}
+  if (window.parent && typeof window.parent.switchToTab === 'function') {
+    window.parent.switchToTab('dashboard');
+  } else {
+    const targetOrigin = window.location.origin && window.location.origin !== 'null' ? window.location.origin : '*';
+    window.parent.postMessage({ action: 'switchToTab', target: 'dashboard' }, targetOrigin);
+  }
+}
+
 // Bind Waterfall Category Chips and Simulator Controls
 const chipContainer = document.getElementById('cfCategoryChips');
 if (chipContainer) {
@@ -2592,9 +2616,15 @@ if (btnBridgeDca) {
   btnBridgeDca.addEventListener('click', bridgeSurplusDcaToRebalance);
 }
 
+const btnBridgeGoals = document.getElementById('btnBridgeSurplusGoals');
+if (btnBridgeGoals) {
+  btnBridgeGoals.addEventListener('click', bridgeSurplusToGoals);
+}
+
 if (typeof window !== 'undefined') {
   window.selectCashflowCategory = selectCashflowCategory;
   window.bridgeSurplusDcaToRebalance = bridgeSurplusDcaToRebalance;
+  window.bridgeSurplusToGoals = bridgeSurplusToGoals;
 }
 
 function onToggleRunway(checked) {
