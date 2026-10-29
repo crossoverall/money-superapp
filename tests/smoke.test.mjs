@@ -3267,4 +3267,16 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(remHtml.includes('id="kpiEmergency"') && remHtml.includes('aria-live="polite"'));
     });
   });
+
+  describe('Phase 141: Native Zero-Dependency Code Coverage Reporting Contracts', () => {
+    it('verifies package.json declares valid test:coverage script with native Node test coverage', () => {
+      const pkgJson = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8'));
+      assert.ok(pkgJson.scripts['test:coverage'], 'package.json must declare test:coverage script');
+      assert.strictEqual(
+        pkgJson.scripts['test:coverage'],
+        'node --test --experimental-test-coverage tests/**/*.test.mjs',
+        'test:coverage script must invoke node --test with native --experimental-test-coverage',
+      );
+    });
+  });
 });

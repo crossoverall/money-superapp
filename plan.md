@@ -222,7 +222,7 @@ flowchart LR
 | Phase | Target Version | Scope & Deliverable | Complexity | Status |
 |---|---|---|---|---|
 | **Phase 140** | `v2.6.1` | Synchronize v3.0 next-generation roadmap into `plan.md` | Level 1 | ✅ **Shipped** |
-| **Phase 141** | `v2.6.2` | Native zero-dependency code coverage reporting (`npm run test:coverage`) | Level 1 | 📋 Queued |
+| **Phase 141** | `v2.6.2` | Native zero-dependency code coverage reporting (`npm run test:coverage`) | Level 1 | ✅ **Shipped** |
 | **Phase 142** | `v2.6.3` | Unified GitHub Actions CI pipeline (`lint`, `test`, `test:budget`, `test:coverage`) | Level 1 | 📋 Queued |
 | **Phase 143** | `v2.6.4` | First-time user onboarding wizard & quick-start templates | Level 2 | 📋 Queued |
 | **Phase 144** | `v2.6.5` | Goal-based savings planner calculation engine (`MoneyApp.SavingsGoals`) | Level 2 | 📋 Queued |

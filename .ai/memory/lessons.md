@@ -15,6 +15,17 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-29: Native Zero-Dependency Code Coverage Reporting (Phase 141 / v2.6.2)
+- **Date & Context:** 2026-10-29, Pillar 6.1 Native Zero-Dependency Code Coverage Reporting (`v2.6.2`).
+- **Problem:**
+  - Traditional JavaScript coverage tools like `nyc` or `c8` introduce heavy external npm dependencies and violate ADR-001 as well as `tests/asset-budget.test.mjs`.
+  - Developers needed a single standard command to inspect code, branch, and function coverage across the 25 domain engines without breaking CI budget gates.
+- **Solution & Invariants:**
+  1. Configured `"test:coverage": "node --test --experimental-test-coverage tests/**/*.test.mjs"` natively in `package.json`.
+  2. Preserved zero runtime dependencies in `package.json` (`dependencies` empty, `devDependencies` strictly `@biomejs/biome`).
+  3. Added contract assertions in `tests/smoke.test.mjs` verifying the coverage command structure.
+  4. All 807 tests pass across 227 test suites with 0 lint violations. Version bumped to `v2.6.2`.
+
 ### 2026-10-29: Roadmap Plan v3.0 Synchronization & Invariant Hardening (Phase 140 / v2.6.1)
 - **Date & Context:** 2026-10-29, Phase 140 Next-Generation Roadmap Synchronization (`v2.6.1`).
 - **Problem:**
