@@ -1,7 +1,7 @@
 ---
-task_id: "phase-141-native-test-coverage"
+task_id: "phase-142-unified-github-actions-ci"
 status: "in_progress"
-current_stage: "qa_verification"
+current_stage: "coding"
 iteration_count: 0
 pipeline:
   - stage: "spec"
@@ -11,7 +11,7 @@ pipeline:
   - stage: "human_approval"
     status: "approved_by_user"
   - stage: "coding"
-    status: "completed"
+    status: "in_progress"
   - stage: "qa_verification"
     status: "pending"
   - stage: "code_review"
@@ -20,15 +20,16 @@ pipeline:
     status: "pending"
 ---
 
-### Feature Specification: Phase 141 — Native Zero-Dependency Code Coverage Reporting (Pillar 6.1 / v2.6.2)
+### Feature Specification: Phase 142 — Unified GitHub Actions CI Pipeline (Pillar 6.2 / v2.6.3)
 
 #### 1. Goal & Requirements
-- Add `"test:coverage": "node --test --experimental-test-coverage tests/**/*.test.mjs"` to `package.json` scripts.
-- Ensure zero external npm dependencies are introduced, strictly adhering to ADR-001 and `tests/asset-budget.test.mjs`.
-- Add an automated assertion in `tests/smoke.test.mjs` verifying that `package.json` declares the `test:coverage` command and runs via native Node.js test runner.
+- Update `.github/workflows/ci.yml` to include:
+  1. `npm run test:budget` (Automated Asset Size & Zero-Dependency Budget Gate)
+  2. `npm run test:coverage` (Native Node.js Test Coverage Reporting)
+- Add contract assertion in `tests/smoke.test.mjs` verifying `.github/workflows/ci.yml` runs all 4 gates (`lint`, `test`, `test:budget`, `test:coverage`).
+- Update `plan.md` status.
 
 #### 2. Acceptance Criteria
-- `npm run test:coverage` runs cleanly and prints line, branch, and function coverage percentages.
-- `npm run test:budget` passes with 0 violations.
-- `npm run lint` passes with 0 errors/warnings.
-- All tests pass (806+ passing).
+- `.github/workflows/ci.yml` contains clear steps for all 4 gates across Node 20 and Node 22 matrix.
+- `tests/smoke.test.mjs` passes contract assertions.
+- `npm run lint`, `npm run test:budget`, `npm test` all pass cleanly.

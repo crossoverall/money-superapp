@@ -15,6 +15,16 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-29: Unified GitHub Actions CI Pipeline (Phase 142 / v2.6.3)
+- **Date & Context:** 2026-10-29, Pillar 6.2 Unified GitHub Actions CI Pipeline (`v2.6.3`).
+- **Problem:**
+  - Automated CI workflows on GitHub Actions previously only ran `npm test` and Lighthouse CI, omitting the asset size & zero-dependency budget gate (`npm run test:budget`) and the native test coverage reporting (`npm run test:coverage`).
+  - Without running `test:budget` in CI, unintended CDN references or payload budget breaches could pass unnoticed on pull requests.
+- **Solution & Invariants:**
+  1. Updated `.github/workflows/ci.yml` across the Node 20 & 22 matrix to execute `npm run test:budget` and `npm run test:coverage` on every push and PR.
+  2. Added contract assertions in `tests/smoke.test.mjs` verifying the workflow configuration.
+  3. All 807 tests passed cleanly with 0 Biome linter errors. Version bumped to `v2.6.3`.
+
 ### 2026-10-29: Native Zero-Dependency Code Coverage Reporting (Phase 141 / v2.6.2)
 - **Date & Context:** 2026-10-29, Pillar 6.1 Native Zero-Dependency Code Coverage Reporting (`v2.6.2`).
 - **Problem:**

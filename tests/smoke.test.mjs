@@ -3279,4 +3279,14 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       );
     });
   });
+
+  describe('Phase 142: Unified GitHub Actions CI Pipeline Contracts', () => {
+    it('verifies .github/workflows/ci.yml includes npm run test:budget and npm run test:coverage', () => {
+      const ciPath = path.join(ROOT_DIR, '.github/workflows/ci.yml');
+      assert.ok(fs.existsSync(ciPath), '.github/workflows/ci.yml must exist');
+      const ciContent = fs.readFileSync(ciPath, 'utf8');
+      assert.ok(ciContent.includes('npm run test:budget'), 'CI workflow must execute npm run test:budget');
+      assert.ok(ciContent.includes('npm run test:coverage'), 'CI workflow must execute npm run test:coverage');
+    });
+  });
 });
