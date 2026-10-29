@@ -38,6 +38,7 @@ const CORE_JS_SCRIPTS = [
   'js/engines/monte-carlo.js',
   'js/engines/dashboard-viz.js',
   'js/engines/savings-goals.js',
+  'js/engines/gdrive-sync.js',
   'js/workers/simulation-worker.js',
   'js/app-shell.js',
   'js/dashboard.js',
@@ -3641,6 +3642,87 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       for (const k of requiredKeys) {
         assert.ok(dashJs.includes(`${k}:`), `js/dashboard.js must define translation key ${k}`);
       }
+    });
+  });
+
+  describe('Phase 146: Google Drive Cloud Sync & Intelligent Conflict Resolution Contracts', () => {
+    it('verifies index.html declares #gdriveConflictModal and bidirectional sync triggers', () => {
+      const indexHtml = fs.readFileSync(path.join(ROOT_DIR, 'index.html'), 'utf8');
+
+      assert.ok(indexHtml.includes('id="gdriveConflictModal"'), 'index.html must include #gdriveConflictModal');
+      assert.ok(indexHtml.includes('id="btn-gdrive-sync"'), 'index.html must include #btn-gdrive-sync');
+      assert.ok(
+        indexHtml.includes('id="btn-gdrive-resolve-merge"'),
+        'index.html must include #btn-gdrive-resolve-merge',
+      );
+      assert.ok(
+        indexHtml.includes('id="btn-gdrive-resolve-cloud"'),
+        'index.html must include #btn-gdrive-resolve-cloud',
+      );
+      assert.ok(
+        indexHtml.includes('id="btn-gdrive-resolve-local"'),
+        'index.html must include #btn-gdrive-resolve-local',
+      );
+      assert.ok(indexHtml.includes('id="gdrive-diff-summary"'), 'index.html must include #gdrive-diff-summary');
+      assert.ok(indexHtml.includes('id="gdrive-local-time"'), 'index.html must include #gdrive-local-time');
+      assert.ok(indexHtml.includes('id="gdrive-cloud-time"'), 'index.html must include #gdrive-cloud-time');
+
+      assert.ok(
+        indexHtml.includes('<script src="js/engines/gdrive-sync.js"></script>'),
+        'index.html must include gdrive-sync.js script tag',
+      );
+    });
+
+    it('verifies app-shell.js implements sync orchestration and conflict resolution', () => {
+      const appShellJs = fs.readFileSync(path.join(ROOT_DIR, 'js/app-shell.js'), 'utf8');
+
+      assert.ok(appShellJs.includes('function syncWithGoogleDrive'), 'app-shell.js must define syncWithGoogleDrive()');
+      assert.ok(
+        appShellJs.includes('function openGdriveConflictModal'),
+        'app-shell.js must define openGdriveConflictModal()',
+      );
+      assert.ok(
+        appShellJs.includes('function closeGdriveConflictModal'),
+        'app-shell.js must define closeGdriveConflictModal()',
+      );
+      assert.ok(
+        appShellJs.includes('function resolveGdriveConflict'),
+        'app-shell.js must define resolveGdriveConflict()',
+      );
+
+      // Bilingual dictionary keys
+      const gdriveKeys = [
+        'btnGdriveSync',
+        'gdriveConflictTitle',
+        'gdriveConflictDesc',
+        'gdriveLocalTitle',
+        'gdriveCloudTitle',
+        'btnGdriveResolveMerge',
+        'btnGdriveResolveCloud',
+        'btnGdriveResolveLocal',
+      ];
+      for (const k of gdriveKeys) {
+        assert.ok(appShellJs.includes(`${k}:`), `app-shell.js must define dictionary translation for ${k}`);
+      }
+    });
+
+    it('verifies js/engines/gdrive-sync.js exports canonical methods on MoneyApp.GoogleDrive', () => {
+      const gdriveEnginePath = path.join(ROOT_DIR, 'js/engines/gdrive-sync.js');
+      assert.ok(fs.existsSync(gdriveEnginePath), 'js/engines/gdrive-sync.js must exist on disk');
+
+      const engineCode = fs.readFileSync(gdriveEnginePath, 'utf8');
+      const sandbox = { window: {}, globalThis: {} };
+      createContext(sandbox);
+      const script = new Script(engineCode);
+      script.runInContext(sandbox);
+
+      const engine = sandbox.window.MoneyApp?.GoogleDrive || sandbox.globalThis.MoneyApp?.GoogleDrive;
+      assert.ok(engine, 'MoneyApp.GoogleDrive must be exported');
+      assert.equal(typeof engine.createSnapshot, 'function');
+      assert.equal(typeof engine.compareSnapshots, 'function');
+      assert.equal(typeof engine.mergeSnapshots, 'function');
+      assert.equal(typeof engine.applySnapshot, 'function');
+      assert.equal(typeof engine.formatSyncTimestamp, 'function');
     });
   });
 });

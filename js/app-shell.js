@@ -31,6 +31,20 @@ const translations = {
     btnGoogleSignout: 'ออกจากระบบ',
     btnGdriveUpload: '📤 สำรองขึ้น Drive',
     btnGdriveDownload: '📥 กู้คืนจาก Drive',
+    btnGdriveSync: '🔄 ตรวจสอบ & ซิงค์ข้อมูล',
+    gdriveConflictTitle: 'จัดการการซิงค์ข้อมูล Google Drive',
+    gdriveConflictDesc: 'พบข้อมูลสำรองใน Google Drive แตกต่างจากข้อมูลในเครื่องนี้ กรุณาเลือกวิธีจัดการข้อมูลที่ต้องการ:',
+    gdriveLocalTitle: 'ข้อมูลในเครื่อง',
+    gdriveCloudTitle: 'Google Drive',
+    gdriveTimeLabel: 'บันทึกล่าสุด:',
+    gdriveKeysLabel: 'ชุดข้อมูล:',
+    gdriveDiffTitle: 'รายการความเปลี่ยนแปลงที่ตรวจพบ:',
+    btnGdriveResolveMerge: '🔀 ผสานข้อมูลทั้งสอง (Smart Merge - แนะนำ)',
+    btnGdriveResolveCloud: '📥 กู้คืนจาก Cloud',
+    btnGdriveResolveLocal: '📤 แทนที่ด้วยเครื่องนี้',
+    btnCancel: 'ยกเลิก',
+    gdriveSyncedMsg: '✓ ข้อมูลในเครื่องตรงกับ Google Drive เรียบร้อยแล้ว',
+    gdriveMergeSuccess: '✓ ผสานข้อมูลกับ Google Drive สำเร็จแล้ว!',
     gdriveNeverSynced: 'สำรองล่าสุด: ยังไม่เคยสำรอง',
     gdriveLastSync: (t) => `สำรองล่าสุด: ${t}`,
     gdriveAdvanced: '⚙️ การตั้งค่าขั้นสูง (Client ID)',
@@ -173,6 +187,21 @@ const translations = {
     btnGoogleSignout: 'Sign out',
     btnGdriveUpload: '📤 Save to Drive',
     btnGdriveDownload: '📥 Restore from Drive',
+    btnGdriveSync: '🔄 Check & Sync',
+    gdriveConflictTitle: 'Google Drive Cloud Sync Resolution',
+    gdriveConflictDesc:
+      'Found differences between your Google Drive cloud backup and local device. Please choose how to proceed:',
+    gdriveLocalTitle: 'Local Device',
+    gdriveCloudTitle: 'Google Drive',
+    gdriveTimeLabel: 'Last modified:',
+    gdriveKeysLabel: 'Data sets:',
+    gdriveDiffTitle: 'Detected Differences:',
+    btnGdriveResolveMerge: '🔀 Merge Both (Smart Merge - Recommended)',
+    btnGdriveResolveCloud: '📥 Use Cloud Backup',
+    btnGdriveResolveLocal: '📤 Keep Local Data',
+    btnCancel: 'Cancel',
+    gdriveSyncedMsg: '✓ Local data is already in sync with Google Drive.',
+    gdriveMergeSuccess: '✓ Successfully merged data with Google Drive!',
     gdriveNeverSynced: 'Last backup: Never',
     gdriveLastSync: (t) => `Last backup: ${t}`,
     gdriveAdvanced: '⚙️ Advanced Settings (Client ID)',
@@ -434,6 +463,22 @@ function applyLang(lang) {
     document.getElementById('lbl-btn-gdrive-upload').textContent = t.btnGdriveUpload;
   if (document.getElementById('lbl-btn-gdrive-download'))
     document.getElementById('lbl-btn-gdrive-download').textContent = t.btnGdriveDownload;
+  if (document.getElementById('lbl-btn-gdrive-sync'))
+    document.getElementById('lbl-btn-gdrive-sync').textContent = t.btnGdriveSync;
+  if (document.getElementById('lbl-btn-gdrive-resolve-merge'))
+    document.getElementById('lbl-btn-gdrive-resolve-merge').textContent = t.btnGdriveResolveMerge;
+  if (document.getElementById('lbl-btn-gdrive-resolve-cloud'))
+    document.getElementById('lbl-btn-gdrive-resolve-cloud').textContent = t.btnGdriveResolveCloud;
+  if (document.getElementById('lbl-btn-gdrive-resolve-local'))
+    document.getElementById('lbl-btn-gdrive-resolve-local').textContent = t.btnGdriveResolveLocal;
+  if (document.getElementById('lbl-btn-gdrive-resolve-cancel'))
+    document.getElementById('lbl-btn-gdrive-resolve-cancel').textContent = t.btnCancel;
+  if (document.getElementById('lbl-gdrive-local-title'))
+    document.getElementById('lbl-gdrive-local-title').textContent = t.gdriveLocalTitle;
+  if (document.getElementById('lbl-gdrive-cloud-title'))
+    document.getElementById('lbl-gdrive-cloud-title').textContent = t.gdriveCloudTitle;
+  if (document.getElementById('lbl-gdrive-diff-title'))
+    document.getElementById('lbl-gdrive-diff-title').textContent = t.gdriveDiffTitle;
   if (document.getElementById('lbl-gdrive-advanced'))
     document.getElementById('lbl-gdrive-advanced').textContent = t.gdriveAdvanced;
   if (document.getElementById('lbl-btn-save-client-id'))
@@ -837,6 +882,211 @@ async function ensureValidGoogleToken() {
   });
 }
 
+let pendingGdriveConflictState = null;
+
+async function fetchGoogleDriveBackupFile(token) {
+  const q = encodeURIComponent(
+    "name = 'money-superapp-backup.json' and 'appDataFolder' in parents and trashed = false",
+  );
+  const listRes = await fetch(
+    `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=${q}&fields=files(id,name,modifiedTime)`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    },
+  );
+  if (!listRes.ok) throw new Error(`Drive API error (${listRes.status})`);
+  const listData = await listRes.json();
+  return listData.files && listData.files.length > 0 ? listData.files[0] : null;
+}
+
+async function uploadGoogleDriveBackup(token, backupSnapshot, existingFileId = null) {
+  const backupJson = JSON.stringify(backupSnapshot, null, 2);
+  let saveRes;
+  if (existingFileId) {
+    saveRes = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${existingFileId}?uploadType=media`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: backupJson,
+    });
+  } else {
+    const metadata = {
+      name: 'money-superapp-backup.json',
+      parents: ['appDataFolder'],
+      mimeType: 'application/json',
+    };
+    const boundary = '-------314159265358979323846';
+    const delimiter = `\r\n--${boundary}\r\n`;
+    const closeDelimiter = `\r\n--${boundary}--`;
+    const body =
+      delimiter +
+      'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+      JSON.stringify(metadata) +
+      delimiter +
+      'Content-Type: application/json\r\n\r\n' +
+      backupJson +
+      closeDelimiter;
+
+    saveRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': `multipart/related; boundary=${boundary}`,
+      },
+      body: body,
+    });
+  }
+  if (!saveRes.ok) throw new Error(`Upload failed (${saveRes.status})`);
+  return saveRes;
+}
+
+async function downloadGoogleDriveBackup(token, fileId) {
+  const getRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!getRes.ok) throw new Error(`Download failed (${getRes.status})`);
+  return await getRes.json();
+}
+
+function openGdriveConflictModal(state) {
+  pendingGdriveConflictState = state;
+  const modal = document.getElementById('gdriveConflictModal');
+  if (!modal) return;
+
+  const lang = getLang();
+  const GDrive = window.MoneyApp?.GoogleDrive;
+
+  const localTimeEl = document.getElementById('gdrive-local-time');
+  const localKeysEl = document.getElementById('gdrive-local-keys');
+  const cloudTimeEl = document.getElementById('gdrive-cloud-time');
+  const cloudKeysEl = document.getElementById('gdrive-cloud-keys');
+  const diffSummaryEl = document.getElementById('gdrive-diff-summary');
+
+  const localTime = state.localSnapshot?.exportedAt || localStorage.getItem('moneySuperapp.lastGoogleSync');
+  const remoteTime = state.remoteSnapshot?.exportedAt || state.remoteFile?.modifiedTime;
+
+  if (localTimeEl)
+    localTimeEl.textContent = GDrive?.formatSyncTimestamp
+      ? GDrive.formatSyncTimestamp(localTime, lang)
+      : localTime || '-';
+  if (localKeysEl)
+    localKeysEl.textContent = `${state.comparison?.totalLocalKeys ?? Object.keys(state.localSnapshot?.data || {}).length} ${lang === 'en' ? 'items' : 'รายการ'}`;
+
+  if (cloudTimeEl)
+    cloudTimeEl.textContent = GDrive?.formatSyncTimestamp
+      ? GDrive.formatSyncTimestamp(remoteTime, lang)
+      : remoteTime || '-';
+  if (cloudKeysEl)
+    cloudKeysEl.textContent = `${state.comparison?.totalRemoteKeys ?? Object.keys(state.remoteSnapshot?.data || {}).length} ${lang === 'en' ? 'items' : 'รายการ'}`;
+
+  if (diffSummaryEl) {
+    const diffs = [];
+    if (state.comparison?.modifiedKeys?.length > 0) {
+      diffs.push(
+        `• ${lang === 'en' ? 'Modified in both' : 'แก้ไขทั้งสองฝั่ง'}: ${state.comparison.modifiedKeys.length} ${lang === 'en' ? 'items' : 'รายการ'} (${state.comparison.modifiedKeys.slice(0, 3).join(', ')}${state.comparison.modifiedKeys.length > 3 ? '...' : ''})`,
+      );
+    }
+    if (state.comparison?.localOnlyKeys?.length > 0) {
+      diffs.push(
+        `• ${lang === 'en' ? 'Local device only' : 'มีเฉพาะในเครื่องนี้'}: ${state.comparison.localOnlyKeys.length} ${lang === 'en' ? 'items' : 'รายการ'}`,
+      );
+    }
+    if (state.comparison?.remoteOnlyKeys?.length > 0) {
+      diffs.push(
+        `• ${lang === 'en' ? 'Google Drive only' : 'มีเฉพาะบน Google Drive'}: ${state.comparison.remoteOnlyKeys.length} ${lang === 'en' ? 'items' : 'รายการ'}`,
+      );
+    }
+    if (diffs.length === 0) {
+      diffs.push(`• ${lang === 'en' ? 'Timestamp differences detected' : 'ตรวจพบเวลาแก้ไขต่างกัน'}`);
+    }
+    diffSummaryEl.innerHTML = diffs.map((d) => `<div style="margin-bottom:2px;">${d}</div>`).join('');
+  }
+
+  modal.style.display = 'flex';
+  if (window.MoneyApp?.announce) {
+    window.MoneyApp.announce(
+      lang === 'en' ? 'Google Drive conflict dialog opened' : 'เปิดหน้าต่างจัดการข้อมูลซิงค์ Google Drive',
+    );
+  }
+}
+
+function closeGdriveConflictModal() {
+  const modal = document.getElementById('gdriveConflictModal');
+  if (modal) modal.style.display = 'none';
+  pendingGdriveConflictState = null;
+}
+
+async function resolveGdriveConflict(strategy) {
+  if (!pendingGdriveConflictState) return;
+  const state = pendingGdriveConflictState;
+  const lang = getLang();
+  const GDrive = window.MoneyApp?.GoogleDrive;
+
+  try {
+    const mergedResult = GDrive?.mergeSnapshots
+      ? GDrive.mergeSnapshots(state.localSnapshot, state.remoteSnapshot, strategy)
+      : { strategy, data: strategy === 'local' ? state.localSnapshot.data : state.remoteSnapshot.data };
+
+    if (strategy === 'cloud') {
+      if (GDrive?.applySnapshot) {
+        GDrive.applySnapshot(mergedResult.data, localStorage);
+      } else {
+        Object.keys(mergedResult.data).forEach((k) => {
+          localStorage.setItem(k, mergedResult.data[k]);
+        });
+      }
+      localStorage.setItem(
+        'moneySuperapp.lastGoogleSync',
+        state.remoteSnapshot?.exportedAt || new Date().toISOString(),
+      );
+      updateGoogleUI();
+      closeGdriveConflictModal();
+      alert(
+        lang === 'en' ? '✓ Backup restored from Google Drive successfully!' : '✓ กู้คืนข้อมูลจาก Google Drive สำเร็จแล้ว!',
+      );
+      reloadFrame();
+      closeSettingsModal();
+    } else if (strategy === 'local') {
+      await uploadGoogleDriveBackup(state.token, state.localSnapshot, state.remoteFile?.id);
+      localStorage.setItem('moneySuperapp.lastGoogleSync', state.localSnapshot.exportedAt || new Date().toISOString());
+      updateGoogleUI();
+      closeGdriveConflictModal();
+      alert(
+        lang === 'en'
+          ? '✓ Local backup saved to Google Drive successfully!'
+          : '✓ สำรองข้อมูลจากเครื่องขึ้น Google Drive เรียบร้อยแล้ว!',
+      );
+    } else {
+      // 'merge'
+      if (GDrive?.applySnapshot) {
+        GDrive.applySnapshot(mergedResult.data, localStorage);
+      } else {
+        Object.keys(mergedResult.data).forEach((k) => {
+          localStorage.setItem(k, mergedResult.data[k]);
+        });
+      }
+      const mergedSnapshot = {
+        version: '1.1.0',
+        appName: 'Money Superapp',
+        exportedAt: mergedResult.exportedAt || new Date().toISOString(),
+        data: mergedResult.data,
+      };
+      await uploadGoogleDriveBackup(state.token, mergedSnapshot, state.remoteFile?.id);
+      localStorage.setItem('moneySuperapp.lastGoogleSync', mergedSnapshot.exportedAt);
+      updateGoogleUI();
+      closeGdriveConflictModal();
+      alert(lang === 'en' ? '✓ Successfully merged data with Google Drive!' : '✓ ผสานข้อมูลกับ Google Drive สำเร็จแล้ว!');
+      reloadFrame();
+      closeSettingsModal();
+    }
+  } catch (err) {
+    console.error('Google Drive Conflict Resolution Error:', err);
+    alert((lang === 'en' ? 'Resolution failed: ' : 'จัดการข้อมูลไม่สำเร็จ: ') + err.message);
+  }
+}
+
 async function saveToGoogleDrive() {
   const spinner = document.getElementById('gdrive-sync-spinner');
   const btnUpload = document.getElementById('btn-gdrive-upload');
@@ -847,75 +1097,30 @@ async function saveToGoogleDrive() {
     const token = await ensureValidGoogleToken();
     if (!token) throw new Error('No Google token available');
 
-    const backup = {
-      version: '1.0.0',
-      appName: 'Money Superapp',
-      exportedAt: new Date().toISOString(),
-      data: {},
-    };
-    const allowedPrefixes = ['moneySuperapp.', 'remainingMoneyCalculator.', 'rebalanceCalculator.'];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && allowedPrefixes.some((p) => key.startsWith(p))) {
-        backup.data[key] = localStorage.getItem(key);
+    const GDrive = window.MoneyApp?.GoogleDrive;
+    const localSnapshot = GDrive?.createSnapshot
+      ? GDrive.createSnapshot(localStorage)
+      : {
+          version: '1.1.0',
+          appName: 'Money Superapp',
+          exportedAt: new Date().toISOString(),
+          data: {},
+        };
+
+    if (!GDrive?.createSnapshot) {
+      const allowedPrefixes = ['moneySuperapp.', 'remainingMoneyCalculator.', 'rebalanceCalculator.'];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && allowedPrefixes.some((p) => key.startsWith(p))) {
+          localSnapshot.data[key] = localStorage.getItem(key);
+        }
       }
     }
-    const backupJson = JSON.stringify(backup, null, 2);
 
-    const q = encodeURIComponent(
-      "name = 'money-superapp-backup.json' and 'appDataFolder' in parents and trashed = false",
-    );
-    const listRes = await fetch(
-      `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=${q}&fields=files(id,name,modifiedTime)`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    );
-    if (!listRes.ok) throw new Error(`Drive API error (${listRes.status})`);
-    const listData = await listRes.json();
-    const existingFile = listData.files && listData.files.length > 0 ? listData.files[0] : null;
+    const existingFile = await fetchGoogleDriveBackupFile(token);
+    await uploadGoogleDriveBackup(token, localSnapshot, existingFile ? existingFile.id : null);
 
-    let saveRes;
-    if (existingFile) {
-      saveRes = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${existingFile.id}?uploadType=media`, {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: backupJson,
-      });
-    } else {
-      const metadata = {
-        name: 'money-superapp-backup.json',
-        parents: ['appDataFolder'],
-        mimeType: 'application/json',
-      };
-      const boundary = '-------314159265358979323846';
-      const delimiter = `\r\n--${boundary}\r\n`;
-      const closeDelimiter = `\r\n--${boundary}--`;
-      const body =
-        delimiter +
-        'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
-        JSON.stringify(metadata) +
-        delimiter +
-        'Content-Type: application/json\r\n\r\n' +
-        backupJson +
-        closeDelimiter;
-
-      saveRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': `multipart/related; boundary=${boundary}`,
-        },
-        body: body,
-      });
-    }
-
-    if (!saveRes.ok) throw new Error(`Upload failed (${saveRes.status})`);
-
-    const nowIso = new Date().toISOString();
+    const nowIso = localSnapshot.exportedAt || new Date().toISOString();
     localStorage.setItem('moneySuperapp.lastGoogleSync', nowIso);
     updateGoogleUI();
     alert(
@@ -940,18 +1145,8 @@ async function restoreFromGoogleDrive() {
     const token = await ensureValidGoogleToken();
     if (!token) throw new Error('No Google token available');
 
-    const q = encodeURIComponent(
-      "name = 'money-superapp-backup.json' and 'appDataFolder' in parents and trashed = false",
-    );
-    const listRes = await fetch(
-      `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=${q}&fields=files(id,name,modifiedTime)`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    );
-    if (!listRes.ok) throw new Error(`Drive API error (${listRes.status})`);
-    const listData = await listRes.json();
-    if (!listData.files || listData.files.length === 0) {
+    const file = await fetchGoogleDriveBackupFile(token);
+    if (!file) {
       alert(
         getLang() === 'en'
           ? 'No backup file found in your Google Drive AppData.'
@@ -960,45 +1155,113 @@ async function restoreFromGoogleDrive() {
       return;
     }
 
-    const file = listData.files[0];
-    const modDate = file.modifiedTime
-      ? new Date(file.modifiedTime).toLocaleString(getLang() === 'en' ? 'en-US' : 'th-TH')
-      : '';
-    const confirmMsg =
-      getLang() === 'en'
-        ? `Found backup saved on ${modDate}.\n\nRestore this data? Current calculator data will be replaced.`
-        : `พบไฟล์สำรองข้อมูลบันทึกเมื่อ ${modDate}\n\nต้องการกู้คืนข้อมูลนี้หรือไม่? ข้อมูลปัจจุบันในเครื่องจะถูกแทนที่`;
-    if (!confirm(confirmMsg)) return;
-
-    const getRes = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!getRes.ok) throw new Error(`Download failed (${getRes.status})`);
-    const backup = await getRes.json();
-
-    if (!backup || typeof backup !== 'object' || !backup.data) {
+    const remoteBackup = await downloadGoogleDriveBackup(token, file.id);
+    if (!remoteBackup || typeof remoteBackup !== 'object' || !remoteBackup.data) {
       alert(getLang() === 'en' ? 'Invalid backup data from Google Drive' : 'ข้อมูลสำรองจาก Google Drive ไม่ถูกต้อง');
       return;
     }
 
-    const allowedPrefixes = ['moneySuperapp.', 'remainingMoneyCalculator.', 'rebalanceCalculator.'];
-    Object.keys(backup.data).forEach((key) => {
-      if (allowedPrefixes.some((p) => key.startsWith(p)) && typeof backup.data[key] === 'string') {
-        localStorage.setItem(key, backup.data[key]);
-      }
-    });
+    const GDrive = window.MoneyApp?.GoogleDrive;
+    const localSnapshot = GDrive?.createSnapshot
+      ? GDrive.createSnapshot(localStorage)
+      : {
+          version: '1.1.0',
+          appName: 'Money Superapp',
+          exportedAt: new Date().toISOString(),
+          data: {},
+        };
 
-    alert(
-      getLang() === 'en' ? '✓ Backup restored from Google Drive successfully!' : '✓ กู้คืนข้อมูลจาก Google Drive สำเร็จแล้ว!',
-    );
-    reloadFrame();
-    closeSettingsModal();
+    const comparison = GDrive?.compareSnapshots
+      ? GDrive.compareSnapshots(localSnapshot, remoteBackup)
+      : { isIdentical: false, status: 'conflict' };
+
+    // If identical, inform user
+    if (comparison.isIdentical) {
+      alert(
+        getLang() === 'en'
+          ? '✓ Local data is already in sync with Google Drive.'
+          : '✓ ข้อมูลในเครื่องตรงกับ Google Drive เรียบร้อยแล้ว',
+      );
+      return;
+    }
+
+    // Open Conflict Resolution Modal with side-by-side comparison
+    openGdriveConflictModal({
+      token,
+      remoteFile: file,
+      localSnapshot,
+      remoteSnapshot: remoteBackup,
+      comparison,
+    });
   } catch (err) {
     console.error('Google Drive Restore Error:', err);
     alert((getLang() === 'en' ? 'Restore failed: ' : 'กู้คืนข้อมูลไม่สำเร็จ: ') + err.message);
   } finally {
     if (spinner) spinner.style.display = 'none';
     if (btnDownload) btnDownload.disabled = false;
+  }
+}
+
+async function syncWithGoogleDrive() {
+  const spinner = document.getElementById('gdrive-sync-spinner');
+  const btnSync = document.getElementById('btn-gdrive-sync');
+  if (spinner) spinner.style.display = 'inline';
+  if (btnSync) btnSync.disabled = true;
+
+  try {
+    const token = await ensureValidGoogleToken();
+    if (!token) throw new Error('No Google token available');
+
+    const file = await fetchGoogleDriveBackupFile(token);
+    const GDrive = window.MoneyApp?.GoogleDrive;
+    const localSnapshot = GDrive?.createSnapshot
+      ? GDrive.createSnapshot(localStorage)
+      : {
+          version: '1.1.0',
+          appName: 'Money Superapp',
+          exportedAt: new Date().toISOString(),
+          data: {},
+        };
+
+    if (!file) {
+      const confirmUpload = confirm(
+        getLang() === 'en'
+          ? 'No existing backup found on Google Drive. Would you like to upload your local data now?'
+          : 'ยังไม่มีไฟล์สำรองบน Google Drive ต้องการอัปโหลดข้อมูลในเครื่องนี้ขึ้นทันทีหรือไม่?',
+      );
+      if (confirmUpload) {
+        await saveToGoogleDrive();
+      }
+      return;
+    }
+
+    const remoteBackup = await downloadGoogleDriveBackup(token, file.id);
+    const comparison = GDrive?.compareSnapshots
+      ? GDrive.compareSnapshots(localSnapshot, remoteBackup)
+      : { isIdentical: false, status: 'conflict' };
+
+    if (comparison.isIdentical) {
+      alert(
+        getLang() === 'en'
+          ? '✓ Local data is completely in sync with Google Drive.'
+          : '✓ ข้อมูลในเครื่องตรงกับ Google Drive เรียบร้อยแล้ว',
+      );
+      return;
+    }
+
+    openGdriveConflictModal({
+      token,
+      remoteFile: file,
+      localSnapshot,
+      remoteSnapshot: remoteBackup,
+      comparison,
+    });
+  } catch (err) {
+    console.error('Google Drive Sync Error:', err);
+    alert((getLang() === 'en' ? 'Sync failed: ' : 'ซิงค์ข้อมูลไม่สำเร็จ: ') + err.message);
+  } finally {
+    if (spinner) spinner.style.display = 'none';
+    if (btnSync) btnSync.disabled = false;
   }
 }
 
@@ -1458,11 +1721,26 @@ if (typeof window !== 'undefined') {
   window.refreshAppCache = refreshAppCache;
   window.purgeStaleCaches = purgeStaleCaches;
 
+  window.saveToGoogleDrive = saveToGoogleDrive;
+  window.restoreFromGoogleDrive = restoreFromGoogleDrive;
+  window.syncWithGoogleDrive = syncWithGoogleDrive;
+  window.openGdriveConflictModal = openGdriveConflictModal;
+  window.closeGdriveConflictModal = closeGdriveConflictModal;
+  window.resolveGdriveConflict = resolveGdriveConflict;
+
   window.MoneyApp = window.MoneyApp || {};
   window.MoneyApp.formatStorageBytes = formatStorageBytes;
   window.MoneyApp.updateStorageQuotaDisplay = updateStorageQuotaDisplay;
   window.MoneyApp.refreshAppCache = refreshAppCache;
   window.MoneyApp.purgeStaleCaches = purgeStaleCaches;
+
+  window.MoneyApp.GoogleDrive = window.MoneyApp.GoogleDrive || {};
+  window.MoneyApp.GoogleDrive.save = saveToGoogleDrive;
+  window.MoneyApp.GoogleDrive.restore = restoreFromGoogleDrive;
+  window.MoneyApp.GoogleDrive.sync = syncWithGoogleDrive;
+  window.MoneyApp.GoogleDrive.openConflictModal = openGdriveConflictModal;
+  window.MoneyApp.GoogleDrive.closeConflictModal = closeGdriveConflictModal;
+  window.MoneyApp.GoogleDrive.resolveConflict = resolveGdriveConflict;
 }
 
 // Phase 139: Multi-Profile & Partition UI Controller

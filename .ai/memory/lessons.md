@@ -2171,3 +2171,30 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
 
 
 
+
+### 2026-10-29: Google Drive AppData Bidirectional Cloud Backup Sync & Intelligent Conflict Resolution (Phase 146 / v2.6.7)
+
+- **Date & Context:** 2026-10-29, Phase 146 Google Drive AppData Bidirectional Cloud Sync & Conflict Resolution (`v2.6.7`).
+- **Problem:**
+  1. Previously, the Google Drive integration was unidirectional: saving would overwrite remote files unconditionally, while restoring used a native blocking `confirm()` dialog that wiped all local calculator states without diff analysis or merge capability.
+  2. In multi-device setups (desktop and mobile), users modifying debt, payslips, or rebalance portfolios on one device risked losing changes made on another device if they restored from Drive or saved over a newer cloud backup.
+  3. When designing modal dialogs in the app shell, hardcoding static text in Thai (e.g. `"0 รายการ"`) in initial HTML markup causes live DOM translation checks (`bilingual-parity.test.mjs`) to fail in English mode because the elements contain untranslated non-ASCII characters prior to hydration.
+- **Root Cause:**
+  - Lack of snapshot differential comparator (`compareSnapshots`) and 3-way merger (`mergeSnapshots`).
+  - Relying on synchronous browser `confirm()` rather than an accessible, side-by-side comparison modal dialog.
+  - Direct literal strings in initial HTML spans rather than neutral placeholders (`-`).
+- **Resolution:**
+  1. **Standalone Sync Engine (`js/engines/gdrive-sync.js`):** Modularized `MoneyApp.GoogleDrive`:
+     - `createSnapshot`: Filters by canonical prefixes (`moneySuperapp.`, `remainingMoneyCalculator.`, `rebalanceCalculator.`), records ISO timestamps and active profile metadata.
+     - `compareSnapshots`: Differential analyzer identifying identical (`synced`), `cloud_ahead`, `local_ahead`, and `conflict` states with exact key differences.
+     - `mergeSnapshots`: Multi-strategy resolver supporting `cloud`, `local`, and intelligent 3-way `merge` (deduplicating slip and goal array items by id/month, preserving non-conflicting keys, and resolving scalar conflicts using latest timestamp).
+     - `applySnapshot`: Safe storage writer strictly checking allowed domain prefixes.
+  2. **Accessible Side-by-Side Conflict Resolution Modal (`#gdriveConflictModal` in `index.html`):**
+     - Side-by-side cards comparing Local Device vs Google Drive (timestamps, item counts, detected diffs).
+     - Provides clear action options: Smart Merge (recommended), Restore from Cloud, Overwrite Cloud with Local, and Cancel.
+  3. **App Shell Orchestration (`js/app-shell.js`):**
+     - Enhanced `saveToGoogleDrive()` and `restoreFromGoogleDrive()` to run non-destructive pre-flight diffs.
+     - Implemented `syncWithGoogleDrive()` trigger in `#settingsModal`.
+     - 100% Thai/English translation dictionary parity with aria-live screen-reader announcements (`MoneyApp.announce`).
+  4. **Automated Verification:** Added 7 unit tests in `tests/google-drive-sync.test.mjs` (88.6% coverage), contracts in `tests/smoke.test.mjs`, verified asset budget (150KB limit intact), and verified 858/858 tests pass cleanly.
+- **Rule:** In client-side offline-first sync engines, never blindly overwrite data or rely on blocking browser `confirm()` prompts; always construct structured snapshot comparisons with deep JSON array deduplication, provide side-by-side visual diff modals with explicit user consent (ADR-004), and initialize dynamic DOM placeholders with neutral characters (`-`) to preserve bilingual live DOM parity.

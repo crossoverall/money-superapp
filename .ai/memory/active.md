@@ -1,7 +1,7 @@
 ---
-task_id: "phase-145-savings-goals-ui-and-bridge"
-status: "in_progress"
-current_stage: "coding"
+task_id: "phase-146-gdrive-bidirectional-sync"
+status: "completed"
+current_stage: "release"
 iteration_count: 0
 pipeline:
   - stage: "spec"
@@ -11,34 +11,22 @@ pipeline:
   - stage: "human_approval"
     status: "approved_by_user"
   - stage: "coding"
-    status: "in_progress"
+    status: "completed"
   - stage: "qa_verification"
-    status: "pending"
+    status: "completed"
   - stage: "code_review"
-    status: "pending"
+    status: "completed"
   - stage: "release"
-    status: "pending"
+    status: "completed"
 ---
 
-### Feature Specification: Phase 145 — Goal-Based Savings Planner UI & Cross-Tool Surplus Bridge (Pillar 2.1 / v2.6.6)
+### Feature Specification: Phase 146 — Google Drive AppData Bidirectional Cloud Backup Sync & Conflict Resolver (Pillar 4.1 / v2.6.7)
 
-#### 1. Goal & Requirements
-- **Dashboard UI (`dashboard.html` & `js/dashboard.js`):**
-  - Add `#savingsGoalsSection` in `panelGoals` rendering active sinking-fund goals from `MoneyApp.SavingsGoals`.
-  - Display progress bars, required monthly contributions, and allocation strategy switcher (`priority`, `proportional`, `balanced`).
-  - Add goal editor modal `#goalEditorModal` for adding/editing/deleting custom goals.
-  - Ingest bridged monthly surplus via `Bridge.receive('savings_goals_budget')` or `moneySuperapp.pendingGoalsBudget`.
-- **Remaining Money Bridge (`remaining-money.html` & `js/remaining-money.js`):**
-  - Add `#btnBridgeSurplusGoals` in the surplus simulator section.
-  - Sends available cash flow surplus to Dashboard savings goals and navigates to Dashboard.
-- **Bilingual & Accessibility Parity:**
-  - 100% dictionary key symmetry between Thai and English.
-  - Full WCAG 2.1 AA keyboard support and screen reader announcements.
-- **Automated Tests:**
-  - Test bridge execution in `tests/integration-bridges.test.mjs`.
-  - Smoke tests in `tests/smoke.test.mjs`.
-
-#### 2. Acceptance Criteria
-- User can add, view, and allocate monthly surplus across savings goals.
-- Clicking "Send Surplus to Goals" in Remaining Money successfully bridges surplus and displays allocation in Dashboard.
-- All tests pass (842+ passing). Version bumped to `v2.6.6`.
+#### Verification Summary
+- `tests/google-drive-sync.test.mjs`: 7/7 tests passed with 88.6% line coverage.
+- `tests/smoke.test.mjs`: 123/123 contracts passed.
+- `tests/bilingual-parity.test.mjs`: 16/16 suites passed (100% TH/EN symmetry in live DOM).
+- `tests/i18n-coverage.test.mjs`: 32/32 suites passed.
+- `tests/asset-budget.test.mjs`: 20/20 budget checks passed (0 external dependencies, 150KB limit satisfied).
+- Full regression suite: 858/858 passed cleanly across 242 suites.
+- Version bumped to `v2.6.7`.
