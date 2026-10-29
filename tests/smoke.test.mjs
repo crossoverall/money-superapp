@@ -3289,4 +3289,209 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.ok(ciContent.includes('npm run test:coverage'), 'CI workflow must execute npm run test:coverage');
     });
   });
+
+  describe('Phase 143: First-Time Onboarding Wizard & Archetype Contracts', () => {
+    it('verifies index.html declares #onboardingArchetypes container and 3 selectable archetype buttons with accessibility attributes', () => {
+      const indexHtml = fs.readFileSync(path.join(ROOT_DIR, 'index.html'), 'utf8');
+      assert.ok(indexHtml.includes('id="onboardingArchetypes"'), 'index.html must define #onboardingArchetypes');
+      assert.ok(indexHtml.includes('role="tablist"'), '#onboardingArchetypes must have role="tablist"');
+      assert.ok(indexHtml.includes('id="btn-archetype-salaried"'), 'index.html must define #btn-archetype-salaried');
+      assert.ok(indexHtml.includes('id="btn-archetype-freelance"'), 'index.html must define #btn-archetype-freelance');
+      assert.ok(indexHtml.includes('id="btn-archetype-investor"'), 'index.html must define #btn-archetype-investor');
+
+      assert.ok(
+        indexHtml.includes('id="btn-archetype-salaried" role="tab" aria-selected="true"'),
+        '#btn-archetype-salaried must have role="tab" and aria-selected="true" by default',
+      );
+      assert.ok(
+        indexHtml.includes('id="btn-archetype-freelance" role="tab" aria-selected="false"'),
+        '#btn-archetype-freelance must have role="tab" and aria-selected="false" by default',
+      );
+      assert.ok(
+        indexHtml.includes('id="btn-archetype-investor" role="tab" aria-selected="false"'),
+        '#btn-archetype-investor must have role="tab" and aria-selected="false" by default',
+      );
+
+      assert.ok(indexHtml.includes('data-i18n="archetypeSelectorTitle"'), 'Selector title must define data-i18n');
+      assert.ok(indexHtml.includes('data-i18n="archetypeSalariedTitle"'), 'Salaried title must define data-i18n');
+      assert.ok(indexHtml.includes('data-i18n="archetypeSalariedDesc"'), 'Salaried desc must define data-i18n');
+      assert.ok(indexHtml.includes('data-i18n="archetypeFreelanceTitle"'), 'Freelance title must define data-i18n');
+      assert.ok(indexHtml.includes('data-i18n="archetypeFreelanceDesc"'), 'Freelance desc must define data-i18n');
+      assert.ok(indexHtml.includes('data-i18n="archetypeInvestorTitle"'), 'Investor title must define data-i18n');
+      assert.ok(indexHtml.includes('data-i18n="archetypeInvestorDesc"'), 'Investor desc must define data-i18n');
+
+      assert.ok(indexHtml.includes('id="onboarding-step-1"'), 'Must define #onboarding-step-1');
+      assert.ok(indexHtml.includes('id="onboarding-step-2"'), 'Must define #onboarding-step-2');
+      assert.ok(indexHtml.includes('id="onboarding-step-3"'), 'Must define #onboarding-step-3');
+    });
+
+    it('verifies js/app-shell.js defines complete bilingual archetype dictionary keys and start-CTA formatter', () => {
+      const appShellJs = fs.readFileSync(path.join(ROOT_DIR, 'js/app-shell.js'), 'utf8');
+      const match = appShellJs.match(/const\s+translations\s*=\s*(\{[\s\S]*?\n\};)/);
+      assert.ok(match, 'app-shell.js must define translations object');
+
+      const fn = new Function(`return ${match[1]}`);
+      const t = fn();
+
+      const requiredKeys = [
+        'archetypeSelectorTitle',
+        'archetypeSalariedTitle',
+        'archetypeSalariedDesc',
+        'archetypeFreelanceTitle',
+        'archetypeFreelanceDesc',
+        'archetypeInvestorTitle',
+        'archetypeInvestorDesc',
+        'btnStartWithArchetype',
+      ];
+
+      for (const k of requiredKeys) {
+        assert.ok(t.th[k], `translations.th must define ${k}`);
+        assert.ok(t.en[k], `translations.en must define ${k}`);
+      }
+
+      assert.strictEqual(typeof t.th.btnStartWithArchetype, 'function');
+      assert.strictEqual(typeof t.en.btnStartWithArchetype, 'function');
+
+      assert.strictEqual(t.th.btnStartWithArchetype('พนักงานประจำ'), '🚀 เริ่มต้นด้วยเส้นทางพนักงานประจำ');
+      assert.strictEqual(t.en.btnStartWithArchetype('Salaried Employee'), '🚀 Start with Salaried Employee');
+    });
+
+    it('verifies selectOnboardingArchetype, startOnboardingWithArchetype, and closeOnboardingModal exports & behavior', () => {
+      const appShellJs = fs.readFileSync(path.join(ROOT_DIR, 'js/app-shell.js'), 'utf8');
+
+      assert.ok(appShellJs.includes('function selectOnboardingArchetype'), 'Must define selectOnboardingArchetype');
+      assert.ok(
+        appShellJs.includes('function startOnboardingWithArchetype'),
+        'Must define startOnboardingWithArchetype',
+      );
+      assert.ok(appShellJs.includes('function closeOnboardingModal'), 'Must define closeOnboardingModal');
+      assert.ok(
+        appShellJs.includes("localStorage.setItem('moneySuperapp.onboardingComplete', 'true')"),
+        'closeOnboardingModal must set moneySuperapp.onboardingComplete',
+      );
+      assert.ok(
+        appShellJs.includes('MoneyApp.selectOnboardingArchetype = selectOnboardingArchetype'),
+        'Must export selectOnboardingArchetype to MoneyApp',
+      );
+      assert.ok(appShellJs.includes('CANONICAL_STORAGE_SCHEMAS'), 'CANONICAL_STORAGE_SCHEMAS must be declared');
+      assert.ok(
+        appShellJs.includes("'moneySuperapp.onboardingComplete':"),
+        'CANONICAL_STORAGE_SCHEMAS must register moneySuperapp.onboardingComplete',
+      );
+    });
+
+    it('validates state transitions, tab targeting, and announcement execution across all 3 archetypes', () => {
+      const appShellJs = fs.readFileSync(path.join(ROOT_DIR, 'js/app-shell.js'), 'utf8');
+
+      const sandboxFn = new Function(
+        'mockDoc',
+        'mockStorage',
+        'mockMoneyApp',
+        `
+        const document = mockDoc;
+        const localStorage = mockStorage;
+        const window = { MoneyApp: mockMoneyApp };
+        const MoneyApp = mockMoneyApp;
+        let currentLang = 'th';
+
+        ${appShellJs.match(/const translations = \{[\s\S]*?\n\};/)[0]}
+        ${appShellJs.match(/let currentOnboardingArchetype = 'salaried';[\s\S]*?function closeOnboardingModal\(\) \{[\s\S]*?\n\}/)[0]}
+
+        return {
+          selectOnboardingArchetype,
+          closeOnboardingModal,
+          getArchetype: () => currentOnboardingArchetype,
+          getTargetTab: () => currentOnboardingTargetTab,
+          setLang: (l) => { currentLang = l; }
+        };
+        `,
+      );
+
+      const elements = {
+        'btn-archetype-salaried': {
+          style: {},
+          setAttribute(k, v) {
+            this[k] = v;
+          },
+        },
+        'lbl-archetype-salaried-title': { style: {} },
+        'btn-archetype-freelance': {
+          style: {},
+          setAttribute(k, v) {
+            this[k] = v;
+          },
+        },
+        'lbl-archetype-freelance-title': { style: {} },
+        'btn-archetype-investor': {
+          style: {},
+          setAttribute(k, v) {
+            this[k] = v;
+          },
+        },
+        'lbl-archetype-investor-title': { style: {} },
+        'onboarding-step-1': { style: {} },
+        'onboarding-step-2': { style: {} },
+        'onboarding-step-3': { style: {} },
+        'onboarding-step-4': { style: {} },
+        'onboarding-step-5': { style: {} },
+        'lbl-btn-get-started': { textContent: '' },
+        onboardingModal: { style: { display: 'flex' } },
+      };
+
+      const mockDoc = {
+        getElementById: (id) => elements[id] || null,
+      };
+      const mockStorage = {
+        store: {},
+        setItem(k, v) {
+          this.store[k] = String(v);
+        },
+        getItem(k) {
+          return this.store[k] || null;
+        },
+      };
+      const announcements = [];
+      const mockMoneyApp = {
+        announce: (msg) => announcements.push(msg),
+      };
+
+      const runtime = sandboxFn(mockDoc, mockStorage, mockMoneyApp);
+
+      // 1. Salaried Selection
+      runtime.selectOnboardingArchetype('salaried');
+      assert.strictEqual(runtime.getArchetype(), 'salaried');
+      assert.strictEqual(runtime.getTargetTab(), 'months-slips');
+      assert.strictEqual(elements['btn-archetype-salaried']['aria-selected'], 'true');
+      assert.strictEqual(elements['btn-archetype-freelance']['aria-selected'], 'false');
+      assert.strictEqual(elements['onboarding-step-1'].style.borderColor, '#2F8B76');
+      assert.strictEqual(elements['lbl-btn-get-started'].textContent, '🚀 เริ่มต้นด้วยเส้นทางพนักงานประจำ');
+      assert.strictEqual(announcements[announcements.length - 1], 'เลือกแนวทางการเงิน: พนักงานประจำ');
+
+      // 2. Freelance Selection
+      runtime.selectOnboardingArchetype('freelance');
+      assert.strictEqual(runtime.getArchetype(), 'freelance');
+      assert.strictEqual(runtime.getTargetTab(), 'remaining-money');
+      assert.strictEqual(elements['btn-archetype-freelance']['aria-selected'], 'true');
+      assert.strictEqual(elements['btn-archetype-salaried']['aria-selected'], 'false');
+      assert.strictEqual(elements['onboarding-step-2'].style.borderColor, '#2F8B76');
+      assert.strictEqual(elements['lbl-btn-get-started'].textContent, '🚀 เริ่มต้นด้วยเส้นทางฟรีแลนซ์ / ธุรกิจ');
+      assert.strictEqual(announcements[announcements.length - 1], 'เลือกแนวทางการเงิน: ฟรีแลนซ์ / ธุรกิจ');
+
+      // 3. Investor Selection (in English mode)
+      runtime.setLang('en');
+      runtime.selectOnboardingArchetype('investor');
+      assert.strictEqual(runtime.getArchetype(), 'investor');
+      assert.strictEqual(runtime.getTargetTab(), 'rebalance');
+      assert.strictEqual(elements['btn-archetype-investor']['aria-selected'], 'true');
+      assert.strictEqual(elements['btn-archetype-freelance']['aria-selected'], 'false');
+      assert.strictEqual(elements['onboarding-step-3'].style.borderColor, '#2F8B76');
+      assert.strictEqual(elements['lbl-btn-get-started'].textContent, '🚀 Start with Investor / Debt-Free');
+      assert.strictEqual(announcements[announcements.length - 1], 'Selected focus: Investor / Debt-Free');
+
+      // 4. Modal close stores both keys
+      runtime.closeOnboardingModal();
+      assert.strictEqual(mockStorage.getItem('moneySuperapp.hasSeenOnboarding'), 'true');
+      assert.strictEqual(mockStorage.getItem('moneySuperapp.onboardingComplete'), 'true');
+    });
+  });
 });

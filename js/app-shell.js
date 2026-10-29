@@ -39,6 +39,14 @@ const translations = {
     helpBtn: 'คู่มือการใช้งาน (Quick Tour)',
     onboardingTitle: 'เริ่มต้นใช้งาน Money Superapp',
     onboardingSubtitle: 'คู่มือ 5 ขั้นตอนจัดระเบียบการเงินแบบครบวงจร ปลอดภัย 100% บนเครื่องของคุณ',
+    archetypeSelectorTitle: 'เลือกแนวทางการเงินเริ่มต้นของคุณ:',
+    archetypeSalariedTitle: '💼 พนักงานประจำ',
+    archetypeSalariedDesc: 'สลิปเงินเดือน & ภาษี',
+    archetypeFreelanceTitle: '🚀 ฟรีแลนซ์ / ธุรกิจ',
+    archetypeFreelanceDesc: 'เงินคงเหลือ & กระแสเงินสด',
+    archetypeInvestorTitle: '📈 นักลงทุน / ปลดหนี้',
+    archetypeInvestorDesc: 'ปรับพอร์ต & แผนปลดหนี้',
+    btnStartWithArchetype: (name) => `🚀 เริ่มต้นด้วยเส้นทาง${name}`,
     step1Title: '1. 💵 สลิปเงินเดือน (Payslip)',
     step1Desc: 'จำลองรายได้สุทธิ, ภาษีหัก ณ ที่จ่าย, ปกส., และเงินสะสมกองทุนสำรองเลี้ยงชีพ (PVD)',
     step2Title: '2. 💰 เงินคงเหลือ (Remaining Money)',
@@ -173,6 +181,14 @@ const translations = {
     helpBtn: 'Quick Tour & Guide',
     onboardingTitle: 'Welcome to Money Superapp',
     onboardingSubtitle: '5 Steps to Financial Freedom with 100% Client-Side Privacy',
+    archetypeSelectorTitle: 'Choose your primary financial focus:',
+    archetypeSalariedTitle: '💼 Salaried Employee',
+    archetypeSalariedDesc: 'Payslips & Tax',
+    archetypeFreelanceTitle: '🚀 Freelancer / Creator',
+    archetypeFreelanceDesc: 'Cash Flow & Runway',
+    archetypeInvestorTitle: '📈 Investor / Debt-Free',
+    archetypeInvestorDesc: 'Rebalance & Debt',
+    btnStartWithArchetype: (name) => `🚀 Start with ${name}`,
     step1Title: '1. 💵 Payslip Simulator',
     step1Desc: 'Calculate net income, withholding tax, SSO, and Provident Fund (PVD) contributions.',
     step2Title: '2. 💰 Remaining Money',
@@ -432,6 +448,20 @@ function applyLang(lang) {
     document.getElementById('lbl-onboarding-title').textContent = t.onboardingTitle;
   if (document.getElementById('lbl-onboarding-subtitle'))
     document.getElementById('lbl-onboarding-subtitle').textContent = t.onboardingSubtitle;
+  if (document.getElementById('lbl-archetype-selector-title'))
+    document.getElementById('lbl-archetype-selector-title').textContent = t.archetypeSelectorTitle;
+  if (document.getElementById('lbl-archetype-salaried-title'))
+    document.getElementById('lbl-archetype-salaried-title').textContent = t.archetypeSalariedTitle;
+  if (document.getElementById('lbl-archetype-salaried-desc'))
+    document.getElementById('lbl-archetype-salaried-desc').textContent = t.archetypeSalariedDesc;
+  if (document.getElementById('lbl-archetype-freelance-title'))
+    document.getElementById('lbl-archetype-freelance-title').textContent = t.archetypeFreelanceTitle;
+  if (document.getElementById('lbl-archetype-freelance-desc'))
+    document.getElementById('lbl-archetype-freelance-desc').textContent = t.archetypeFreelanceDesc;
+  if (document.getElementById('lbl-archetype-investor-title'))
+    document.getElementById('lbl-archetype-investor-title').textContent = t.archetypeInvestorTitle;
+  if (document.getElementById('lbl-archetype-investor-desc'))
+    document.getElementById('lbl-archetype-investor-desc').textContent = t.archetypeInvestorDesc;
   if (document.getElementById('lbl-step1-title')) document.getElementById('lbl-step1-title').textContent = t.step1Title;
   if (document.getElementById('lbl-step1-desc')) document.getElementById('lbl-step1-desc').textContent = t.step1Desc;
   if (document.getElementById('lbl-step2-title')) document.getElementById('lbl-step2-title').textContent = t.step2Title;
@@ -445,8 +475,11 @@ function applyLang(lang) {
   document.querySelectorAll('.lbl-btn-try-step').forEach((el) => {
     el.textContent = t.btnTryStep;
   });
-  if (document.getElementById('lbl-btn-get-started'))
+  if (typeof updateOnboardingCtaLabel === 'function') {
+    updateOnboardingCtaLabel();
+  } else if (document.getElementById('lbl-btn-get-started')) {
     document.getElementById('lbl-btn-get-started').textContent = t.btnGetStarted;
+  }
   if (document.getElementById('lbl-onboarding-footer-note'))
     document.getElementById('lbl-onboarding-footer-note').textContent = t.onboardingFooterNote;
   if (document.getElementById('lbl-settings-guide-title'))
@@ -983,6 +1016,7 @@ const CANONICAL_STORAGE_SCHEMAS = {
   'moneySuperapp.lang': { label: 'ภาษา (Language)', isJson: false, defaultVal: 'th' },
   'moneySuperapp.theme': { label: 'ธีม (Theme)', isJson: false, defaultVal: 'light' },
   'moneySuperapp.hasSeenOnboarding': { label: 'สถานะคู่มือ (Onboarding)', isJson: false, defaultVal: 'true' },
+  'moneySuperapp.onboardingComplete': { label: 'สถานะจบคู่มือ (Onboarding Complete)', isJson: false, defaultVal: 'true' },
   'moneySuperapp.googleUser': { label: 'ข้อมูลผู้ใช้ Google', isJson: true, defaultVal: '{}' },
   'moneySuperapp.lastGoogleSync': { label: 'ประวัติ Sync Drive', isJson: false, defaultVal: '' },
   'moneySuperapp.pendingBudget': { label: 'งบประมาณข้ามเครื่องมือ', isJson: false, defaultVal: '0' },
@@ -1762,19 +1796,138 @@ function closeSettingsModal() {
   document.getElementById('settingsModal').style.display = 'none';
 }
 
+let currentOnboardingArchetype = 'salaried';
+let currentOnboardingTargetTab = 'months-slips';
+
+const ARCHETYPE_CONFIG = {
+  salaried: {
+    btnId: 'btn-archetype-salaried',
+    titleId: 'lbl-archetype-salaried-title',
+    stepId: 'onboarding-step-1',
+    targetTab: 'months-slips',
+    names: { th: 'พนักงานประจำ', en: 'Salaried Employee' },
+  },
+  freelance: {
+    btnId: 'btn-archetype-freelance',
+    titleId: 'lbl-archetype-freelance-title',
+    stepId: 'onboarding-step-2',
+    targetTab: 'remaining-money',
+    names: { th: 'ฟรีแลนซ์ / ธุรกิจ', en: 'Freelancer / Creator' },
+  },
+  investor: {
+    btnId: 'btn-archetype-investor',
+    titleId: 'lbl-archetype-investor-title',
+    stepId: 'onboarding-step-3',
+    targetTab: 'rebalance',
+    names: { th: 'นักลงทุน / ปลดหนี้', en: 'Investor / Debt-Free' },
+  },
+};
+
+function updateOnboardingCtaLabel() {
+  const ctaLabel = document.getElementById('lbl-btn-get-started');
+  if (!ctaLabel) return;
+  const cfg = ARCHETYPE_CONFIG[currentOnboardingArchetype] || ARCHETYPE_CONFIG.salaried;
+  const lang = typeof getLang === 'function' ? getLang() : typeof currentLang !== 'undefined' ? currentLang : 'th';
+  const t = typeof translations !== 'undefined' ? translations[lang] : null;
+  const archName = cfg.names?.[lang] || cfg.names.th;
+  if (t && typeof t.btnStartWithArchetype === 'function') {
+    ctaLabel.textContent = t.btnStartWithArchetype(archName);
+  } else {
+    ctaLabel.textContent = lang === 'en' ? `🚀 Start with ${archName}` : `🚀 เริ่มต้นด้วยเส้นทาง${archName}`;
+  }
+}
+
+function selectOnboardingArchetype(type, announce = true) {
+  const archetype = ARCHETYPE_CONFIG[type] ? type : 'salaried';
+  currentOnboardingArchetype = archetype;
+  const activeCfg = ARCHETYPE_CONFIG[archetype];
+  currentOnboardingTargetTab = activeCfg.targetTab;
+
+  // 1. Update button styling & aria-selected
+  Object.keys(ARCHETYPE_CONFIG).forEach((k) => {
+    const cfg = ARCHETYPE_CONFIG[k];
+    const btn = document.getElementById(cfg.btnId);
+    const titleEl = document.getElementById(cfg.titleId);
+    if (!btn) return;
+    const isSelected = k === archetype;
+    btn.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+    if (isSelected) {
+      btn.style.background = 'rgba(47, 139, 118, 0.15)';
+      btn.style.borderColor = '#2F8B76';
+      if (titleEl) titleEl.style.color = '#4FA894';
+    } else {
+      btn.style.background = '#0E1512';
+      btn.style.borderColor = '#24352C';
+      if (titleEl) titleEl.style.color = '#EAF2EE';
+    }
+  });
+
+  // 2. Highlight recommended step card in workflow list
+  const stepIds = [
+    'onboarding-step-1',
+    'onboarding-step-2',
+    'onboarding-step-3',
+    'onboarding-step-4',
+    'onboarding-step-5',
+  ];
+  stepIds.forEach((id) => {
+    const card = document.getElementById(id);
+    if (!card) return;
+    if (id === activeCfg.stepId) {
+      card.style.background = 'rgba(47, 139, 118, 0.1)';
+      card.style.borderColor = '#2F8B76';
+    } else {
+      card.style.background = '#0E1512';
+      card.style.borderColor = '#24352C';
+    }
+  });
+
+  // 3. Update primary CTA button text
+  updateOnboardingCtaLabel();
+
+  // 4. Announce via MoneyApp.announce
+  if (announce) {
+    const lang = typeof getLang === 'function' ? getLang() : typeof currentLang !== 'undefined' ? currentLang : 'th';
+    const archName = activeCfg.names?.[lang] || activeCfg.names.th;
+    const announceMsg = lang === 'en' ? `Selected focus: ${archName}` : `เลือกแนวทางการเงิน: ${archName}`;
+    const announcer =
+      typeof MoneyApp !== 'undefined' && typeof MoneyApp.announce === 'function'
+        ? MoneyApp.announce
+        : typeof window !== 'undefined' && window.MoneyApp && typeof window.MoneyApp.announce === 'function'
+          ? window.MoneyApp.announce
+          : null;
+    if (announcer) {
+      announcer(announceMsg);
+    }
+  }
+}
+
+function startOnboardingWithArchetype() {
+  const targetTab = currentOnboardingTargetTab || 'months-slips';
+  closeOnboardingModal();
+  if (typeof activateTab === 'function') {
+    activateTab(targetTab);
+  }
+}
+
 function openOnboardingModal() {
   const modal = document.getElementById('onboardingModal');
   if (modal) modal.style.display = 'flex';
+  selectOnboardingArchetype(currentOnboardingArchetype || 'salaried', false);
 }
 function closeOnboardingModal() {
   const modal = document.getElementById('onboardingModal');
   if (modal) modal.style.display = 'none';
   try {
     localStorage.setItem('moneySuperapp.hasSeenOnboarding', 'true');
+    localStorage.setItem('moneySuperapp.onboardingComplete', 'true');
   } catch (_e) {}
 }
 window.openOnboardingModal = openOnboardingModal;
 window.closeOnboardingModal = closeOnboardingModal;
+window.selectOnboardingArchetype = selectOnboardingArchetype;
+window.startOnboardingWithArchetype = startOnboardingWithArchetype;
+window.updateOnboardingCtaLabel = updateOnboardingCtaLabel;
 
 async function shareOrDownloadFile(blob, fileName, title, text) {
   if (typeof navigator !== 'undefined' && typeof File !== 'undefined' && typeof navigator.canShare === 'function') {
@@ -4078,6 +4231,10 @@ shellGlobal.MoneyApp.computeBadgeCount = computeBadgeCount;
 shellGlobal.MoneyApp.updateAppBadge = updateAppBadge;
 shellGlobal.MoneyApp.clearAppBadge = clearAppBadge;
 shellGlobal.MoneyApp.initPullToRefresh = initPullToRefresh;
+shellGlobal.MoneyApp.selectOnboardingArchetype = selectOnboardingArchetype;
+shellGlobal.MoneyApp.startOnboardingWithArchetype = startOnboardingWithArchetype;
+shellGlobal.MoneyApp.openOnboardingModal = openOnboardingModal;
+shellGlobal.MoneyApp.closeOnboardingModal = closeOnboardingModal;
 
 if (typeof window !== 'undefined') {
   window.installPwa = installPwa;
@@ -4086,6 +4243,8 @@ if (typeof window !== 'undefined') {
   window.updateAppBadge = updateAppBadge;
   window.clearAppBadge = clearAppBadge;
   window.initPullToRefresh = initPullToRefresh;
+  window.selectOnboardingArchetype = selectOnboardingArchetype;
+  window.startOnboardingWithArchetype = startOnboardingWithArchetype;
 
   const initShellPwaAndBadges = () => {
     updateNetworkStatus();

@@ -1,5 +1,5 @@
 ---
-task_id: "phase-142-unified-github-actions-ci"
+task_id: "phase-143-onboarding-wizard-archetypes"
 status: "in_progress"
 current_stage: "coding"
 iteration_count: 0
@@ -11,7 +11,7 @@ pipeline:
   - stage: "human_approval"
     status: "approved_by_user"
   - stage: "coding"
-    status: "in_progress"
+    status: "completed"
   - stage: "qa_verification"
     status: "pending"
   - stage: "code_review"
@@ -20,16 +20,20 @@ pipeline:
     status: "pending"
 ---
 
-### Feature Specification: Phase 142 — Unified GitHub Actions CI Pipeline (Pillar 6.2 / v2.6.3)
+### Feature Specification: Phase 143 — First-Time Onboarding Wizard & Quick-Start Templates (Pillar 3.1 / v2.6.4)
 
 #### 1. Goal & Requirements
-- Update `.github/workflows/ci.yml` to include:
-  1. `npm run test:budget` (Automated Asset Size & Zero-Dependency Budget Gate)
-  2. `npm run test:coverage` (Native Node.js Test Coverage Reporting)
-- Add contract assertion in `tests/smoke.test.mjs` verifying `.github/workflows/ci.yml` runs all 4 gates (`lint`, `test`, `test:budget`, `test:coverage`).
-- Update `plan.md` status.
+- Add an interactive Financial Archetype Quick-Start Selector to `#onboardingModal`:
+  1. `Salaried Employee` (Focus: Payslip & Tax)
+  2. `Freelancer / Creator` (Focus: Cash Flow & ภ.ง.ด. 90 Tax)
+  3. `Investor & Debt-Free` (Focus: Portfolio Rebalance & Debt Elimination)
+- Selection dynamically focuses recommended starting tools, updates primary action button, and announces changes to assistive technology via `MoneyApp.announce`.
+- Store `moneySuperapp.onboardingComplete = 'true'` upon completion.
+- Maintain 100% bilingual symmetry between `translations.th` and `translations.en`.
+- Maintain strict mobile layout constraints (max-height, overflow-y: auto, zero horizontal blowout on 320px–375px viewports).
 
 #### 2. Acceptance Criteria
-- `.github/workflows/ci.yml` contains clear steps for all 4 gates across Node 20 and Node 22 matrix.
-- `tests/smoke.test.mjs` passes contract assertions.
-- `npm run lint`, `npm run test:budget`, `npm test` all pass cleanly.
+- User can toggle between the 3 archetype templates interactively.
+- Primary CTA navigates directly to the chosen archetype's recommended entry tool.
+- Bilingual parity verified across all new keys in Thai and English.
+- All 808+ tests pass, 0 Biome warnings, budget gate passes.

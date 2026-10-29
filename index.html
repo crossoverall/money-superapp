@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="2.6.3">
+<meta name="version" content="2.6.4">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://accounts.google.com/ https://www.googleapis.com/; frame-src 'self' https://accounts.google.com/; object-src 'none'; base-uri 'self';">
 <script>
   try {
@@ -705,7 +705,7 @@
       <span>⬇️</span>
       <span id="lbl-pwa-install" data-i18n="pwaInstallBtn">ติดตั้งแอป</span>
     </button>
-    <span class="version-badge">v2.6.3</span>
+    <span class="version-badge">v2.6.4</span>
     <button id="btn-help-modal" onclick="openOnboardingModal()" title="คู่มือการใช้งาน (Quick Tour)" aria-label="Open Quick Tour and Guide">
       <span class="help-icon">❓</span>
     </button>
@@ -746,7 +746,7 @@
       <span class="pwa-status-dot online" id="pwaStatusDot"></span>
       <span id="lbl-pwa-offline-badge" data-i18n="pwaOfflineReady">พร้อมใช้งานออฟไลน์</span>
     </span>
-    <span class="privacy-ver-badge">Money Superapp v2.6.3</span>
+    <span class="privacy-ver-badge">Money Superapp v2.6.4</span>
   </div>
 </div>
 
@@ -1130,10 +1130,29 @@
       <button onclick="closeOnboardingModal()" style="background: none; border: none; color: #8FA69C; font-size: 22px; cursor: pointer; padding: 0 4px; line-height: 1;" aria-label="Close Tour">&times;</button>
     </div>
 
+    <!-- Archetype Quick-Start Selector Title & Tabs -->
+    <div style="margin-bottom: 6px;">
+      <span id="lbl-archetype-selector-title" data-i18n="archetypeSelectorTitle" style="font-size: 11.5px; font-weight: 600; color: #8FA69C;">เลือกแนวทางการเงินเริ่มต้นของคุณ:</span>
+    </div>
+    <div id="onboardingArchetypes" role="tablist" aria-label="Financial Archetypes" style="display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;">
+      <button type="button" id="btn-archetype-salaried" role="tab" aria-selected="true" onclick="selectOnboardingArchetype('salaried')" style="flex: 1 1 calc(33.333% - 6px); min-width: 130px; background: rgba(47,139,118,0.15); border: 1.5px solid #2F8B76; border-radius: 10px; padding: 10px; text-align: left; cursor: pointer; transition: all 0.2s ease;">
+        <div id="lbl-archetype-salaried-title" data-i18n="archetypeSalariedTitle" style="font-weight: 700; font-size: 12.5px; color: #4FA894;">💼 พนักงานประจำ</div>
+        <div id="lbl-archetype-salaried-desc" data-i18n="archetypeSalariedDesc" style="font-size: 11px; color: #8FA69C; margin-top: 2px;">สลิปเงินเดือน &amp; ภาษี</div>
+      </button>
+      <button type="button" id="btn-archetype-freelance" role="tab" aria-selected="false" onclick="selectOnboardingArchetype('freelance')" style="flex: 1 1 calc(33.333% - 6px); min-width: 130px; background: #0E1512; border: 1px solid #24352C; border-radius: 10px; padding: 10px; text-align: left; cursor: pointer; transition: all 0.2s ease;">
+        <div id="lbl-archetype-freelance-title" data-i18n="archetypeFreelanceTitle" style="font-weight: 700; font-size: 12.5px; color: #EAF2EE;">🚀 ฟรีแลนซ์ / ธุรกิจ</div>
+        <div id="lbl-archetype-freelance-desc" data-i18n="archetypeFreelanceDesc" style="font-size: 11px; color: #8FA69C; margin-top: 2px;">เงินคงเหลือ &amp; กระแสเงินสด</div>
+      </button>
+      <button type="button" id="btn-archetype-investor" role="tab" aria-selected="false" onclick="selectOnboardingArchetype('investor')" style="flex: 1 1 calc(33.333% - 6px); min-width: 130px; background: #0E1512; border: 1px solid #24352C; border-radius: 10px; padding: 10px; text-align: left; cursor: pointer; transition: all 0.2s ease;">
+        <div id="lbl-archetype-investor-title" data-i18n="archetypeInvestorTitle" style="font-weight: 700; font-size: 12.5px; color: #EAF2EE;">📈 นักลงทุน / ปลดหนี้</div>
+        <div id="lbl-archetype-investor-desc" data-i18n="archetypeInvestorDesc" style="font-size: 11px; color: #8FA69C; margin-top: 2px;">ปรับพอร์ต &amp; แผนปลดหนี้</div>
+      </button>
+    </div>
+
     <!-- Workflow Steps List -->
     <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
       <!-- Step 1: Payslip -->
-      <div style="background: #0E1512; border: 1px solid #24352C; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+      <div id="onboarding-step-1" class="onboarding-step-card" style="background: rgba(47,139,118,0.1); border: 1.5px solid #2F8B76; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; transition: all 0.2s ease;">
         <div style="flex: 1;">
           <div style="font-weight: 700; font-size: 13px; color: #4FA894;" id="lbl-step1-title" data-i18n="step1Title">1. 💵 สลิปเงินเดือน (Payslip)</div>
           <div style="font-size: 11.5px; color: #8FA69C; margin-top: 2px;" id="lbl-step1-desc" data-i18n="step1Desc">จำลองรายได้สุทธิ, ภาษีหัก ณ ที่จ่าย, ปกส., และเงินสะสมกองทุนสำรองเลี้ยงชีพ (PVD)</div>
@@ -1144,7 +1163,7 @@
       </div>
 
       <!-- Step 2: Remaining Money -->
-      <div style="background: #0E1512; border: 1px solid #24352C; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+      <div id="onboarding-step-2" class="onboarding-step-card" style="background: #0E1512; border: 1px solid #24352C; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; transition: all 0.2s ease;">
         <div style="flex: 1;">
           <div style="font-weight: 700; font-size: 13px; color: #38bdf8;" id="lbl-step2-title" data-i18n="step2Title">2. 💰 เงินคงเหลือ (Remaining Money)</div>
           <div style="font-size: 11.5px; color: #8FA69C; margin-top: 2px;" id="lbl-step2-desc" data-i18n="step2Desc">วางแผนงบรายจ่าย จัดสรรเงินออมฉุกเฉิน และส่งเงินส่วนเกินไปลงทุน</div>
@@ -1155,7 +1174,7 @@
       </div>
 
       <!-- Step 3: Rebalance -->
-      <div style="background: #0E1512; border: 1px solid #24352C; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+      <div id="onboarding-step-3" class="onboarding-step-card" style="background: #0E1512; border: 1px solid #24352C; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; transition: all 0.2s ease;">
         <div style="flex: 1;">
           <div style="font-weight: 700; font-size: 13px; color: #a78bfa;" id="lbl-step3-title" data-i18n="step3Title">3. ⚖️ ปรับพอร์ต (Rebalance)</div>
           <div style="font-size: 11.5px; color: #8FA69C; margin-top: 2px;" id="lbl-step3-desc" data-i18n="step3Desc">จัดสรรเงินลงทุนตามสัดส่วนเป้าหมาย คำนวณ DCA ขั้นต่ำแบบ Zero-Drift</div>
@@ -1166,7 +1185,7 @@
       </div>
 
       <!-- Step 4: Debt Payoff -->
-      <div style="background: #0E1512; border: 1px solid #24352C; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+      <div id="onboarding-step-4" class="onboarding-step-card" style="background: #0E1512; border: 1px solid #24352C; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; transition: all 0.2s ease;">
         <div style="flex: 1;">
           <div style="font-weight: 700; font-size: 13px; color: #fb923c;" id="lbl-step4-title" data-i18n="step4Title">4. 📉 วางแผนปลดหนี้ (Debt Payoff)</div>
           <div style="font-size: 11.5px; color: #8FA69C; margin-top: 2px;" id="lbl-step4-desc" data-i18n="step4Desc">เปรียบเทียบวิธี Snowball และ Avalanche พร้อมกราฟ Timeline ปลดหนี้</div>
@@ -1177,7 +1196,7 @@
       </div>
 
       <!-- Step 5: Dashboard -->
-      <div style="background: #0E1512; border: 1px solid #24352C; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+      <div id="onboarding-step-5" class="onboarding-step-card" style="background: #0E1512; border: 1px solid #24352C; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; transition: all 0.2s ease;">
         <div style="flex: 1;">
           <div style="font-weight: 700; font-size: 13px; color: #34d399;" id="lbl-step5-title" data-i18n="step5Title">5. 📊 ภาพรวม & แดชบอร์ด (Dashboard)</div>
           <div style="font-size: 11.5px; color: #8FA69C; margin-top: 2px;" id="lbl-step5-desc" data-i18n="step5Desc">บันทึกประวัติความมั่งคั่งสุทธิ (Net Worth) และติดตามเป้าหมายการเงินระยะยาว</div>
@@ -1197,7 +1216,7 @@
 
     <!-- Action Footer -->
     <div style="display: flex; flex-direction: column; gap: 8px;">
-      <button onclick="closeOnboardingModal()" style="width: 100%; background: #2F8B76; color: #FFFFFF; border: none; padding: 11px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: background 0.15s;">
+      <button id="btn-onboarding-main-cta" onclick="if(typeof startOnboardingWithArchetype==='function'){startOnboardingWithArchetype();}else{closeOnboardingModal();}" style="width: 100%; background: #2F8B76; color: #FFFFFF; border: none; padding: 11px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: background 0.15s;">
         <span id="lbl-btn-get-started" data-i18n="btnGetStarted">🚀 เริ่มต้นใช้งานเลย</span>
       </button>
       <div style="text-align: center; font-size: 11px; color: #5B7168;" id="lbl-onboarding-footer-note" data-i18n="onboardingFooterNote">

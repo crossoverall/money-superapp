@@ -15,6 +15,26 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-29: First-Time Onboarding Wizard & Financial Archetype Templates (Phase 143 / v2.6.4)
+- **Date & Context:** 2026-10-29, Pillar 3.1 First-Time User Onboarding Wizard & Archetypes (`v2.6.4`).
+- **Problem:**
+  - First-time visitors facing 7 standalone tools had no clear starting path tailored to their employment and financial situation, increasing user drop-off.
+  - Adding archetype buttons and tabs without rigorous bilingual synchronization and screen reader announcements would violate WCAG 2.1 AA and headless DOM parity invariants.
+- **Solution & Invariants:**
+  1. Implemented `#onboardingArchetypes` (`role="tablist"`) with 3 selectable financial archetypes:
+     - `Salaried Employee` (`#btn-archetype-salaried` -> defaults to Payslip Simulator and Tax).
+     - `Freelancer / Creator` (`#btn-archetype-freelance` -> defaults to Remaining Money Cash Flow and ภ.ง.ด. 90 Tax).
+     - `Investor & Debt-Free` (`#btn-archetype-investor` -> defaults to Portfolio Rebalance and Debt Amortization).
+  2. Implemented `selectOnboardingArchetype(type, announce)`:
+     - Toggles active borders and backgrounds dynamically.
+     - Highlights matching step cards in the 5-step workflow.
+     - Updates primary CTA `#btn-onboarding-main-cta` text with dynamic formatter `btnStartWithArchetype(name)`.
+     - Directs `startOnboardingWithArchetype()` to open the chosen tool directly.
+     - Announces archetype selection politely to screen readers via `MoneyApp.announce`.
+  3. Added complete dictionary parity across `translations.th` and `translations.en` in `js/app-shell.js`.
+  4. Registered `moneySuperapp.onboardingComplete` in `CANONICAL_STORAGE_SCHEMAS`.
+  5. Added contract and sandboxed state machine tests in `tests/smoke.test.mjs`. All 812 tests pass. Version bumped to `v2.6.4`.
+
 ### 2026-10-29: Unified GitHub Actions CI Pipeline (Phase 142 / v2.6.3)
 - **Date & Context:** 2026-10-29, Pillar 6.2 Unified GitHub Actions CI Pipeline (`v2.6.3`).
 - **Problem:**
