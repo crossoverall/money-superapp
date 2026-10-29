@@ -2198,3 +2198,29 @@ ow.innerHTML template literal, inadvertently closing the template early. The rem
      - 100% Thai/English translation dictionary parity with aria-live screen-reader announcements (`MoneyApp.announce`).
   4. **Automated Verification:** Added 7 unit tests in `tests/google-drive-sync.test.mjs` (88.6% coverage), contracts in `tests/smoke.test.mjs`, verified asset budget (150KB limit intact), and verified 858/858 tests pass cleanly.
 - **Rule:** In client-side offline-first sync engines, never blindly overwrite data or rely on blocking browser `confirm()` prompts; always construct structured snapshot comparisons with deep JSON array deduplication, provide side-by-side visual diff modals with explicit user consent (ADR-004), and initialize dynamic DOM placeholders with neutral characters (`-`) to preserve bilingual live DOM parity.
+
+### 2026-10-29: Automated Periodic Rolling Backup Scheduler & Schema Version Migration (Phase 147 / v2.7.0 Milestone)
+
+- **Date & Context:** 2026-10-29, Phase 147 Automated Rolling Backup Ring Buffer & Schema Migration Engine (`v2.7.0`).
+- **Problem:**
+  1. Users could lose valuable historical entries or budgeting states due to unintended manual resets or unversioned schema conflicts across iterative updates.
+  2. While JSON export/import existed, users rarely performed manual exports daily, creating risk of data loss.
+  3. Upgrading data structures (such as adding sinking fund annuity metadata or active profile keys) previously lacked declarative forward migration chains, risking null pointer errors or missing defaults on legacy records.
+- **Root Cause:**
+  - Absence of automated local snapshot ring buffer and declarative data schema versioning.
+- **Resolution:**
+  1. **Automated Rolling Backup Ring Buffer (`MoneyApp.RollingBackup` in `js/engines/storage-db.js`):**
+     - Implemented `createSnapshot`, `listSnapshots`, `restoreSnapshot`, `deleteSnapshot`, and `checkAndTriggerAutoBackup`.
+     - Automatically creates periodic snapshots on app launch with 24-hour rate limiting.
+     - Strictly enforces `MAX_SNAPSHOTS = 5` ring buffer pruning, keeping only the 5 most recent snapshots to prevent storage bloat.
+     - Isolates storage key `moneySuperapp.rollingSnapshots.v1` from circular self-inclusion.
+  2. **Forward Schema Version Migration Engine (`MoneyApp.SchemaMigration` in `js/engines/storage-db.js`):**
+     - Tracks `moneySuperapp.schemaVersion` (migrated to schema version 3).
+     - Automated forward migrations:
+       - `v1 -> v2`: Ensures `moneySuperapp.activeProfile` is initialized.
+       - `v2 -> v3`: Upgrades savings goals with compound sinking fund annuity metadata (`sinkingFundEnabled`, `expectedReturnAnnual`).
+  3. **Settings Modal Integration (`index.html` & `js/app-shell.js`):**
+     - Added `#rollingBackupSection` in `#settingsModal` with dynamic list of snapshots and manual snapshot trigger (`#btn-create-snapshot`).
+     - Bilingual translation keys with screen reader live region confirmations (`MoneyApp.announce`).
+  4. **Automated Verification:** Added 6 unit tests in `tests/rolling-backup-migration.test.mjs`, smoke contracts in `tests/smoke.test.mjs`, verified asset budget (150KB limit intact), and verified 867/867 tests pass cleanly.
+- **Rule:** Implement automated rolling snapshot ring buffers with strict maximum retention ceilings to safeguard client-side data without bloating storage limits, and gate data structure evolution through explicit, idempotent forward schema migrations.

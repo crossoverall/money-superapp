@@ -47,6 +47,16 @@ const translations = {
     gdriveMergeSuccess: '✓ ผสานข้อมูลกับ Google Drive สำเร็จแล้ว!',
     gdriveNeverSynced: 'สำรองล่าสุด: ยังไม่เคยสำรอง',
     gdriveLastSync: (t) => `สำรองล่าสุด: ${t}`,
+    rollingBackupTitle: 'จุดสำรองข้อมูลประวัติอัตโนมัติ (Rolling Snapshots)',
+    rollingBackupDesc: 'จัดเก็บจุดสำรองข้อมูลย้อนหลัง 5 จุดล่าสุดในเครื่องโดยอัตโนมัติ',
+    btnCreateSnapshot: '➕ สร้างจุดสำรองทันที',
+    noSnapshotsFound: 'ยังไม่มีจุดสำรองข้อมูลในเครื่อง',
+    btnRestoreSnapshot: 'กู้คืน',
+    btnDeleteSnapshot: 'ลบ',
+    snapshotRestoredMsg: '✓ กู้คืนข้อมูลจากจุดสำรองเรียบร้อยแล้ว!',
+    snapshotCreatedMsg: '✓ สร้างจุดสำรองข้อมูลประวัติเรียบร้อยแล้ว!',
+    confirmRestoreSnapshot: (label) => `ต้องการกู้คืนข้อมูลจาก "${label}" หรือไม่? ข้อมูลปัจจุบันในเครื่องจะถูกแทนที่`,
+    confirmDeleteSnapshot: 'ต้องการลบจุดสำรองข้อมูลนี้หรือไม่?',
     gdriveAdvanced: '⚙️ การตั้งค่าขั้นสูง (Client ID)',
     btnSaveClientId: 'บันทึก',
     gdriveClientIdNote: 'ค่าเริ่มต้น: ผูกกับ https://crossoverall.github.io',
@@ -204,6 +214,16 @@ const translations = {
     gdriveMergeSuccess: '✓ Successfully merged data with Google Drive!',
     gdriveNeverSynced: 'Last backup: Never',
     gdriveLastSync: (t) => `Last backup: ${t}`,
+    rollingBackupTitle: 'Automated Rolling Snapshots',
+    rollingBackupDesc: 'Automatically keeps last 5 dated snapshots locally on this device',
+    btnCreateSnapshot: '➕ Snapshot Now',
+    noSnapshotsFound: 'No snapshots recorded yet',
+    btnRestoreSnapshot: 'Restore',
+    btnDeleteSnapshot: 'Delete',
+    snapshotRestoredMsg: '✓ Successfully restored snapshot data!',
+    snapshotCreatedMsg: '✓ Snapshot created successfully!',
+    confirmRestoreSnapshot: (label) => `Restore snapshot from "${label}"? Current calculator data will be replaced.`,
+    confirmDeleteSnapshot: 'Are you sure you want to delete this snapshot?',
     gdriveAdvanced: '⚙️ Advanced Settings (Client ID)',
     btnSaveClientId: 'Save',
     gdriveClientIdNote: 'Default: Configured for https://crossoverall.github.io',
@@ -485,6 +505,12 @@ function applyLang(lang) {
     document.getElementById('lbl-btn-save-client-id').textContent = t.btnSaveClientId;
   if (document.getElementById('lbl-gdrive-client-id-note'))
     document.getElementById('lbl-gdrive-client-id-note').textContent = t.gdriveClientIdNote;
+  if (document.getElementById('lbl-rolling-backup-title'))
+    document.getElementById('lbl-rolling-backup-title').textContent = t.rollingBackupTitle;
+  if (document.getElementById('lbl-rolling-backup-desc'))
+    document.getElementById('lbl-rolling-backup-desc').textContent = t.rollingBackupDesc;
+  if (document.getElementById('lbl-btn-create-snapshot'))
+    document.getElementById('lbl-btn-create-snapshot').textContent = t.btnCreateSnapshot;
 
   if (document.getElementById('btn-help-modal')) {
     document.getElementById('btn-help-modal').title = t.helpBtn;
@@ -1284,6 +1310,8 @@ const CANONICAL_STORAGE_SCHEMAS = {
   'moneySuperapp.lastGoogleSync': { label: 'ประวัติ Sync Drive', isJson: false, defaultVal: '' },
   'moneySuperapp.pendingBudget': { label: 'งบประมาณข้ามเครื่องมือ', isJson: false, defaultVal: '0' },
   'moneySuperapp.appLock.v1': { label: 'ระบบล็อกแอป (App Lock)', isJson: true, defaultVal: '{}' },
+  'moneySuperapp.rollingSnapshots.v1': { label: 'จุดสำรองประวัติ (Rolling Snapshots)', isJson: true, defaultVal: '[]' },
+  'moneySuperapp.schemaVersion': { label: 'เวอร์ชันโครงสร้างข้อมูล (Schema Version)', isJson: false, defaultVal: '3' },
 };
 
 function inspectStorageHealth(storageMap, schemas) {
@@ -2062,10 +2090,119 @@ if (typeof window !== 'undefined') {
   });
 }
 
+function renderRollingSnapshotsUI() {
+  const container = document.getElementById('rolling-snapshots-list');
+  if (!container) return;
+
+  const lang = getLang();
+  const Rolling = window.MoneyApp?.RollingBackup;
+  const snapshots = Rolling?.listSnapshots ? Rolling.listSnapshots(localStorage) : [];
+
+  if (!snapshots || snapshots.length === 0) {
+    const emptyMsg = translations[lang]?.noSnapshotsFound || 'No snapshots recorded yet';
+    container.innerHTML = `<div style="color: #8FA69C; font-style: italic; text-align: center; padding: 6px 0;" id="lbl-no-snapshots">${emptyMsg}</div>`;
+    return;
+  }
+
+  const btnRestoreText = translations[lang]?.btnRestoreSnapshot || 'Restore';
+  const btnDeleteText = translations[lang]?.btnDeleteSnapshot || 'Delete';
+
+  let html = '';
+  snapshots.forEach((snap) => {
+    const formattedDate = snap.timestamp
+      ? new Date(snap.timestamp).toLocaleString(lang === 'en' ? 'en-US' : 'th-TH', {
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : snap.id;
+    const label = snap.label || formattedDate;
+    const itemsCount = `${snap.keyCount ?? 0} ${lang === 'en' ? 'items' : 'รายการ'}`;
+
+    html += `
+      <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid #24352C; padding: 6px 8px; border-radius: 6px;">
+        <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 65%;">
+          <div style="font-weight: 600; color: #EAF2EE; font-size: 11.5px; overflow: hidden; text-overflow: ellipsis;">${label}</div>
+          <div style="color: #8FA69C; font-size: 10px;">${formattedDate} • ${itemsCount}</div>
+        </div>
+        <div style="display: flex; gap: 4px; flex-shrink: 0;">
+          <button onclick="restoreRollingSnapshot('${snap.id}')" style="background: rgba(37, 99, 235, 0.2); border: 1px solid #2563eb; color: #93c5fd; padding: 3px 6px; border-radius: 4px; font-size: 10.5px; font-weight: 600; cursor: pointer;">
+            ${btnRestoreText}
+          </button>
+          <button onclick="deleteRollingSnapshot('${snap.id}')" style="background: rgba(201, 125, 90, 0.15); border: 1px solid #C97D5A; color: #E09F7D; padding: 3px 6px; border-radius: 4px; font-size: 10.5px; font-weight: 600; cursor: pointer;">
+            ${btnDeleteText}
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function createManualRollingSnapshot() {
+  const Rolling = window.MoneyApp?.RollingBackup;
+  if (!Rolling?.createSnapshot) return;
+
+  const lang = getLang();
+  const label =
+    lang === 'en'
+      ? `Manual Snapshot ${new Date().toLocaleTimeString()}`
+      : `จุดสำรองข้อมูลสร้างเอง ${new Date().toLocaleTimeString()}`;
+  const snap = Rolling.createSnapshot(localStorage, label);
+  if (snap) {
+    renderRollingSnapshotsUI();
+    const successMsg = translations[lang]?.snapshotCreatedMsg || '✓ Snapshot created successfully!';
+    alert(successMsg);
+    if (window.MoneyApp?.announce) {
+      window.MoneyApp.announce(successMsg);
+    }
+  }
+}
+
+function restoreRollingSnapshot(id) {
+  const Rolling = window.MoneyApp?.RollingBackup;
+  if (!Rolling) return;
+
+  const lang = getLang();
+  const snapshots = Rolling.listSnapshots(localStorage);
+  const target = snapshots.find((s) => s.id === id);
+  if (!target) return;
+
+  const confirmFn = translations[lang]?.confirmRestoreSnapshot;
+  const confirmMsg =
+    typeof confirmFn === 'function'
+      ? confirmFn(target.label || target.id)
+      : `Restore snapshot "${target.label || target.id}"?`;
+
+  if (!confirm(confirmMsg)) return;
+
+  const success = Rolling.restoreSnapshot(id, localStorage);
+  if (success) {
+    alert(translations[lang]?.snapshotRestoredMsg || '✓ Snapshot restored successfully!');
+    reloadFrame();
+    closeSettingsModal();
+  }
+}
+
+function deleteRollingSnapshot(id) {
+  const Rolling = window.MoneyApp?.RollingBackup;
+  if (!Rolling) return;
+
+  const lang = getLang();
+  const confirmMsg = translations[lang]?.confirmDeleteSnapshot || 'Are you sure you want to delete this snapshot?';
+  if (!confirm(confirmMsg)) return;
+
+  Rolling.deleteSnapshot(id, localStorage);
+  renderRollingSnapshotsUI();
+}
+
 function openSettingsModal() {
   updateGoogleUI();
   if (typeof updateAppLockSettingsUI === 'function') updateAppLockSettingsUI();
   if (typeof updateProfileSettingsUI === 'function') updateProfileSettingsUI();
+  if (typeof renderRollingSnapshotsUI === 'function') renderRollingSnapshotsUI();
   runStorageHealthCheck(false);
   if (typeof updateStorageQuotaDisplay === 'function') updateStorageQuotaDisplay();
   document.getElementById('settingsModal').style.display = 'flex';
@@ -4523,11 +4660,24 @@ if (typeof window !== 'undefined') {
   window.initPullToRefresh = initPullToRefresh;
   window.selectOnboardingArchetype = selectOnboardingArchetype;
   window.startOnboardingWithArchetype = startOnboardingWithArchetype;
+  window.renderRollingSnapshotsUI = renderRollingSnapshotsUI;
+  window.createManualRollingSnapshot = createManualRollingSnapshot;
+  window.restoreRollingSnapshot = restoreRollingSnapshot;
+  window.deleteRollingSnapshot = deleteRollingSnapshot;
 
   const initShellPwaAndBadges = () => {
     updateNetworkStatus();
     initPullToRefresh();
     updateAppBadge();
+
+    try {
+      if (typeof window !== 'undefined' && window.MoneyApp?.SchemaMigration) {
+        window.MoneyApp.SchemaMigration.migrate(localStorage);
+      }
+      if (typeof window !== 'undefined' && window.MoneyApp?.RollingBackup) {
+        window.MoneyApp.RollingBackup.checkAndTriggerAutoBackup(localStorage);
+      }
+    } catch (_e) {}
   };
 
   if (document.readyState === 'loading') {

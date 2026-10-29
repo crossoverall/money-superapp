@@ -3725,4 +3725,72 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       assert.equal(typeof engine.formatSyncTimestamp, 'function');
     });
   });
+
+  describe('Phase 147: Automated Periodic Rolling Backup Scheduler & Schema Migration Contracts', () => {
+    it('verifies index.html declares #rollingBackupSection and snapshot controls', () => {
+      const indexHtml = fs.readFileSync(path.join(ROOT_DIR, 'index.html'), 'utf8');
+
+      assert.ok(indexHtml.includes('id="rollingBackupSection"'), 'index.html must include #rollingBackupSection');
+      assert.ok(indexHtml.includes('id="btn-create-snapshot"'), 'index.html must include #btn-create-snapshot');
+      assert.ok(indexHtml.includes('id="rolling-snapshots-list"'), 'index.html must include #rolling-snapshots-list');
+    });
+
+    it('verifies app-shell.js implements rolling snapshot UI controller and translations', () => {
+      const appShellJs = fs.readFileSync(path.join(ROOT_DIR, 'js/app-shell.js'), 'utf8');
+
+      assert.ok(
+        appShellJs.includes('function renderRollingSnapshotsUI'),
+        'app-shell.js must define renderRollingSnapshotsUI()',
+      );
+      assert.ok(
+        appShellJs.includes('function createManualRollingSnapshot'),
+        'app-shell.js must define createManualRollingSnapshot()',
+      );
+      assert.ok(
+        appShellJs.includes('function restoreRollingSnapshot'),
+        'app-shell.js must define restoreRollingSnapshot()',
+      );
+      assert.ok(
+        appShellJs.includes('function deleteRollingSnapshot'),
+        'app-shell.js must define deleteRollingSnapshot()',
+      );
+
+      const requiredKeys = [
+        'rollingBackupTitle',
+        'rollingBackupDesc',
+        'btnCreateSnapshot',
+        'noSnapshotsFound',
+        'btnRestoreSnapshot',
+        'btnDeleteSnapshot',
+      ];
+      for (const k of requiredKeys) {
+        assert.ok(appShellJs.includes(`${k}:`), `app-shell.js must define translation for ${k}`);
+      }
+    });
+
+    it('verifies js/engines/storage-db.js exports RollingBackup and SchemaMigration in runtime sandbox', () => {
+      const storageDbPath = path.join(ROOT_DIR, 'js/engines/storage-db.js');
+      assert.ok(fs.existsSync(storageDbPath), 'js/engines/storage-db.js must exist on disk');
+
+      const engineCode = fs.readFileSync(storageDbPath, 'utf8');
+      const sandbox = { window: {}, globalThis: {} };
+      createContext(sandbox);
+      const script = new Script(engineCode);
+      script.runInContext(sandbox);
+
+      const rolling = sandbox.window.MoneyApp?.RollingBackup || sandbox.globalThis.MoneyApp?.RollingBackup;
+      assert.ok(rolling, 'MoneyApp.RollingBackup must be exported');
+      assert.equal(typeof rolling.createSnapshot, 'function');
+      assert.equal(typeof rolling.listSnapshots, 'function');
+      assert.equal(typeof rolling.restoreSnapshot, 'function');
+      assert.equal(typeof rolling.deleteSnapshot, 'function');
+      assert.equal(typeof rolling.checkAndTriggerAutoBackup, 'function');
+
+      const migration = sandbox.window.MoneyApp?.SchemaMigration || sandbox.globalThis.MoneyApp?.SchemaMigration;
+      assert.ok(migration, 'MoneyApp.SchemaMigration must be exported');
+      assert.equal(typeof migration.getStoredVersion, 'function');
+      assert.equal(typeof migration.migrate, 'function');
+      assert.equal(migration.CURRENT_VERSION, 3);
+    });
+  });
 });

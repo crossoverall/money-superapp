@@ -228,7 +228,7 @@ flowchart LR
 | **Phase 144** | `v2.6.5` | Goal-based savings planner calculation engine (`MoneyApp.SavingsGoals`) | Level 2 | ✅ **Shipped** |
 | **Phase 145** | `v2.6.6` | Goal-based savings planner UI & cash flow surplus bridge integration | Level 2 | ✅ **Shipped** |
 | **Phase 146** | `v2.6.7` | Google Drive bidirectional cloud backup sync & conflict resolution modal | Level 3 | ✅ **Shipped** |
-| **Phase 147** | `v2.7.0` | Automated periodic rolling backup scheduler & schema version migration | Level 2 | 📋 Queued |
+| **Phase 147** | `v2.7.0` | Automated periodic rolling backup scheduler & schema version migration | Level 2 | ✅ **Shipped** |
 
 ### Wave 2 — Medium-Term (Phases 148–155) · Target: v2.8.0
 

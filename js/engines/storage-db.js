@@ -516,15 +516,250 @@
 
   const defaultStorage = createStorageDB();
 
+  // Phase 147: Automated Rolling Backup Ring Buffer & Schema Migration Subsystems
+  const ROLLING_BACKUP_STORAGE_KEY = 'moneySuperapp.rollingSnapshots.v1';
+  const ROLLING_BACKUP_LAST_RUN_KEY = 'moneySuperapp.lastAutoBackupRun';
+  const MAX_ROLLING_SNAPSHOTS = 5;
+
+  const RollingBackup = {
+    STORAGE_KEY: ROLLING_BACKUP_STORAGE_KEY,
+    LAST_RUN_KEY: ROLLING_BACKUP_LAST_RUN_KEY,
+    MAX_SNAPSHOTS: MAX_ROLLING_SNAPSHOTS,
+
+    listSnapshots: (storage = typeof localStorage !== 'undefined' ? localStorage : null) => {
+      if (!storage) return [];
+      try {
+        const raw =
+          typeof storage.getItem === 'function'
+            ? storage.getItem(ROLLING_BACKUP_STORAGE_KEY)
+            : storage[ROLLING_BACKUP_STORAGE_KEY];
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (_e) {
+        return [];
+      }
+    },
+
+    createSnapshot: (storage = typeof localStorage !== 'undefined' ? localStorage : null, label = null) => {
+      if (!storage) return null;
+      const snapshots = RollingBackup.listSnapshots(storage);
+      const now = new Date();
+      const iso = now.toISOString();
+      const id = `snap_${now.getTime()}`;
+
+      const data = {};
+      const allowedPrefixes = ['moneySuperapp.', 'remainingMoneyCalculator.', 'rebalanceCalculator.'];
+      if (typeof storage.length === 'number' && typeof storage.key === 'function') {
+        for (let i = 0; i < storage.length; i++) {
+          const key = storage.key(i);
+          if (key && allowedPrefixes.some((p) => key.startsWith(p)) && key !== ROLLING_BACKUP_STORAGE_KEY) {
+            const val = storage.getItem(key);
+            if (typeof val === 'string') data[key] = val;
+          }
+        }
+      } else {
+        Object.keys(storage).forEach((k) => {
+          if (k && allowedPrefixes.some((p) => k.startsWith(p)) && k !== ROLLING_BACKUP_STORAGE_KEY) {
+            if (typeof storage[k] === 'string') data[k] = storage[k];
+          }
+        });
+      }
+
+      const keyCount = Object.keys(data).length;
+      const snapshot = {
+        id,
+        timestamp: iso,
+        label: label || `Snapshot ${now.toLocaleDateString()}`,
+        version:
+          typeof storage.getItem === 'function'
+            ? storage.getItem('moneySuperapp.schemaVersion') || '1'
+            : storage['moneySuperapp.schemaVersion'] || '1',
+        keyCount,
+        data,
+      };
+
+      snapshots.unshift(snapshot);
+      if (snapshots.length > MAX_ROLLING_SNAPSHOTS) {
+        snapshots.splice(MAX_ROLLING_SNAPSHOTS);
+      }
+
+      const serialized = JSON.stringify(snapshots);
+      if (typeof storage.setItem === 'function') {
+        storage.setItem(ROLLING_BACKUP_STORAGE_KEY, serialized);
+        storage.setItem(ROLLING_BACKUP_LAST_RUN_KEY, iso);
+      } else {
+        storage[ROLLING_BACKUP_STORAGE_KEY] = serialized;
+        storage[ROLLING_BACKUP_LAST_RUN_KEY] = iso;
+      }
+
+      return snapshot;
+    },
+
+    restoreSnapshot: (snapshotId, storage = typeof localStorage !== 'undefined' ? localStorage : null) => {
+      if (!storage || !snapshotId) return false;
+      const snapshots = RollingBackup.listSnapshots(storage);
+      const target = snapshots.find((s) => s.id === snapshotId);
+      if (!target?.data) return false;
+
+      const allowedPrefixes = ['moneySuperapp.', 'remainingMoneyCalculator.', 'rebalanceCalculator.'];
+      Object.keys(target.data).forEach((key) => {
+        if (allowedPrefixes.some((p) => key.startsWith(p)) && key !== ROLLING_BACKUP_STORAGE_KEY) {
+          if (typeof storage.setItem === 'function') {
+            storage.setItem(key, target.data[key]);
+          } else {
+            storage[key] = target.data[key];
+          }
+        }
+      });
+      return true;
+    },
+
+    deleteSnapshot: (snapshotId, storage = typeof localStorage !== 'undefined' ? localStorage : null) => {
+      if (!storage || !snapshotId) return false;
+      const snapshots = RollingBackup.listSnapshots(storage);
+      const filtered = snapshots.filter((s) => s.id !== snapshotId);
+      const serialized = JSON.stringify(filtered);
+      if (typeof storage.setItem === 'function') {
+        storage.setItem(ROLLING_BACKUP_STORAGE_KEY, serialized);
+      } else {
+        storage[ROLLING_BACKUP_STORAGE_KEY] = serialized;
+      }
+      return filtered.length !== snapshots.length;
+    },
+
+    checkAndTriggerAutoBackup: (
+      storage = typeof localStorage !== 'undefined' ? localStorage : null,
+      minIntervalMs = 24 * 3600 * 1000,
+    ) => {
+      if (!storage) return null;
+      const lastRun =
+        typeof storage.getItem === 'function'
+          ? storage.getItem(ROLLING_BACKUP_LAST_RUN_KEY)
+          : storage[ROLLING_BACKUP_LAST_RUN_KEY];
+      const now = Date.now();
+      if (!lastRun || now - new Date(lastRun).getTime() >= minIntervalMs) {
+        return RollingBackup.createSnapshot(storage, 'Automated Daily Snapshot');
+      }
+      return null;
+    },
+  };
+
+  const CURRENT_SCHEMA_VERSION = 3;
+  const SCHEMA_VERSION_KEY = 'moneySuperapp.schemaVersion';
+
+  const SchemaMigration = {
+    CURRENT_VERSION: CURRENT_SCHEMA_VERSION,
+    VERSION_KEY: SCHEMA_VERSION_KEY,
+
+    getStoredVersion: (storage = typeof localStorage !== 'undefined' ? localStorage : null) => {
+      if (!storage) return 1;
+      const v =
+        typeof storage.getItem === 'function' ? storage.getItem(SCHEMA_VERSION_KEY) : storage[SCHEMA_VERSION_KEY];
+      const parsed = parseInt(v, 10);
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+    },
+
+    migrate: (
+      storage = typeof localStorage !== 'undefined' ? localStorage : null,
+      targetVersion = CURRENT_SCHEMA_VERSION,
+    ) => {
+      if (!storage) return { fromVersion: 1, toVersion: 1, appliedMigrations: [], migratedKeysCount: 0 };
+      const fromVersion = SchemaMigration.getStoredVersion(storage);
+      if (fromVersion >= targetVersion) {
+        return { fromVersion, toVersion: fromVersion, appliedMigrations: [], migratedKeysCount: 0 };
+      }
+
+      const appliedMigrations = [];
+      let migratedKeysCount = 0;
+
+      // Migration v1 -> v2: Standardize multi-profile & activeProfile
+      if (fromVersion < 2 && targetVersion >= 2) {
+        const activeProfile =
+          typeof storage.getItem === 'function'
+            ? storage.getItem('moneySuperapp.activeProfile')
+            : storage['moneySuperapp.activeProfile'];
+        if (!activeProfile) {
+          if (typeof storage.setItem === 'function') {
+            storage.setItem('moneySuperapp.activeProfile', 'default');
+          } else {
+            storage['moneySuperapp.activeProfile'] = 'default';
+          }
+          migratedKeysCount++;
+        }
+        appliedMigrations.push('v1_to_v2_active_profile');
+      }
+
+      // Migration v2 -> v3: Standardize savings goals sinking fund annuity metadata
+      if (fromVersion < 3 && targetVersion >= 3) {
+        const goalsRaw =
+          typeof storage.getItem === 'function'
+            ? storage.getItem('moneySuperapp.financialGoals.v1')
+            : storage['moneySuperapp.financialGoals.v1'];
+        if (goalsRaw) {
+          try {
+            const parsed = JSON.parse(goalsRaw);
+            let modified = false;
+            if (Array.isArray(parsed.goals)) {
+              parsed.goals = parsed.goals.map((g) => {
+                if (g && typeof g === 'object') {
+                  if (typeof g.sinkingFundEnabled === 'undefined') {
+                    g.sinkingFundEnabled = true;
+                    modified = true;
+                  }
+                  if (typeof g.expectedReturnAnnual === 'undefined') {
+                    g.expectedReturnAnnual = 0.015;
+                    modified = true;
+                  }
+                }
+                return g;
+              });
+            }
+            if (modified) {
+              const updatedStr = JSON.stringify(parsed);
+              if (typeof storage.setItem === 'function') {
+                storage.setItem('moneySuperapp.financialGoals.v1', updatedStr);
+              } else {
+                storage['moneySuperapp.financialGoals.v1'] = updatedStr;
+              }
+              migratedKeysCount++;
+            }
+          } catch (_e) {}
+        }
+        appliedMigrations.push('v2_to_v3_savings_goals_sinking_fund');
+      }
+
+      if (typeof storage.setItem === 'function') {
+        storage.setItem(SCHEMA_VERSION_KEY, String(targetVersion));
+      } else {
+        storage[SCHEMA_VERSION_KEY] = String(targetVersion);
+      }
+
+      return {
+        fromVersion,
+        toVersion: targetVersion,
+        appliedMigrations,
+        migratedKeysCount,
+      };
+    },
+  };
+
   global.MoneyApp = global.MoneyApp || {};
   const MoneyApp = global.MoneyApp;
   MoneyApp.createStorageDB = createStorageDB;
   MoneyApp.Storage = defaultStorage;
   MoneyApp.StorageDB = defaultStorage;
+  MoneyApp.RollingBackup = RollingBackup;
+  MoneyApp.SchemaMigration = SchemaMigration;
 
   if (typeof global !== 'undefined') {
     if (typeof global.createStorageDB === 'undefined') {
       global.createStorageDB = createStorageDB;
+    }
+    if (typeof global.RollingBackup === 'undefined') {
+      global.RollingBackup = RollingBackup;
+    }
+    if (typeof global.SchemaMigration === 'undefined') {
+      global.SchemaMigration = SchemaMigration;
     }
   }
 })(typeof window !== 'undefined' ? window : globalThis);
