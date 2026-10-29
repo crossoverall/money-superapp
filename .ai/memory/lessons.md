@@ -15,6 +15,25 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-29: Goal-Based Savings Planner Engine & Annuity Sinking Fund Math (Phase 144 / v2.6.5)
+- **Date & Context:** 2026-10-29, Pillar 2.1 Goal-Based Savings Planner Engine (`v2.6.5`).
+- **Problem:**
+  - Users lacked an analytical framework to model named financial targets (e.g. down payments, emergency reserves, wedding funds) accounting for compound interest, target deadlines, and multiple priority levels.
+  - Multi-goal monthly surplus allocations risked capital leaks, over-funding, or floating-point rounding anomalies if unconstrained.
+- **Solution & Invariants:**
+  1. **Annuity Sinking Fund Compounding Formula (`computeRequiredMonthlyContribution`):**
+     - When interest rate $r > 0$, discounts the future compounding value of current balance $PV \cdot (1+r)^n$, then solves for payment $PMT = \frac{(FV - PV(1+r)^n) \cdot r}{(1+r)^n - 1}$.
+     - Clamps to 0 if the goal is already fully funded or if the initial balance compounded alone achieves the target.
+     - Provides linear fallback $PMT = \max(0, FV - PV) / n$ when $r = 0$.
+  2. **Capital Conservation in Multi-Goal Surplus Allocation (`allocateMonthlySurplus`):**
+     - Implements `'priority'`, `'proportional'`, and `'balanced'` allocation strategies.
+     - Enforces strict capital conservation: $\sum \text{allocated} \le \text{surplus}$, caps allocations at remaining shortfall, and redistributes excess funds when higher-priority goals are saturated.
+  3. **Trajectory Generation & Identity Invariant:**
+     - Computes monthly schedule where each period satisfies `totalBalance == principalSaved + interestEarned` within $0.01$ Baht precision.
+  4. **Quality Gates:**
+     - Added 28 unit tests in `tests/savings-goals.test.mjs` including a 100-iteration random fuzzer.
+     - Precaching verified in `sw.js` and `tests/smoke.test.mjs`. Version bumped to `v2.6.5`.
+
 ### 2026-10-29: First-Time Onboarding Wizard & Financial Archetype Templates (Phase 143 / v2.6.4)
 - **Date & Context:** 2026-10-29, Pillar 3.1 First-Time User Onboarding Wizard & Archetypes (`v2.6.4`).
 - **Problem:**

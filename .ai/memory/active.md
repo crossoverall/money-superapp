@@ -1,5 +1,5 @@
 ---
-task_id: "phase-143-onboarding-wizard-archetypes"
+task_id: "phase-144-savings-goals-engine"
 status: "in_progress"
 current_stage: "coding"
 iteration_count: 0
@@ -11,7 +11,7 @@ pipeline:
   - stage: "human_approval"
     status: "approved_by_user"
   - stage: "coding"
-    status: "completed"
+    status: "in_progress"
   - stage: "qa_verification"
     status: "pending"
   - stage: "code_review"
@@ -20,20 +20,19 @@ pipeline:
     status: "pending"
 ---
 
-### Feature Specification: Phase 143 — First-Time Onboarding Wizard & Quick-Start Templates (Pillar 3.1 / v2.6.4)
+### Feature Specification: Phase 144 — Goal-Based Savings Planner Engine (Pillar 2.1 / v2.6.5)
 
 #### 1. Goal & Requirements
-- Add an interactive Financial Archetype Quick-Start Selector to `#onboardingModal`:
-  1. `Salaried Employee` (Focus: Payslip & Tax)
-  2. `Freelancer / Creator` (Focus: Cash Flow & ภ.ง.ด. 90 Tax)
-  3. `Investor & Debt-Free` (Focus: Portfolio Rebalance & Debt Elimination)
-- Selection dynamically focuses recommended starting tools, updates primary action button, and announces changes to assistive technology via `MoneyApp.announce`.
-- Store `moneySuperapp.onboardingComplete = 'true'` upon completion.
-- Maintain 100% bilingual symmetry between `translations.th` and `translations.en`.
-- Maintain strict mobile layout constraints (max-height, overflow-y: auto, zero horizontal blowout on 320px–375px viewports).
+- Build `js/engines/savings-goals.js` (`MoneyApp.SavingsGoals`):
+  - Goal schema validation, creation, cloning, and serialization (`moneySuperapp.savingsGoals.v1`).
+  - Required monthly contribution calculation using annuity sinking-fund compounding formula and 0% interest fallback.
+  - Multi-goal monthly surplus allocation with `'priority'`, `'proportional'`, and `'balanced'` strategies.
+  - Month-by-month compound balance trajectory simulation (principal vs interest earned).
+- Add full unit test suite `tests/savings-goals.test.mjs`.
+- Register in `sw.js` (`ASSETS_TO_CACHE`), `index.html`, and `tests/smoke.test.mjs`.
+- Maintain strict ADR-001 zero-dependency compliance and conservation of capital invariants.
 
 #### 2. Acceptance Criteria
-- User can toggle between the 3 archetype templates interactively.
-- Primary CTA navigates directly to the chosen archetype's recommended entry tool.
-- Bilingual parity verified across all new keys in Thai and English.
-- All 808+ tests pass, 0 Biome warnings, budget gate passes.
+- Unit test suite covers sinking fund math, surplus allocation conservation, and trajectory simulation.
+- `npm run lint` and `npm run test:budget` pass with 0 errors.
+- Version bumped to `v2.6.5`.

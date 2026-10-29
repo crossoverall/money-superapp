@@ -37,6 +37,7 @@ const CORE_JS_SCRIPTS = [
   'js/engines/bridge.js',
   'js/engines/monte-carlo.js',
   'js/engines/dashboard-viz.js',
+  'js/engines/savings-goals.js',
   'js/workers/simulation-worker.js',
   'js/app-shell.js',
   'js/dashboard.js',
@@ -3492,6 +3493,58 @@ describe('Automated Headless Smoke & Integration Test Suite', () => {
       runtime.closeOnboardingModal();
       assert.strictEqual(mockStorage.getItem('moneySuperapp.hasSeenOnboarding'), 'true');
       assert.strictEqual(mockStorage.getItem('moneySuperapp.onboardingComplete'), 'true');
+    });
+  });
+
+  describe('Phase 144: MoneyApp.SavingsGoals Engine & Offline Cache Contracts', () => {
+    it('verifies js/engines/savings-goals.js exists, is cached in sw.js, and declared in index.html head', () => {
+      const scriptPath = path.join(ROOT_DIR, 'js/engines/savings-goals.js');
+      assert.ok(fs.existsSync(scriptPath), 'js/engines/savings-goals.js must exist on disk');
+
+      const content = fs.readFileSync(scriptPath, 'utf8');
+      assert.ok(content.length > 500, 'savings-goals.js must not be empty');
+
+      const swContent = fs.readFileSync(path.join(ROOT_DIR, 'sw.js'), 'utf8');
+      assert.ok(
+        swContent.includes("'./js/engines/savings-goals.js'"),
+        'sw.js ASSETS_TO_CACHE must include ./js/engines/savings-goals.js',
+      );
+
+      const indexContent = fs.readFileSync(path.join(ROOT_DIR, 'index.html'), 'utf8');
+      assert.ok(
+        indexContent.includes('<script src="js/engines/savings-goals.js"></script>'),
+        'index.html must include script tag for js/engines/savings-goals.js',
+      );
+    });
+
+    it('verifies MoneyApp.SavingsGoals exports required methods and contracts in VM runtime', () => {
+      const scriptCode = fs.readFileSync(path.join(ROOT_DIR, 'js/engines/savings-goals.js'), 'utf8');
+      const sandbox = {
+        window: {},
+        globalThis: {},
+      };
+      sandbox.window = sandbox;
+      sandbox.globalThis = sandbox;
+
+      const script = new Script(scriptCode);
+      const context = createContext(sandbox);
+      script.runInContext(context);
+
+      assert.ok(sandbox.MoneyApp, 'MoneyApp namespace must be defined');
+      assert.ok(sandbox.MoneyApp.SavingsGoals, 'MoneyApp.SavingsGoals must be defined');
+
+      const SG = sandbox.MoneyApp.SavingsGoals;
+      assert.strictEqual(typeof SG.createGoal, 'function', 'createGoal must be a function');
+      assert.strictEqual(
+        typeof SG.computeRequiredMonthlyContribution,
+        'function',
+        'computeRequiredMonthlyContribution must be a function',
+      );
+      assert.strictEqual(typeof SG.allocateMonthlySurplus, 'function', 'allocateMonthlySurplus must be a function');
+      assert.strictEqual(typeof SG.generateGoalTrajectory, 'function', 'generateGoalTrajectory must be a function');
+      assert.strictEqual(typeof SG.loadGoals, 'function', 'loadGoals must be a function');
+      assert.strictEqual(typeof SG.saveGoals, 'function', 'saveGoals must be a function');
+      assert.strictEqual(SG.STORAGE_KEY, 'moneySuperapp.savingsGoals.v1', 'STORAGE_KEY must match v1 namespace');
     });
   });
 });

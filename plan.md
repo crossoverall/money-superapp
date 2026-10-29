@@ -225,7 +225,7 @@ flowchart LR
 | **Phase 141** | `v2.6.2` | Native zero-dependency code coverage reporting (`npm run test:coverage`) | Level 1 | ✅ **Shipped** |
 | **Phase 142** | `v2.6.3` | Unified GitHub Actions CI pipeline (`lint`, `test`, `test:budget`, `test:coverage`) | Level 1 | ✅ **Shipped** |
 | **Phase 143** | `v2.6.4` | First-time user onboarding wizard & quick-start templates | Level 2 | ✅ **Shipped** |
-| **Phase 144** | `v2.6.5` | Goal-based savings planner calculation engine (`MoneyApp.SavingsGoals`) | Level 2 | 📋 Queued |
+| **Phase 144** | `v2.6.5` | Goal-based savings planner calculation engine (`MoneyApp.SavingsGoals`) | Level 2 | ✅ **Shipped** |
 | **Phase 145** | `v2.6.6` | Goal-based savings planner UI & cash flow surplus bridge integration | Level 2 | 📋 Queued |
 | **Phase 146** | `v2.6.7` | Google Drive bidirectional cloud backup sync & conflict resolution modal | Level 3 | 📋 Queued |
 | **Phase 147** | `v2.7.0` | Automated periodic rolling backup scheduler & schema version migration | Level 2 | 📋 Queued |
