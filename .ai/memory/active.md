@@ -1,30 +1,33 @@
 ---
-task_id: "phase-139-multi-profile-partition-architecture"
-status: "completed"
-current_stage: "release"
-iteration_count: 1
+task_id: "phase-140-roadmap-synchronization"
+status: "in_progress"
+current_stage: "intake"
+iteration_count: 0
 pipeline:
   - stage: "spec"
-    status: "completed"
+    status: "in_progress"
   - stage: "planning"
-    status: "completed"
+    status: "pending"
   - stage: "human_approval"
-    status: "completed"
+    status: "approved_by_user"
   - stage: "coding"
-    status: "completed"
+    status: "pending"
   - stage: "qa_verification"
-    status: "completed"
+    status: "pending"
   - stage: "code_review"
-    status: "completed"
+    status: "pending"
   - stage: "release"
-    status: "completed"
+    status: "pending"
 ---
 
-### Feature Specification: Phase 139 — Multi-Profile Partition Architecture (Pillar 5.1 / v2.6.0 Milestone)
+### Feature Specification: Phase 140 — Roadmap Synchronization (v3.0 Next-Gen Pillars 140–163)
 
 #### 1. Goal & Requirements
-- **Goal:** Multi-profile data isolation across Personal, Family/Household, and Freelance/Business financial domains.
-- **Engine:** `js/engines/profile-partition.js` providing atomic partition swapping, cloning, export/import, and metrics.
-- **StorageDB:** Added `createPartitionedStorage` in `js/engines/storage-db.js`.
-- **UI:** Topbar switcher button + dropdown and Settings Modal management section in `index.html` & `js/app-shell.js`.
-- **Quality Gates:** 100% bilingual parity, zero external dependencies, 806/806 tests passing. Version bumped to `v2.6.0`.
+- Update `plan.md` in repository root to incorporate the audited v3.0 improvement roadmap following completion of Phase 139 (v2.6.0).
+- Integrate strict zero-dependency invariants, native Node.js coverage, protocol-safe loading, and HTML budget headroom rules.
+- Set up active task pipeline tracking for sequential phase execution.
+
+#### 2. Acceptance Criteria
+- `plan.md` accurately reflects Phases 1–139 as completed and outlines Phases 140–163 with accurate complexity, priority, and risk controls.
+- `npm run lint` passes with 0 errors/warnings.
+- `npm test` passes 100% of test suites.

@@ -15,6 +15,18 @@ When adding a lesson, include:
 
 ## Log
 
+### 2026-10-29: Roadmap Plan v3.0 Synchronization & Invariant Hardening (Phase 140 / v2.6.1)
+- **Date & Context:** 2026-10-29, Phase 140 Next-Generation Roadmap Synchronization (`v2.6.1`).
+- **Problem:**
+  - Proposing external devDependencies (e.g. `c8`, `terser`, `playwright`, `stryker`) violates the strict invariant tested in `tests/asset-budget.test.mjs` which requires devDependencies to contain only `@biomejs/biome`.
+  - Proposing browser ES module dynamic `import()` breaks direct `file://` execution due to browser null-origin CORS restrictions, violating ADR-001 and ADR-002.
+  - Adding features to HTML files without prior size reduction risks exceeding the `MAX_HTML_PAGE_BYTES` (150KB) budget.
+- **Solution & Invariants:**
+  1. Synchronized the audited v3.0 roadmap (Phases 140–163) across 7 pillars into `plan.md`.
+  2. Mandated zero-dependency native tooling: Node.js `--experimental-test-coverage`, zero-dep CDP E2E runner.
+  3. Preserved strict ADR-001 offline privacy and ADR-004 decoupled explicit user data sync.
+  4. Updated active state machine and bumped version to `v2.6.1`.
+
 ### 2026-10-23: Multi-Profile Partition Architecture (Phase 139 / v2.6.0 Milestone)
 - **Date & Context:** 2026-10-23, Pillar 5.1 Multi-Profile Switching & Partition Architecture (`v2.6.0`).
 - **Problem:**

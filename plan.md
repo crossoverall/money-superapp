@@ -197,12 +197,69 @@ flowchart LR
 | **Phase 136** | `v2.5.77` | Interactive Cash Flow Waterfall & Category Filtering (Pillar 3.2) | Level 2 | ✅ **Shipped** (`2dd1d80`) |
 | **Phase 137** | `v2.5.78` | Native Barcode / QR Camera Scanner for P2P Sync (Pillar 1.3) | Level 2 | ✅ **Shipped** (`8efd71a`) |
 | **Phase 138** | `v2.5.79` | Joint Tax Filing & Spousal Exemption Optimizer (Pillar 5.2) | Level 2 | ✅ **Shipped** (`dea1b3a`) |
-| **Phase 139** | `v2.6.0`  | Multi-profile partition architecture (Personal / Family / Freelance) | Level 3 | ✅ **Shipped** |
+| **Phase 139** | `v2.6.0`  | Multi-profile partition architecture (Personal / Family / Freelance) | Level 3 | ✅ **Shipped** (`9dcb4a9`) |
+
+---
+
+# Money Superapp — Next-Generation Improvement Plan v3.0 (v2.6.0+ → v3.0.0)
+
+> Strategic next-generation roadmap building upon the v2.6.0 milestone foundation across 7 strategic pillars and 24 phases (Phases 140–163).
+
+## Strategic Pillars v3.0
+
+1. **Architecture & Code Health:** Centralized i18n dictionaries, script decomposition, JSDoc types (`jsconfig.json`), typed event bus.
+2. **New Financial Tools:** Goal-based savings planner, insurance adequacy card, inflation-adjusted long-term projections, FIRE calculator.
+3. **UX & Accessibility:** First-time onboarding wizard, unified SVG chart library, contextual tooltips, comprehensive print/PDF reports.
+4. **Data Portability & Sync:** Full Google Drive bidirectional sync with conflict resolver, bank statement parsers, auto-backup scheduler, schema migration.
+5. **Performance Optimization:** Protocol-safe lazy-load engines, Web Worker simulation offloading, virtual scrolling for large tables.
+6. **Testing & CI/CD:** Zero-dependency native Node.js code coverage (`--experimental-test-coverage`), unified GitHub Actions CI pipeline, headless CDP journeys.
+7. **Reach & Distribution:** Multi-country tax module framework, PWA install campaign, SEO landing page, community contribution guides.
+
+## Prioritized Implementation Roadmap v3.0
+
+### Wave 1 — Immediate (Phases 140–147) · Target: v2.7.0
+
+| Phase | Target Version | Scope & Deliverable | Complexity | Status |
+|---|---|---|---|---|
+| **Phase 140** | `v2.6.1` | Synchronize v3.0 next-generation roadmap into `plan.md` | Level 1 | ✅ **Shipped** |
+| **Phase 141** | `v2.6.2` | Native zero-dependency code coverage reporting (`npm run test:coverage`) | Level 1 | 📋 Queued |
+| **Phase 142** | `v2.6.3` | Unified GitHub Actions CI pipeline (`lint`, `test`, `test:budget`, `test:coverage`) | Level 1 | 📋 Queued |
+| **Phase 143** | `v2.6.4` | First-time user onboarding wizard & quick-start templates | Level 2 | 📋 Queued |
+| **Phase 144** | `v2.6.5` | Goal-based savings planner calculation engine (`MoneyApp.SavingsGoals`) | Level 2 | 📋 Queued |
+| **Phase 145** | `v2.6.6` | Goal-based savings planner UI & cash flow surplus bridge integration | Level 2 | 📋 Queued |
+| **Phase 146** | `v2.6.7` | Google Drive bidirectional cloud backup sync & conflict resolution modal | Level 3 | 📋 Queued |
+| **Phase 147** | `v2.7.0` | Automated periodic rolling backup scheduler & schema version migration | Level 2 | 📋 Queued |
+
+### Wave 2 — Medium-Term (Phases 148–155) · Target: v2.8.0
+
+| Phase | Target Version | Scope & Deliverable | Complexity | Status |
+|---|---|---|---|---|
+| **Phase 148** | `v2.7.1` | TypeScript-compatible JSDoc type annotations across domain engines | Level 2 | 📋 Queued |
+| **Phase 149** | `v2.7.2` | Decompose monolithic UI scripts (`remaining-money.js` / `dashboard.js`) | Level 3 | 📋 Queued |
+| **Phase 150** | `v2.7.3` | Inflation-adjusted purchasing power projection toggle (Real vs Nominal) | Level 2 | 📋 Queued |
+| **Phase 151** | `v2.7.4` | Unified zero-dependency SVG chart component library (`MoneyApp.Chart`) | Level 3 | 📋 Queued |
+| **Phase 152** | `v2.7.5` | Suite-wide print & PDF annual financial statement generation | Level 2 | 📋 Queued |
+| **Phase 153** | `v2.7.6` | Enhanced bank statement parser for major Thai financial institutions | Level 2 | 📋 Queued |
+| **Phase 154** | `v2.7.7` | Open-source community contribution guides, issue and PR templates | Level 1 | 📋 Queued |
+| **Phase 155** | `v2.8.0` | FIRE (Financial Independence) calculator with Monte Carlo integration | Level 2 | 📋 Queued |
+
+### Wave 3 — Strategic (Phases 156–163) · Target: v3.0.0
+
+| Phase | Target Version | Scope & Deliverable | Complexity | Status |
+|---|---|---|---|---|
+| **Phase 156** | `v2.8.1` | Protocol-safe dynamic lazy-loading for non-critical domain engines | Level 2 | 📋 Queued |
+| **Phase 157** | `v2.8.2` | Centralized typed event bus replacing raw message passing | Level 2 | 📋 Queued |
+| **Phase 158** | `v2.8.3` | Insurance adequacy analyzer UI card & human-value calculation | Level 2 | 📋 Queued |
+| **Phase 159** | `v2.8.4` | Contextual help tooltips & bilingual financial term glossary | Level 1 | 📋 Queued |
+| **Phase 160** | `v2.8.5` | Zero-dependency virtual scrolling for 360-month amortization tables | Level 2 | 📋 Queued |
+| **Phase 161** | `v2.8.6` | Lightweight SEO landing page with structured data showcase | Level 1 | 📋 Queued |
+| **Phase 162** | `v2.9.0` | PWA install optimization banner & Trusted Web Activity (TWA) packaging | Level 2 | 📋 Queued |
+| **Phase 163** | `v3.0.0` | Multi-jurisdiction personal tax framework abstraction (TH + Regional) | Level 3 | 📋 Queued |
 
 ---
 
 ## Status Summary
 
-- **Previous Plan (`improvement-plan.md`):** **0 items left** (100% completed up through v2.5.63).
-- **All Improvement Roadmap Phases (Phases 123–139):** **100% Completed & Shipped (v2.6.0 Milestone Reached)**.
-- **Remaining in Plan (`plan.md`):** **0 phases left** (All 139 phases across 6 Pillars 100% complete).
+- **Completed Phases:** 139 Phases shipped (`v1.0.0` through `v2.6.0`).
+- **Active Phase:** Phase 140 (Roadmap Synchronization).
+- **Queued Phases:** Phases 141–163 (23 phases across Waves 1–3).
